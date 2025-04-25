@@ -1,0 +1,40 @@
+#include "MainWindow.h"
+#include <QToolBar>
+#include <QFileDialog>
+#include <QAction>
+
+MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
+    m_viewerWidget = new ViewerWidget(this);
+    setCentralWidget(m_viewerWidget);
+    createToolBar();
+
+    resize(800, 600);
+}
+
+void MainWindow::createToolBar() {
+    QToolBar* toolbar = addToolBar("Main Toolbar");
+
+    QAction* openAct = toolbar->addAction("Open");
+    connect(openAct, &QAction::triggered, this, &MainWindow::openFile);
+
+    QAction* topViewAct = toolbar->addAction("Top View");
+    connect(topViewAct, &QAction::triggered, this, &MainWindow::setViewTop);
+
+    QAction* interferenceAct = toolbar->addAction("Check Interference");
+    connect(interferenceAct, &QAction::triggered, this, &MainWindow::checkInterference);
+}
+
+void MainWindow::openFile() {
+    QString filename = QFileDialog::getOpenFileName(this, "Open CAD File", "", "STEP (*.step *.stp);;IGES (*.iges *.igs)");
+    if (!filename.isEmpty()) {
+        m_viewerWidget->loadModel(filename);
+    }
+}
+
+void MainWindow::setViewTop() {
+    m_viewerWidget->setTopView();
+}
+
+void MainWindow::checkInterference() {
+    m_viewerWidget->checkInterference();
+}

@@ -1,0 +1,65 @@
+cmake_minimum_required(VERSION 3.10)
+project(Qt_OCC)
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTORCC ON)
+
+set(Qt_OSG_OCC_LinkDirectories)   # include path list
+set(Qt_OSG_OCC_LinkLibraries)     # library list
+
+set(OpenCASCADE_DIR "" CACHE PATH "Path to OpenCASCADE installation")
+
+# Qt
+find_package(Qt5 REQUIRED COMPONENTS Widgets)
+
+# OpenCASCADE
+find_package(OpenCASCADE REQUIRED)
+### OpenCASCADE
+if (OpenCASCADE_DIR AND EXISTS "${OpenCASCADE_DIR}")
+    message(STATUS "OpenCASCADE_DIR: ${OpenCASCADE_DIR}")
+    set(OpenCASCADE_INCLUDE_DIR "${OpenCASCADE_DIR}/inc")
+    set(OpenCASCADE_LIB_DIR "${OpenCASCADE_DIR}/lib")
+    
+    list(APPEND Qt_OSG_OCC_LinkDirectories ${OpenCASCADE_INCLUDE_DIR})
+    
+    link_directories(${OpenCASCADE_LIB_DIR})
+    list(APPEND Qt_OSG_OCC_LinkLibraries
+        TKernel
+        TKG3d
+        TKMath
+        TKBRep
+        TKPrim
+        TKMesh
+        TKTopAlgo
+        TKGeomAlgo
+        TKSTEP
+        TKSTEPAttr
+        TKSTEP209
+        TKXSBase
+    )
+else()
+    message(FATAL_ERROR "OpenCASCADE_DIR not found or path does not exist. ")
+endif()
+
+# UI
+set(SOURCES
+    src/main.cpp
+    src/MainWindow.cpp
+    src/ViewerWidget.cpp
+    src/OCCView.cpp
+)
+
+set(HEADERS
+    src/MainWindow.h
+    src/ViewerWidget.h
+    src/OCCView.h
+)
+
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
+
+target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCASCADE_INCLUDE_DIRS})
+target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCASCADE_LIBRARIES} Qt5::Widgets)
