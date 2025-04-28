@@ -9,8 +9,8 @@ public:
     MainWindow(QWidget* parent = nullptr);
 private slots:
     void openFile();
-    void setViewTop();
-    void checkInterference();
+    void setViewTop() const;
+    void checkInterference() const;
 
 private:
     ViewerWidget* m_viewerWidget;

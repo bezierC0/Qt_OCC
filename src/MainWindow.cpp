@@ -11,7 +11,8 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent) {
     resize(800, 600);
 }
 
-void MainWindow::createToolBar() {
+void MainWindow::createToolBar()
+{
     QToolBar* toolbar = addToolBar("Main Toolbar");
 
     QAction* openAct = toolbar->addAction("Open");
@@ -31,10 +32,12 @@ void MainWindow::openFile() {
     }
 }
 
-void MainWindow::setViewTop() {
+void MainWindow::setViewTop() const
+{
     m_viewerWidget->setTopView();
 }
 
-void MainWindow::checkInterference() {
+void MainWindow::checkInterference() const
+{
     m_viewerWidget->checkInterference();
 }
