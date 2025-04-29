@@ -7,15 +7,25 @@
 
 class OCCView;
 
-class ViewerWidget : public QWidget {
+class ViewerWidget : public QWidget 
+{
     Q_OBJECT
+    struct Document{
+        std::vector<TopoDS_Shape> m_list;
+    };
+
 public:
-    ViewerWidget(QWidget* parent = nullptr);
+    explicit ViewerWidget(QWidget* parent = nullptr);
+    ~ViewerWidget() override;
     void loadModel(const QString& filename) const;
     void setTopView();
     void checkInterference();
+    void clipping();
+    void explosion();
 
 private:
     OCCView* m_occView;
+    std::shared_ptr<Document> m_doc;
+
     //TopoDS_Shape m_loadedShape;
 };

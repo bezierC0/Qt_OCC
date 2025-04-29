@@ -11,6 +11,8 @@ private slots:
     void openFile();
     void setViewTop() const;
     void checkInterference() const;
+    void clipping() const;
+    void explosion() const;
 
 private:
     ViewerWidget* m_viewerWidget;

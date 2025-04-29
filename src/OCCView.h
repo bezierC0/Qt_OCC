@@ -36,12 +36,18 @@ public:
   const QString& getGlInfo() const { return myGlInfo; }
 
   //! Minial widget size.
-  QSize minimumSizeHint() const override { return QSize(200, 200); }
+  QSize minimumSizeHint() const override { return QSize(400, 400); }
 
   //! Default widget size.
   QSize sizeHint()        const override { return QSize(720, 480); }
 
   void setShape( const Handle( AIS_Shape )& loadedShape );
+
+  void reDraw()const ;
+
+  void clipping() const;
+
+  void explosion() const;
 
 public:
 
@@ -84,7 +90,7 @@ private:
   void updateView();
 
   //! Handle view redraw.
-  virtual void handleViewRedraw (const Handle(AIS_InteractiveContext)& theCtx,
+  void handleViewRedraw (const Handle(AIS_InteractiveContext)& theCtx,
                                  const Handle(V3d_View)& theView) override;
   //! Viewer handle.
 
@@ -96,7 +102,7 @@ private:
   Handle(V3d_View)               myView;
   Handle(AIS_InteractiveContext) myContext;
   //! Focus view handle.
-  Handle(AIS_ViewCube)           myViewCube;
+  Handle(AIS_ViewCube)           m_navigationView; // XYZ Navigation
 
   //! OpenGL info.
   Handle(V3d_View)               myFocusView;
