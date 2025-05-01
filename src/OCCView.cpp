@@ -210,14 +210,14 @@ OCCView::OCCView(QWidget* theParent)
     aDriver->ChangeOptions().useSystemBuffer = false;
 
     // create viewer
-    myViewer = new V3d_Viewer(aDriver);
-    myViewer->SetDefaultBackgroundColor(Quantity_NOC_CADETBLUE);
-    myViewer->SetDefaultLights();
-    myViewer->SetLightOn();
-    myViewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines); // show grid grand
+    m_viewer = new V3d_Viewer(aDriver);
+    m_viewer->SetDefaultBackgroundColor(Quantity_NOC_CADETBLUE);
+    m_viewer->SetDefaultLights();
+    m_viewer->SetLightOn();
+    m_viewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines); // show grid grand
 
     // create AIS context
-    myContext = new AIS_InteractiveContext(myViewer);
+    m_context = new AIS_InteractiveContext(m_viewer);
 
     m_navigationView = new AIS_ViewCube();
     m_navigationView->SetViewAnimation(myViewAnimation);
@@ -226,13 +226,13 @@ OCCView::OCCView(QWidget* theParent)
     m_navigationView->TransformPersistence()->SetOffset2d(Graphic3d_Vec2i(100, 150));
 
     // note - window will be created later within initializeGL() callback!
-    myView = myViewer->CreateView();
-    myView->SetImmediateUpdate(false);
+    m_view = m_viewer->CreateView();
+    m_view->SetImmediateUpdate(false);
 #ifndef __APPLE__
-    myView->ChangeRenderingParams().NbMsaaSamples = 4; // warning - affects performance
+    m_view->ChangeRenderingParams().NbMsaaSamples = 4; // warning - affects performance
 #endif
-    myView->ChangeRenderingParams().ToShowStats = true;
-    myView->ChangeRenderingParams().CollectedStats = (Graphic3d_RenderingParams::PerfCounters)
+    m_view->ChangeRenderingParams().ToShowStats = true;
+    m_view->ChangeRenderingParams().CollectedStats = (Graphic3d_RenderingParams::PerfCounters)
         (Graphic3d_RenderingParams::PerfCounters_FrameRate
             | Graphic3d_RenderingParams::PerfCounters_Triangles);
 
@@ -263,14 +263,14 @@ OCCView::~OCCView()
 {
     // hold on X11 display connection till making another connection active by glXMakeCurrent()
     // to workaround sudden crash in QOpenGLWidget destructor
-    Handle(Aspect_DisplayConnection) aDisp = myViewer->Driver()->GetDisplayConnection();
+    Handle(Aspect_DisplayConnection) aDisp = m_viewer->Driver()->GetDisplayConnection();
 
     // release OCCT viewer
-    myContext->RemoveAll(false);
-    myContext.Nullify();
-    myView->Remove();
-    myView.Nullify();
-    myViewer.Nullify();
+    m_context->RemoveAll(false);
+    m_context.Nullify();
+    m_view->Remove();
+    m_view.Nullify();
+    m_viewer.Nullify();
 
     // make active OpenGL context created by Qt
     makeCurrent();
@@ -280,7 +280,7 @@ OCCView::~OCCView()
 void OCCView::dumpGlInfo(bool theIsBasic, bool theToPrint)
 {
     TColStd_IndexedDataMapOfStringString aGlCapsDict;
-    myView->DiagnosticInformation(aGlCapsDict, theIsBasic ? Graphic3d_DiagnosticInfo_Basic : Graphic3d_DiagnosticInfo_Complete);
+    m_view->DiagnosticInformation(aGlCapsDict, theIsBasic ? Graphic3d_DiagnosticInfo_Basic : Graphic3d_DiagnosticInfo_Complete);
     TCollection_AsciiString anInfo;
     for (TColStd_IndexedDataMapOfStringString::Iterator aValueIter(aGlCapsDict); aValueIter.More(); aValueIter.Next())
     {
@@ -326,12 +326,12 @@ void OCCView::initializeGL()
         return;
     }
 
-    Handle(Aspect_NeutralWindow) aWindow = Handle(Aspect_NeutralWindow)::DownCast(myView->Window());
+    Handle(Aspect_NeutralWindow) aWindow = Handle(Aspect_NeutralWindow)::DownCast(m_view->Window());
     if (!aWindow.IsNull())
     {
         aWindow->SetNativeHandle(aNativeWin);
         aWindow->SetSize(aViewSize.x(), aViewSize.y());
-        myView->SetWindow(aWindow, aGlCtx->RenderingContext());
+        m_view->SetWindow(aWindow, aGlCtx->RenderingContext());
         //dumpGlInfo (true, true);
     }
     else
@@ -340,21 +340,11 @@ void OCCView::initializeGL()
         aWindow->SetVirtual(true);
         aWindow->SetNativeHandle(aNativeWin);
         aWindow->SetSize(aViewSize.x(), aViewSize.y());
-        myView->SetWindow(aWindow, aGlCtx->RenderingContext());
+        m_view->SetWindow(aWindow, aGlCtx->RenderingContext());
         //dumpGlInfo (true, true);
 
-        myContext->Display(m_navigationView, 0, 0, false);
+        m_context->Display(m_navigationView, 0, 0, false);
     }
-
-#if 0
-    // dummy shape for testing
-    {
-        TopoDS_Shape aBox = BRepPrimAPI_MakeBox(100.0, 50.0, 90.0).Shape();
-        Handle(AIS_Shape) aShape = new AIS_Shape(aBox);
-        myContext->Display(aShape, AIS_Shaded, 0, false);
-    }
-#endif
-
 }
 
 
@@ -376,7 +366,7 @@ void OCCView::keyPressEvent(QKeyEvent* theEvent)
     }
     case Aspect_VKey_F:
     {
-        myView->FitAll(0.01, false);
+        m_view->FitAll(0.01, false);
         update();
         return;
     }
@@ -390,7 +380,7 @@ void OCCView::mousePressEvent(QMouseEvent* theEvent)
     QOpenGLWidget::mousePressEvent(theEvent);
     const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
     const Aspect_VKeyFlags aFlags = qtMouseModifiers2VKeys(theEvent->modifiers());
-    if (!myView.IsNull()
+    if (!m_view.IsNull()
         && UpdateMouseButtons(aPnt,
             qtMouseButtons2VKeys(theEvent->buttons()),
             aFlags,
@@ -406,7 +396,7 @@ void OCCView::mouseReleaseEvent(QMouseEvent* theEvent)
     QOpenGLWidget::mouseReleaseEvent(theEvent);
     const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
     const Aspect_VKeyFlags aFlags = qtMouseModifiers2VKeys(theEvent->modifiers());
-    if (!myView.IsNull()
+    if (!m_view.IsNull()
         && UpdateMouseButtons(aPnt,
             qtMouseButtons2VKeys(theEvent->buttons()),
             aFlags,
@@ -421,7 +411,7 @@ void OCCView::mouseMoveEvent(QMouseEvent* theEvent)
 {
     QOpenGLWidget::mouseMoveEvent(theEvent);
     const Graphic3d_Vec2i aNewPos(theEvent->pos().x(), theEvent->pos().y());
-    if (!myView.IsNull()
+    if (!m_view.IsNull()
         && UpdateMousePosition(aNewPos,
             qtMouseButtons2VKeys(theEvent->buttons()),
             qtMouseModifiers2VKeys(theEvent->modifiers()),
@@ -440,19 +430,19 @@ void OCCView::wheelEvent(QWheelEvent* theEvent)
 #else
     const Graphic3d_Vec2i aPos(theEvent->pos().x(), theEvent->pos().y());
 #endif
-    if (myView.IsNull())
+    if (m_view.IsNull())
     {
         return;
     }
 
-    if (!myView->Subviews().IsEmpty())
+    if (!m_view->Subviews().IsEmpty())
     {
-        Handle(V3d_View) aPickedView = myView->PickSubview(aPos);
+        Handle(V3d_View) aPickedView = m_view->PickSubview(aPos);
         if (!aPickedView.IsNull()
             && aPickedView != myFocusView)
         {
             // switch input focus to another subview
-            OnSubviewChanged(myContext, myFocusView, aPickedView);
+            OnSubviewChanged(m_context, myFocusView, aPickedView);
             updateView();
             return;
         }
@@ -474,7 +464,7 @@ void OCCView::updateView()
 
 void OCCView::paintGL()
 {
-    if (myView->Window().IsNull())
+    if (m_view->Window().IsNull())
     {
         return;
     }
@@ -486,7 +476,7 @@ void OCCView::paintGL()
     auto aNativeWin = reinterpret_cast<Aspect_Drawable>(winId());
 #endif
 
-    if (myView->Window()->NativeHandle() != aNativeWin)
+    if (m_view->Window()->NativeHandle() != aNativeWin)
     {
         // workaround window recreation done by Qt on monitor (QScreen) disconnection
         Message::SendWarning() << "Native window handle has changed by QOpenGLWidget!";
@@ -498,7 +488,7 @@ void OCCView::paintGL()
     // get context from this (composer) view rather than from arbitrary one
     //Handle(OpenGl_GraphicDriver) aDriver = Handle(OpenGl_GraphicDriver)::DownCast (myContext->CurrentViewer()->Driver());
     //Handle(OpenGl_Context) aGlCtx = aDriver->GetSharedContext();
-    Handle(OpenGl_Context) aGlCtx = OcctGlTools::GetGlContext(myView);
+    Handle(OpenGl_Context) aGlCtx = OcctGlTools::GetGlContext(m_view);
     Handle(OpenGl_FrameBuffer) aDefaultFbo = aGlCtx->DefaultFrameBuffer();
     if (aDefaultFbo.IsNull())
     {
@@ -517,16 +507,16 @@ void OCCView::paintGL()
     Graphic3d_Vec2i aViewSizeOld;
     //const QRect aRect = rect(); Graphic3d_Vec2i aViewSizeNew(aRect.right() - aRect.left(), aRect.bottom() - aRect.top());
     Graphic3d_Vec2i aViewSizeNew = aDefaultFbo->GetVPSize();
-    Handle(Aspect_NeutralWindow) aWindow = Handle(Aspect_NeutralWindow)::DownCast(myView->Window());
+    Handle(Aspect_NeutralWindow) aWindow = Handle(Aspect_NeutralWindow)::DownCast(m_view->Window());
     aWindow->Size(aViewSizeOld.x(), aViewSizeOld.y());
     if (aViewSizeNew != aViewSizeOld)
     {
         aWindow->SetSize(aViewSizeNew.x(), aViewSizeNew.y());
-        myView->MustBeResized();
-        myView->Invalidate();
+        m_view->MustBeResized();
+        m_view->Invalidate();
         //dumpGlInfo (true, false);
 
-        for (const Handle(V3d_View)& aSubviewIter : myView->Subviews())
+        for (const Handle(V3d_View)& aSubviewIter : m_view->Subviews())
         {
             aSubviewIter->MustBeResized();
             aSubviewIter->Invalidate();
@@ -535,9 +525,9 @@ void OCCView::paintGL()
     }
 
     // flush pending input events and redraw the viewer
-    Handle(V3d_View) aView = !myFocusView.IsNull() ? myFocusView : myView;
+    Handle(V3d_View) aView = !myFocusView.IsNull() ? myFocusView : m_view;
     aView->InvalidateImmediate();
-    FlushViewEvents(myContext, aView, true);
+    FlushViewEvents(m_context, aView, true);
 }
 
 void OCCView::handleViewRedraw(const Handle(AIS_InteractiveContext)& theCtx,
@@ -552,16 +542,31 @@ void OCCView::handleViewRedraw(const Handle(AIS_InteractiveContext)& theCtx,
 }
 
 
+void OCCView::clearShape()
+{
+    for ( const Handle( AIS_Shape )& shape : m_loadedShapes ) {
+      m_context->Erase( shape,  false );
+    }
+    m_loadedShapes.clear();
+}
+
 void OCCView::setShape(const Handle(AIS_Shape)& loadedShape)
 {
-    m_loadedShape = loadedShape;
-
-    myContext->Display(m_loadedShape, AIS_Shaded, 0, false);
+    m_loadedShapes.emplace_back( loadedShape ) ;
 }
 
 void OCCView::reDraw() const
 {
-    myView->Redraw();
+    for ( const Handle( AIS_Shape )& shape : m_loadedShapes ) {
+      m_context->Display( shape, AIS_Shaded, 0, false );
+    }
+    m_view->Redraw();
+}
+
+void OCCView::fit() const
+{
+    m_view->ZFitAll();
+    m_view->FitAll( 0.1, false );
 }
 
 void OCCView::clipping() const

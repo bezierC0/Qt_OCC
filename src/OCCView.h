@@ -24,13 +24,13 @@ public:
   ~OCCView() override;
 
   //! Return Viewer.
-  const Handle(V3d_Viewer)& Viewer() const { return myViewer; }
+  const Handle(V3d_Viewer)& Viewer() const { return m_viewer; }
 
   //! Return View.
-  const Handle(V3d_View)& View() const { return myView; }
+  const Handle(V3d_View)& View() const { return m_view; }
 
   //! Return AIS context.
-  const Handle(AIS_InteractiveContext)& Context() const { return myContext; }
+  const Handle(AIS_InteractiveContext)& Context() const { return m_context; }
 
   //! Return OpenGL info.
   const QString& getGlInfo() const { return myGlInfo; }
@@ -41,9 +41,13 @@ public:
   //! Default widget size.
   QSize sizeHint()        const override { return QSize(720, 480); }
 
+  void clearShape() ;
+
   void setShape( const Handle( AIS_Shape )& loadedShape );
 
-  void reDraw()const ;
+  void reDraw() const ;
+
+  void fit() const;
 
   void clipping() const;
 
@@ -97,18 +101,18 @@ private:
   //! View handle.
 private:
   //! AIS context handle.
-  Handle(V3d_Viewer)             myViewer;
+  Handle(V3d_Viewer)             m_viewer;
   //! View cube handle.
-  Handle(V3d_View)               myView;
-  Handle(AIS_InteractiveContext) myContext;
-  //! Focus view handle.
-  Handle(AIS_ViewCube)           m_navigationView; // XYZ Navigation
+  Handle(V3d_View)               m_view;
+  Handle(AIS_InteractiveContext) m_context;
+
+  Handle(AIS_ViewCube)           m_navigationView; // XYZ Navigation GuiDocument::setViewTrihedronMode
 
   //! OpenGL info.
   Handle(V3d_View)               myFocusView;
   //! Core profile flag.
 
-  Handle( AIS_Shape )           m_loadedShape;
+  std::vector<Handle( AIS_Shape )>    m_loadedShapes;
 
   QString myGlInfo;
   bool myIsCoreProfile;

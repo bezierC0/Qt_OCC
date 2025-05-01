@@ -9,12 +9,14 @@ public:
     MainWindow(QWidget* parent = nullptr);
 private slots:
     void openFile();
-    void setViewTop() const;
+    void viewFit() const;
     void checkInterference() const;
     void clipping() const;
     void explosion() const;
 
 private:
-    ViewerWidget* m_viewerWidget;
     void createToolBar();
+
+private:
+    ViewerWidget* m_viewerWidget;
 };

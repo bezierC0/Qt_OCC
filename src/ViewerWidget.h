@@ -18,9 +18,9 @@ public:
     explicit ViewerWidget(QWidget* parent = nullptr);
     ~ViewerWidget() override;
     void loadModel(const QString& filename) const;
-    void setTopView();
+    void viewFit();
     void checkInterference();
-    void clipping();
+    void clipping( const gp_Dir& normal, const gp_Pnt& point, bool isOn = true );
     void explosion();
 
 private:

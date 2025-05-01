@@ -1,5 +1,7 @@
 #include "MainWindow.h"
 #include <QToolBar>
+#include <QToolButton>
+#include <QMenu>
 #include <QFileDialog>
 #include <QAction>
 
@@ -16,14 +18,41 @@ void MainWindow::createToolBar()
 {
     QToolBar* toolbar = addToolBar("Main Toolbar");
 
-    QAction* openAct = toolbar->addAction("Open");
-    connect(openAct, &QAction::triggered, this, &MainWindow::openFile);
+    // ---- File Group ----
+    QToolButton* fileButton = new QToolButton();
+    fileButton->setText( "File" );
+    fileButton->setPopupMode( QToolButton::InstantPopup );
+    QMenu* fileMenu = new QMenu( fileButton );
+    QAction* openAct = fileMenu->addAction( "Open" );
+    connect( openAct, &QAction::triggered, this, &MainWindow::openFile );
+    fileButton->setMenu( fileMenu );
+    toolbar->addWidget( fileButton );
 
-    QAction* topViewAct = toolbar->addAction("Top View");
-    connect(topViewAct, &QAction::triggered, this, &MainWindow::setViewTop);
+    // ---- View Group ----
+    QToolButton* viewButton = new QToolButton();
+    viewButton->setText( "View" );
+    viewButton->setPopupMode( QToolButton::InstantPopup );
 
-    QAction* interferenceAct = toolbar->addAction("Interference");
-    connect(interferenceAct, &QAction::triggered, this, &MainWindow::checkInterference);
+    QMenu* viewMenu = new QMenu( viewButton );
+    QAction* fitAct = viewMenu->addAction( "Fit" );
+    connect( fitAct, &QAction::triggered, this, &MainWindow::viewFit );
+
+    viewButton->setMenu( viewMenu );
+    toolbar->addWidget( viewButton );
+
+    // ---- Analysis Group ----
+    QToolButton* analysisButton = new QToolButton();
+    analysisButton->setText( "Analysis" );
+    analysisButton->setPopupMode( QToolButton::InstantPopup );
+
+    QMenu* analysisMenu = new QMenu( analysisButton );
+    QAction* interferenceAct = analysisMenu->addAction( "Interference" );
+    connect( interferenceAct, &QAction::triggered, this, &MainWindow::checkInterference );
+
+    analysisButton->setMenu( analysisMenu );
+    toolbar->addWidget( analysisButton );
+
+    // ---- Others (flat actions) ----
 
     const auto clippingAct = toolbar->addAction("clipping");
     connect(clippingAct, &QAction::triggered, this, &MainWindow::clipping);
@@ -41,9 +70,9 @@ void MainWindow::openFile()
     }
 }
 
-void MainWindow::setViewTop() const
+void MainWindow::viewFit() const
 {
-    m_viewerWidget->setTopView();
+    m_viewerWidget->viewFit();
 }
 
 void MainWindow::checkInterference() const
@@ -53,7 +82,9 @@ void MainWindow::checkInterference() const
 
 void MainWindow::clipping() const
 {
-    m_viewerWidget->clipping();
+    const gp_Dir normal(0.0,0.0,1.0);
+    const gp_Pnt point( 0.0, 0.0, 10.0 );
+    m_viewerWidget->clipping( normal , point );
 }
 
 void MainWindow::explosion() const

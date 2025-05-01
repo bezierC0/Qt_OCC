@@ -12,10 +12,88 @@
 #include <XCAFDoc_ShapeTool.hxx>
 #include <XCAFApp_Application.hxx>
 #include <XCAFDoc_ColorTool.hxx>
+#include <TDataStd_Name.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 
 #include <AIS_Shape.hxx>
+
+namespace {
+
+bool isShapeAssembly( const TDF_Label& lbl )
+{
+  return XCAFDoc_ShapeTool::IsAssembly( lbl );
+}
+
+bool isShapeReference( const TDF_Label& lbl )
+{
+  return XCAFDoc_ShapeTool::IsReference( lbl );
+}
+
+bool isShapeSimple( const TDF_Label& lbl )
+{
+  return XCAFDoc_ShapeTool::IsSimpleShape( lbl );
+}
+
+bool isShapeComponent( const TDF_Label& lbl )
+{
+  return XCAFDoc_ShapeTool::IsComponent( lbl );
+}
+
+bool isShapeCompound( const TDF_Label& lbl )
+{
+  return XCAFDoc_ShapeTool::IsCompound( lbl );
+}
+
+bool isShapeSub( const TDF_Label& lbl )
+{
+  return XCAFDoc_ShapeTool::IsSubShape( lbl );
+}
+
+
+TDF_LabelSequence shapeComponents( const TDF_Label& lbl )
+{
+  TDF_LabelSequence seq;
+  XCAFDoc_ShapeTool::GetComponents( lbl, seq );
+  return seq;
+}
+
+TDF_Label shapeReferred( const TDF_Label& lbl )
+{
+  TDF_Label referred;
+  XCAFDoc_ShapeTool::GetReferredShape( lbl, referred );
+  return referred;
+}
+
+// mayo xcaf.cpp deepBuildAssemblyTree
+uint32_t deepBuildAssemblyTree( uint32_t parentNode, const TDF_Label& label )
+{
+
+  //const uint32_t node = m_modelTree->appendChild( parentNode, label );
+  if ( isShapeAssembly( label ) ) 
+  { 
+      Handle_TDataStd_Name attrName;
+      if ( label.FindAttribute( TDataStd_Name::GetID(), attrName ) ) {
+          //std::cout << attrName->Get() << std::endl;
+      }
+      std::cout << " ShapeAssembly : " << attrName->Get() << std::endl;
+      for ( const TDF_Label& child : shapeComponents( label ) )
+          deepBuildAssemblyTree( 0, child );
+  }
+  else if ( isShapeReference( label ) ) 
+  {
+      Handle_TDataStd_Name attrName;
+      if ( label.FindAttribute( TDataStd_Name::GetID(), attrName ) ) {
+        //std::cout << attrName->Get() << std::endl;
+      }
+      std::cout << "ShapeReference : " << attrName->Get() << std::endl;
+      const TDF_Label referred = shapeReferred( label );
+      deepBuildAssemblyTree( 0, referred );
+  }
+
+  return 0;
+}
+}
 
 
 ViewerWidget::ViewerWidget(QWidget* parent) : QWidget(parent)
@@ -37,12 +115,14 @@ ViewerWidget::~ViewerWidget()
     }
 }
 
+
+
 void ViewerWidget::loadModel(const QString& filename) const
 {
     
     if (filename.endsWith(".step") || filename.endsWith(".stp"))
     {
-#if 1
+#if 0
         STEPControl_Reader reader;
         IFSelect_ReturnStatus status = reader.ReadFile(filename.toStdString().c_str());
         if ( status == IFSelect_RetDone )
@@ -77,7 +157,8 @@ void ViewerWidget::loadModel(const QString& filename) const
         Handle(TDocStd_Document) doc;
         Handle(XCAFDoc_ShapeTool) shapeTool;
         Handle(XCAFDoc_ColorTool) colorTool;
-        Handle(XCAFApp_Application)::DownCast(XCAFApp_Application::GetApplication())->NewDocument("MDTV-XCAF", doc);
+
+        Handle(XCAFApp_Application)::DownCast(XCAFApp_Application::GetApplication())->NewDocument("BinXCAF", doc);
 
         if (!reader.Transfer(doc))
         {
@@ -85,12 +166,14 @@ void ViewerWidget::loadModel(const QString& filename) const
             return;
         }
 
-        
         shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
         colorTool = XCAFDoc_DocumentTool::ColorTool(doc->Main());
 
         TDF_LabelSequence labels;
         shapeTool->GetFreeShapes(labels); 
+        for ( const TDF_Label& label : labels ) {
+            deepBuildAssemblyTree( 0, label );
+        }
 
         for (Standard_Integer i = 1; i <= labels.Length(); ++i)
         {
@@ -99,6 +182,34 @@ void ViewerWidget::loadModel(const QString& filename) const
             TopoDS_Shape shape = shapeTool->GetShape(label);
             if (shape.IsNull())
                 continue;
+
+            auto nc = shape.NbChildren();
+
+            deepBuildAssemblyTree( 0, label );
+
+            auto GetShapeType = [&]( const TDF_Label& label ) -> int
+            {
+                int type = 0;
+                if ( XCAFDoc_ShapeTool::IsAssembly( label ) ) {
+                    type = 1;
+                }
+                else if ( XCAFDoc_ShapeTool::IsReference( label ) ) {
+                    type = 2;
+                }
+                else if ( XCAFDoc_ShapeTool::IsSimpleShape( label ) ) {
+                    type = 3;
+                }
+                else if ( XCAFDoc_ShapeTool::IsComponent( label ) ) {
+                    type = 4;
+                }
+                else if ( XCAFDoc_ShapeTool::IsCompound( label ) ) {
+                    type = 5;
+                }
+                else if ( XCAFDoc_ShapeTool::IsSubShape( label ) ) {
+                    type = 6;
+                }
+                return type ;
+            };
 
 
             /*TCollection_ExtendedString name;
@@ -109,21 +220,39 @@ void ViewerWidget::loadModel(const QString& filename) const
 
             QString partName = QString::fromUtf16((const char16_t*)name.ToExtString());*/
 
+            if ( 1 == GetShapeType( label ) ) {
+              TDF_LabelSequence seq;
+              XCAFDoc_ShapeTool::GetComponents( label, seq );
+              for ( const TDF_Label& childLabel : seq ) {
+                  auto childType = GetShapeType( childLabel );
+                  Quantity_Color color;
 
-            Quantity_Color color;
+                  auto shapeColor = [&]( const TDF_Label& lbl ) 
+                  {
+                    Handle_XCAFDoc_ColorTool tool = colorTool;
+                    Quantity_Color color = {};
+                    if ( !tool )
+                      return color;
 
-            if (colorTool->GetColor(label, color))
-            {
+                    if ( tool->GetColor( lbl, XCAFDoc_ColorGen, color ) )
+                      return color;
 
-                double r = color.Red();
-                double g = color.Green();
-                double b = color.Blue();
-                //qDebug() << "Part" << partName << "Color:" << r << g << b;
+                    if ( tool->GetColor( lbl, XCAFDoc_ColorSurf, color ) )
+                      return color;
+
+                    if ( tool->GetColor( lbl, XCAFDoc_ColorCurv, color ) )
+                      return color;
+
+                    return color;
+                  };
+
+                  color = shapeColor( childLabel ) ;
+                  std::cout << color.Red() << " " << color.Green() << " " << color.Blue() << std::endl;
+                  std::cout << childType << std::endl;
+              }
             }
-            else
-            {
-                //qDebug() << "Part" << partName << "no color";
-            }
+
+            
         }
 #endif
     }
@@ -158,10 +287,9 @@ void ViewerWidget::loadModel(const QString& filename) const
     
 }
 
-void ViewerWidget::setTopView()
+void ViewerWidget::viewFit()
 {
-    // m_view->SetProj(V3d_Xneg);
-    // m_view->FitAll();
+    m_occView->fit();
 }
 
 void ViewerWidget::checkInterference()
@@ -195,8 +323,14 @@ void ViewerWidget::checkInterference()
     }
 }
 
-void ViewerWidget::clipping()
+void ViewerWidget::clipping( const gp_Dir& normal, const gp_Pnt& point, const bool isOn )
 {
+  const Handle( Graphic3d_ClipPlane ) clipPlane = new Graphic3d_ClipPlane( gp_Pln( point, normal ) );
+  clipPlane->SetCapping( false );
+  clipPlane->SetOn( isOn );
+
+  m_occView->View()->AddClipPlane( clipPlane );
+  m_occView->View()->Update();
 }
 
 void ViewerWidget::explosion()
@@ -211,7 +345,7 @@ void ViewerWidget::explosion()
         };
 
     auto applyExplosion = [&](const std::vector<TopoDS_Shape>& shapeList,
-        double distanceMultiplier = 50.0) -> std::vector<TopoDS_Shape>
+        const double distanceMultiplier = 50.0) -> std::vector<TopoDS_Shape>
         {
             std::vector<TopoDS_Shape> explodedShapes;
 
@@ -238,9 +372,9 @@ void ViewerWidget::explosion()
                     moveDir *= distanceMultiplier;
                 }
 
-                gp_Trsf trsf;
-                trsf.SetTranslation(moveDir);
-                BRepBuilderAPI_Transform transformer(shape, trsf, true);
+                gp_Trsf transform;
+                transform.SetTranslation(moveDir);
+                BRepBuilderAPI_Transform transformer(shape, transform, true);
                 explodedShapes.emplace_back(transformer.Shape());
             }
 
@@ -248,13 +382,15 @@ void ViewerWidget::explosion()
         };
 
 
-    auto explodedShapes = applyExplosion(m_doc->m_list, 80.0);
+    const auto explodedShapes = applyExplosion(m_doc->m_list, 80.0);
 
+    m_occView->clearShape();
     for (const TopoDS_Shape& shape : explodedShapes)
     {
-        Handle(AIS_Shape) ais = new AIS_Shape(shape);
-        ais->SetDisplayMode(AIS_Shaded);
-        ais->SetColor(Quantity_NOC_SKYBLUE);
-        //m_occView->displayShape(ais);
+        Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
+        aisShape->SetDisplayMode(AIS_Shaded);
+        aisShape->SetColor(Quantity_NOC_SKYBLUE);
+        m_occView->setShape( aisShape );
     }
+    m_occView->reDraw();
 }
