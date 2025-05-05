@@ -4,6 +4,7 @@
 #include <AIS_InteractiveContext.hxx>
 #include <V3d_View.hxx>
 #include <TopoDS_Shape.hxx>
+#include <AIS_InteractiveObject.hxx>
 
 class OCCView;
 
@@ -11,7 +12,7 @@ class ViewerWidget : public QWidget
 {
     Q_OBJECT
     struct Document{
-        std::vector<TopoDS_Shape> m_list;
+        std::vector<Handle(AIS_InteractiveObject)> m_list;
     };
 
 public:

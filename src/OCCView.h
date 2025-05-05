@@ -43,7 +43,7 @@ public:
 
   void clearShape() ;
 
-  void setShape( const Handle( AIS_Shape )& loadedShape );
+  void setShape( const Handle(AIS_InteractiveObject)& loadedShape );
 
   void reDraw() const ;
 
@@ -112,7 +112,7 @@ private:
   Handle(V3d_View)               myFocusView;
   //! Core profile flag.
 
-  std::vector<Handle( AIS_Shape )>    m_loadedShapes;
+  std::vector<Handle(AIS_InteractiveObject)>    m_loadedObjects;
 
   QString myGlInfo;
   bool myIsCoreProfile;

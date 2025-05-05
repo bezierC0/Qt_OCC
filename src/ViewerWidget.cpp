@@ -12,6 +12,7 @@
 #include <XCAFDoc_ShapeTool.hxx>
 #include <XCAFApp_Application.hxx>
 #include <XCAFDoc_ColorTool.hxx>
+#include <XCAFPrs_AISObject.hxx>
 #include <TDataStd_Name.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
@@ -19,6 +20,100 @@
 #include <AIS_Shape.hxx>
 
 namespace {
+using TreeNodeId = uint32_t;
+static TreeNodeId lastNodeId = 0; // TreeNodeId
+struct TreeNode
+{
+    TreeNodeId siblingPrevious;
+    TreeNodeId siblingNext;
+    TreeNodeId childFirst;
+    TreeNodeId childLast;
+    TreeNodeId parent;
+    TDF_Label data;
+    bool isDeleted;
+};
+template<typename T>
+class Tree
+{
+public:
+    Tree();
+    TreeNodeId lastNodeId() const;
+    TreeNode* ptrNode(TreeNodeId id);
+    const TreeNode* ptrNode(TreeNodeId id) const;
+    TreeNode* appendChild(TreeNodeId parentId);
+    //bool isNodeDeleted(TreeNodeId id) const;
+
+    TreeNodeId nodeChildLast(TreeNodeId id) const;
+
+    TreeNodeId appendChild(TreeNodeId parentId, const T& data);
+    TreeNodeId appendChild(TreeNodeId parentId, T&& data);
+
+public:
+    std::vector<TreeNode> m_vecNode;
+    std::vector<TreeNodeId> m_vecRoot;
+};
+
+template<typename T> Tree<T>::Tree()
+{
+}
+
+template<typename T>
+TreeNodeId Tree<T>::lastNodeId() const
+{
+    return static_cast<TreeNodeId>(m_vecNode.size());
+}
+
+template<typename T>
+TreeNode* Tree<T>::ptrNode(TreeNodeId id)
+{
+    return id != 0 && id <= m_vecNode.size() ? &m_vecNode.at(id - 1) : nullptr;
+}
+
+template<typename T> 
+TreeNodeId Tree<T>::nodeChildLast(TreeNodeId id) const
+{
+    const TreeNode* node = this->ptrNode(id);
+    return node ? node->childLast : 0;
+}
+
+template<typename T>
+TreeNodeId Tree<T>::appendChild(TreeNodeId parentId, const T& data)
+{
+    TreeNode* node = this->appendChild(parentId);
+    node->data = data;
+    return this->lastNodeId();
+}
+template<typename T>
+const TreeNode* Tree<T>::ptrNode(TreeNodeId id) const
+{
+    return id != 0 && id <= m_vecNode.size() ? &m_vecNode.at(id - 1) : nullptr;
+}
+template<typename T>
+TreeNode* Tree<T>::appendChild(TreeNodeId parentId)
+{
+    m_vecNode.push_back({});
+    const TreeNodeId nodeId = this->lastNodeId();
+    TreeNode* node = &m_vecNode.back();
+    node->parent = parentId;
+    node->siblingPrevious = this->nodeChildLast(parentId);
+    if (parentId != 0)
+    {
+        TreeNode* parentNode = this->ptrNode(parentId);
+        if (parentNode->childFirst == 0)
+            parentNode->childFirst = nodeId;
+
+        if (parentNode->childLast != 0)
+            //this->ptrNode(parentNode->childLast)->siblingNext = nodeId;
+
+            parentNode->childLast = nodeId;
+    }
+    else
+    {
+        m_vecRoot.push_back(nodeId);
+    }
+
+    return node;
+}
 
 bool isShapeAssembly( const TDF_Label& lbl )
 {
@@ -49,7 +144,10 @@ bool isShapeSub( const TDF_Label& lbl )
 {
   return XCAFDoc_ShapeTool::IsSubShape( lbl );
 }
-
+bool isShape(const TDF_Label& lbl)
+{
+    return XCAFDoc_ShapeTool::IsShape(lbl);
+}
 
 TDF_LabelSequence shapeComponents( const TDF_Label& lbl )
 {
@@ -64,34 +162,41 @@ TDF_Label shapeReferred( const TDF_Label& lbl )
   XCAFDoc_ShapeTool::GetReferredShape( lbl, referred );
   return referred;
 }
-
+Tree<TDF_Label> m_modelTree;
 // mayo xcaf.cpp deepBuildAssemblyTree
-uint32_t deepBuildAssemblyTree( uint32_t parentNode, const TDF_Label& label )
+uint32_t deepBuildAssemblyTree(uint32_t parentNode, const TDF_Label& label)
 {
+    const TreeNodeId node = m_modelTree.appendChild(parentNode, label);
+    // GraphicsObjectPtr GraphicsShapeObjectDriver::createObject(const TDF_Label& label) const
+    Handle_TDataStd_Name attrName;
+    if (label.FindAttribute(TDataStd_Name::GetID(), attrName))
+    {
+        std::cout << node << "  : " << attrName->Get() << std::endl;
+    }
+    if (isShapeAssembly(label))
+    {
+        //if (isShape(label))
+        //{
+        //    // GraphicsObjectPtr GraphicsShapeObjectDriver::createObject(const TDF_Label& label) const
+        //    std::cout << " isShape : \n";
+        //}
+        for (const TDF_Label& child : shapeComponents(label))
+            deepBuildAssemblyTree(node, child);
+    }
+    else if (isShapeReference(label))
+    {
+        //Handle_TDataStd_Name attrName;
+        //if (isShape(label))
+        //{
+        //    // GraphicsObjectPtr GraphicsShapeObjectDriver::createObject(const TDF_Label& label) const
+        //    std::cout << " isShape : \n";
+        //}
 
-  //const uint32_t node = m_modelTree->appendChild( parentNode, label );
-  if ( isShapeAssembly( label ) ) 
-  { 
-      Handle_TDataStd_Name attrName;
-      if ( label.FindAttribute( TDataStd_Name::GetID(), attrName ) ) {
-          //std::cout << attrName->Get() << std::endl;
-      }
-      std::cout << " ShapeAssembly : " << attrName->Get() << std::endl;
-      for ( const TDF_Label& child : shapeComponents( label ) )
-          deepBuildAssemblyTree( 0, child );
-  }
-  else if ( isShapeReference( label ) ) 
-  {
-      Handle_TDataStd_Name attrName;
-      if ( label.FindAttribute( TDataStd_Name::GetID(), attrName ) ) {
-        //std::cout << attrName->Get() << std::endl;
-      }
-      std::cout << "ShapeReference : " << attrName->Get() << std::endl;
-      const TDF_Label referred = shapeReferred( label );
-      deepBuildAssemblyTree( 0, referred );
-  }
+        const TDF_Label referred = shapeReferred(label);
+        deepBuildAssemblyTree(node, referred);
+    }
 
-  return 0;
+    return node;
 }
 }
 
@@ -122,31 +227,6 @@ void ViewerWidget::loadModel(const QString& filename) const
     
     if (filename.endsWith(".step") || filename.endsWith(".stp"))
     {
-#if 0
-        STEPControl_Reader reader;
-        IFSelect_ReturnStatus status = reader.ReadFile(filename.toStdString().c_str());
-        if ( status == IFSelect_RetDone )
-        {
-            reader.TransferRoots();
-            /*const int nbRoots = reader.NbRootsForTransfer();
-            for (int i = 1; i <= nbRoots; ++i)
-            {
-
-                TopoDS_Shape subShape = reader.Shape(i);
-                if (subShape.IsNull())
-                    continue;
-                shapeList.emplace_back( std::move(subShape) );
-
-            }*/
-            for (TopExp_Explorer exp(reader.OneShape(), TopAbs_SOLID); exp.More(); exp.Next())
-            {
-                TopoDS_Shape part = exp.Current();
-                if (!part.IsNull())
-                    m_doc->m_list.emplace_back(std::move(part));
-            }
-        }
-
-#else
         STEPCAFControl_Reader reader;
         IFSelect_ReturnStatus status = reader.ReadFile(filename.toStdString().c_str());
         if (status != IFSelect_RetDone)
@@ -169,92 +249,34 @@ void ViewerWidget::loadModel(const QString& filename) const
         shapeTool = XCAFDoc_DocumentTool::ShapeTool(doc->Main());
         colorTool = XCAFDoc_DocumentTool::ColorTool(doc->Main());
 
+        int nbRoots = reader.NbRootsForTransfer();
+
         TDF_LabelSequence labels;
         shapeTool->GetFreeShapes(labels); 
         for ( const TDF_Label& label : labels ) {
             deepBuildAssemblyTree( 0, label );
         }
 
-        for (Standard_Integer i = 1; i <= labels.Length(); ++i)
+        for (const auto& it : m_modelTree.m_vecNode)
         {
-            TDF_Label label = labels.Value(i);
-
-            TopoDS_Shape shape = shapeTool->GetShape(label);
-            if (shape.IsNull())
-                continue;
-
-            auto nc = shape.NbChildren();
-
-            deepBuildAssemblyTree( 0, label );
-
-            auto GetShapeType = [&]( const TDF_Label& label ) -> int
+            TDF_Label label = it.data;
+            if (isShapeReference(label))
             {
-                int type = 0;
-                if ( XCAFDoc_ShapeTool::IsAssembly( label ) ) {
-                    type = 1;
-                }
-                else if ( XCAFDoc_ShapeTool::IsReference( label ) ) {
-                    type = 2;
-                }
-                else if ( XCAFDoc_ShapeTool::IsSimpleShape( label ) ) {
-                    type = 3;
-                }
-                else if ( XCAFDoc_ShapeTool::IsComponent( label ) ) {
-                    type = 4;
-                }
-                else if ( XCAFDoc_ShapeTool::IsCompound( label ) ) {
-                    type = 5;
-                }
-                else if ( XCAFDoc_ShapeTool::IsSubShape( label ) ) {
-                    type = 6;
-                }
-                return type ;
-            };
+                TopoDS_Shape part;
 
+                Handle(XCAFPrs_AISObject) object = new XCAFPrs_AISObject(label);
 
-            /*TCollection_ExtendedString name;
-            if (XCAFDoc_ShapeTool::GetShapeLabel(doc->Main(), shape, label))
-            {
-                name = shapeTool->GetShapeName(label);
+                // GraphicsObjectPtr GraphicsShapeObjectDriver::createObject(const TDF_Label& label) const
+                object->SetDisplayMode(AIS_Shaded);
+                object->SetMaterial(Graphic3d_NOM_PLASTER);
+                object->Attributes()->SetFaceBoundaryDraw(true);
+                object->Attributes()->SetFaceBoundaryAspect(
+                    new Prs3d_LineAspect(Quantity_NOC_BLACK, Aspect_TOL_SOLID, 1.)
+                );
+
+                m_doc->m_list.emplace_back(object);
             }
-
-            QString partName = QString::fromUtf16((const char16_t*)name.ToExtString());*/
-
-            if ( 1 == GetShapeType( label ) ) {
-              TDF_LabelSequence seq;
-              XCAFDoc_ShapeTool::GetComponents( label, seq );
-              for ( const TDF_Label& childLabel : seq ) {
-                  auto childType = GetShapeType( childLabel );
-                  Quantity_Color color;
-
-                  auto shapeColor = [&]( const TDF_Label& lbl ) 
-                  {
-                    Handle_XCAFDoc_ColorTool tool = colorTool;
-                    Quantity_Color color = {};
-                    if ( !tool )
-                      return color;
-
-                    if ( tool->GetColor( lbl, XCAFDoc_ColorGen, color ) )
-                      return color;
-
-                    if ( tool->GetColor( lbl, XCAFDoc_ColorSurf, color ) )
-                      return color;
-
-                    if ( tool->GetColor( lbl, XCAFDoc_ColorCurv, color ) )
-                      return color;
-
-                    return color;
-                  };
-
-                  color = shapeColor( childLabel ) ;
-                  std::cout << color.Red() << " " << color.Green() << " " << color.Blue() << std::endl;
-                  std::cout << childType << std::endl;
-              }
-            }
-
-            
         }
-#endif
     }
     else if (filename.endsWith(".iges") || filename.endsWith(".igs"))
     {
@@ -268,23 +290,19 @@ void ViewerWidget::loadModel(const QString& filename) const
                 TopoDS_Shape subShape = reader.Shape(i);
                 if (subShape.IsNull())
                     continue;
-                m_doc->m_list.emplace_back(std::move(subShape));
+                Handle(AIS_Shape) aisShape = new AIS_Shape(subShape);
+                aisShape->SetDisplayMode(AIS_Shaded);
+                aisShape->SetColor(Quantity_NOC_WHITE); 
+                m_doc->m_list.emplace_back(aisShape);
             }
         }
     }
 
-    for ( const auto& subShape : m_doc->m_list)
+    for ( const auto& aisObject : m_doc->m_list)
     {
-        if (!subShape.IsNull())
-        {
-
-            Handle(AIS_Shape) aisShape = new AIS_Shape(subShape);
-            m_occView->setShape(aisShape);
-        }
+        m_occView->setShape(aisObject);
     }
     m_occView->reDraw();
-
-    
 }
 
 void ViewerWidget::viewFit()
@@ -298,9 +316,17 @@ void ViewerWidget::checkInterference()
     {
         for (size_t j = i + 1; j < m_doc->m_list.size(); ++j)
         {
+            Handle(AIS_InteractiveObject) objA = m_doc->m_list[i];
+            Handle(AIS_InteractiveObject) objB = m_doc->m_list[j];
 
-            const TopoDS_Shape& shapeA = m_doc->m_list[i];
-            const TopoDS_Shape& shapeB = m_doc->m_list[j];
+            const auto aisShapeA = Handle(AIS_Shape)::DownCast(objA);
+            const auto aisShapeB = Handle(AIS_Shape)::DownCast(objA);
+
+            if (aisShapeA.IsNull() || aisShapeB.IsNull())
+                continue;
+
+            const auto& shapeA = aisShapeA->Shape();
+            const auto& shapeB = aisShapeB->Shape();
 
             BRepAlgoAPI_Common commonOp(shapeA, shapeB);
             commonOp.Build();
@@ -311,12 +337,10 @@ void ViewerWidget::checkInterference()
                 if (!result.IsNull())
                 {
                     std::cout << "Shape " << i << " intersects with Shape " << j << std::endl;
-
-
                     Handle(AIS_Shape) aisResult = new AIS_Shape(result);
                     aisResult->SetColor(Quantity_NOC_RED);
                     aisResult->SetDisplayMode(AIS_Shaded);
-                    //m_occView->displayShape(aisResult);
+                    m_occView->setShape(aisResult);
                 }
             }
         }
@@ -325,36 +349,37 @@ void ViewerWidget::checkInterference()
 
 void ViewerWidget::clipping( const gp_Dir& normal, const gp_Pnt& point, const bool isOn )
 {
-  const Handle( Graphic3d_ClipPlane ) clipPlane = new Graphic3d_ClipPlane( gp_Pln( point, normal ) );
-  clipPlane->SetCapping( false );
-  clipPlane->SetOn( isOn );
+    const Handle(Graphic3d_ClipPlane) clipPlane = new Graphic3d_ClipPlane(gp_Pln(point, normal));
+    clipPlane->SetCapping(false);
+    clipPlane->SetOn(isOn);
 
-  m_occView->View()->AddClipPlane( clipPlane );
-  m_occView->View()->Update();
+    m_occView->View()->AddClipPlane(clipPlane);
+    m_occView->View()->Update();
 }
 
 void ViewerWidget::explosion()
 {
-    auto computeShapeCenter = [](const TopoDS_Shape& shape) -> gp_Pnt
+    auto applyExplosion = [](const std::vector<Handle(AIS_InteractiveObject)>& objectList, const double distanceMultiplier = 50.0)
         {
-            Bnd_Box bbox;
-            BRepBndLib::Add(shape, bbox);
-            Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
-            bbox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
-            return gp_Pnt((xMin + xMax) / 2.0, (yMin + yMax) / 2.0, (zMin + zMax) / 2.0);
-        };
+            auto computeShapeCenter = [](const TopoDS_Shape& shape) -> gp_Pnt
+                {
+                    Bnd_Box bbox;
+                    BRepBndLib::Add(shape, bbox);
+                    Standard_Real xMin{}, yMin{}, zMin{}, xMax{}, yMax{}, zMax{};
+                    bbox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
+                    return gp_Pnt((xMin + xMax) / 2.0, (yMin + yMax) / 2.0, (zMin + zMax) / 2.0);
+                };
 
-    auto applyExplosion = [&](const std::vector<TopoDS_Shape>& shapeList,
-        const double distanceMultiplier = 50.0) -> std::vector<TopoDS_Shape>
-        {
             std::vector<TopoDS_Shape> explodedShapes;
 
             gp_Pnt globalCenter(0, 0, 0);
-            if (!shapeList.empty())
+            if (!objectList.empty())
             {
                 Bnd_Box globalBox;
-                for (const TopoDS_Shape& shape : shapeList)
+                for (const auto& object : objectList)
                 {
+                    const auto aisShape = Handle(AIS_Shape)::DownCast(object);
+                    const auto& shape = aisShape->Shape();
                     BRepBndLib::Add(shape, globalBox);
                 }
                 Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
@@ -362,8 +387,10 @@ void ViewerWidget::explosion()
                 globalCenter = gp_Pnt((xMin + xMax) / 2.0, (yMin + yMax) / 2.0, (zMin + zMax) / 2.0);
             }
 
-            for (const TopoDS_Shape& shape : shapeList)
+            for (const auto& object : objectList)
             {
+                const auto aisShape = Handle(AIS_Shape)::DownCast(object);
+                const auto& shape = aisShape->Shape();
                 gp_Pnt center = computeShapeCenter(shape);
                 gp_Vec moveDir(globalCenter, center);
                 if (moveDir.Magnitude() > 0.0)
@@ -385,7 +412,7 @@ void ViewerWidget::explosion()
     const auto explodedShapes = applyExplosion(m_doc->m_list, 80.0);
 
     m_occView->clearShape();
-    for (const TopoDS_Shape& shape : explodedShapes)
+    for (const auto& shape : explodedShapes)
     {
         Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
         aisShape->SetDisplayMode(AIS_Shaded);

@@ -544,21 +544,25 @@ void OCCView::handleViewRedraw(const Handle(AIS_InteractiveContext)& theCtx,
 
 void OCCView::clearShape()
 {
-    for ( const Handle( AIS_Shape )& shape : m_loadedShapes ) {
-      m_context->Erase( shape,  false );
+    for ( const auto& object : m_loadedObjects ) {
+      m_context->Erase( object,  false );
     }
-    m_loadedShapes.clear();
+    m_loadedObjects.clear();
 }
 
-void OCCView::setShape(const Handle(AIS_Shape)& loadedShape)
+void OCCView::setShape(const Handle(AIS_InteractiveObject)& loadedShape)
 {
-    m_loadedShapes.emplace_back( loadedShape ) ;
+    m_loadedObjects.emplace_back( loadedShape ) ;
 }
 
 void OCCView::reDraw() const
 {
-    for ( const Handle( AIS_Shape )& shape : m_loadedShapes ) {
-      m_context->Display( shape, AIS_Shaded, 0, false );
+    for ( const auto& object : m_loadedObjects ) {
+        // void GraphicsScene::addObject(const GraphicsObjectPtr& object, AddObjectFlags flags)
+        const bool onEntry_AutoActivateSelection = m_context->GetAutoActivateSelection();
+        object->Attributes()->SetIsoOnTriangulation(true);
+        m_context->Display( object, object->DisplayMode(), 0, false);
+        m_context->SetAutoActivateSelection(onEntry_AutoActivateSelection);
     }
     m_view->Redraw();
 }
