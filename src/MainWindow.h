@@ -1,12 +1,16 @@
 #pragma once
 
 #include <QMainWindow>
-#include "ViewerWidget.h"
+
+class ViewerWidget;
+class ModelTreeWidget;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
 public:
     MainWindow(QWidget* parent = nullptr);
+    ViewerWidget* GetViewerWidget() const;
+    ModelTreeWidget* GetModelTreeWidget() const;
 private slots:
     void openFile();
     void viewFit() const;
@@ -19,4 +23,5 @@ private:
 
 private:
     ViewerWidget* m_viewerWidget;
+    ModelTreeWidget* m_modelTreeWidget;
 };

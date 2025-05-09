@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10)
 project(Qt_OCC)
 
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_AUTOMOC ON)
@@ -38,6 +38,8 @@ set(SOURCES
     src/ViewerWidget.cpp
     src/OCCView.cpp
     src/OcctGlTools.cpp
+    src/TreeWidget.cpp
+    src/WidgetModelTree.cpp
 )
 
 set(HEADERS
@@ -45,6 +47,11 @@ set(HEADERS
     src/ViewerWidget.h
     src/OCCView.h
     src/OcctGlTools.h
+    src/Tree.h
+    src/TreeWidget.h
+    src/WidgetModelTree.h
+    src/string_conv.h
+    src/qstring_conv.h
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})

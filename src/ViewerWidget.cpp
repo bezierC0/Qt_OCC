@@ -1,5 +1,8 @@
 #include "ViewerWidget.h"
+#include "MainWindow.h"
+#include "WidgetModelTree.h"
 #include "OCCView.h"
+#include "Tree.h"
 #include <QVBoxLayout>
 
 #include <STEPControl_Reader.hxx>
@@ -19,102 +22,11 @@
 
 #include <AIS_Shape.hxx>
 
-namespace {
-using TreeNodeId = uint32_t;
-static TreeNodeId lastNodeId = 0; // TreeNodeId
-struct TreeNode
+
+
+
+namespace 
 {
-    TreeNodeId siblingPrevious;
-    TreeNodeId siblingNext;
-    TreeNodeId childFirst;
-    TreeNodeId childLast;
-    TreeNodeId parent;
-    TDF_Label data;
-    bool isDeleted;
-};
-template<typename T>
-class Tree
-{
-public:
-    Tree();
-    TreeNodeId lastNodeId() const;
-    TreeNode* ptrNode(TreeNodeId id);
-    const TreeNode* ptrNode(TreeNodeId id) const;
-    TreeNode* appendChild(TreeNodeId parentId);
-    //bool isNodeDeleted(TreeNodeId id) const;
-
-    TreeNodeId nodeChildLast(TreeNodeId id) const;
-
-    TreeNodeId appendChild(TreeNodeId parentId, const T& data);
-    TreeNodeId appendChild(TreeNodeId parentId, T&& data);
-
-public:
-    std::vector<TreeNode> m_vecNode;
-    std::vector<TreeNodeId> m_vecRoot;
-};
-
-template<typename T> Tree<T>::Tree()
-{
-}
-
-template<typename T>
-TreeNodeId Tree<T>::lastNodeId() const
-{
-    return static_cast<TreeNodeId>(m_vecNode.size());
-}
-
-template<typename T>
-TreeNode* Tree<T>::ptrNode(TreeNodeId id)
-{
-    return id != 0 && id <= m_vecNode.size() ? &m_vecNode.at(id - 1) : nullptr;
-}
-
-template<typename T> 
-TreeNodeId Tree<T>::nodeChildLast(TreeNodeId id) const
-{
-    const TreeNode* node = this->ptrNode(id);
-    return node ? node->childLast : 0;
-}
-
-template<typename T>
-TreeNodeId Tree<T>::appendChild(TreeNodeId parentId, const T& data)
-{
-    TreeNode* node = this->appendChild(parentId);
-    node->data = data;
-    return this->lastNodeId();
-}
-template<typename T>
-const TreeNode* Tree<T>::ptrNode(TreeNodeId id) const
-{
-    return id != 0 && id <= m_vecNode.size() ? &m_vecNode.at(id - 1) : nullptr;
-}
-template<typename T>
-TreeNode* Tree<T>::appendChild(TreeNodeId parentId)
-{
-    m_vecNode.push_back({});
-    const TreeNodeId nodeId = this->lastNodeId();
-    TreeNode* node = &m_vecNode.back();
-    node->parent = parentId;
-    node->siblingPrevious = this->nodeChildLast(parentId);
-    if (parentId != 0)
-    {
-        TreeNode* parentNode = this->ptrNode(parentId);
-        if (parentNode->childFirst == 0)
-            parentNode->childFirst = nodeId;
-
-        if (parentNode->childLast != 0)
-            //this->ptrNode(parentNode->childLast)->siblingNext = nodeId;
-
-            parentNode->childLast = nodeId;
-    }
-    else
-    {
-        m_vecRoot.push_back(nodeId);
-    }
-
-    return node;
-}
-
 bool isShapeAssembly( const TDF_Label& lbl )
 {
   return XCAFDoc_ShapeTool::IsAssembly( lbl );
@@ -162,11 +74,11 @@ TDF_Label shapeReferred( const TDF_Label& lbl )
   XCAFDoc_ShapeTool::GetReferredShape( lbl, referred );
   return referred;
 }
-Tree<TDF_Label> m_modelTree;
+
 // mayo xcaf.cpp deepBuildAssemblyTree
-uint32_t deepBuildAssemblyTree(uint32_t parentNode, const TDF_Label& label)
+uint32_t deepBuildAssemblyTree(uint32_t parentNode, const TDF_Label& label, Tree<TDF_Label>& modelTree )
 {
-    const TreeNodeId node = m_modelTree.appendChild(parentNode, label);
+    const TreeNodeId node = modelTree.appendChild(parentNode, label);
     // GraphicsObjectPtr GraphicsShapeObjectDriver::createObject(const TDF_Label& label) const
     Handle_TDataStd_Name attrName;
     if (label.FindAttribute(TDataStd_Name::GetID(), attrName))
@@ -181,7 +93,7 @@ uint32_t deepBuildAssemblyTree(uint32_t parentNode, const TDF_Label& label)
         //    std::cout << " isShape : \n";
         //}
         for (const TDF_Label& child : shapeComponents(label))
-            deepBuildAssemblyTree(node, child);
+            deepBuildAssemblyTree(node, child, modelTree );
     }
     else if (isShapeReference(label))
     {
@@ -193,7 +105,7 @@ uint32_t deepBuildAssemblyTree(uint32_t parentNode, const TDF_Label& label)
         //}
 
         const TDF_Label referred = shapeReferred(label);
-        deepBuildAssemblyTree(node, referred);
+        deepBuildAssemblyTree(node, referred, modelTree );
     }
 
     return node;
@@ -221,10 +133,9 @@ ViewerWidget::~ViewerWidget()
 }
 
 
-
+static Tree<TDF_Label> m_modelTree;
 void ViewerWidget::loadModel(const QString& filename) const
 {
-    
     if (filename.endsWith(".step") || filename.endsWith(".stp"))
     {
         STEPCAFControl_Reader reader;
@@ -254,7 +165,7 @@ void ViewerWidget::loadModel(const QString& filename) const
         TDF_LabelSequence labels;
         shapeTool->GetFreeShapes(labels); 
         for ( const TDF_Label& label : labels ) {
-            deepBuildAssemblyTree( 0, label );
+            deepBuildAssemblyTree( 0, label, m_modelTree );
         }
 
         for (const auto& it : m_modelTree.m_vecNode)
@@ -302,6 +213,10 @@ void ViewerWidget::loadModel(const QString& filename) const
     {
         m_occView->setShape(aisObject);
     }
+
+    MainWindow* mainWindow = qobject_cast<MainWindow*>( this->window() );
+    auto treeWidget = mainWindow->GetModelTreeWidget();
+    treeWidget->setModelTree( m_modelTree );
     m_occView->reDraw();
 }
 

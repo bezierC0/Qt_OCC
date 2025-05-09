@@ -5,6 +5,8 @@
 #include <V3d_View.hxx>
 #include <TopoDS_Shape.hxx>
 #include <AIS_InteractiveObject.hxx>
+#include "Tree.h"
+
 
 class OCCView;
 
@@ -27,6 +29,7 @@ public:
 private:
     OCCView* m_occView;
     std::shared_ptr<Document> m_doc;
+    
 
     //TopoDS_Shape m_loadedShape;
 };

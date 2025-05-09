@@ -1,14 +1,27 @@
 #include "MainWindow.h"
 #include <QToolBar>
 #include <QToolButton>
+#include <QSplitter>
 #include <QMenu>
 #include <QFileDialog>
 #include <QAction>
+#include "ViewerWidget.h"
+#include "WidgetModelTree.h"
+
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
 {
+    m_modelTreeWidget = new ModelTreeWidget( this );
     m_viewerWidget = new ViewerWidget(this);
-    setCentralWidget(m_viewerWidget);
+
+    QSplitter* splitter = new QSplitter( Qt::Horizontal, this );
+    splitter->addWidget( m_modelTreeWidget );
+    splitter->addWidget( m_viewerWidget );
+
+    splitter->setStretchFactor( 0, 1 ); // m_modelTreeWidget
+    splitter->setStretchFactor( 1, 4 ); 
+
+    setCentralWidget( splitter );
     createToolBar();
 
     resize(800, 600);
@@ -90,4 +103,14 @@ void MainWindow::clipping() const
 void MainWindow::explosion() const
 {
     m_viewerWidget->explosion();
+}
+
+ViewerWidget* MainWindow::GetViewerWidget() const
+{
+    return m_viewerWidget;
+}
+
+ModelTreeWidget* MainWindow::GetModelTreeWidget() const
+{
+    return m_modelTreeWidget;
 }
