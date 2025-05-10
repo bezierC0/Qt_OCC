@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: Qt_OCC
 
 on:
   push:
@@ -9,15 +9,18 @@ on:
 jobs:
   build:
 
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
     - uses: actions/checkout@v4
-    - name: configure
-      run: ./configure
-    - name: make
-      run: make
-    - name: make check
-      run: make check
-    - name: make distcheck
-      run: make distcheck
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
+      with:
+        version: '5.14.0'
+        target: 'desktop'
+        arch: 'win64_msvc2017_64'
+    - name: Configure CMake
+      run: |
+        cmake -S . -B build -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake -DCMAKE_PREFIX_PATH=$Qt5_DIR
+    - name: Build
+      run: cmake --build build --config Release
