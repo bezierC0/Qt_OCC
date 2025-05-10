@@ -13,10 +13,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up vcpkg and install dependencies
-      uses: lukka/run-vcpkg@v11
+    - name: Install Qt
+      uses: jurplel/install-qt-action@v3
       with:
-        vcpkgJsonGlob: 'vcpkg.json'
+        version: '5.14.0'
+        target: 'desktop'
+        arch: 'win64_msvc2017_64'
+        
+    - name: Install dependencies (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        choco install opencascade
 
     - name: Configure CMake project
       run: |
