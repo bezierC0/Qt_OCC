@@ -1,6 +1,7 @@
 {
     "name": "qt-occ-project",
     "version-string": "0.1.0",
+    "builtin-baseline": "3f6f23835edc733cc0988bdbbdccfc6c7bbf86e7",
     "dependencies": [
       "opencascade",
       "qt5-base"
