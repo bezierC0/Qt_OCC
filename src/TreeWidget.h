@@ -1,11 +1,15 @@
 #pragma once
+
 #include <QVBoxLayout>
-#include <TDF_Label.hxx>
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QHeaderView>
 
-#include "Tree.h"
+class TopoDS_Shape;
+class TDF_Label;
+
+template<typename T>
+class Tree;
 
 class TreeWidget : public QTreeWidget
 {
@@ -20,5 +24,6 @@ public:
 
 private:
     void rebuildData( const Tree<TDF_Label>& modelTree );
-    void buildSubTree( const Tree<TDF_Label>& tree, TreeNodeId parentId, QTreeWidgetItem* parentItem );
+    void buildAssemblyTree( const Tree<TDF_Label>& tree, uint32_t parentId, QTreeWidgetItem* parentItem );
+    void buildShapeTree(const TopoDS_Shape& shape, const QTreeWidgetItem* parentItem );
 };

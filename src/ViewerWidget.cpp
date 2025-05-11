@@ -3,6 +3,7 @@
 #include "WidgetModelTree.h"
 #include "OCCView.h"
 #include "Tree.h"
+
 #include <QVBoxLayout>
 
 #include <STEPControl_Reader.hxx>
@@ -11,6 +12,7 @@
 #include <STEPCAFControl_Reader.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TDocStd_Document.hxx>
+#include <TopoDS_Shape.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
 #include <XCAFDoc_ShapeTool.hxx>
 #include <XCAFApp_Application.hxx>
@@ -19,11 +21,8 @@
 #include <TDataStd_Name.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
-
 #include <AIS_Shape.hxx>
-
-
-
+#include <AIS_InteractiveObject.hxx>
 
 namespace 
 {

@@ -50,8 +50,8 @@ set(HEADERS
     src/Tree.h
     src/TreeWidget.h
     src/WidgetModelTree.h
-    src/string_conv.h
-    src/qstring_conv.h
+    src/StringConv.h
+    src/QStringConv.h
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})

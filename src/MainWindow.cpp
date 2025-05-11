@@ -5,6 +5,7 @@
 #include <QMenu>
 #include <QFileDialog>
 #include <QAction>
+#include <TopoDS_Shape.hxx>
 #include "ViewerWidget.h"
 #include "WidgetModelTree.h"
 

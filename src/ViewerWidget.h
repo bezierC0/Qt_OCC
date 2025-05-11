@@ -1,20 +1,25 @@
 #pragma once
 
 #include <QWidget>
-#include <AIS_InteractiveContext.hxx>
-#include <V3d_View.hxx>
-#include <TopoDS_Shape.hxx>
-#include <AIS_InteractiveObject.hxx>
-#include "Tree.h"
-
 
 class OCCView;
+class AIS_InteractiveObject;
+class gp_Dir;
+class gp_Pnt;
+
+template<typename T>
+class Tree;
+namespace opencascade
+{
+    template <class T>
+    class handle;
+}
 
 class ViewerWidget : public QWidget 
 {
     Q_OBJECT
     struct Document{
-        std::vector<Handle(AIS_InteractiveObject)> m_list;
+        std::vector<opencascade::handle<AIS_InteractiveObject>> m_list;
     };
 
 public:
@@ -29,7 +34,6 @@ public:
 private:
     OCCView* m_occView;
     std::shared_ptr<Document> m_doc;
-    
 
     //TopoDS_Shape m_loadedShape;
 };

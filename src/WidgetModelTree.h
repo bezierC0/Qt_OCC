@@ -1,9 +1,12 @@
 #pragma once
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QHeaderView>
-#include "Tree.h"
 
 class TreeWidget;
+class TDF_Label;
+template<typename T>
+class Tree;
+
 class ModelTreeWidget : public QWidget {
     Q_OBJECT
 public:
