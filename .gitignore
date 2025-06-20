@@ -1,5 +1,14 @@
+# vscode
+.promptx/
+
+# vscode
+.vscode/
+
 # build
 build/
+
+# bak
+*.bak
 
 # Prerequisites
 *.d

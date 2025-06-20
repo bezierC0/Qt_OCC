@@ -18,6 +18,7 @@
 #include <Aspect_DisplayConnection.hxx>
 #include <Aspect_NeutralWindow.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
+#include <BRepBuilderAPI_Transform.hxx>
 #include <Message.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <OpenGl_FrameBuffer.hxx>
@@ -555,13 +556,78 @@ void OCCView::setShape(const Handle(AIS_InteractiveObject)& loadedShape)
     m_loadedObjects.emplace_back( loadedShape ) ;
 }
 
+std::vector<Handle( AIS_InteractiveObject )> OCCView::getShapeObjects() const
+{
+  return m_loadedObjects;
+}
+
+void OCCView::transform()
+{
+    if ( !m_loadedObjects.empty() ) {
+        Handle( AIS_InteractiveObject ) obj = m_loadedObjects.at(0);
+        auto aisShape = Handle( AIS_Shape )::DownCast( obj );
+        if ( aisShape.IsNull() ) {
+            return ;
+        }
+
+#if 0
+        gp_Trsf trsf;
+        trsf.SetTranslation( gp_Vec( 100.0, 0.0, 0.0 ) );
+        aisShape->SetLocalTransformation( trsf );
+        const TopoDS_Shape& shape = aisShape->Shape();
+        TopLoc_Location location = shape.Location();
+        gp_Trsf shapeTrsf = location.Transformation();
+
+        std::cout << "\n=== before ===" << std::endl;
+        std::cout << "- LocalTransformation: " << aisShape->LocalTransformation().Form() << std::endl;
+        std::cout << "- Shape Location Trsf: " << shapeTrsf.Form() << std::endl;
+        if ( shapeTrsf.Form() != gp_Identity ) {
+            gp_XYZ trans = shapeTrsf.TranslationPart();
+            std::cout << "  Translation: (" << trans.X() << ", " << trans.Y() << ", " << trans.Z() << ")" << std::endl;
+        }
+
+
+
+        TopoDS_Shape newShape = BRepBuilderAPI_Transform( shape, trsf ).Shape();
+        aisShape->SetShape( newShape );
+        aisShape->ResetTransformation();
+
+        std::cout << "\n=== after ===" << std::endl;
+        std::cout << "- LocalTransformation: " << aisShape->LocalTransformation().Form() << std::endl;
+        TopLoc_Location newLocation = newShape.Location();
+        gp_Trsf newTrsf = newLocation.Transformation();
+        std::cout << "- New Shape Location Trsf: " << newTrsf.Form() << std::endl;
+        if ( newTrsf.Form() != gp_Identity ) {
+            gp_XYZ newTrans = newTrsf.TranslationPart();
+            std::cout << "  Translation: (" << newTrans.X() << ", " << newTrans.Y() << ", " << newTrans.Z() << ")" << std::endl;
+        }
+        Context()->Redisplay( aisShape, true );
+#else
+        gp_Trsf currentTrsf = aisShape->LocalTransformation();
+
+        gp_Trsf translation;
+        translation.SetTranslation( gp_Vec( 100.0, 0.0, 0.0 ) );
+        currentTrsf.Multiply( translation );
+
+        aisShape->SetLocalTransformation( currentTrsf );
+
+        Context()->Redisplay( aisShape, true );
+#endif
+    }
+    reDraw();
+}
+
 void OCCView::reDraw() const
 {
     for ( const auto& object : m_loadedObjects ) {
         // void GraphicsScene::addObject(const GraphicsObjectPtr& object, AddObjectFlags flags)
         const bool onEntry_AutoActivateSelection = m_context->GetAutoActivateSelection();
         object->Attributes()->SetIsoOnTriangulation(true);
-        m_context->Display( object, object->DisplayMode(), 0, false);
+        if (m_context->IsDisplayed(object)) {
+            m_context->Redisplay(object, false);
+        } else {
+            m_context->Display(object, object->DisplayMode(), 0, false);
+        }
         m_context->SetAutoActivateSelection(onEntry_AutoActivateSelection);
     }
     m_view->Redraw();

@@ -28,6 +28,7 @@ public:
     void loadModel(const QString& filename) const;
     void viewFit();
     void checkInterference();
+    void transform();
     void clipping( const gp_Dir& normal, const gp_Pnt& point, bool isOn = true );
     void explosion();
 

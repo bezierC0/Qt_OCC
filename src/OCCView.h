@@ -45,6 +45,10 @@ public:
 
   void setShape( const Handle(AIS_InteractiveObject)& loadedShape );
 
+  std::vector<Handle( AIS_InteractiveObject )> getShapeObjects( ) const;
+
+  void transform() ;
+
   void reDraw() const ;
 
   void fit() const;

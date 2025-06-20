@@ -67,6 +67,8 @@ void MainWindow::createToolBar()
     toolbar->addWidget( analysisButton );
 
     // ---- Others (flat actions) ----
+    const auto transformAct = toolbar->addAction("transform");
+    connect(transformAct, &QAction::triggered, this, &MainWindow::transform );
 
     const auto clippingAct = toolbar->addAction("clipping");
     connect(clippingAct, &QAction::triggered, this, &MainWindow::clipping);
@@ -92,6 +94,11 @@ void MainWindow::viewFit() const
 void MainWindow::checkInterference() const
 {
     m_viewerWidget->checkInterference();
+}
+
+void MainWindow::transform() const
+{
+    m_viewerWidget->transform();
 }
 
 void MainWindow::clipping() const
