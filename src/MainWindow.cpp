@@ -8,6 +8,8 @@
 #include <TopoDS_Shape.hxx>
 #include "ViewerWidget.h"
 #include "WidgetModelTree.h"
+#include <QtQuickWidgets/QQuickWidget>
+#include <QtQml>
 
 
 MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
@@ -23,7 +25,17 @@ MainWindow::MainWindow(QWidget* parent) : QMainWindow(parent)
     splitter->setStretchFactor( 1, 4 ); 
 
     setCentralWidget( splitter );
-    createToolBar();
+
+    // QML Toolbar
+    QQuickWidget* toolbarWidget = new QQuickWidget(this);
+    toolbarWidget->setResizeMode(QQuickWidget::SizeRootObjectToView);
+    toolbarWidget->engine()->rootContext()->setContextProperty("toolbarBackend", this);
+    toolbarWidget->setSource(QUrl("qrc:/src/ToolbarWidget.qml"));
+    toolbarWidget->setFixedHeight(40); 
+
+    QToolBar* toolbar = new QToolBar(this);
+    toolbar->addWidget(toolbarWidget);
+    addToolBar(Qt::TopToolBarArea, toolbar);
 
     resize(800, 600);
 }

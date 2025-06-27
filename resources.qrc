@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>src/CentralWidget.qml</file>
+        <file>src/ToolbarWidget.qml</file>
+    </qresource>
+</RCC> 
