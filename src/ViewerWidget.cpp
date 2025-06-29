@@ -230,6 +230,11 @@ void ViewerWidget::viewFit()
     m_occView->fit();
 }
 
+void ViewerWidget::transform()
+{
+    m_occView->transform();
+}
+
 void ViewerWidget::checkInterference()
 {
     for (size_t i = 0; i < m_doc->m_list.size(); ++i)
@@ -265,12 +270,6 @@ void ViewerWidget::checkInterference()
             }
         }
     }
-}
-
-void ViewerWidget::transform()
-{
-    m_occView->transform();
-
 }
 
 void ViewerWidget::clipping( const gp_Dir& normal, const gp_Pnt& point, const bool isOn )

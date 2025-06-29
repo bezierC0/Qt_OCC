@@ -19,8 +19,7 @@ namespace opencascade
 class ViewerWidget : public QWidget
 {
     Q_OBJECT
-        struct Document
-    {
+    struct Document{
         std::vector<opencascade::handle<AIS_InteractiveObject>> m_list;
     };
 
@@ -30,6 +29,7 @@ public:
     void loadModel(const QString& filename) const;
     void viewFit();
     void checkInterference();
+    void transform();
     void clipping(const gp_Dir& normal, const gp_Pnt& point, bool isOn = true);
     void explosion();
     void displayShape(const TopoDS_Shape& shape); // Add this function

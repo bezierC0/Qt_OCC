@@ -109,6 +109,11 @@ void MainWindow::checkInterference() const
     m_viewerWidget->checkInterference();
 }
 
+void MainWindow::transform() const
+{
+    m_viewerWidget->transform();
+}
+
 void MainWindow::clipping() const
 {
     const gp_Dir normal(0.0,0.0,1.0);
