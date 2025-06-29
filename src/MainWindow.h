@@ -15,6 +15,7 @@ private slots:
     void openFile();
     void viewFit() const;
     void checkInterference() const;
+    void transform() const;
     void clipping() const;
     void explosion() const;
     void createBox();

@@ -267,6 +267,12 @@ void ViewerWidget::checkInterference()
     }
 }
 
+void ViewerWidget::transform()
+{
+    m_occView->transform();
+
+}
+
 void ViewerWidget::clipping( const gp_Dir& normal, const gp_Pnt& point, const bool isOn )
 {
     const Handle(Graphic3d_ClipPlane) clipPlane = new Graphic3d_ClipPlane(gp_Pln(point, normal));
