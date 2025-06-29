@@ -5,6 +5,14 @@
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QAction>
+#include <TopoDS_Shape.hxx>
+#include "MainWindow.h"
+#include <QtWidgets/QToolBar>
+#include <QtWidgets/QToolButton>
+#include <QtWidgets/QSplitter>
+#include <QtWidgets/QMenu>
+#include <QtWidgets/QFileDialog>
+#include <QtWidgets/QAction>
 #include <TopoDS_Shape.hxx> // This should be resolved by CMakeLists.txt fix
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
@@ -32,7 +40,7 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     setCentralWidget( splitter );
 
     // Initialize Ribbon Bar
-    SARibbonBar* ribbon = ribbonBar(); // Get the ribbon bar from SARibbonMainWindow
+    SARibbonBar* ribbon = ribbonBar();
     ribbon->setRibbonStyle(SARibbonBar::RibbonStyleLooseThreeRow); // Or other styles like WpsLiteStyle
 
     // ---- File Group ----

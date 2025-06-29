@@ -40,6 +40,8 @@ set(SOURCES
     src/OcctGlTools.cpp
     src/TreeWidget.cpp
     src/WidgetModelTree.cpp
+    # external
+    external/SARibbon/SARibbon.cpp
 )
 
 set(HEADERS
@@ -56,5 +58,9 @@ set(HEADERS
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 
-target_include_directories(${PROJECT_NAME} PRIVATE ${OpenCASCADE_INCLUDE_DIRS})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCASCADE_LIBRARIES} Qt5::Widgets)
+target_include_directories(${PROJECT_NAME} 
+    PRIVATE 
+        ${OpenCASCADE_INCLUDE_DIR}
+        external/SARibbon
+)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCASCADE_LIBRARIES} Qt5::Widgets Qt5::Core)

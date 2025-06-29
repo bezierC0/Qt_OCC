@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QWidget>
+#include <TopoDS_Shape.hxx> // Add this include
 
 class OCCView;
 class AIS_InteractiveObject;
@@ -15,10 +16,11 @@ namespace opencascade
     class handle;
 }
 
-class ViewerWidget : public QWidget 
+class ViewerWidget : public QWidget
 {
     Q_OBJECT
-    struct Document{
+        struct Document
+    {
         std::vector<opencascade::handle<AIS_InteractiveObject>> m_list;
     };
 
@@ -28,8 +30,9 @@ public:
     void loadModel(const QString& filename) const;
     void viewFit();
     void checkInterference();
-    void clipping( const gp_Dir& normal, const gp_Pnt& point, bool isOn = true );
+    void clipping(const gp_Dir& normal, const gp_Pnt& point, bool isOn = true);
     void explosion();
+    void displayShape(const TopoDS_Shape& shape); // Add this function
 
 private:
     OCCView* m_occView;

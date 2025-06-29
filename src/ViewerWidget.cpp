@@ -4,7 +4,7 @@
 #include "OCCView.h"
 #include "Tree.h"
 
-#include <QVBoxLayout>
+#include <QtWidgets/QVBoxLayout> // Corrected path
 
 #include <STEPControl_Reader.hxx>
 #include <IGESControl_Reader.hxx>
@@ -23,6 +23,12 @@
 #include <BRepBuilderAPI_Transform.hxx>
 #include <AIS_Shape.hxx>
 #include <AIS_InteractiveObject.hxx>
+#include <Graphic3d_ClipPlane.hxx> // Added missing include for clipping
+#include <gp_Pln.hxx> // Added missing include for clipping
+#include <Bnd_Box.hxx> // Added missing include for explosion
+#include <gp_Trsf.hxx> // Added missing include for explosion
+#include <gp_Vec.hxx> // Added missing include for explosion
+#include <Quantity_Color.hxx> // Added missing include for colors
 
 namespace 
 {
@@ -328,10 +334,22 @@ void ViewerWidget::explosion()
     m_occView->clearShape();
     for (const auto& shape : explodedShapes)
     {
+        if (shape.IsNull())
+            continue;        
         Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
         aisShape->SetDisplayMode(AIS_Shaded);
         aisShape->SetColor(Quantity_NOC_SKYBLUE);
         m_occView->setShape( aisShape );
     }
     m_occView->reDraw();
+}
+
+void ViewerWidget::displayShape(const TopoDS_Shape& shape)
+{
+    Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
+    aisShape->SetDisplayMode(AIS_Shaded);
+    aisShape->SetColor(Quantity_NOC_WHITE);
+    m_occView->setShape(aisShape);
+    m_occView->reDraw();
+    m_occView->fit(); // Fit view to the new shape
 }
