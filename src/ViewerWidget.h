@@ -32,7 +32,7 @@ public:
     void transform();
     void clipping(const gp_Dir& normal, const gp_Pnt& point, bool isOn = true);
     void explosion();
-    void displayShape(const TopoDS_Shape& shape); // Add this function
+    void displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0); // Add this function
 
 private:
     OCCView* m_occView;

@@ -153,7 +153,7 @@ void ViewerWidget::loadModel(const QString& filename) const
         Handle(TDocStd_Document) doc;
         Handle(XCAFDoc_ShapeTool) shapeTool;
         Handle(XCAFDoc_ColorTool) colorTool;
-
+        
         Handle(XCAFApp_Application)::DownCast(XCAFApp_Application::GetApplication())->NewDocument("BinXCAF", doc);
 
         if (!reader.Transfer(doc))
@@ -349,11 +349,11 @@ void ViewerWidget::explosion()
     m_occView->reDraw();
 }
 
-void ViewerWidget::displayShape(const TopoDS_Shape& shape)
+void ViewerWidget::displayShape(const TopoDS_Shape& shape, const double r , const double g , const double b )
 {
     Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
     aisShape->SetDisplayMode(AIS_Shaded);
-    aisShape->SetColor(Quantity_NOC_WHITE);
+    aisShape->SetColor(Quantity_Color(r, g, b, Quantity_TOC_RGB));
     m_occView->setShape(aisShape);
     m_occView->reDraw();
     m_occView->fit(); // Fit view to the new shape

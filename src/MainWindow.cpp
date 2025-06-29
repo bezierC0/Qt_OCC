@@ -12,7 +12,6 @@
 #include <BRepPrimAPI_MakeCone.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Dir.hxx>
-#include "SARibbon.h"
 #include "ViewerWidget.h"
 #include "WidgetModelTree.h"
 
@@ -129,25 +128,25 @@ void MainWindow::explosion() const
 void MainWindow::createBox()
 {
     BRepPrimAPI_MakeBox box(10.0, 10.0, 10.0);
-    m_viewerWidget->displayShape(box.Shape());
+    m_viewerWidget->displayShape(box.Shape(), 1.0, 0.0, 1.0);
 }
 
 void MainWindow::createSphere()
 {
     BRepPrimAPI_MakeSphere sphere(gp_Pnt(0, 0, 0), 5.0);
-    m_viewerWidget->displayShape(sphere.Shape());
+    m_viewerWidget->displayShape(sphere.Shape(), 1.0,0.0,0.0);
 }
 
 void MainWindow::createCylinder()
 {
     BRepPrimAPI_MakeCylinder cylinder(5.0, 10.0);
-    m_viewerWidget->displayShape(cylinder.Shape());
+    m_viewerWidget->displayShape(cylinder.Shape(), 0.0, 1.0, 0.0);
 }
 
 void MainWindow::createCone()
 {
     BRepPrimAPI_MakeCone cone(5.0, 0.0, 10.0);
-    m_viewerWidget->displayShape(cone.Shape());
+    m_viewerWidget->displayShape(cone.Shape(), 0.0, 1.0, 1.0);
 }
 
 ViewerWidget* MainWindow::GetViewerWidget() const
