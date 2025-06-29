@@ -8,7 +8,9 @@ ToolBar {
             onClicked: fileMenu.open()
             Menu {
                 id: fileMenu
-                MenuItem { text: "Open"; onTriggered: toolbarBackend.openFile() }
+                x: parent.x // 确保菜单在按钮下方对齐
+                y: parent.height // 确保菜单在按钮下方弹出
+                MenuItem { text: "Open"; onClicked: toolbarBackend.openFile() }
             }
         }
         ToolButton {
@@ -16,7 +18,9 @@ ToolBar {
             onClicked: viewMenu.open()
             Menu {
                 id: viewMenu
-                MenuItem { text: "Fit"; onTriggered: toolbarBackend.viewFit() }
+                x: parent.x
+                y: parent.height
+                MenuItem { text: "Fit"; onClicked: toolbarBackend.viewFit() }
             }
         }
         ToolButton {
@@ -24,11 +28,13 @@ ToolBar {
             onClicked: analysisMenu.open()
             Menu {
                 id: analysisMenu
-                MenuItem { text: "Interference"; onTriggered: toolbarBackend.checkInterference() }
+                x: parent.x
+                y: parent.height
+                MenuItem { text: "Interference"; onClicked: toolbarBackend.checkInterference() }
             }
         }
         ToolButton { text: "transform"; onClicked: toolbarBackend.transform() }
         ToolButton { text: "clipping"; onClicked: toolbarBackend.clipping() }
         ToolButton { text: "explosion"; onClicked: toolbarBackend.explosion() }
     }
-} 
+}

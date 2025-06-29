@@ -11,7 +11,7 @@ public:
     MainWindow(QWidget* parent = nullptr);
     ViewerWidget* GetViewerWidget() const;
     ModelTreeWidget* GetModelTreeWidget() const;
-private slots:
+public slots: 
     void openFile();
     void viewFit() const;
     void checkInterference() const;

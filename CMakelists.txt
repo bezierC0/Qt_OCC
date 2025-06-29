@@ -40,6 +40,8 @@ set(SOURCES
     src/OcctGlTools.cpp
     src/TreeWidget.cpp
     src/WidgetModelTree.cpp
+    src/CentralWidget.qml
+    src/ToolbarWidget.qml
     resources.qrc
 )
 
