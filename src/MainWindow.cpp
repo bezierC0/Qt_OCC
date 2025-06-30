@@ -37,21 +37,21 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     // ---- File Group ----
     SARibbonCategory* fileCategory = ribbon->addCategoryPage(QStringLiteral("File"));
     SARibbonPannel* filePannel = fileCategory->addPannel(QStringLiteral("File Operations"));
-    QAction* openAct = new QAction(QIcon(":/icons/open.png"), QStringLiteral("Open"), this); // Assuming an icon path
+    QAction* openAct = new QAction(QIcon(":/icons/icon/open.png"), QStringLiteral("Open"), this); // Assuming an icon path
     connect(openAct, &QAction::triggered, this, &MainWindow::openFile);
     filePannel->addLargeAction(openAct);
 
     // ---- View Group ----
     SARibbonCategory* viewCategory = ribbon->addCategoryPage(QStringLiteral("View"));
     SARibbonPannel* viewPannel = viewCategory->addPannel(QStringLiteral("View Operations"));
-    QAction* fitAct = new QAction(QIcon(":/icons/fit.png"), QStringLiteral("Fit"), this); // Assuming an icon path
+    QAction* fitAct = new QAction(QIcon(":/icons/icon/fit.png"), QStringLiteral("Fit"), this); // Assuming an icon path
     connect(fitAct, &QAction::triggered, this, &MainWindow::viewFit);
     viewPannel->addLargeAction(fitAct);
 
     // ---- Analysis Group ----
     SARibbonCategory* analysisCategory = ribbon->addCategoryPage(QStringLiteral("Analysis"));
     SARibbonPannel* analysisPannel = analysisCategory->addPannel(QStringLiteral("Analysis Tools"));
-    QAction* interferenceAct = new QAction(QIcon(":/icons/interference.png"), QStringLiteral("Interference"), this); // Assuming an icon path
+    QAction* interferenceAct = new QAction(QIcon(":/icons/icon/interference.png"), QStringLiteral("Interference"), this); // Assuming an icon path
     connect(interferenceAct, &QAction::triggered, this, &MainWindow::checkInterference);
     analysisPannel->addLargeAction(interferenceAct);
 
@@ -59,30 +59,30 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     SARibbonCategory* shapeCategory = ribbon->addCategoryPage(QStringLiteral("Shape"));
     SARibbonPannel* basicShapesPannel = shapeCategory->addPannel(QStringLiteral("Basic Shapes"));
 
-    QAction* boxAct = new QAction(QIcon(":/icons/box.png"), QStringLiteral("Box"), this);
+    QAction* boxAct = new QAction(QIcon(":/icons/icon/box.png"), QStringLiteral("Box"), this);
     connect(boxAct, &QAction::triggered, this, &MainWindow::createBox);
     basicShapesPannel->addLargeAction(boxAct);
 
-    QAction* sphereAct = new QAction(QIcon(":/icons/sphere.png"), QStringLiteral("Sphere"), this);
+    QAction* sphereAct = new QAction(QIcon(":/icons/icon/sphere.png"), QStringLiteral("Sphere"), this);
     connect(sphereAct, &QAction::triggered, this, &MainWindow::createSphere);
     basicShapesPannel->addLargeAction(sphereAct);
 
-    QAction* cylinderAct = new QAction(QIcon(":/icons/cylinder.png"), QStringLiteral("Cylinder"), this);
+    QAction* cylinderAct = new QAction(QIcon(":/icons/icon/cylinder.png"), QStringLiteral("Cylinder"), this);
     connect(cylinderAct, &QAction::triggered, this, &MainWindow::createCylinder);
     basicShapesPannel->addLargeAction(cylinderAct);
 
-    QAction* coneAct = new QAction(QIcon(":/icons/cone.png"), QStringLiteral("Cone"), this);
+    QAction* coneAct = new QAction(QIcon(":/icons/icon/cone.png"), QStringLiteral("Cone"), this);
     connect(coneAct, &QAction::triggered, this, &MainWindow::createCone);
     basicShapesPannel->addLargeAction(coneAct);
 
     // ---- Others (flat actions) ----
     // These actions can be added to an existing pannel or a new one
     SARibbonPannel* otherPannel = analysisCategory->addPannel(QStringLiteral("Other Tools")); // Adding to Analysis category for simplicity
-    QAction* clippingAct = new QAction(QIcon(":/icons/clipping.png"), QStringLiteral("Clipping"), this); // Assuming an icon path
+    QAction* clippingAct = new QAction(QIcon(":/icons/icon/clipping.png"), QStringLiteral("Clipping"), this); // Assuming an icon path
     connect(clippingAct, &QAction::triggered, this, &MainWindow::clipping);
     otherPannel->addSmallAction(clippingAct);
 
-    QAction* explosionAct = new QAction(QIcon(":/icons/explosion.png"), QStringLiteral("Explosion"), this); // Assuming an icon path
+    QAction* explosionAct = new QAction(QIcon(":/icons/icon/explosion.png"), QStringLiteral("Explosion"), this); // Assuming an icon path
     connect(explosionAct, &QAction::triggered, this, &MainWindow::explosion);
     otherPannel->addSmallAction(explosionAct);
 

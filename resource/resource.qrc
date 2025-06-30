@@ -1,5 +1,12 @@
 <RCC>
     <qresource prefix="/icons">
         <file>icon/box.png</file>
+        <file>icon/cone.png</file>
+        <file>icon/cylinder.png</file>
+        <file>icon/fit.png</file>
+        <file>icon/interference.png</file>
+        <file>icon/open.png</file>
+        <file>icon/sphere.png</file>
+
     </qresource>
 </RCC>
