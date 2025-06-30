@@ -17,6 +17,7 @@ private slots:
     void checkInterference() const;
     void transform() const;
     void clipping() const;
+    void version();
     void explosion() const;
     void createBox();
     void createSphere();

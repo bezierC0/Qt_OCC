@@ -14,6 +14,7 @@
 #include <gp_Dir.hxx>
 #include "ViewerWidget.h"
 #include "WidgetModelTree.h"
+#include "DialogAbout.h"
 
 
 MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
@@ -86,6 +87,16 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     connect(explosionAct, &QAction::triggered, this, &MainWindow::explosion);
     otherPannel->addSmallAction(explosionAct);
 
+    // ---- help Group ----
+    SARibbonCategory* helpCategory = ribbon->addCategoryPage(QStringLiteral("Help"));
+    // ---- help ----
+    // These actions can be added to an existing pannel or a new one
+    SARibbonPannel* versionPannel = helpCategory->addPannel(QStringLiteral("Version"));  // Adding to Analysis category for simplicity
+    QAction* versionAct = new QAction(QIcon(":/icons/icon/info.png"), QStringLiteral("Version"), this);  // Assuming an icon path
+    connect(versionAct, &QAction::triggered, this, &MainWindow::version);
+    versionPannel->addSmallAction(versionAct);
+
+
     resize(800, 600);
 }
 
@@ -123,6 +134,12 @@ void MainWindow::clipping() const
 void MainWindow::explosion() const
 {
     m_viewerWidget->explosion();
+}
+
+void MainWindow::version()
+{
+    DialogAbout dlg(this);
+    dlg.exec();
 }
 
 void MainWindow::createBox()

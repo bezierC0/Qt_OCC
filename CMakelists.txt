@@ -40,12 +40,16 @@ set(SOURCES
     src/OcctGlTools.cpp
     src/TreeWidget.cpp
     src/WidgetModelTree.cpp
+    src/DialogAbout.cpp
+    # ui
+    src/dialog_about.ui
     # external
     external/SARibbon/SARibbon.cpp
 )
 
 set(HEADERS
     src/MainWindow.h
+    src/DialogAbout.h
     src/ViewerWidget.h
     src/OCCView.h
     src/OcctGlTools.h
