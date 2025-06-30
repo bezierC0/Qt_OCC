@@ -23,6 +23,7 @@ private slots:
     void createSphere();
     void createCylinder();
     void createCone();
+    void onSelectModeToggled(bool checked);
 
 private:
     ViewerWidget* m_viewerWidget;

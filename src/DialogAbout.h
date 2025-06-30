@@ -1,5 +1,4 @@
-#ifndef DIALOGABOUT_H
-#define DIALOGABOUT_H
+#pragma once
 
 #include <QDialog>
 
@@ -19,4 +18,3 @@ private:
     Ui::DialogAbout *ui;
 };
 
-#endif // DIALOGABOUT_H

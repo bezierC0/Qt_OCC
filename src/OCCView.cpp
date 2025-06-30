@@ -199,7 +199,8 @@ public:
 
 OCCView::OCCView(QWidget* theParent)
     : QOpenGLWidget(theParent),
-    myIsCoreProfile(true)
+    myIsCoreProfile(true),
+    m_interactionMode(InteractionMode::Highlight)
 {
     Handle(Aspect_DisplayConnection) aDisp = new Aspect_DisplayConnection();
     Handle(OpenGl_GraphicDriver) aDriver = new OpenGl_GraphicDriver(aDisp, false);
@@ -276,6 +277,25 @@ OCCView::~OCCView()
     // make active OpenGL context created by Qt
     makeCurrent();
     aDisp.Nullify();
+}
+
+void OCCView::setInteractionMode(InteractionMode theMode)
+{
+    if (m_interactionMode == theMode)
+    {
+        return;
+    }
+
+    m_interactionMode = theMode;
+    m_context->Deactivate(); // Deactivate all previous modes
+
+    if (m_interactionMode == InteractionMode::Select)
+    {
+        //m_context->Activate(AIS_Shape::SelectionMode(TopAbs_FACE));
+        //m_context->Activate(AIS_Shape::SelectionMode(TopAbs_EDGE));
+        //m_context->Activate(AIS_Shape::SelectionMode(TopAbs_VERTEX));
+        m_context->Activate(AIS_Shape::SelectionMode(TopAbs_SOLID));
+    }
 }
 
 void OCCView::dumpGlInfo(bool theIsBasic, bool theToPrint)
@@ -378,16 +398,28 @@ void OCCView::keyPressEvent(QKeyEvent* theEvent)
 
 void OCCView::mousePressEvent(QMouseEvent* theEvent)
 {
-    QOpenGLWidget::mousePressEvent(theEvent);
-    const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
-    const Aspect_VKeyFlags aFlags = qtMouseModifiers2VKeys(theEvent->modifiers());
-    if (!m_view.IsNull()
-        && UpdateMouseButtons(aPnt,
-            qtMouseButtons2VKeys(theEvent->buttons()),
-            aFlags,
-            false))
+    if (m_interactionMode == InteractionMode::Select)
     {
+        /*const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
+        const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier) ? AIS_SelectionScheme_Add : AIS_SelectionScheme_Replace;
+        m_context->Select(aPnt, m_view, aScheme);*/
+
+        m_context->SelectDetected( AIS_SelectionScheme_Replace );
         updateView();
+    }
+    else
+    {
+        QOpenGLWidget::mousePressEvent(theEvent);
+        const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
+        const Aspect_VKeyFlags aFlags = qtMouseModifiers2VKeys(theEvent->modifiers());
+        if (!m_view.IsNull()
+            && UpdateMouseButtons(aPnt,
+                qtMouseButtons2VKeys(theEvent->buttons()),
+                aFlags,
+                false))
+        {
+            updateView();
+        }
     }
 }
 

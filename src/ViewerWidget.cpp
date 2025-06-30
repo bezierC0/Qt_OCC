@@ -358,3 +358,8 @@ void ViewerWidget::displayShape(const TopoDS_Shape& shape, const double r , cons
     m_occView->reDraw();
     m_occView->fit(); // Fit view to the new shape
 }
+
+void ViewerWidget::setInteractionMode(InteractionMode mode)
+{
+    m_occView->setInteractionMode(mode);
+}

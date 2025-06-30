@@ -38,6 +38,13 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     // ---- File Group ----
     SARibbonCategory* fileCategory = ribbon->addCategoryPage(QStringLiteral("File"));
     SARibbonPannel* filePannel = fileCategory->addPannel(QStringLiteral("File Operations"));
+
+    // new
+    QAction* fileNewAct = new QAction(QIcon(":/icons/icon/file_new.svg"), QStringLiteral("New"), this); // Assuming an icon path
+    //connect(fileNewAct, &QAction::triggered, this, &MainWindow::newFile);
+    filePannel->addLargeAction(fileNewAct);
+
+    // open
     QAction* openAct = new QAction(QIcon(":/icons/icon/open.png"), QStringLiteral("Open"), this); // Assuming an icon path
     connect(openAct, &QAction::triggered, this, &MainWindow::openFile);
     filePannel->addLargeAction(openAct);
@@ -48,6 +55,12 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     QAction* fitAct = new QAction(QIcon(":/icons/icon/fit.png"), QStringLiteral("Fit"), this); // Assuming an icon path
     connect(fitAct, &QAction::triggered, this, &MainWindow::viewFit);
     viewPannel->addLargeAction(fitAct);
+
+    // select
+    QAction* selectAction = new QAction(QIcon(":/icons/icon/select.svg"), QStringLiteral("Select"), this);
+    selectAction->setCheckable(true);
+    connect(selectAction, &QAction::toggled, this, &MainWindow::onSelectModeToggled);
+    viewPannel->addLargeAction(selectAction);
 
     // ---- Analysis Group ----
     SARibbonCategory* analysisCategory = ribbon->addCategoryPage(QStringLiteral("Analysis"));
@@ -60,14 +73,17 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     SARibbonCategory* shapeCategory = ribbon->addCategoryPage(QStringLiteral("Shape"));
     SARibbonPannel* basicShapesPannel = shapeCategory->addPannel(QStringLiteral("Basic Shapes"));
 
+    // box
     QAction* boxAct = new QAction(QIcon(":/icons/icon/box.png"), QStringLiteral("Box"), this);
     connect(boxAct, &QAction::triggered, this, &MainWindow::createBox);
     basicShapesPannel->addLargeAction(boxAct);
 
+    // sphere
     QAction* sphereAct = new QAction(QIcon(":/icons/icon/sphere.png"), QStringLiteral("Sphere"), this);
     connect(sphereAct, &QAction::triggered, this, &MainWindow::createSphere);
     basicShapesPannel->addLargeAction(sphereAct);
 
+    // cylinder
     QAction* cylinderAct = new QAction(QIcon(":/icons/icon/cylinder.png"), QStringLiteral("Cylinder"), this);
     connect(cylinderAct, &QAction::triggered, this, &MainWindow::createCylinder);
     basicShapesPannel->addLargeAction(cylinderAct);
@@ -79,7 +95,7 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     // ---- Others (flat actions) ----
     // These actions can be added to an existing pannel or a new one
     SARibbonPannel* otherPannel = analysisCategory->addPannel(QStringLiteral("Other Tools")); // Adding to Analysis category for simplicity
-    QAction* clippingAct = new QAction(QIcon(":/icons/icon/clipping.png"), QStringLiteral("Clipping"), this); // Assuming an icon path
+    QAction* clippingAct = new QAction(QIcon(":/icons/icon/clipping.svg"), QStringLiteral("Clipping"), this); // Assuming an icon path
     connect(clippingAct, &QAction::triggered, this, &MainWindow::clipping);
     otherPannel->addSmallAction(clippingAct);
 
@@ -91,8 +107,8 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     SARibbonCategory* helpCategory = ribbon->addCategoryPage(QStringLiteral("Help"));
     // ---- help ----
     // These actions can be added to an existing pannel or a new one
-    SARibbonPannel* versionPannel = helpCategory->addPannel(QStringLiteral("Version"));  // Adding to Analysis category for simplicity
-    QAction* versionAct = new QAction(QIcon(":/icons/icon/info.png"), QStringLiteral("Version"), this);  // Assuming an icon path
+    SARibbonPannel* versionPannel = helpCategory->addPannel( QStringLiteral("Version") );  // Adding to Analysis category for simplicity
+    QAction* versionAct = new QAction(QIcon(":/icons/icon/version.svg"), QStringLiteral("Version"), this);  // Assuming an icon path
     connect(versionAct, &QAction::triggered, this, &MainWindow::version);
     versionPannel->addSmallAction(versionAct);
 
@@ -126,8 +142,8 @@ void MainWindow::transform() const
 
 void MainWindow::clipping() const
 {
-    const gp_Dir normal(0.0,0.0,1.0);
-    const gp_Pnt point( 0.0, 0.0, 10.0 );
+    const gp_Dir normal(0.0, 0.0, 1.0);
+    const gp_Pnt point(0.0, 0.0, 10.0);
     m_viewerWidget->clipping( normal , point );
 }
 
@@ -150,8 +166,8 @@ void MainWindow::createBox()
 
 void MainWindow::createSphere()
 {
-    BRepPrimAPI_MakeSphere sphere(gp_Pnt(0, 0, 0), 5.0);
-    m_viewerWidget->displayShape(sphere.Shape(), 1.0,0.0,0.0);
+    BRepPrimAPI_MakeSphere sphere( gp_Pnt( 0, 0, 0 ), 5.0 ) ;
+    m_viewerWidget->displayShape( sphere.Shape(), 1.0, 0.0, 0.0 ) ;  // NOLINT
 }
 
 void MainWindow::createCylinder()
@@ -174,4 +190,16 @@ ViewerWidget* MainWindow::GetViewerWidget() const
 ModelTreeWidget* MainWindow::GetModelTreeWidget() const
 {
     return m_modelTreeWidget;
+}
+
+void MainWindow::onSelectModeToggled(bool checked)
+{
+    if (checked)
+    {
+        m_viewerWidget->setInteractionMode(InteractionMode::Select);
+    }
+    else
+    {
+        m_viewerWidget->setInteractionMode(InteractionMode::Highlight);
+    }
 }

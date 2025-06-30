@@ -11,6 +11,13 @@
 
 class AIS_ViewCube;
 
+//! Interaction mode.
+enum class InteractionMode
+{
+  Highlight,
+  Select
+};
+
 //! OCCT 3D View.
 class OCCView : public QOpenGLWidget, public AIS_ViewController
 {
@@ -40,6 +47,9 @@ public:
 
   //! Default widget size.
   QSize sizeHint()        const override { return QSize(720, 480); }
+
+  //! Set interaction mode.
+  void setInteractionMode(InteractionMode theMode);
 
   void clearShape() ;
 
@@ -120,4 +130,6 @@ private:
 
   QString myGlInfo;
   bool myIsCoreProfile;
+
+  InteractionMode m_interactionMode;
 };
