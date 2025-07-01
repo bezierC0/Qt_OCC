@@ -22,7 +22,7 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     m_modelTreeWidget = new ModelTreeWidget( this );
     m_viewerWidget = new ViewerWidget(this);
 
-    QSplitter* splitter = new QSplitter( Qt::Horizontal, this );
+    const auto splitter = new QSplitter( Qt::Horizontal, this );
     splitter->addWidget( m_modelTreeWidget );
     splitter->addWidget( m_viewerWidget );
 

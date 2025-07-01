@@ -293,7 +293,7 @@ void OCCView::setInteractionMode(InteractionMode theMode)
     {
         //m_context->Activate(AIS_Shape::SelectionMode(TopAbs_FACE));
         //m_context->Activate(AIS_Shape::SelectionMode(TopAbs_EDGE));
-        //m_context->Activate(AIS_Shape::SelectionMode(TopAbs_VERTEX));
+        m_context->Activate(AIS_Shape::SelectionMode(TopAbs_VERTEX));
         m_context->Activate(AIS_Shape::SelectionMode(TopAbs_SOLID));
     }
 }
@@ -404,7 +404,10 @@ void OCCView::mousePressEvent(QMouseEvent* theEvent)
         const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier) ? AIS_SelectionScheme_Add : AIS_SelectionScheme_Replace;
         m_context->Select(aPnt, m_view, aScheme);*/
 
-        m_context->SelectDetected( AIS_SelectionScheme_Replace );
+        if ( const auto statusOfPick = m_context->SelectDetected( AIS_SelectionScheme_Replace );  statusOfPick == AIS_SOP_OneSelected || statusOfPick == AIS_SOP_SeveralSelected ) {
+            auto selectedObject = m_context->FirstSelectedObject();
+
+        }
         updateView();
     }
     else

@@ -138,9 +138,10 @@ ViewerWidget::~ViewerWidget()
 }
 
 
-static Tree<TDF_Label> m_modelTree;
+
 void ViewerWidget::loadModel(const QString& filename) const
 {
+    static Tree<TDF_Label> modelTree;
     if (filename.endsWith(".step") || filename.endsWith(".stp"))
     {
         STEPCAFControl_Reader reader;
@@ -170,10 +171,10 @@ void ViewerWidget::loadModel(const QString& filename) const
         TDF_LabelSequence labels;
         shapeTool->GetFreeShapes(labels); 
         for ( const TDF_Label& label : labels ) {
-            deepBuildAssemblyTree( 0, label, m_modelTree );
+            deepBuildAssemblyTree( 0, label, modelTree );
         }
 
-        for (const auto& it : m_modelTree.m_vecNode)
+        for (const auto& it : modelTree.m_vecNode)
         {
             TDF_Label label = it.data;
             if (isShapeReference(label))
@@ -219,9 +220,9 @@ void ViewerWidget::loadModel(const QString& filename) const
         m_occView->setShape(aisObject);
     }
 
-    MainWindow* mainWindow = qobject_cast<MainWindow*>( this->window() );
+    const MainWindow* mainWindow = qobject_cast<MainWindow*>( this->window() );
     auto treeWidget = mainWindow->GetModelTreeWidget();
-    treeWidget->setModelTree( m_modelTree );
+    treeWidget->setModelTree( modelTree );
     m_occView->reDraw();
 }
 

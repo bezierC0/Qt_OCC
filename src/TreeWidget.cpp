@@ -72,7 +72,8 @@ QTreeWidgetItem* TreeWidget::itemFromIndex( const QModelIndex& index ) const
 
 void TreeWidget::setData( const Tree<TDF_Label>& modelTree )
 {
-    rebuildData( modelTree );
+    m_modelTree = std::make_shared<Tree<TDF_Label>>( modelTree );
+    rebuildData( *m_modelTree );
 }
 
 void TreeWidget::rebuildData( const Tree<TDF_Label>& modelTree )

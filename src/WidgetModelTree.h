@@ -15,4 +15,5 @@ public:
     void setModelTree( const Tree<TDF_Label>& modelTree);
 private:
     TreeWidget* m_treeWidget = nullptr; // TreeWidget
+
 };
