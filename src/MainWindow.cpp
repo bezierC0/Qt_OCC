@@ -1,10 +1,14 @@
 #include "MainWindow.h"
+#include <QtCore>
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QToolButton>
 #include <QtWidgets/QSplitter>
 #include <QtWidgets/QMenu>
 #include <QtWidgets/QFileDialog>
 #include <QtWidgets/QAction>
+#include <QCoreApplication>
+#include <QTranslator>
+#include <QEvent>
 #include <TopoDS_Shape.hxx> // This should be resolved by CMakeLists.txt fix
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
@@ -19,6 +23,9 @@
 
 MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
 {
+    m_translator = new QTranslator(this);
+    m_currentLanguage = 0; // 0: English, 1: Chinese, 2: Japanese
+
     m_modelTreeWidget = new ModelTreeWidget( this );
     m_viewerWidget = new ViewerWidget(this);
 
@@ -31,89 +38,113 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
 
     setCentralWidget( splitter );
 
-    // Initialize Ribbon Bar
-    SARibbonBar* ribbon = ribbonBar(); // Get the ribbon bar from SARibbonMainWindow
-    ribbon->setRibbonStyle(SARibbonBar::RibbonStyleLooseThreeRow); // Or other styles like WpsLiteStyle
+    setupUi();
+
+    resize(1200, 800);
+}
+
+void MainWindow::setupUi()
+{
+    
+    if ( m_ribbon )
+    {
+        m_ribbon->clear();
+        m_ribbon->removeCategory( m_fileCategory );
+        m_ribbon->removeCategory( m_viewCategory );
+        m_ribbon->removeCategory( m_analysisCategory );
+        m_ribbon->removeCategory( m_shapeCategory );
+        m_ribbon->removeCategory( m_helpCategory );
+
+    }
+    else
+    {
+        m_ribbon = new SARibbonBar(this);
+        setRibbonBar( m_ribbon );
+    }
+    
+    m_ribbon->setRibbonStyle(SARibbonBar::RibbonStyleLooseThreeRow); // Or other styles like WpsLiteStyle
 
     // ---- File Group ----
-    SARibbonCategory* fileCategory = ribbon->addCategoryPage(QStringLiteral("File"));
-    SARibbonPannel* filePannel = fileCategory->addPannel(QStringLiteral("File Operations"));
+    m_fileCategory = m_ribbon->addCategoryPage(tr("File"));
+    m_filePannel = m_fileCategory->addPannel(tr("File Operations"));
 
     // new
-    QAction* fileNewAct = new QAction(QIcon(":/icons/icon/file_new.svg"), QStringLiteral("New"), this); // Assuming an icon path
-    //connect(fileNewAct, &QAction::triggered, this, &MainWindow::newFile);
-    filePannel->addLargeAction(fileNewAct);
+    m_newAction = new QAction(QIcon(":/icons/icon/file_new.svg"), tr("New"), this); // Assuming an icon path
+    //connect(m_newAction, &QAction::triggered, this, &MainWindow::newFile);
+    m_filePannel->addLargeAction(m_newAction);
 
     // open
-    QAction* openAct = new QAction(QIcon(":/icons/icon/open.png"), QStringLiteral("Open"), this); // Assuming an icon path
-    connect(openAct, &QAction::triggered, this, &MainWindow::openFile);
-    filePannel->addLargeAction(openAct);
+    m_openAction = new QAction(QIcon(":/icons/icon/open.png"), tr("Open"), this); // Assuming an icon path
+    connect(m_openAction, &QAction::triggered, this, &MainWindow::openFile);
+    m_filePannel->addLargeAction(m_openAction);
 
     // ---- View Group ----
-    SARibbonCategory* viewCategory = ribbon->addCategoryPage(QStringLiteral("View"));
-    SARibbonPannel* viewPannel = viewCategory->addPannel(QStringLiteral("View Operations"));
-    QAction* fitAct = new QAction(QIcon(":/icons/icon/fit.png"), QStringLiteral("Fit"), this); // Assuming an icon path
-    connect(fitAct, &QAction::triggered, this, &MainWindow::viewFit);
-    viewPannel->addLargeAction(fitAct);
+    m_viewCategory = m_ribbon->addCategoryPage(tr("View"));
+    m_viewPannel = m_viewCategory->addPannel(tr("View Operations"));
+    m_fitAction = new QAction(QIcon(":/icons/icon/fit.png"), tr("Fit"), this); // Assuming an icon path
+    connect(m_fitAction, &QAction::triggered, this, &MainWindow::viewFit);
+    m_viewPannel->addLargeAction(m_fitAction);
 
     // select
-    QAction* selectAction = new QAction(QIcon(":/icons/icon/select.svg"), QStringLiteral("Select"), this);
-    selectAction->setCheckable(true);
-    connect(selectAction, &QAction::toggled, this, &MainWindow::onSelectModeToggled);
-    viewPannel->addLargeAction(selectAction);
+    m_selectAction = new QAction(QIcon(":/icons/icon/select.svg"), tr("Select"), this);
+    m_selectAction->setCheckable(true);
+    connect(m_selectAction, &QAction::toggled, this, &MainWindow::onSelectModeToggled);
+    m_viewPannel->addLargeAction(m_selectAction);
 
     // ---- Analysis Group ----
-    SARibbonCategory* analysisCategory = ribbon->addCategoryPage(QStringLiteral("Analysis"));
-    SARibbonPannel* analysisPannel = analysisCategory->addPannel(QStringLiteral("Analysis Tools"));
-    QAction* interferenceAct = new QAction(QIcon(":/icons/icon/interference.png"), QStringLiteral("Interference"), this); // Assuming an icon path
-    connect(interferenceAct, &QAction::triggered, this, &MainWindow::checkInterference);
-    analysisPannel->addLargeAction(interferenceAct);
+    m_analysisCategory = m_ribbon->addCategoryPage(tr("Analysis"));
+    m_analysisPannel = m_analysisCategory->addPannel(tr("Analysis Tools"));
+    m_interferenceAction = new QAction(QIcon(":/icons/icon/interference.png"), tr("Interference"), this); // Assuming an icon path
+    connect(m_interferenceAction, &QAction::triggered, this, &MainWindow::checkInterference);
+    m_analysisPannel->addLargeAction(m_interferenceAction);
 
     // ---- Shape Group ----
-    SARibbonCategory* shapeCategory = ribbon->addCategoryPage(QStringLiteral("Shape"));
-    SARibbonPannel* basicShapesPannel = shapeCategory->addPannel(QStringLiteral("Basic Shapes"));
+    m_shapeCategory = m_ribbon->addCategoryPage(tr("Shape"));
+    m_basicShapesPannel = m_shapeCategory->addPannel(tr("Basic Shapes"));
 
     // box
-    QAction* boxAct = new QAction(QIcon(":/icons/icon/box.png"), QStringLiteral("Box"), this);
-    connect(boxAct, &QAction::triggered, this, &MainWindow::createBox);
-    basicShapesPannel->addLargeAction(boxAct);
+    m_boxAction = new QAction(QIcon(":/icons/icon/box.png"), tr("Box"), this);
+    connect(m_boxAction, &QAction::triggered, this, &MainWindow::createBox);
+    m_basicShapesPannel->addLargeAction(m_boxAction);
 
     // sphere
-    QAction* sphereAct = new QAction(QIcon(":/icons/icon/sphere.png"), QStringLiteral("Sphere"), this);
-    connect(sphereAct, &QAction::triggered, this, &MainWindow::createSphere);
-    basicShapesPannel->addLargeAction(sphereAct);
+    m_sphereAction = new QAction(QIcon(":/icons/icon/sphere.png"), tr("Sphere"), this);
+    connect(m_sphereAction, &QAction::triggered, this, &MainWindow::createSphere);
+    m_basicShapesPannel->addLargeAction(m_sphereAction);
 
     // cylinder
-    QAction* cylinderAct = new QAction(QIcon(":/icons/icon/cylinder.png"), QStringLiteral("Cylinder"), this);
-    connect(cylinderAct, &QAction::triggered, this, &MainWindow::createCylinder);
-    basicShapesPannel->addLargeAction(cylinderAct);
+    m_cylinderAction = new QAction(QIcon(":/icons/icon/cylinder.png"), tr("Cylinder"), this);
+    connect(m_cylinderAction, &QAction::triggered, this, &MainWindow::createCylinder);
+    m_basicShapesPannel->addLargeAction(m_cylinderAction);
 
-    QAction* coneAct = new QAction(QIcon(":/icons/icon/cone.png"), QStringLiteral("Cone"), this);
-    connect(coneAct, &QAction::triggered, this, &MainWindow::createCone);
-    basicShapesPannel->addLargeAction(coneAct);
+    m_coneAction = new QAction(QIcon(":/icons/icon/cone.png"), tr("Cone"), this);
+    connect(m_coneAction, &QAction::triggered, this, &MainWindow::createCone);
+    m_basicShapesPannel->addLargeAction(m_coneAction);
 
     // ---- Others (flat actions) ----
     // These actions can be added to an existing pannel or a new one
-    SARibbonPannel* otherPannel = analysisCategory->addPannel(QStringLiteral("Other Tools")); // Adding to Analysis category for simplicity
-    QAction* clippingAct = new QAction(QIcon(":/icons/icon/clipping.svg"), QStringLiteral("Clipping"), this); // Assuming an icon path
-    connect(clippingAct, &QAction::triggered, this, &MainWindow::clipping);
-    otherPannel->addSmallAction(clippingAct);
+    m_otherPannel = m_analysisCategory->addPannel(tr("Other Tools")); // Adding to Analysis category for simplicity
+    m_clippingAction = new QAction(QIcon(":/icons/icon/clipping.svg"), tr("Clipping"), this); // Assuming an icon path
+    connect(m_clippingAction, &QAction::triggered, this, &MainWindow::clipping);
+    m_otherPannel->addSmallAction(m_clippingAction);
 
-    QAction* explosionAct = new QAction(QIcon(":/icons/icon/explosion.png"), QStringLiteral("Explosion"), this); // Assuming an icon path
-    connect(explosionAct, &QAction::triggered, this, &MainWindow::explosion);
-    otherPannel->addSmallAction(explosionAct);
+    m_explosionAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("Explosion"), this); // Assuming an icon path
+    connect(m_explosionAction, &QAction::triggered, this, &MainWindow::explosion);
+    m_otherPannel->addSmallAction(m_explosionAction);
 
     // ---- help Group ----
-    SARibbonCategory* helpCategory = ribbon->addCategoryPage(QStringLiteral("Help"));
+    m_helpCategory = m_ribbon->addCategoryPage(tr("Help"));
     // ---- help ----
     // These actions can be added to an existing pannel or a new one
-    SARibbonPannel* versionPannel = helpCategory->addPannel( QStringLiteral("Version") );  // Adding to Analysis category for simplicity
-    QAction* versionAct = new QAction(QIcon(":/icons/icon/version.svg"), QStringLiteral("Version"), this);  // Assuming an icon path
-    connect(versionAct, &QAction::triggered, this, &MainWindow::version);
-    versionPannel->addSmallAction(versionAct);
+    m_versionPannel = m_helpCategory->addPannel( tr("Version") );  // Adding to Analysis category for simplicity
+    m_versionAction = new QAction(QIcon(":/icons/icon/version.svg"), tr("Version"), this);  // Assuming an icon path
+    connect(m_versionAction, &QAction::triggered, this, &MainWindow::version);
+    m_versionPannel->addSmallAction(m_versionAction);
 
-
-    resize(800, 600);
+    m_languagePannel = m_helpCategory->addPannel(tr("Language"));
+    m_languageAction = new QAction(QIcon(), tr("Switch Language"), this);
+    connect(m_languageAction, &QAction::triggered, this, &MainWindow::switchLanguage);
+    m_languagePannel->addSmallAction(m_languageAction);
 }
 
 void MainWindow::openFile()
@@ -202,4 +233,31 @@ void MainWindow::onSelectModeToggled(bool checked)
     {
         m_viewerWidget->setInteractionMode(InteractionMode::Highlight);
     }
+}
+
+void MainWindow::switchLanguage()
+{
+    m_currentLanguage = (m_currentLanguage + 1) % 3;
+    QString langCode;
+    switch (m_currentLanguage)
+    {
+    case 0:
+        langCode = "en";
+        break;
+    case 1:
+        langCode = "zh";
+        break;
+    case 2:
+        langCode = "ja";
+        break;
+    }
+
+    QCoreApplication::removeTranslator(m_translator);
+    if (m_translator->load(QString(":/language/i18n/qt_occ_") + langCode))
+    {
+        QCoreApplication::installTranslator( m_translator );
+    }
+    
+    // Re-create the UI to apply the new language
+    setupUi();
 }

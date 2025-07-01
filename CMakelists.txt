@@ -14,7 +14,7 @@ set(Qt_OSG_OCC_LinkLibraries)     # library list
 set(OpenCASCADE_DIR "" CACHE PATH "Path to OpenCASCADE installation")
 
 # Qt
-find_package(Qt5 REQUIRED COMPONENTS Widgets)
+find_package(Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
 
 # OpenCASCADE
 find_package(OpenCASCADE REQUIRED)
@@ -60,7 +60,9 @@ set(HEADERS
     src/QStringConv.h
 )
 
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} resource/resource.qrc)
+qt5_create_translation(QM_FILES ${PROJECT_NAME} ${TS_FILES})
+
+add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} resource/resource.qrc ${QM_FILES})
 
 target_include_directories(${PROJECT_NAME} 
     PRIVATE 

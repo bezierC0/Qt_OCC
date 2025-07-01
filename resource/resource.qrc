@@ -4,12 +4,17 @@
         <file>icon/clipping.svg</file>
         <file>icon/cone.png</file>
         <file>icon/cylinder.png</file>
+        <file>icon/file_new.svg</file>
         <file>icon/fit.png</file>
         <file>icon/interference.png</file>
         <file>icon/open.png</file>
-        <file>icon/file_new.svg</file>
         <file>icon/select.svg</file>
         <file>icon/sphere.png</file>
         <file>icon/version.svg</file>
+    </qresource>
+    <qresource prefix="/language">
+        <file>i18n/qt_occ_en.qm</file>
+        <file>i18n/qt_occ_zh.qm</file>
+        <file>i18n/qt_occ_ja.qm</file>
     </qresource>
 </RCC>
