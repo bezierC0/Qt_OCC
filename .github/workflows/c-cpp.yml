@@ -60,6 +60,17 @@ jobs:
     - name: Configure Compiler
       uses: ilammy/msvc-dev-cmd@v1
 
+    - name: Build
+      shell: cmd
+      run: |
+          mkdir ${{github.workspace}}\build
+          cd ${{github.workspace}}\build
+          cmake --version
+          cmake .. ^
+                -DOpenCASCADE_DIR=../OpenCASCADE-${{matrix.occ_version}}-vc14-64/opencascade-${{matrix.occ_version}} 
+          cmake --build . ^
+                --config Release ^
+                --parallel ${{steps.cpu-cores.outputs.count}}
 
     - name: Upload logs on failure
       if: failure()
