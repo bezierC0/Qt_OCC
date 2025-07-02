@@ -51,10 +51,10 @@ jobs:
       uses: carlosperate/download-file-action@v2
       with:
           file-url: 'https://www.fougue.pro/share/bin/OpenCASCADE-${{env.OCC_VERSION}}-vc14-64.zip'
-          sha256: ${{matrix.OCC_ZIP_sha256}}
+          sha256: ${{env.OCC_ZIP_sha256}}
 
     - name: Extract OpenCascade
-      run: 7z x OpenCASCADE-${{matrix.OCC_VERSION}}-vc14-64.zip
+      run: 7z x OpenCASCADE-${{env.OCC_VERSION}}-vc14-64.zip
 
     - name: Get count of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1
