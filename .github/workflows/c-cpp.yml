@@ -1,35 +1,201 @@
-name: Qt_OCC
+name: Build Windows Qt OpenCASCADE Project
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ "main" ]
+    branches: [ main ]
 
 jobs:
-  build:
+  build-windows:
     runs-on: windows-latest
-
-    steps:
-    - uses: actions/checkout@v4
     
-    - name: Install Qt
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Cache Qt
+      id: cache-qt
+      uses: actions/cache@v4
+      with:
+        path: C:\Qt
+        key: ${{ runner.os }}-Qt-5.14.0-msvc2017_64
+        
+    - name: Install Qt 5.14.0
       uses: jurplel/install-qt-action@v3
       with:
         version: '5.14.0'
-        target: 'desktop'
-        arch: 'win64_msvc2017_64'
+        arch: win64_msvc2017_64
+        cached: ${{ steps.cache-qt.outputs.cache-hit }}
+        modules: 'qtcharts qtdatavis3d qtnetworkauth'
         
-    - name: Install dependencies (Windows)
-      if: runner.os == 'Windows'
+    - name: Cache OpenCASCADE
+      id: cache-opencascade
+      uses: actions/cache@v4
+      with:
+        path: C:\opencascade
+        key: ${{ runner.os }}-OpenCASCADE-7.7.0-msvc2017_64
+        
+    - name: Setup MSVC
+      uses: microsoft/setup-msbuild@v2
+      
+    - name: Setup Visual Studio environment
+      uses: ilammy/msvc-dev-cmd@v1
+      with:
+        arch: x64
+        
+    - name: Download and Build OpenCASCADE 7.7.0
+      if: steps.cache-opencascade.outputs.cache-hit != 'true'
+      shell: powershell
       run: |
-        choco install opencascade
-
-    - name: Configure CMake project
+        # 创建工作目录
+        New-Item -ItemType Directory -Force -Path "C:\temp"
+        Set-Location "C:\temp"
+        
+        # 下载OpenCASCADE 7.7.0源码
+        Write-Host "Downloading OpenCASCADE 7.7.0..."
+        Invoke-WebRequest -Uri "https://github.com/Open-Cascade-SAS/OCCT/archive/refs/tags/V7_7_0.zip" -OutFile "opencascade-7.7.0.zip"
+        
+        # 解压源码
+        Write-Host "Extracting OpenCASCADE..."
+        Expand-Archive -Path "opencascade-7.7.0.zip" -DestinationPath "."
+        Set-Location "OCCT-7_7_0"
+        
+        # 创建构建目录
+        New-Item -ItemType Directory -Force -Path "build"
+        Set-Location "build"
+        
+        # 配置CMake
+        Write-Host "Configuring OpenCASCADE with CMake..."
+        cmake .. -G "Visual Studio 16 2019" -A x64 `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DCMAKE_INSTALL_PREFIX=C:\opencascade `
+          -DUSE_FREEIMAGE=OFF `
+          -DUSE_OPENVR=OFF `
+          -DUSE_FFMPEG=OFF `
+          -DUSE_TK=OFF `
+          -DUSE_VTK=OFF `
+          -DBUILD_RELEASE_DISABLE_EXCEPTIONS=OFF `
+          -DBUILD_Inspector=OFF `
+          -DBUILD_DOC_Overview=OFF `
+          -DINSTALL_TEST_CASES=OFF `
+          -DINSTALL_SAMPLES=OFF
+          
+        # 编译安装
+        Write-Host "Building OpenCASCADE (this may take 30-60 minutes)..."
+        cmake --build . --config Release --parallel 4
+        
+        Write-Host "Installing OpenCASCADE..."
+        cmake --build . --config Release --target install
+        
+        # 清理临时文件
+        Set-Location "C:\"
+        Remove-Item -Recurse -Force "C:\temp"
+        
+    - name: Verify OpenCASCADE installation
+      shell: powershell
       run: |
-        cmake -S . -B build `
-              -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/vcpkg/scripts/buildsystems/vcpkg.cmake `
-              -DCMAKE_BUILD_TYPE=Release
-
-    - name: Build
-      run: cmake --build build --config Release
+        if (Test-Path "C:\opencascade\bin") {
+          Write-Host "OpenCASCADE installation found at C:\opencascade"
+          Get-ChildItem "C:\opencascade\bin" | Select-Object Name | Format-Table
+        } else {
+          Write-Error "OpenCASCADE installation not found!"
+          exit 1
+        }
+        
+    - name: Configure environment variables
+      shell: powershell
+      run: |
+        # 设置环境变量
+        $env:OPENCASCADE_ROOT = "C:\opencascade"
+        $env:PATH = "C:\opencascade\bin;$env:PATH"
+        $env:CMAKE_PREFIX_PATH = "C:\opencascade;$env:CMAKE_PREFIX_PATH"
+        
+        # 保存到GitHub环境
+        echo "OPENCASCADE_ROOT=C:\opencascade" >> $env:GITHUB_ENV
+        echo "PATH=C:\opencascade\bin;$env:PATH" >> $env:GITHUB_ENV
+        echo "CMAKE_PREFIX_PATH=C:\opencascade;$env:CMAKE_PREFIX_PATH" >> $env:GITHUB_ENV
+        
+    - name: Create build directory
+      run: mkdir build
+      
+    - name: Configure project with CMake
+      shell: powershell
+      run: |
+        Set-Location "build"
+        
+        # 查找Qt5安装路径
+        $Qt5_DIR = Get-ChildItem -Path "C:\Qt" -Recurse -Directory -Name "lib" | 
+                   Where-Object { $_ -like "*5.14.0*msvc2017_64*" } | 
+                   Select-Object -First 1 | 
+                   ForEach-Object { Join-Path (Split-Path $_.FullName) "cmake\Qt5" }
+        
+        Write-Host "Using Qt5_DIR: $Qt5_DIR"
+        Write-Host "Using OPENCASCADE_ROOT: C:\opencascade"
+        
+        # 配置CMake项目
+        cmake .. -G "Visual Studio 16 2019" -A x64 `
+          -DCMAKE_BUILD_TYPE=Release `
+          -DCMAKE_PREFIX_PATH="C:\opencascade;$Qt5_DIR" `
+          -DQt5_DIR="$Qt5_DIR" `
+          -DOPENCASCADE_ROOT_DIR="C:\opencascade" `
+          -DOPENCASCADE_INCLUDE_DIR="C:\opencascade\include\opencascade" `
+          -DOPENCASCADE_LIBRARY_DIR="C:\opencascade\lib"
+          
+    - name: Build project
+      shell: powershell
+      run: |
+        Set-Location "build"
+        Write-Host "Building project..."
+        cmake --build . --config Release --parallel 4
+        
+    - name: Package artifacts
+      shell: powershell
+      run: |
+        # 创建发布目录
+        New-Item -ItemType Directory -Force -Path "release"
+        
+        # 复制可执行文件
+        if (Test-Path "build\Release") {
+          Copy-Item -Path "build\Release\*" -Destination "release\" -Recurse
+        }
+        
+        # 复制Qt DLL
+        $QtBinDir = Get-ChildItem -Path "C:\Qt" -Recurse -Directory -Name "bin" | 
+                    Where-Object { $_ -like "*5.14.0*msvc2017_64*" } | 
+                    Select-Object -First 1
+        
+        if ($QtBinDir) {
+          $QtDlls = @("Qt5Core.dll", "Qt5Gui.dll", "Qt5Widgets.dll", "Qt5OpenGL.dll")
+          foreach ($dll in $QtDlls) {
+            $dllPath = Join-Path $QtBinDir.FullName $dll
+            if (Test-Path $dllPath) {
+              Copy-Item $dllPath "release\"
+            }
+          }
+        }
+        
+        # 复制OpenCASCADE DLL
+        if (Test-Path "C:\opencascade\bin") {
+          Copy-Item -Path "C:\opencascade\bin\*.dll" -Destination "release\"
+        }
+        
+        Write-Host "Packaged files:"
+        Get-ChildItem "release" | Format-Table Name, Length
+        
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: windows-build-qt5.14.0-opencascade7.7.0
+        path: release/
+        retention-days: 30
+        
+    - name: Upload logs on failure
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: build-logs
+        path: |
+          build/**/*.log
+          CMakeFiles/**/*.log
+        retention-days: 7
