@@ -67,7 +67,7 @@ jobs:
           cd ${{github.workspace}}\build
           cmake --version
           cmake .. ^
-                -DOpenCASCADE_DIR=../OpenCASCADE-${{matrix.occ_version}}-vc14-64/opencascade-${{matrix.occ_version}} 
+                -DOpenCASCADE_DIR=../OpenCASCADE-${{env.OCC_VERSION}}-vc14-64/opencascade-${{env.OCC_VERSION}} 
           cmake --build . ^
                 --config Release ^
                 --parallel ${{steps.cpu-cores.outputs.count}}
