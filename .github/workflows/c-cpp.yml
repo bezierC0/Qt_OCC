@@ -29,12 +29,19 @@ jobs:
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
         modules: 'qtcharts qtdatavis3d qtnetworkauth'
         
-    - name: Cache OpenCASCADE
+    - name: Cache OpenCASCADE (Method 1)
       id: cache-opencascade
       uses: actions/cache@v4
       with:
         path: C:\opencascade
         key: ${{ runner.os }}-OpenCASCADE-7.7.0-msvc2017_64
+        
+    - name: Cache vcpkg
+      id: cache-vcpkg
+      uses: actions/cache@v4
+      with:
+        path: C:\vcpkg
+        key: ${{ runner.os }}-vcpkg-opencascade-7.7.0
         
     - name: Setup MSVC
       uses: microsoft/setup-msbuild@v2
@@ -44,53 +51,111 @@ jobs:
       with:
         arch: x64
         
-    - name: Download and Build OpenCASCADE 7.7.0
+    - name: Install OpenCASCADE 7.7.0
       if: steps.cache-opencascade.outputs.cache-hit != 'true'
       shell: powershell
       run: |
-        # 创建工作目录
-        New-Item -ItemType Directory -Force -Path "C:\temp"
-        Set-Location "C:\temp"
-        
-        # 下载OpenCASCADE 7.7.0源码
-        Write-Host "Downloading OpenCASCADE 7.7.0..."
-        Invoke-WebRequest -Uri "https://github.com/Open-Cascade-SAS/OCCT/archive/refs/tags/V7_7_0.zip" -OutFile "opencascade-7.7.0.zip"
-        
-        # 解压源码
-        Write-Host "Extracting OpenCASCADE..."
-        Expand-Archive -Path "opencascade-7.7.0.zip" -DestinationPath "."
-        Set-Location "OCCT-7_7_0"
-        
-        # 创建构建目录
-        New-Item -ItemType Directory -Force -Path "build"
-        Set-Location "build"
-        
-        # 配置CMake
-        Write-Host "Configuring OpenCASCADE with CMake..."
-        cmake .. -G "Visual Studio 16 2019" -A x64 `
-          -DCMAKE_BUILD_TYPE=Release `
-          -DCMAKE_INSTALL_PREFIX=C:\opencascade `
-          -DUSE_FREEIMAGE=OFF `
-          -DUSE_OPENVR=OFF `
-          -DUSE_FFMPEG=OFF `
-          -DUSE_TK=OFF `
-          -DUSE_VTK=OFF `
-          -DBUILD_RELEASE_DISABLE_EXCEPTIONS=OFF `
-          -DBUILD_Inspector=OFF `
-          -DBUILD_DOC_Overview=OFF `
-          -DINSTALL_TEST_CASES=OFF `
-          -DINSTALL_SAMPLES=OFF
+        # 方法1: 尝试使用vcpkg安装 (推荐)
+        if (-not (Test-Path "C:\opencascade")) {
+          Write-Host "Method 1: Trying vcpkg installation..."
           
-        # 编译安装
-        Write-Host "Building OpenCASCADE (this may take 30-60 minutes)..."
-        cmake --build . --config Release --parallel 4
+          # 安装或更新vcpkg
+          if (-not (Test-Path "C:\vcpkg")) {
+            Write-Host "Installing vcpkg..."
+            git clone https://github.com/Microsoft/vcpkg.git C:\vcpkg
+            Set-Location "C:\vcpkg"
+            .\bootstrap-vcpkg.bat
+          } else {
+            Write-Host "Using cached vcpkg..."
+            Set-Location "C:\vcpkg"
+          }
+          
+          # 尝试通过vcpkg安装opencascade
+          try {
+            Write-Host "Installing OpenCASCADE via vcpkg..."
+            .\vcpkg.exe install opencascade:x64-windows --recurse
+            
+            # 复制到标准位置
+            if (Test-Path "installed\x64-windows") {
+              Write-Host "Copying vcpkg installation to C:\opencascade..."
+              New-Item -ItemType Directory -Force -Path "C:\opencascade"
+              Copy-Item -Path "installed\x64-windows\*" -Destination "C:\opencascade\" -Recurse -Force
+            }
+          }
+          catch {
+            Write-Host "vcpkg installation failed, falling back to source build..."
+          }
+        }
         
-        Write-Host "Installing OpenCASCADE..."
-        cmake --build . --config Release --target install
-        
-        # 清理临时文件
-        Set-Location "C:\"
-        Remove-Item -Recurse -Force "C:\temp"
+        # 方法2: 从源码构建 (备用方案)
+        if (-not (Test-Path "C:\opencascade\bin")) {
+          Write-Host "Method 2: Building OpenCASCADE from source..."
+          
+          # 创建工作目录
+          New-Item -ItemType Directory -Force -Path "C:\temp"
+          Set-Location "C:\temp"
+          
+          # 下载OpenCASCADE 7.7.0源码
+          Write-Host "Downloading OpenCASCADE 7.7.0 source code..."
+          $ProgressPreference = 'SilentlyContinue'
+          Invoke-WebRequest -Uri "https://github.com/Open-Cascade-SAS/OCCT/archive/refs/tags/V7_7_0.zip" -OutFile "opencascade-7.7.0.zip"
+          
+          # 解压源码
+          Write-Host "Extracting OpenCASCADE source code..."
+          Expand-Archive -Path "opencascade-7.7.0.zip" -DestinationPath "." -Force
+          Set-Location "OCCT-7_7_0"
+          
+          # 创建构建目录
+          New-Item -ItemType Directory -Force -Path "build"
+          Set-Location "build"
+          
+          # 配置CMake - 最小化构建以节省时间
+          Write-Host "Configuring OpenCASCADE with CMake (minimal build)..."
+          cmake .. -G "Visual Studio 16 2019" -A x64 `
+            -DCMAKE_BUILD_TYPE=Release `
+            -DCMAKE_INSTALL_PREFIX=C:\opencascade `
+            -DUSE_FREEIMAGE=OFF `
+            -DUSE_OPENVR=OFF `
+            -DUSE_FFMPEG=OFF `
+            -DUSE_TK=OFF `
+            -DUSE_VTK=OFF `
+            -DUSE_DRACO=OFF `
+            -DBUILD_RELEASE_DISABLE_EXCEPTIONS=OFF `
+            -DBUILD_Inspector=OFF `
+            -DBUILD_DOC_Overview=OFF `
+            -DBUILD_SAMPLES_MFC=OFF `
+            -DBUILD_SAMPLES_QT=OFF `
+            -DINSTALL_TEST_CASES=OFF `
+            -DINSTALL_SAMPLES=OFF `
+            -DBUILD_MODULE_ApplicationFramework=ON `
+            -DBUILD_MODULE_DataExchange=ON `
+            -DBUILD_MODULE_Draw=OFF `
+            -DBUILD_MODULE_FoundationClasses=ON `
+            -DBUILD_MODULE_ModelingAlgorithms=ON `
+            -DBUILD_MODULE_ModelingData=ON `
+            -DBUILD_MODULE_Visualization=ON
+            
+          # 检查CMake配置是否成功
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "CMake configuration failed!"
+            exit 1
+          }
+          
+          # 编译安装 - 使用更多并行任务
+          Write-Host "Building OpenCASCADE (this will take 20-40 minutes)..."
+          cmake --build . --config Release --parallel 6 --target install
+          
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "OpenCASCADE build failed!"
+            exit 1
+          }
+          
+          Write-Host "OpenCASCADE build completed successfully!"
+          
+          # 清理临时文件以节省空间
+          Set-Location "C:\"
+          Remove-Item -Recurse -Force "C:\temp" -ErrorAction SilentlyContinue
+        }
         
     - name: Verify OpenCASCADE installation
       shell: powershell
