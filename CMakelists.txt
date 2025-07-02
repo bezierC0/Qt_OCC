@@ -11,16 +11,28 @@ set(CMAKE_AUTORCC ON)
 set(Qt_OSG_OCC_LinkDirectories)   # include path list
 set(Qt_OSG_OCC_LinkLibraries)     # library list
 
+set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resource")
+
 set(OpenCASCADE_DIR "" CACHE PATH "Path to OpenCASCADE installation")
 
 # Qt
-find_package(Qt5 REQUIRED COMPONENTS Widgets LinguistTools)
+find_package(Qt5 REQUIRED COMPONENTS 
+    Core Widgets LinguistTools
+)
+# Output Qt info
+if(Qt5_FOUND)
+    message(STATUS "Qt5_DIR: ${Qt5_DIR}")
+    message(STATUS "Qt5_VERSION: ${Qt5_VERSION}")
+else()
+    message(FATAL_ERROR "Qt5_DIR not found or path does not exist. ")
+endif()
 
 # OpenCASCADE
 find_package(OpenCASCADE REQUIRED)
-### OpenCASCADE
+# Output OpenCASCADE info 
 if (OpenCASCADE_FOUND)
     message(STATUS "OpenCASCADE_DIR: ${OpenCASCADE_DIR}")
+    message(STATUS "OpenCASCADE_VERSION: ${OpenCASCADE_VERSION}")
     set(OpenCASCADE_INCLUDE_DIR "${OpenCASCADE_DIR}/inc")
     set(OpenCASCADE_LIB_DIR "${OpenCASCADE_DIR}/lib")
     
@@ -29,9 +41,17 @@ if (OpenCASCADE_FOUND)
 else()
     message(FATAL_ERROR "OpenCASCADE_DIR not found or path does not exist. ")
 endif()
+
 set (OpenCASCADE_LIBS TKRWMesh TKBinXCAF TKBin TKBinL TKOpenGl TKXCAF TKVCAF TKCAF TKV3d TKHLR TKMesh TKService TKShHealing TKPrim TKTopAlgo TKGeomAlgo TKBRep TKGeomBase TKG3d TKG2d TKMath TKLCAF TKCDF TKernel)
 
-# UI
+# resource
+set(TS_FILES
+    ${RESOURCE_DIR}/i18n/qt_occ_en.ts
+    ${RESOURCE_DIR}/i18n/qt_occ_ja.ts
+    ${RESOURCE_DIR}/i18n/qt_occ_zh.ts
+)
+
+# sources
 set(SOURCES
     src/main.cpp
     src/MainWindow.cpp
@@ -47,6 +67,7 @@ set(SOURCES
     external/SARibbon/SARibbon.cpp
 )
 
+#  headers
 set(HEADERS
     src/MainWindow.h
     src/DialogAbout.h
@@ -60,7 +81,21 @@ set(HEADERS
     src/QStringConv.h
 )
 
-qt5_create_translation(QM_FILES ${PROJECT_NAME} ${TS_FILES})
+# ts to qm
+set(QM_FILES)
+foreach(TS_FILE ${TS_FILES})
+    get_filename_component(TS_NAME ${TS_FILE} NAME_WE)
+    set(QM_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TS_NAME}.qm")
+    list(APPEND QM_FILES ${QM_FILE})
+    
+    # 
+    add_custom_command(
+        OUTPUT ${QM_FILE}
+        COMMAND ${Qt5_LRELEASE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${TS_FILE} -qm ${QM_FILE}
+        DEPENDS ${TS_FILE}
+        COMMENT "Generating ${QM_FILE}"
+    )
+endforeach()
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} resource/resource.qrc ${QM_FILES})
 
