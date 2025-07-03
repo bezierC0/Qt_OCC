@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.19)
 project(Qt_OCC)
 
 set(CMAKE_CXX_STANDARD 17)
@@ -8,14 +8,85 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
-set(Qt_OSG_OCC_LinkDirectories)   # include path list
-set(Qt_OSG_OCC_LinkLibraries)     # library list
-
 set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resource")
 
-set(OpenCASCADE_DIR "" CACHE PATH "Path to OpenCASCADE installation")
+###
+# Opencascade
+###
 
+# WIN32
+# Can't use find_package(OpenCASCADE) as OpenCASCADEConfig.cmake is broken for Windows platform
+# See https://dev.opencascade.org/content/3rdparty-hard-coded-paths-when-building-against-opencascade
+set(OpenCASCADE_DIR "" CACHE PATH "OpenCASCADE Options: Path to OpenCASCADE directory")
+set(OpenCASCADE_3RDPARTY_DIR "" CACHE PATH "OpenCASCADE Options: Path to OpenCASCADE 3RDPARTY directory")
+
+include(${OpenCASCADE_DIR}/CMake/OpenCASCADEConfig.cmake)
+
+set(OpenCASCADE_VERSION ${OpenCASCADE_MAJOR_VERSION}.${OpenCASCADE_MINOR_VERSION}.${OpenCASCADE_MAINTENANCE_VERSION})
+
+message(STATUS "OpenCascade version ${OpenCASCADE_VERSION}")
+message(STATUS "OpenCascade binary ${OpenCASCADE_BINARY_DIR}")
+message(STATUS "OpenCascade library ${OpenCASCADE_LIBRARY_DIR}")
+message(STATUS "OpenCascade include ${OpenCASCADE_INCLUDE_DIR}")
+
+# Define the list of OpenCASCADE toolkits to link against based on your project's needs
+set(
+    OpenCASCADE_TOOLKITS
+    # FoundationClasses
+    TKernel TKMath
+    # ModelingData
+    TKG2d TKG3d TKGeomBase TKBRep
+    # ModelingAlgorithms
+    TKBO TKBool TKGeomAlgo TKHLR TKMesh TKPrim TKShHealing TKTopAlgo
+    # Visualization
+    TKMeshVS TKOpenGl TKService TKV3d
+    # ApplicationFramework
+    TKBin TKBinL TKBinXCAF TKCAF TKCDF TKLCAF TKVCAF TKXml TKXmlL
+    # DataExchange
+    TKXCAF TKXmlXCAF TKXSBase
+)
+
+# Add version-specific toolkits (this is an example, adjust as needed for your OCCT version)
+if(OpenCASCADE_VERSION VERSION_GREATER_EQUAL 7.8.0)
+    list(APPEND OpenCASCADE_TOOLKITS TKDE TKDEIGES TKDESTEP TKDESTL TKDEVRML)
+else()
+    list(APPEND OpenCASCADE_TOOLKITS TKIGES TKXDEIGES)
+    list(APPEND OpenCASCADE_TOOLKITS TKSTEP TKSTEP209 TKSTEPAttr TKSTEPBase TKXDESTEP)
+    list(APPEND OpenCASCADE_TOOLKITS TKSTL)
+    list(APPEND OpenCASCADE_TOOLKITS TKVRML)
+    if(OpenCASCADE_VERSION VERSION_GREATER_EQUAL 7.7.0)
+        list(APPEND OpenCASCADE_TOOLKITS  TKXDE)
+    endif()
+endif()
+
+# Build the final list of library files to link
+set(OCCT_LIBRARIES_TO_LINK "")
+foreach(OccTK ${OpenCASCADE_TOOLKITS})
+    list(APPEND OCCT_LIBRARIES_TO_LINK "${OccTK}.lib")
+endforeach()
+
+list(APPEND OCCT_LIBRARIES_TO_LINK "OpenGL32.lib")
+
+# OpenCASCADE (Manual Configuration)
+if(OpenCASCADE_INCLUDE_DIR)
+    include_directories(${OpenCASCADE_INCLUDE_DIR})
+else()
+    message(WARNING "OpenCASCADE_DIR is not set. Please specify the OpenCASCADE include path.")
+endif()
+
+if(OpenCASCADE_LIBRARY_DIR)
+    link_directories(${OpenCASCADE_LIBRARY_DIR})
+else()
+    message(WARNING "OpenCASCADE_DIR is not set. Please specify the OpenCASCADE library path.")
+endif()
+
+if(NOT OCCT_LIBRARIES_TO_LINK)
+    message(FATAL_ERROR "Failed to build the list of OpenCASCADE libraries. Check your configuration.")
+endif()
+
+###
 # Qt
+###
 find_package(Qt5 REQUIRED COMPONENTS 
     Core Widgets LinguistTools
 )
@@ -27,58 +98,35 @@ else()
     message(FATAL_ERROR "Qt5_DIR not found or path does not exist. ")
 endif()
 
-# OpenCASCADE
-find_package(OpenCASCADE REQUIRED)
-# Output OpenCASCADE info 
-if (OpenCASCADE_FOUND)
-    message(STATUS "OpenCASCADE_DIR: ${OpenCASCADE_DIR}")
-    message(STATUS "OpenCASCADE_VERSION: ${OpenCASCADE_VERSION}")
-    set(OpenCASCADE_INCLUDE_DIR "${OpenCASCADE_DIR}/inc")
-    set(OpenCASCADE_LIB_DIR "${OpenCASCADE_DIR}/lib")
-    
-    include_directories(${OpenCASCADE_INCLUDE_DIR})
-    link_directories(${OpenCASCADE_LIBRARY_DIR})
-else()
-    message(FATAL_ERROR "OpenCASCADE_DIR not found or path does not exist. ")
-endif()
-
-set (OpenCASCADE_LIBS TKRWMesh TKBinXCAF TKBin TKBinL TKOpenGl TKXCAF TKVCAF TKCAF TKV3d TKHLR TKMesh TKService TKShHealing TKPrim TKTopAlgo TKGeomAlgo TKBRep TKGeomBase TKG3d TKG2d TKMath TKLCAF TKCDF TKernel)
-
+###
 # resource
-set(TS_FILES
-    ${RESOURCE_DIR}/i18n/qt_occ_en.ts
-    ${RESOURCE_DIR}/i18n/qt_occ_ja.ts
-    ${RESOURCE_DIR}/i18n/qt_occ_zh.ts
+###
+set(TS_FILES)
+file(
+    GLOB TS_FILES
+    ${RESOURCE_DIR}/i18n/*.ts
 )
 
+###
 # sources
-set(SOURCES
-    src/main.cpp
-    src/MainWindow.cpp
-    src/ViewerWidget.cpp
-    src/OCCView.cpp
-    src/OcctGlTools.cpp
-    src/TreeWidget.cpp
-    src/WidgetModelTree.cpp
-    src/DialogAbout.cpp
+###
+set(SOURCES)
+file(
+    GLOB SOURCES
+    src/*.cpp
     # ui
     src/dialog_about.ui
     # external
     external/SARibbon/SARibbon.cpp
 )
 
-#  headers
-set(HEADERS
-    src/MainWindow.h
-    src/DialogAbout.h
-    src/ViewerWidget.h
-    src/OCCView.h
-    src/OcctGlTools.h
-    src/Tree.h
-    src/TreeWidget.h
-    src/WidgetModelTree.h
-    src/StringConv.h
-    src/QStringConv.h
+###
+# headers
+###
+set(HEADERS)
+file(
+    GLOB HEADERS
+    src/*.h
 )
 
 # ts to qm
@@ -99,9 +147,18 @@ endforeach()
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} resource/resource.qrc ${QM_FILES})
 
+if(WIN32)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE QT_OPENGL_DESKTOP)
+endif()
+
 target_include_directories(${PROJECT_NAME} 
     PRIVATE 
-        ${OpenCASCADE_INCLUDE_DIR}
+        ${MANUAL_OCCT_INCLUDE_DIR}
         external/SARibbon
 )
-target_link_libraries(${PROJECT_NAME} PRIVATE ${OpenCASCADE_LIBRARIES} Qt5::Widgets Qt5::Core)
+target_link_libraries(${PROJECT_NAME} 
+    PRIVATE 
+        ${OCCT_LIBRARIES_TO_LINK} 
+        ${MANUAL_3RDPARTY_LIBRARIES} 
+        Qt5::Widgets Qt5::Core
+)
