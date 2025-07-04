@@ -70,6 +70,14 @@ jobs:
       run: |
           dir
 
+    - name : TEST
+      run: |
+          cd ${{github.workspace}}\occt-vc143-64\
+
+    - name : TEST
+      run: |
+          dir
+
     - name: Get count of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
