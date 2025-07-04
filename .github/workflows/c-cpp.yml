@@ -73,6 +73,7 @@ jobs:
     - name : TEST
       run: |
           cd ${{github.workspace}}\occt-vc143-64\
+          dir
 
     - name : TEST
       run: |
