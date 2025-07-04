@@ -12,8 +12,8 @@ jobs:
     env:
       QT_VERSION: '5.14.0'
       QT_ARCH: 'win64_msvc2017_64'
-      OCC_VERSION: '7.7.0'
-      OCC_VERSION_TAG: 'V7_7_0' # 用于源码下载
+      OCC_VERSION: '7.8.0'
+      OCC_VERSION_TAG: 'V7_8_0' # 用于源码下载
       OCC_ZIP_sha256: '82afb7bd5fd7097189ee4e98bf3bc02b4030cae7a82967db68d5f2b556801779'
       VS_VERSION: 'Visual Studio 16 2019'
       QT_ROOT: 'C:\Qt'
@@ -50,11 +50,21 @@ jobs:
       if: steps.cache-occ.outputs.cache-hit != 'true'
       uses: carlosperate/download-file-action@v2
       with:
-          file-url: 'https://www.fougue.pro/share/bin/OpenCASCADE-${{env.OCC_VERSION}}-vc14-64.zip'
-          sha256: ${{env.OCC_ZIP_sha256}}
+          file-url: 'https://github.com/Open-Cascade-SAS/OCCT/releases/download/${{env.OCC_VERSION_TAG}}/occt-vc143-64.zip'
+          file-path: occt-vc143-64.zip
+
+    - name: Download OpenCascade 3rdparty
+      if: steps.cache-occ.outputs.cache-hit != 'true'
+      uses: carlosperate/download-file-action@v2
+      with:
+          file-url: 'https://github.com/Open-Cascade-SAS/OCCT/releases/download/${{env.OCC_VERSION_TAG}}/3rdparty-vc14-64.zip'
+          file-path: 3rdparty-vc14-64.zip
 
     - name: Extract OpenCascade
-      run: 7z x OpenCASCADE-${{env.OCC_VERSION}}-vc14-64.zip
+      run: 7z x occt-vc143-64.zip
+
+    - name: Extract OpenCascade 3rdparty
+      run: 7z x 3rdparty-vc14-64.zip
 
     - name: Get count of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1
@@ -70,7 +80,8 @@ jobs:
           cd ${{github.workspace}}\build
           cmake --version
           cmake .. ^
-                -DOpenCASCADE_DIR=../OpenCASCADE-${{env.OCC_VERSION}}-vc14-64/opencascade-${{env.OCC_VERSION}} 
+                -DOpenCASCADE_DIR=../occt-vc143-64/occt-vc143-64
+                -DOpenCASCADE_3RDPARTY_DIR=../occt-vc143-64/occt-vc143-64
           cmake --build . ^
                 --config Release ^
                 --parallel ${{steps.cpu-cores.outputs.count}}
