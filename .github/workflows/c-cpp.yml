@@ -92,8 +92,8 @@ jobs:
           cd ${{github.workspace}}\build
           cmake --version
           cmake .. ^
-                -DOpenCASCADE_DIR=${{github.workspace}}\occt-vc143-64\occt-vc143-64
-                -DOpenCASCADE_3RDPARTY_DIR=${{github.workspace}}\occt-vc143-64\occt-vc143-64
+                -DOpenCASCADE_DIR=${{github.workspace}}\occt-vc143-64\occt-vc143-64 ^
+                -DOpenCASCADE_3RDPARTY_DIR=${{github.workspace}}\3rdparty-vc14-64\3rdparty-vc14-64
           cmake --build . ^
                 --config Release ^
                 --parallel ${{steps.cpu-cores.outputs.count}}
