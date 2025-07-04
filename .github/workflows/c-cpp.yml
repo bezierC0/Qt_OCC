@@ -73,6 +73,11 @@ jobs:
     - name: Configure Compiler
       uses: ilammy/msvc-dev-cmd@v1
 
+    - name : TEST
+      run: |
+          pwd
+          cd ${{github.workspace}}/occt-vc143-64/occt-vc143-64
+
     - name: Build
       shell: cmd
       run: |
