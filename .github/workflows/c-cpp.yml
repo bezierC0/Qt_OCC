@@ -76,7 +76,6 @@ jobs:
     - name : TEST
       run: |
           pwd
-          cd ${{github.workspace}}/occt-vc143-64/occt-vc143-64
 
     - name: Build
       shell: cmd
