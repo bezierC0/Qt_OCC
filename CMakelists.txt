@@ -133,6 +133,7 @@ endif()
 set(TS_FILES)
 file(
     GLOB TS_FILES
+    RELATIVE ${CMAKE_SOURCE_DIR}  
     ${RESOURCE_DIR}/i18n/*.ts
 )
 
