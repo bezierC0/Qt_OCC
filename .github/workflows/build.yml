@@ -66,19 +66,6 @@ jobs:
     - name: Extract OpenCascade 3rdparty
       run: 7z x 3rdparty-vc14-64.zip
 
-    - name : TEST
-      run: |
-          dir
-
-    - name : TEST
-      run: |
-          cd ${{github.workspace}}\occt-vc143-64\
-          dir
-
-    - name : TEST
-      run: |
-          dir
-
     - name: Get count of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
