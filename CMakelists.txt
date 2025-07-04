@@ -10,15 +10,15 @@ set(CMAKE_AUTORCC ON)
 
 set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resource")
 
-###
+#########
 # Opencascade
-###
+#########
 
 # WIN32
 # Can't use find_package(OpenCASCADE) as OpenCASCADEConfig.cmake is broken for Windows platform
 # See https://dev.opencascade.org/content/3rdparty-hard-coded-paths-when-building-against-opencascade
-set(OpenCASCADE_DIR "" CACHE PATH "OpenCASCADE Options: Path to OpenCASCADE directory")
-set(OpenCASCADE_3RDPARTY_DIR "" CACHE PATH "OpenCASCADE Options: Path to OpenCASCADE 3RDPARTY directory")
+set(OpenCASCADE_DIR "C:/Download/occt-vc143-64/occt-vc143-64" CACHE PATH "OpenCASCADE Options: Path to OpenCASCADE directory")
+set(OpenCASCADE_3RDPARTY_DIR "C:/3rdparty-vc14-64/3rdparty-vc14-64" CACHE PATH "OpenCASCADE Options: Path to OpenCASCADE 3RDPARTY directory")
 
 include(${OpenCASCADE_DIR}/CMake/OpenCASCADEConfig.cmake)
 
@@ -67,6 +67,31 @@ endforeach()
 
 list(APPEND OCCT_LIBRARIES_TO_LINK "OpenGL32.lib")
 
+# Find core OpenCASCADE runtime DLLs from the binary directory
+file(GLOB OpenCASCADE_TOOLKITS_DLLS "${OpenCASCADE_BINARY_DIR}/*.dll")
+
+# 3RDPARTY
+file(GLOB 3RDPARTY_MODULE_DIRS "${OpenCASCADE_3RDPARTY_DIR}/*")
+set(OpenCASCADE_3RDPARTY_DLLS "")
+foreach(3RDPARTY_MODULE_DIR ${3RDPARTY_MODULE_DIRS})
+    set(3RDPARTY_MODULE_BIN_DIR "${3RDPARTY_MODULE_DIR}/bin")
+    if(EXISTS "${3RDPARTY_MODULE_BIN_DIR}")
+        # Find all DLLs in the bin directory
+        file(GLOB DLLS_IN_BIN "${3RDPARTY_MODULE_BIN_DIR}/*.dll")
+        # Add found DLLs to the list
+        list(APPEND OpenCASCADE_3RDPARTY_DLLS ${DLLS_IN_BIN})
+    endif()
+endforeach()
+
+file(GLOB 3RDPARTY_MODULE_OPENVR_DIR "${OpenCASCADE_3RDPARTY_DIR}/openvr*")
+file(GLOB OPENVR_DLLS_IN_BIN "${3RDPARTY_MODULE_OPENVR_DIR}/bin/win64/*.dll")
+list(APPEND OpenCASCADE_3RDPARTY_DLLS ${OPENVR_DLLS_IN_BIN})
+
+message(STATUS "Found DLLs:")
+foreach(dll ${OpenCASCADE_3RDPARTY_DLLS})
+    message(STATUS "  ${dll}")
+endforeach()
+
 # OpenCASCADE (Manual Configuration)
 if(OpenCASCADE_INCLUDE_DIR)
     include_directories(${OpenCASCADE_INCLUDE_DIR})
@@ -84,9 +109,13 @@ if(NOT OCCT_LIBRARIES_TO_LINK)
     message(FATAL_ERROR "Failed to build the list of OpenCASCADE libraries. Check your configuration.")
 endif()
 
-###
+if(NOT OpenCASCADE_3RDPARTY_DLLS)
+    message(FATAL_ERROR "Failed to find the list of OpenCASCADE 3rdParty. Check your configuration.")
+endif()
+
+#########
 # Qt
-###
+#########
 find_package(Qt5 REQUIRED COMPONENTS 
     Core Widgets LinguistTools
 )
@@ -98,18 +127,18 @@ else()
     message(FATAL_ERROR "Qt5_DIR not found or path does not exist. ")
 endif()
 
-###
+#########
 # resource
-###
+#########
 set(TS_FILES)
 file(
     GLOB TS_FILES
     ${RESOURCE_DIR}/i18n/*.ts
 )
 
-###
+#########
 # sources
-###
+#########
 set(SOURCES)
 file(
     GLOB SOURCES
@@ -120,9 +149,9 @@ file(
     external/SARibbon/SARibbon.cpp
 )
 
-###
+#########
 # headers
-###
+#########
 set(HEADERS)
 file(
     GLOB HEADERS
@@ -146,6 +175,21 @@ foreach(TS_FILE ${TS_FILES})
 endforeach()
 
 add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} resource/resource.qrc ${QM_FILES})
+
+if(WIN32)
+    set(ALL_DLLS_TO_COPY ${OpenCASCADE_TOOLKITS_DLLS} ${OpenCASCADE_3RDPARTY_DLLS})
+    if(ALL_DLLS_TO_COPY)
+        # Add a post-build command to copy all necessary DLLs to the output directory
+        add_custom_command(
+            TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${ALL_DLLS_TO_COPY}
+                    $<TARGET_FILE_DIR:${PROJECT_NAME}>
+            COMMAND_EXPAND_LISTS
+            COMMENT "Copying OpenCASCADE and 3rd-party runtime DLLs"
+        )
+    endif()
+endif()
 
 if(WIN32)
     target_compile_definitions(${PROJECT_NAME} PRIVATE QT_OPENGL_DESKTOP)
