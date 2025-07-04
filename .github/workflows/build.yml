@@ -99,14 +99,8 @@ jobs:
                 --config Release ^
                 --parallel ${{steps.cpu-cores.outputs.count}}
 
-    - name: Package output into ZIP
-      run: |
-        cd output
-        zip -r ../module.zip .
-      shell: bash
-
     - name: Upload Module
-      if: success()
+      if: failure()
       uses: actions/upload-artifact@v4
       with:
         name: build-logs
@@ -117,7 +111,7 @@ jobs:
 
     - name: Package output into ZIP
       run: |
-        cd Release
+        cd build/Release
         zip -r ../module.zip .
       shell: bash
 
