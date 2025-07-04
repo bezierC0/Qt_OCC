@@ -66,16 +66,16 @@ jobs:
     - name: Extract OpenCascade 3rdparty
       run: 7z x 3rdparty-vc14-64.zip
 
+    - name : TEST
+      run: |
+          dir
+
     - name: Get count of CPU cores
       uses: SimenB/github-actions-cpu-cores@v1
       id: cpu-cores
 
     - name: Configure Compiler
       uses: ilammy/msvc-dev-cmd@v1
-
-    - name : TEST
-      run: |
-          pwd
 
     - name: Build
       shell: cmd
@@ -84,8 +84,8 @@ jobs:
           cd ${{github.workspace}}\build
           cmake --version
           cmake .. ^
-                -DOpenCASCADE_DIR=../occt-vc143-64/occt-vc143-64
-                -DOpenCASCADE_3RDPARTY_DIR=../occt-vc143-64/occt-vc143-64
+                -DOpenCASCADE_DIR=${{github.workspace}}\occt-vc143-64\occt-vc143-64
+                -DOpenCASCADE_3RDPARTY_DIR=${{github.workspace}}\occt-vc143-64\occt-vc143-64
           cmake --build . ^
                 --config Release ^
                 --parallel ${{steps.cpu-cores.outputs.count}}
