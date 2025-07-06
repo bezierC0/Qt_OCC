@@ -99,7 +99,7 @@ jobs:
     - name: Package output into ZIP
       run: |
         cd build/Release
-        zip -r ../module.zip .
+        7z a ../module.zip .
       shell: bash
 
     - name: Upload zip artifact
