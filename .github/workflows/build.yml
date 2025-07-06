@@ -94,16 +94,13 @@ jobs:
         path: |
           build/**/*.log
           CMakeFiles/**/*.log
-        retention-days: 7
-
-    - name: Package output into ZIP
-      run: |
-        cd build/Release
-        7z a ../module.zip .
-      shell: bash
+        retention-days: 1
 
     - name: Upload zip artifact
       uses: actions/upload-artifact@v4
       with:
         name: module
-        path: build/module.zip
+        path: |
+          build/Release/*.exe
+          build/Release/*.dll
+        retention-days: 1
