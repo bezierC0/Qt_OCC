@@ -106,4 +106,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: module
-        path: module.zip
+        path: build/module.zip
