@@ -17,8 +17,8 @@ set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resource")
 # WIN32
 # Can't use find_package(OpenCASCADE) as OpenCASCADEConfig.cmake is broken for Windows platform
 # See https://dev.opencascade.org/content/3rdparty-hard-coded-paths-when-building-against-opencascade
-set(OpenCASCADE_DIR "C:/Download/occt-vc143-64/occt-vc143-64" CACHE PATH "OpenCASCADE Options: Path to OpenCASCADE directory")
-set(OpenCASCADE_3RDPARTY_DIR "C:/3rdparty-vc14-64/3rdparty-vc14-64" CACHE PATH "OpenCASCADE Options: Path to OpenCASCADE 3RDPARTY directory")
+set(OpenCASCADE_DIR "" CACHE PATH "OpenCASCADE Options: Path to OpenCASCADE directory")
+set(OpenCASCADE_3RDPARTY_DIR "" CACHE PATH "OpenCASCADE Options: Path to OpenCASCADE 3RDPARTY directory")
 
 include(${OpenCASCADE_DIR}/CMake/OpenCASCADEConfig.cmake)
 
