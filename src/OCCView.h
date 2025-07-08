@@ -61,7 +61,7 @@ public:
 
   void reDraw() const ;
 
-  void fit() const;
+  void fit();
 
   void clipping() const;
 
@@ -104,6 +104,9 @@ private:
   //! Dump OpenGL info.
   void dumpGlInfo (bool theIsBasic, bool theToPrint);
 
+  //! Animate camera transition from one state to another.
+  void animateCamera (const Handle(Graphic3d_Camera)& theCamStart, const Handle(Graphic3d_Camera)& theCamEnd);
+
   //! Request widget paintGL() event.
   void updateView();
 
@@ -122,6 +125,8 @@ private:
 
   Handle(AIS_ViewCube)           m_navigationView; // XYZ Navigation GuiDocument::setViewTrihedronMode
 
+  Handle(AIS_AnimationCamera)    m_animationCamera;
+
   //! OpenGL info.
   Handle(V3d_View)               myFocusView;
   //! Core profile flag.
@@ -132,4 +137,6 @@ private:
   bool myIsCoreProfile;
 
   InteractionMode m_interactionMode;
+
+  Standard_Real m_duration{ 1 };
 };

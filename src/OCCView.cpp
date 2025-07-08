@@ -22,6 +22,7 @@
 #include <Message.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <OpenGl_FrameBuffer.hxx>
+#include <AIS_AnimationCamera.hxx>
 
 namespace
 {
@@ -220,6 +221,7 @@ OCCView::OCCView(QWidget* theParent)
 
     // create AIS context
     m_context = new AIS_InteractiveContext(m_viewer);
+    myViewAnimation = new AIS_AnimationCamera( "fit", m_view );
 
     m_navigationView = new AIS_ViewCube();
     m_navigationView->SetViewAnimation(myViewAnimation);
@@ -237,6 +239,10 @@ OCCView::OCCView(QWidget* theParent)
     m_view->ChangeRenderingParams().CollectedStats = (Graphic3d_RenderingParams::PerfCounters)
         (Graphic3d_RenderingParams::PerfCounters_FrameRate
             | Graphic3d_RenderingParams::PerfCounters_Triangles);
+
+    
+    myViewAnimation->SetOwnDuration( m_duration );
+    myViewAnimation->SetView( m_view );
 
     // Qt widget setup
     setMouseTracking(true);
@@ -668,10 +674,35 @@ void OCCView::reDraw() const
     m_view->Redraw();
 }
 
-void OCCView::fit() const
+void OCCView::fit()
 {
-    m_view->ZFitAll();
-    m_view->FitAll( 0.1, false );
+    // Create a copy of the camera *before* fitting, this is our starting point.
+    Handle(Graphic3d_Camera) aCamStart = new Graphic3d_Camera() ;
+    aCamStart->Copy( m_view->Camera() ) ;
+
+    // This modifies the view's internal camera to the "fitted" state.
+    m_view->FitAll( 0.1, false ) ;
+
+    // Create a copy of the new (end) camera state.
+    Handle(Graphic3d_Camera) aCamEnd = new Graphic3d_Camera() ;
+    aCamEnd->Copy( m_view->Camera() ) ;
+
+    // Restore the view's camera to its original state, so the animation starts from the correct position.
+    m_view->SetCamera( aCamStart ) ;
+
+    // Start the animation from the start state to the end state.
+    //aCamEnd->SetCenter( { 10,10,10 } );
+    //auto center = aCamEnd->Center();
+    animateCamera( aCamStart, aCamEnd ) ;
+}
+
+void OCCView::animateCamera(const Handle(Graphic3d_Camera)& theCamStart, const Handle(Graphic3d_Camera)& theCamEnd)
+{
+    myViewAnimation->SetCameraStart( theCamStart );
+    myViewAnimation->SetCameraEnd( theCamEnd );
+    myViewAnimation->StartTimer( 0, 1, true, false );
+    myViewAnimation->Start( false );
+    updateView();
 }
 
 void OCCView::clipping() const
