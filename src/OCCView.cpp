@@ -15,14 +15,15 @@
 
 #include <AIS_Shape.hxx>
 #include <AIS_ViewCube.hxx>
+#include <AIS_AnimationCamera.hxx>
 #include <Aspect_DisplayConnection.hxx>
 #include <Aspect_NeutralWindow.hxx>
+#include <TopoDS_Shape.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <Message.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <OpenGl_FrameBuffer.hxx>
-#include <AIS_AnimationCamera.hxx>
 
 namespace
 {
@@ -70,100 +71,174 @@ namespace
         switch (theKey)
         {
         case 1060: // ru
-        case Qt::Key_A: return Aspect_VKey_A;
+        case Qt::Key_A:
+            return Aspect_VKey_A;
         case 1048: // ru
-        case Qt::Key_B: return Aspect_VKey_B;
+        case Qt::Key_B:
+            return Aspect_VKey_B;
         case 1057: // ru
-        case Qt::Key_C: return Aspect_VKey_C;
+        case Qt::Key_C:
+            return Aspect_VKey_C;
         case 1042: // ru
-        case Qt::Key_D: return Aspect_VKey_D;
+        case Qt::Key_D:
+            return Aspect_VKey_D;
         case 1059: // ru
-        case Qt::Key_E: return Aspect_VKey_E;
+        case Qt::Key_E:
+            return Aspect_VKey_E;
         case 1040: // ru
-        case Qt::Key_F: return Aspect_VKey_F;
-        case Qt::Key_G: return Aspect_VKey_G;
-        case Qt::Key_H: return Aspect_VKey_H;
-        case Qt::Key_I: return Aspect_VKey_I;
-        case Qt::Key_J: return Aspect_VKey_J;
-        case Qt::Key_K: return Aspect_VKey_K;
+        case Qt::Key_F:
+            return Aspect_VKey_F;
+        case Qt::Key_G:
+            return Aspect_VKey_G;
+        case Qt::Key_H:
+            return Aspect_VKey_H;
+        case Qt::Key_I:
+            return Aspect_VKey_I;
+        case Qt::Key_J:
+            return Aspect_VKey_J;
+        case Qt::Key_K:
+            return Aspect_VKey_K;
         case 1044: // ru
-        case Qt::Key_L: return Aspect_VKey_L;
-        case Qt::Key_M: return Aspect_VKey_M;
-        case Qt::Key_N: return Aspect_VKey_N;
-        case Qt::Key_O: return Aspect_VKey_O;
-        case Qt::Key_P: return Aspect_VKey_P;
+        case Qt::Key_L:
+            return Aspect_VKey_L;
+        case Qt::Key_M:
+            return Aspect_VKey_M;
+        case Qt::Key_N:
+            return Aspect_VKey_N;
+        case Qt::Key_O:
+            return Aspect_VKey_O;
+        case Qt::Key_P:
+            return Aspect_VKey_P;
         case 1049: // ru
-        case Qt::Key_Q: return Aspect_VKey_Q;
+        case Qt::Key_Q:
+            return Aspect_VKey_Q;
         case 1050: // ru
-        case Qt::Key_R: return Aspect_VKey_R;
+        case Qt::Key_R:
+            return Aspect_VKey_R;
         case 1067: // ru
-        case Qt::Key_S: return Aspect_VKey_S;
+        case Qt::Key_S:
+            return Aspect_VKey_S;
         case 1045: // ru
-        case Qt::Key_T: return Aspect_VKey_T;
-        case Qt::Key_U: return Aspect_VKey_U;
+        case Qt::Key_T:
+            return Aspect_VKey_T;
+        case Qt::Key_U:
+            return Aspect_VKey_U;
         case 1052: // ru
-        case Qt::Key_V: return Aspect_VKey_V;
+        case Qt::Key_V:
+            return Aspect_VKey_V;
         case 1062: // ru
-        case Qt::Key_W: return Aspect_VKey_W;
+        case Qt::Key_W:
+            return Aspect_VKey_W;
         case 1063: // ru
-        case Qt::Key_X: return Aspect_VKey_X;
-        case Qt::Key_Y: return Aspect_VKey_Y;
+        case Qt::Key_X:
+            return Aspect_VKey_X;
+        case Qt::Key_Y:
+            return Aspect_VKey_Y;
         case 1071: // ru
-        case Qt::Key_Z: return Aspect_VKey_Z;
+        case Qt::Key_Z:
+            return Aspect_VKey_Z;
             //
-        case Qt::Key_0: return Aspect_VKey_0;
-        case Qt::Key_1: return Aspect_VKey_1;
-        case Qt::Key_2: return Aspect_VKey_2;
-        case Qt::Key_3: return Aspect_VKey_3;
-        case Qt::Key_4: return Aspect_VKey_4;
-        case Qt::Key_5: return Aspect_VKey_5;
-        case Qt::Key_6: return Aspect_VKey_6;
-        case Qt::Key_7: return Aspect_VKey_7;
-        case Qt::Key_8: return Aspect_VKey_8;
-        case Qt::Key_9: return Aspect_VKey_9;
+        case Qt::Key_0:
+            return Aspect_VKey_0;
+        case Qt::Key_1:
+            return Aspect_VKey_1;
+        case Qt::Key_2:
+            return Aspect_VKey_2;
+        case Qt::Key_3:
+            return Aspect_VKey_3;
+        case Qt::Key_4:
+            return Aspect_VKey_4;
+        case Qt::Key_5:
+            return Aspect_VKey_5;
+        case Qt::Key_6:
+            return Aspect_VKey_6;
+        case Qt::Key_7:
+            return Aspect_VKey_7;
+        case Qt::Key_8:
+            return Aspect_VKey_8;
+        case Qt::Key_9:
+            return Aspect_VKey_9;
             //
-        case Qt::Key_F1:        return Aspect_VKey_F1;
-        case Qt::Key_F2:        return Aspect_VKey_F2;
-        case Qt::Key_F3:        return Aspect_VKey_F3;
-        case Qt::Key_F4:        return Aspect_VKey_F4;
-        case Qt::Key_F5:        return Aspect_VKey_F5;
-        case Qt::Key_F6:        return Aspect_VKey_F6;
-        case Qt::Key_F7:        return Aspect_VKey_F7;
-        case Qt::Key_F8:        return Aspect_VKey_F8;
-        case Qt::Key_F9:        return Aspect_VKey_F9;
-        case Qt::Key_F10:       return Aspect_VKey_F10;
-        case Qt::Key_F11:       return Aspect_VKey_F11;
-        case Qt::Key_F12:       return Aspect_VKey_F12;
+        case Qt::Key_F1:
+            return Aspect_VKey_F1;
+        case Qt::Key_F2:
+            return Aspect_VKey_F2;
+        case Qt::Key_F3:
+            return Aspect_VKey_F3;
+        case Qt::Key_F4:
+            return Aspect_VKey_F4;
+        case Qt::Key_F5:
+            return Aspect_VKey_F5;
+        case Qt::Key_F6:
+            return Aspect_VKey_F6;
+        case Qt::Key_F7:
+            return Aspect_VKey_F7;
+        case Qt::Key_F8:
+            return Aspect_VKey_F8;
+        case Qt::Key_F9:
+            return Aspect_VKey_F9;
+        case Qt::Key_F10:
+            return Aspect_VKey_F10;
+        case Qt::Key_F11:
+            return Aspect_VKey_F11;
+        case Qt::Key_F12:
+            return Aspect_VKey_F12;
             //
-        case Qt::Key_Up:        return Aspect_VKey_Up;
-        case Qt::Key_Left:      return Aspect_VKey_Left;
-        case Qt::Key_Right:     return Aspect_VKey_Right;
-        case Qt::Key_Down:      return Aspect_VKey_Down;
-        case Qt::Key_Plus:      return Aspect_VKey_Plus;
-        case Qt::Key_Minus:     return Aspect_VKey_Minus;
-        case Qt::Key_Equal:     return Aspect_VKey_Equal;
-        case Qt::Key_PageDown:  return Aspect_VKey_PageDown;
-        case Qt::Key_PageUp:    return Aspect_VKey_PageUp;
-        case Qt::Key_Home:      return Aspect_VKey_Home;
-        case Qt::Key_End:       return Aspect_VKey_End;
-        case Qt::Key_Escape:    return Aspect_VKey_Escape;
-        case Qt::Key_Back:      return Aspect_VKey_Back;
-        case Qt::Key_Enter:     return Aspect_VKey_Enter;
-        case Qt::Key_Backspace: return Aspect_VKey_Backspace;
-        case Qt::Key_Space:     return Aspect_VKey_Space;
-        case Qt::Key_Delete:    return Aspect_VKey_Delete;
-        case Qt::Key_Tab:       return Aspect_VKey_Tab;
+        case Qt::Key_Up:
+            return Aspect_VKey_Up;
+        case Qt::Key_Left:
+            return Aspect_VKey_Left;
+        case Qt::Key_Right:
+            return Aspect_VKey_Right;
+        case Qt::Key_Down:
+            return Aspect_VKey_Down;
+        case Qt::Key_Plus:
+            return Aspect_VKey_Plus;
+        case Qt::Key_Minus:
+            return Aspect_VKey_Minus;
+        case Qt::Key_Equal:
+            return Aspect_VKey_Equal;
+        case Qt::Key_PageDown:
+            return Aspect_VKey_PageDown;
+        case Qt::Key_PageUp:
+            return Aspect_VKey_PageUp;
+        case Qt::Key_Home:
+            return Aspect_VKey_Home;
+        case Qt::Key_End:
+            return Aspect_VKey_End;
+        case Qt::Key_Escape:
+            return Aspect_VKey_Escape;
+        case Qt::Key_Back:
+            return Aspect_VKey_Back;
+        case Qt::Key_Enter:
+            return Aspect_VKey_Enter;
+        case Qt::Key_Backspace:
+            return Aspect_VKey_Backspace;
+        case Qt::Key_Space:
+            return Aspect_VKey_Space;
+        case Qt::Key_Delete:
+            return Aspect_VKey_Delete;
+        case Qt::Key_Tab:
+            return Aspect_VKey_Tab;
         case 1025:
-        case Qt::Key_QuoteLeft: return Aspect_VKey_Tilde;
+        case Qt::Key_QuoteLeft:
+            return Aspect_VKey_Tilde;
             //
-        case Qt::Key_Shift:     return Aspect_VKey_Shift;
-        case Qt::Key_Control:   return Aspect_VKey_Control;
-        case Qt::Key_Alt:       return Aspect_VKey_Alt;
-        case Qt::Key_Menu:      return Aspect_VKey_Menu;
-        case Qt::Key_Meta:      return Aspect_VKey_Meta;
-        default:                return Aspect_VKey_UNKNOWN;
+        case Qt::Key_Shift:
+            return Aspect_VKey_Shift;
+        case Qt::Key_Control:
+            return Aspect_VKey_Control;
+        case Qt::Key_Alt:
+            return Aspect_VKey_Alt;
+        case Qt::Key_Menu:
+            return Aspect_VKey_Menu;
+        case Qt::Key_Meta:
+            return Aspect_VKey_Meta;
+        default:
+            return Aspect_VKey_UNKNOWN;
         }
     }
+
 }
 
 //! OpenGL FBO subclass for wrapping FBO created by Qt using GL_RGBA8 texture format instead of GL_SRGB8_ALPHA8.
@@ -178,30 +253,29 @@ public:
     OcctQtFrameBuffer() = default;
 
     //! Make this FBO active in context.
-    void BindBuffer(const Handle(OpenGl_Context)& theGlCtx) override
+    void BindBuffer(const Handle(OpenGl_Context) & theGlCtx) override
     {
         OpenGl_FrameBuffer::BindBuffer(theGlCtx);
         theGlCtx->SetFrameBufferSRGB(true, false);
     }
 
     //! Make this FBO as drawing target in context.
-    void BindDrawBuffer(const Handle(OpenGl_Context)& theGlCtx) override
+    void BindDrawBuffer(const Handle(OpenGl_Context) & theGlCtx) override
     {
         OpenGl_FrameBuffer::BindDrawBuffer(theGlCtx);
         theGlCtx->SetFrameBufferSRGB(true, false);
     }
 
     //! Make this FBO as reading source in context.
-    void BindReadBuffer(const Handle(OpenGl_Context)& theGlCtx) override
+    void BindReadBuffer(const Handle(OpenGl_Context) & theGlCtx) override
     {
         OpenGl_FrameBuffer::BindReadBuffer(theGlCtx);
     }
 };
 
-OCCView::OCCView(QWidget* theParent)
+OCCView::OCCView(QWidget *theParent)
     : QOpenGLWidget(theParent),
-    myIsCoreProfile(true),
-    m_interactionMode(InteractionMode::Highlight)
+      myIsCoreProfile(true)
 {
     Handle(Aspect_DisplayConnection) aDisp = new Aspect_DisplayConnection();
     Handle(OpenGl_GraphicDriver) aDriver = new OpenGl_GraphicDriver(aDisp, false);
@@ -221,7 +295,7 @@ OCCView::OCCView(QWidget* theParent)
 
     // create AIS context
     m_context = new AIS_InteractiveContext(m_viewer);
-    myViewAnimation = new AIS_AnimationCamera( "fit", m_view );
+    myViewAnimation = new AIS_AnimationCamera("fit", m_view);
 
     m_navigationView = new AIS_ViewCube();
     m_navigationView->SetViewAnimation(myViewAnimation);
@@ -236,18 +310,15 @@ OCCView::OCCView(QWidget* theParent)
     m_view->ChangeRenderingParams().NbMsaaSamples = 4; // warning - affects performance
 #endif
     m_view->ChangeRenderingParams().ToShowStats = true;
-    m_view->ChangeRenderingParams().CollectedStats = (Graphic3d_RenderingParams::PerfCounters)
-        (Graphic3d_RenderingParams::PerfCounters_FrameRate
-            | Graphic3d_RenderingParams::PerfCounters_Triangles);
+    m_view->ChangeRenderingParams().CollectedStats = (Graphic3d_RenderingParams::PerfCounters)(Graphic3d_RenderingParams::PerfCounters_FrameRate | Graphic3d_RenderingParams::PerfCounters_Triangles);
 
-    
-    myViewAnimation->SetOwnDuration( m_duration );
-    myViewAnimation->SetView( m_view );
+    myViewAnimation->SetOwnDuration(m_duration);
+    myViewAnimation->SetView(m_view);
 
     // Qt widget setup
     setMouseTracking(true);
     setBackgroundRole(QPalette::NoRole); // or NoBackground
-    setFocusPolicy(Qt::StrongFocus); // set focus policy to threat QContextMenuEvent from keyboard
+    setFocusPolicy(Qt::StrongFocus);     // set focus policy to threat QContextMenuEvent from keyboard
     setUpdatesEnabled(true);
     setUpdateBehavior(QOpenGLWidget::NoPartialUpdate);
 
@@ -255,9 +326,9 @@ OCCView::OCCView(QWidget* theParent)
     QSurfaceFormat aGlFormat;
     aGlFormat.setDepthBufferSize(24);
     aGlFormat.setStencilBufferSize(8);
-    //aGlFormat.setOption (QSurfaceFormat::DebugContext, true);
+    // aGlFormat.setOption (QSurfaceFormat::DebugContext, true);
     aDriver->ChangeOptions().contextDebug = aGlFormat.testOption(QSurfaceFormat::DebugContext);
-    //aGlFormat.setOption (QSurfaceFormat::DeprecatedFunctions, true);
+    // aGlFormat.setOption (QSurfaceFormat::DeprecatedFunctions, true);
     if (myIsCoreProfile)
     {
         aGlFormat.setVersion(4, 5);
@@ -285,22 +356,19 @@ OCCView::~OCCView()
     aDisp.Nullify();
 }
 
-void OCCView::setInteractionMode(InteractionMode theMode)
+void OCCView::updateSelectionFilter(bool theIsActive)
 {
-    if (m_interactionMode == theMode)
+    m_selectionFilters[TopAbs_SOLID] = !theIsActive;
+    m_selectionFilters[TopAbs_FACE] = theIsActive;
+    m_selectionFilters[TopAbs_EDGE] = theIsActive;
+    m_selectionFilters[TopAbs_VERTEX] = theIsActive;
+    m_context->Deactivate();
+    for (const auto &filter : m_selectionFilters)
     {
-        return;
-    }
-
-    m_interactionMode = theMode;
-    m_context->Deactivate(); // Deactivate all previous modes
-
-    if (m_interactionMode == InteractionMode::Select)
-    {
-        //m_context->Activate(AIS_Shape::SelectionMode(TopAbs_FACE));
-        //m_context->Activate(AIS_Shape::SelectionMode(TopAbs_EDGE));
-        m_context->Activate(AIS_Shape::SelectionMode(TopAbs_VERTEX));
-        m_context->Activate(AIS_Shape::SelectionMode(TopAbs_SOLID));
+        if (filter.second)
+        {
+            m_context->Activate(AIS_Shape::SelectionMode(filter.first));
+        }
     }
 }
 
@@ -339,8 +407,8 @@ void OCCView::initializeGL()
 
     Aspect_Drawable aNativeWin = reinterpret_cast<Aspect_Drawable>(winId());
 #ifdef _WIN32
-    HDC   aWglDevCtx = wglGetCurrentDC();
-    HWND  aWglWin = WindowFromDC(aWglDevCtx);
+    HDC aWglDevCtx = wglGetCurrentDC();
+    HWND aWglWin = WindowFromDC(aWglDevCtx);
     aNativeWin = static_cast<Aspect_Drawable>(aWglWin);
 #endif
 
@@ -359,7 +427,7 @@ void OCCView::initializeGL()
         aWindow->SetNativeHandle(aNativeWin);
         aWindow->SetSize(aViewSize.x(), aViewSize.y());
         m_view->SetWindow(aWindow, aGlCtx->RenderingContext());
-        //dumpGlInfo (true, true);
+        // dumpGlInfo (true, true);
     }
     else
     {
@@ -368,20 +436,18 @@ void OCCView::initializeGL()
         aWindow->SetNativeHandle(aNativeWin);
         aWindow->SetSize(aViewSize.x(), aViewSize.y());
         m_view->SetWindow(aWindow, aGlCtx->RenderingContext());
-        //dumpGlInfo (true, true);
+        // dumpGlInfo (true, true);
 
         m_context->Display(m_navigationView, 0, 0, false);
     }
 }
 
-
-void OCCView::closeEvent(QCloseEvent* theEvent)
+void OCCView::closeEvent(QCloseEvent *theEvent)
 {
     theEvent->accept();
 }
 
-
-void OCCView::keyPressEvent(QKeyEvent* theEvent)
+void OCCView::keyPressEvent(QKeyEvent *theEvent)
 {
     Aspect_VKey aKey = qtKey2VKey(theEvent->key());
     switch (aKey)
@@ -402,69 +468,68 @@ void OCCView::keyPressEvent(QKeyEvent* theEvent)
     QOpenGLWidget::keyPressEvent(theEvent);
 }
 
-void OCCView::mousePressEvent(QMouseEvent* theEvent)
+void OCCView::mousePressEvent(QMouseEvent *theEvent)
 {
-    if (m_interactionMode == InteractionMode::Select)
+    const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
+
+    // Perform selection
+    const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier) ? AIS_SelectionScheme_Add : AIS_SelectionScheme_Replace;
+    m_context->SelectDetected(aScheme);
+
+    // If something is selected, update the view and return
+    if (m_context->NbSelected() > 0)
     {
-        /*const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
-        const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier) ? AIS_SelectionScheme_Add : AIS_SelectionScheme_Replace;
-        m_context->Select(aPnt, m_view, aScheme);*/
-
-        if ( const auto statusOfPick = m_context->SelectDetected( AIS_SelectionScheme_Replace );  statusOfPick == AIS_SOP_OneSelected || statusOfPick == AIS_SOP_SeveralSelected ) {
-            auto selectedObject = m_context->FirstSelectedObject();
-
+        m_selectedObjects.clear();
+        for (m_context->InitSelected(); m_context->MoreSelected(); m_context->NextSelected())
+        {
+            const TopoDS_Shape &detectedShape = m_context->SelectedShape();
+            if (!detectedShape.IsNull())
+            {
+                Handle(AIS_Shape) selectedSubShape = new AIS_Shape(detectedShape);
+                m_selectedObjects.emplace_back(selectedSubShape);
+            }
         }
         updateView();
+        return; // Selection was made, do not proceed to view navigation
     }
-    else
+
+    // If nothing was selected, proceed with view navigation
+    QOpenGLWidget::mousePressEvent(theEvent);
+    const Aspect_VKeyFlags aFlags = qtMouseModifiers2VKeys(theEvent->modifiers());
+    if (!m_view.IsNull() && UpdateMouseButtons(aPnt, qtMouseButtons2VKeys(theEvent->buttons()), aFlags, false))
     {
-        QOpenGLWidget::mousePressEvent(theEvent);
-        const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
-        const Aspect_VKeyFlags aFlags = qtMouseModifiers2VKeys(theEvent->modifiers());
-        if (!m_view.IsNull()
-            && UpdateMouseButtons(aPnt,
-                qtMouseButtons2VKeys(theEvent->buttons()),
-                aFlags,
-                false))
-        {
-            updateView();
-        }
+        updateView();
     }
 }
 
-
-void OCCView::mouseReleaseEvent(QMouseEvent* theEvent)
+void OCCView::mouseReleaseEvent(QMouseEvent *theEvent)
 {
     QOpenGLWidget::mouseReleaseEvent(theEvent);
     const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
     const Aspect_VKeyFlags aFlags = qtMouseModifiers2VKeys(theEvent->modifiers());
-    if (!m_view.IsNull()
-        && UpdateMouseButtons(aPnt,
-            qtMouseButtons2VKeys(theEvent->buttons()),
-            aFlags,
-            false))
+    if (!m_view.IsNull() && UpdateMouseButtons(aPnt,
+                                               qtMouseButtons2VKeys(theEvent->buttons()),
+                                               aFlags,
+                                               false))
     {
         updateView();
     }
 }
 
-
-void OCCView::mouseMoveEvent(QMouseEvent* theEvent)
+void OCCView::mouseMoveEvent(QMouseEvent *theEvent)
 {
     QOpenGLWidget::mouseMoveEvent(theEvent);
     const Graphic3d_Vec2i aNewPos(theEvent->pos().x(), theEvent->pos().y());
-    if (!m_view.IsNull()
-        && UpdateMousePosition(aNewPos,
-            qtMouseButtons2VKeys(theEvent->buttons()),
-            qtMouseModifiers2VKeys(theEvent->modifiers()),
-            false))
+    if (!m_view.IsNull() && UpdateMousePosition(aNewPos,
+                                                qtMouseButtons2VKeys(theEvent->buttons()),
+                                                qtMouseModifiers2VKeys(theEvent->modifiers()),
+                                                false))
     {
         updateView();
     }
 }
 
-
-void OCCView::wheelEvent(QWheelEvent* theEvent)
+void OCCView::wheelEvent(QWheelEvent *theEvent)
 {
     QOpenGLWidget::wheelEvent(theEvent);
 #if QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)
@@ -480,8 +545,7 @@ void OCCView::wheelEvent(QWheelEvent* theEvent)
     if (!m_view->Subviews().IsEmpty())
     {
         Handle(V3d_View) aPickedView = m_view->PickSubview(aPos);
-        if (!aPickedView.IsNull()
-            && aPickedView != myFocusView)
+        if (!aPickedView.IsNull() && aPickedView != myFocusView)
         {
             // switch input focus to another subview
             OnSubviewChanged(m_context, myFocusView, aPickedView);
@@ -496,13 +560,11 @@ void OCCView::wheelEvent(QWheelEvent* theEvent)
     }
 }
 
-
 void OCCView::updateView()
 {
     update();
-    //if (window() != NULL) { window()->update(); }
+    // if (window() != NULL) { window()->update(); }
 }
-
 
 void OCCView::paintGL()
 {
@@ -511,8 +573,8 @@ void OCCView::paintGL()
         return;
     }
 #ifdef _WIN32
-    HDC   aWglDevCtx = wglGetCurrentDC();
-    HWND  aWglWin = WindowFromDC(aWglDevCtx);
+    HDC aWglDevCtx = wglGetCurrentDC();
+    HWND aWglWin = WindowFromDC(aWglDevCtx);
     auto aNativeWin = static_cast<Aspect_Drawable>(aWglWin);
 #else
     auto aNativeWin = reinterpret_cast<Aspect_Drawable>(winId());
@@ -528,8 +590,8 @@ void OCCView::paintGL()
 
     // wrap FBO created by QOpenGLWidget
     // get context from this (composer) view rather than from arbitrary one
-    //Handle(OpenGl_GraphicDriver) aDriver = Handle(OpenGl_GraphicDriver)::DownCast (myContext->CurrentViewer()->Driver());
-    //Handle(OpenGl_Context) aGlCtx = aDriver->GetSharedContext();
+    // Handle(OpenGl_GraphicDriver) aDriver = Handle(OpenGl_GraphicDriver)::DownCast (myContext->CurrentViewer()->Driver());
+    // Handle(OpenGl_Context) aGlCtx = aDriver->GetSharedContext();
     Handle(OpenGl_Context) aGlCtx = OcctGlTools::GetGlContext(m_view);
     Handle(OpenGl_FrameBuffer) aDefaultFbo = aGlCtx->DefaultFrameBuffer();
     if (aDefaultFbo.IsNull())
@@ -547,7 +609,7 @@ void OCCView::paintGL()
     }
 
     Graphic3d_Vec2i aViewSizeOld;
-    //const QRect aRect = rect(); Graphic3d_Vec2i aViewSizeNew(aRect.right() - aRect.left(), aRect.bottom() - aRect.top());
+    // const QRect aRect = rect(); Graphic3d_Vec2i aViewSizeNew(aRect.right() - aRect.left(), aRect.bottom() - aRect.top());
     Graphic3d_Vec2i aViewSizeNew = aDefaultFbo->GetVPSize();
     Handle(Aspect_NeutralWindow) aWindow = Handle(Aspect_NeutralWindow)::DownCast(m_view->Window());
     aWindow->Size(aViewSizeOld.x(), aViewSizeOld.y());
@@ -556,9 +618,9 @@ void OCCView::paintGL()
         aWindow->SetSize(aViewSizeNew.x(), aViewSizeNew.y());
         m_view->MustBeResized();
         m_view->Invalidate();
-        //dumpGlInfo (true, false);
+        // dumpGlInfo (true, false);
 
-        for (const Handle(V3d_View)& aSubviewIter : m_view->Subviews())
+        for (const Handle(V3d_View) &aSubviewIter : m_view->Subviews())
         {
             aSubviewIter->MustBeResized();
             aSubviewIter->Invalidate();
@@ -572,8 +634,8 @@ void OCCView::paintGL()
     FlushViewEvents(m_context, aView, true);
 }
 
-void OCCView::handleViewRedraw(const Handle(AIS_InteractiveContext)& theCtx,
-    const Handle(V3d_View)& theView)
+void OCCView::handleViewRedraw(const Handle(AIS_InteractiveContext) & theCtx,
+                               const Handle(V3d_View) & theView)
 {
     AIS_ViewController::handleViewRedraw(theCtx, theView);
     if (myToAskNextFrame)
@@ -583,32 +645,44 @@ void OCCView::handleViewRedraw(const Handle(AIS_InteractiveContext)& theCtx,
     }
 }
 
-
 void OCCView::clearShape()
 {
-    for ( const auto& object : m_loadedObjects ) {
-      m_context->Erase( object,  false );
+    for (const auto &object : m_loadedObjects)
+    {
+        m_context->Erase(object, false);
     }
     m_loadedObjects.clear();
 }
 
-void OCCView::setShape(const Handle(AIS_InteractiveObject)& loadedShape)
+void OCCView::setShape(const Handle(AIS_InteractiveObject) & loadedShape)
 {
-    m_loadedObjects.emplace_back( loadedShape ) ;
+    m_loadedObjects.emplace_back(loadedShape);
 }
 
-std::vector<Handle( AIS_InteractiveObject )> OCCView::getShapeObjects() const
+const std::vector<Handle(AIS_InteractiveObject)> &OCCView::getShapeObjects() const
 {
-  return m_loadedObjects;
+    return m_loadedObjects;
+}
+
+const std::vector<Handle(AIS_InteractiveObject)> &OCCView::getSelectedObjects() const
+{
+    return m_selectedObjects;
+}
+
+void OCCView::clearSelectedObjects()
+{
+    m_selectedObjects.clear();
 }
 
 void OCCView::transform()
 {
-    if ( !m_loadedObjects.empty() ) {
-        Handle( AIS_InteractiveObject ) obj = m_loadedObjects.at(0);
-        auto aisShape = Handle( AIS_Shape )::DownCast( obj );
-        if ( aisShape.IsNull() ) {
-            return ;
+    if (!m_loadedObjects.empty())
+    {
+        Handle(AIS_InteractiveObject) obj = m_loadedObjects.at(0);
+        auto aisShape = Handle(AIS_Shape)::DownCast(obj);
+        if (aisShape.IsNull())
+        {
+            return;
         }
 
 #if 0
@@ -647,12 +721,12 @@ void OCCView::transform()
         gp_Trsf currentTrsf = aisShape->LocalTransformation();
 
         gp_Trsf translation;
-        translation.SetTranslation( gp_Vec( 100.0, 0.0, 0.0 ) );
-        currentTrsf.Multiply( translation );
+        translation.SetTranslation(gp_Vec(100.0, 0.0, 0.0));
+        currentTrsf.Multiply(translation);
 
-        aisShape->SetLocalTransformation( currentTrsf );
+        aisShape->SetLocalTransformation(currentTrsf);
 
-        Context()->Redisplay( aisShape, true );
+        Context()->Redisplay(aisShape, true);
 #endif
     }
     reDraw();
@@ -660,13 +734,17 @@ void OCCView::transform()
 
 void OCCView::reDraw() const
 {
-    for ( const auto& object : m_loadedObjects ) {
+    for (const auto &object : m_loadedObjects)
+    {
         // void GraphicsScene::addObject(const GraphicsObjectPtr& object, AddObjectFlags flags)
         const bool onEntry_AutoActivateSelection = m_context->GetAutoActivateSelection();
         object->Attributes()->SetIsoOnTriangulation(true);
-        if (m_context->IsDisplayed(object)) {
+        if (m_context->IsDisplayed(object))
+        {
             m_context->Redisplay(object, false);
-        } else {
+        }
+        else
+        {
             m_context->Display(object, object->DisplayMode(), 0, false);
         }
         m_context->SetAutoActivateSelection(onEntry_AutoActivateSelection);
@@ -677,31 +755,29 @@ void OCCView::reDraw() const
 void OCCView::fit()
 {
     // Create a copy of the camera *before* fitting, this is our starting point.
-    Handle(Graphic3d_Camera) aCamStart = new Graphic3d_Camera() ;
-    aCamStart->Copy( m_view->Camera() ) ;
+    Handle(Graphic3d_Camera) aCamStart = new Graphic3d_Camera();
+    aCamStart->Copy(m_view->Camera());
 
     // This modifies the view's internal camera to the "fitted" state.
-    m_view->FitAll( 0.1, false ) ;
+    m_view->FitAll(0.3, false);
 
     // Create a copy of the new (end) camera state.
-    Handle(Graphic3d_Camera) aCamEnd = new Graphic3d_Camera() ;
-    aCamEnd->Copy( m_view->Camera() ) ;
+    Handle(Graphic3d_Camera) aCamEnd = new Graphic3d_Camera();
+    aCamEnd->Copy(m_view->Camera());
 
     // Restore the view's camera to its original state, so the animation starts from the correct position.
-    m_view->SetCamera( aCamStart ) ;
+    m_view->SetCamera(aCamStart);
 
     // Start the animation from the start state to the end state.
-    //aCamEnd->SetCenter( { 10,10,10 } );
-    //auto center = aCamEnd->Center();
-    animateCamera( aCamStart, aCamEnd ) ;
+    animateCamera(aCamStart, aCamEnd);
 }
 
-void OCCView::animateCamera(const Handle(Graphic3d_Camera)& theCamStart, const Handle(Graphic3d_Camera)& theCamEnd)
+void OCCView::animateCamera(const Handle(Graphic3d_Camera) & theCamStart, const Handle(Graphic3d_Camera) & theCamEnd)
 {
-    myViewAnimation->SetCameraStart( theCamStart );
-    myViewAnimation->SetCameraEnd( theCamEnd );
-    myViewAnimation->StartTimer( 0, 1, true, false );
-    myViewAnimation->Start( false );
+    myViewAnimation->SetCameraStart(theCamStart);
+    myViewAnimation->SetCameraEnd(theCamEnd);
+    myViewAnimation->StartTimer(0, 1, true, false);
+    myViewAnimation->Start(false);
     updateView();
 }
 
@@ -711,12 +787,11 @@ void OCCView::clipping() const
 
 void OCCView::explosion() const
 {
-    
 }
 
-void OCCView::OnSubviewChanged(const Handle(AIS_InteractiveContext)&,
-    const Handle(V3d_View)&,
-    const Handle(V3d_View)& theNewView)
+void OCCView::OnSubviewChanged(const Handle(AIS_InteractiveContext) &,
+                               const Handle(V3d_View) &,
+                               const Handle(V3d_View) & theNewView)
 {
     myFocusView = theNewView;
 }

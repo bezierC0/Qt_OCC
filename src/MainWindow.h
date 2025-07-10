@@ -20,6 +20,7 @@ private slots:
     void clipping() const;
     void version();
     void explosion() const;
+    void measureDistance() const;
     void createBox();
     void createSphere();
     void createCylinder();
@@ -54,6 +55,7 @@ private:
     SARibbonPannel* m_otherPannel;
     QAction* m_clippingAction;
     QAction* m_explosionAction;
+    QAction* m_measureDistanceAction;
 
     SARibbonCategory* m_shapeCategory;
     SARibbonPannel* m_basicShapesPannel;

@@ -8,15 +8,11 @@
 #include <AIS_Shape.hxx>
 #include <AIS_ViewController.hxx>
 #include <V3d_View.hxx>
+#include <TopAbs_ShapeEnum.hxx>
+
+#include <map>
 
 class AIS_ViewCube;
-
-//! Interaction mode.
-enum class InteractionMode
-{
-  Highlight,
-  Select
-};
 
 //! OCCT 3D View.
 class OCCView : public QOpenGLWidget, public AIS_ViewController
@@ -48,14 +44,18 @@ public:
   //! Default widget size.
   QSize sizeHint()        const override { return QSize(720, 480); }
 
-  //! Set interaction mode.
-  void setInteractionMode(InteractionMode theMode);
+  //! Update selection filter status.
+  void updateSelectionFilter( bool theIsActive);
 
   void clearShape() ;
 
   void setShape( const Handle(AIS_InteractiveObject)& loadedShape );
 
-  std::vector<Handle( AIS_InteractiveObject )> getShapeObjects( ) const;
+  const std::vector<Handle(AIS_InteractiveObject)>& getShapeObjects( ) const;
+
+  const std::vector<Handle( AIS_InteractiveObject )>& getSelectedObjects( ) const;
+
+  void clearSelectedObjects( ) ;
 
   void transform() ;
 
@@ -66,8 +66,6 @@ public:
   void clipping() const;
 
   void explosion() const;
-
-public:
 
   //! Handle subview focus change.
   void OnSubviewChanged(const Handle(AIS_InteractiveContext)&,
@@ -133,10 +131,18 @@ private:
 
   std::vector<Handle(AIS_InteractiveObject)>    m_loadedObjects;
 
+  std::vector<Handle(AIS_InteractiveObject)>    m_selectedObjects;
+
   QString myGlInfo;
   bool myIsCoreProfile;
 
-  InteractionMode m_interactionMode;
+  //! Active selection filters map.
+  std::map<TopAbs_ShapeEnum, bool> m_selectionFilters{
+        { TopAbs_VERTEX, true },
+        { TopAbs_EDGE,   true },
+        { TopAbs_FACE,   true },
+        { TopAbs_SOLID,  true }
+  };
 
   Standard_Real m_duration{ 1 };
 };

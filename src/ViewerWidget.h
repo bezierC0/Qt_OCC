@@ -26,14 +26,21 @@ class ViewerWidget : public QWidget
 public:
     explicit ViewerWidget(QWidget* parent = nullptr);
     ~ViewerWidget() override;
+
     void loadModel(const QString& filename) const;
+
+    //view
     void viewFit();
+    void setFilters(bool isElementOn);
+
+    // tool
     void checkInterference();
     void transform();
     void clipping(const gp_Dir& normal, const gp_Pnt& point, bool isOn = true);
     void explosion();
+    void measureDistance();
+    
     void displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0); // Add this function
-    void setInteractionMode(InteractionMode mode);
 
 private:
     OCCView* m_occView;
