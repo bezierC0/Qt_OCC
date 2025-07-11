@@ -1,9 +1,6 @@
 # vscode
 .promptx/
 
-# vscode
-.vscode/
-
 # build
 build/
 
