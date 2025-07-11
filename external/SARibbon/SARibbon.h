@@ -1,4 +1,4 @@
-#ifndef SA_RIBBON_H
+﻿#ifndef SA_RIBBON_H
 #define SA_RIBBON_H
 // 定义此宏，将SA_RIBBON_EXPORT定义为空
 #ifndef SA_RIBBON_BAR_NO_EXPORT
