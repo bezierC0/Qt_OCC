@@ -20,6 +20,56 @@
     </message>
 </context>
 <context>
+    <name>ViewerWidget</name>
+    <message>
+        <location filename="../src/ViewerWidget.cpp" line="201"/>
+        <source>Error</source>
+        <translation>Error</translation>
+    </message>
+    <message>
+        <location filename="../src/ViewerWidget.cpp" line="201"/>
+        <source>STEP file read failed</source>
+        <translation>STEP file read failed</translation>
+    </message>
+    <message>
+        <location filename="../src/ViewerWidget.cpp" line="208"/>
+        <source>STEP transfer to document failed</source>
+        <translation>STEP transfer to document failed</translation>
+    </message>
+    <message>
+        <location filename="../src/ViewerWidget.cpp" line="308"/>
+        <source>Interference</source>
+        <translation>Interference</translation>
+    </message>
+    <message>
+        <location filename="../src/ViewerWidget.cpp" line="309"/>
+        <source>Shape %1 intersects with Shape %2</source>
+        <translation>Shape %1 intersects with Shape %2</translation>
+    </message>
+    <message>
+        <location filename="../src/ViewerWidget.cpp" line="401"/>
+        <location filename="../src/ViewerWidget.cpp" line="421"/>
+        <source>Selection Error</source>
+        <translation>Selection Error</translation>
+    </message>
+    <message>
+        <location filename="../src/ViewerWidget.cpp" line="401"/>
+        <location filename="../src/ViewerWidget.cpp" line="421"/>
+        <source>Please select exactly two vertices.</source>
+        <translation>Please select exactly two vertices.</translation>
+    </message>
+    <message>
+        <location filename="../src/ViewerWidget.cpp" line="430"/>
+        <source>Distance</source>
+        <translation>Distance</translation>
+    </message>
+    <message>
+        <location filename="../src/ViewerWidget.cpp" line="431"/>
+        <source>Distance between the two vertices: %1</source>
+        <translation>Distance between the two vertices: %1</translation>
+    </message>
+</context>
+<context>
     <name>MainWindow</name>
     <message>
         <location filename="../MainWindow.cpp" line="38"/>
@@ -63,13 +113,28 @@
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="65"/>
+        <source>Tool</source>
+        <translation>Tool</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp" line="65"/>
         <source>Analysis</source>
         <translation>Analysis</translation>
     </message>
     <message>
-        <location filename="../MainWindow.cpp" line="66"/>
-        <source>Analysis Tools</source>
-        <translation>Analysis Tools</translation>
+        <location filename="../MainWindow.cpp" line="97"/>
+        <source>Clipping Tool</source>
+        <translation>Clipping</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp" line="98"/>
+        <source>Measure</source>
+        <translation>Measure</translation>
+    </message>
+    <message>
+        <location filename="../MainWindow.cpp" line="98"/>
+        <source>MeasureDistance</source>
+        <translation>Distance</translation>
     </message>
     <message>
         <location filename="../MainWindow.cpp" line="67"/>

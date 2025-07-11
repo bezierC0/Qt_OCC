@@ -51,6 +51,8 @@ private:
 
     SARibbonCategory* m_analysisCategory;
     SARibbonPannel* m_analysisPannel;
+    SARibbonPannel* m_clippingPannel;
+    SARibbonPannel* m_measurePannel;
     QAction* m_interferenceAction;
     SARibbonPannel* m_otherPannel;
     QAction* m_clippingAction;

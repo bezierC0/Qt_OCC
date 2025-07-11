@@ -312,7 +312,7 @@ OCCView::OCCView(QWidget *theParent)
     m_view->ChangeRenderingParams().ToShowStats = true;
     m_view->ChangeRenderingParams().CollectedStats = (Graphic3d_RenderingParams::PerfCounters)(Graphic3d_RenderingParams::PerfCounters_FrameRate | Graphic3d_RenderingParams::PerfCounters_Triangles);
 
-    myViewAnimation->SetOwnDuration(m_duration);
+    myViewAnimation->SetOwnDuration(m_animationDuration);
     myViewAnimation->SetView(m_view);
 
     // Qt widget setup
@@ -356,17 +356,12 @@ OCCView::~OCCView()
     aDisp.Nullify();
 }
 
-void OCCView::updateSelectionFilter(bool theIsActive)
+void OCCView::updateSelectionFilter(TopAbs_ShapeEnum target, bool theIsActive)
 {
-    m_selectionFilters[TopAbs_SOLID] = !theIsActive;
-    m_selectionFilters[TopAbs_FACE] = theIsActive;
-    m_selectionFilters[TopAbs_EDGE] = theIsActive;
-    m_selectionFilters[TopAbs_VERTEX] = theIsActive;
+    m_selectionFilters.at(target) = theIsActive;
     m_context->Deactivate();
-    for (const auto &filter : m_selectionFilters)
-    {
-        if (filter.second)
-        {
+    for (const auto &filter : m_selectionFilters) {
+        if (filter.second) {
             m_context->Activate(AIS_Shape::SelectionMode(filter.first));
         }
     }
@@ -470,29 +465,30 @@ void OCCView::keyPressEvent(QKeyEvent *theEvent)
 
 void OCCView::mousePressEvent(QMouseEvent *theEvent)
 {
-    const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
+    if( m_mouseMode == 1){
+        // Perform selection
+        const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier) ? AIS_SelectionScheme_Add : AIS_SelectionScheme_Replace;
+        m_context->SelectDetected(aScheme);
 
-    // Perform selection
-    const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier) ? AIS_SelectionScheme_Add : AIS_SelectionScheme_Replace;
-    m_context->SelectDetected(aScheme);
-
-    // If something is selected, update the view and return
-    if (m_context->NbSelected() > 0)
-    {
-        m_selectedObjects.clear();
-        for (m_context->InitSelected(); m_context->MoreSelected(); m_context->NextSelected())
+        // If something is selected, update the view and return
+        if (m_context->NbSelected() > 0)
         {
-            const TopoDS_Shape &detectedShape = m_context->SelectedShape();
-            if (!detectedShape.IsNull())
+            for (m_context->InitSelected(); m_context->MoreSelected(); m_context->NextSelected())
             {
-                Handle(AIS_Shape) selectedSubShape = new AIS_Shape(detectedShape);
-                m_selectedObjects.emplace_back(selectedSubShape);
+                const TopoDS_Shape &detectedShape = m_context->SelectedShape();
+                if (!detectedShape.IsNull())
+                {
+                    Handle(AIS_Shape) selectedSubShape = new AIS_Shape(detectedShape);
+                    m_selectedObjects.emplace_back(selectedSubShape);
+                }
             }
+            updateView();
         }
-        updateView();
         return; // Selection was made, do not proceed to view navigation
     }
+    m_selectedObjects.clear();
 
+    const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
     // If nothing was selected, proceed with view navigation
     QOpenGLWidget::mousePressEvent(theEvent);
     const Aspect_VKeyFlags aFlags = qtMouseModifiers2VKeys(theEvent->modifiers());
@@ -787,6 +783,11 @@ void OCCView::clipping() const
 
 void OCCView::explosion() const
 {
+}
+
+void OCCView::setMouseMode(const int mode)
+{
+    m_mouseMode = mode;
 }
 
 void OCCView::OnSubviewChanged(const Handle(AIS_InteractiveContext) &,

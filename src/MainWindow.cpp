@@ -86,35 +86,41 @@ void MainWindow::setupUi()
     m_viewPannel->addLargeAction(m_fitAction);
 
     // select
-    m_selectAction = new QAction(QIcon(":/icons/icon/select.svg"), tr("HightlightMode"), this);
+    m_selectAction = new QAction(QIcon(":/icons/icon/select.svg"), tr("Select"), this);
     m_selectAction->setCheckable(true);
     connect(m_selectAction, &QAction::toggled, this, &MainWindow::onSelectModeToggled);
     m_viewPannel->addLargeAction(m_selectAction);
 
     // ---- Tool Group ----
     m_analysisCategory = m_ribbon->addCategoryPage(tr("Tool"));
+    
+    /* Analysis Pannel*/
     m_analysisPannel = m_analysisCategory->addPannel(tr("Analysis"));
-
-    // interference
+    // analysisPannel interference
     m_interferenceAction = new QAction(QIcon(":/icons/icon/interference.png"), tr("Interference"), this); // Assuming an icon path
     connect(m_interferenceAction, &QAction::triggered, this, &MainWindow::checkInterference);
     m_analysisPannel->addLargeAction(m_interferenceAction);
 
-    // ---- Other Tools ----
-    m_otherPannel = m_analysisCategory->addPannel(tr("Other Tools")); // Adding to Analysis category for simplicity
+    /* Clipping Pannel */
+    m_clippingPannel = m_analysisCategory->addPannel(tr("Clipping Tool"));
+    // clipping
     m_clippingAction = new QAction(QIcon(":/icons/icon/clipping.svg"), tr("Clipping"), this); // Assuming an icon path
     connect(m_clippingAction, &QAction::triggered, this, &MainWindow::clipping);
-    m_otherPannel->addSmallAction(m_clippingAction);
+    m_clippingPannel->addSmallAction(m_clippingAction);
 
+    /* Measure Pannel */
+    m_measurePannel = m_analysisCategory->addPannel(tr("Measure"));
+    // measure distance
+    m_measureDistanceAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("MeasureDistance"), this); // Assuming an icon path
+    connect(m_measureDistanceAction, &QAction::triggered, this, &MainWindow::measureDistance);
+    m_measurePannel->addSmallAction(m_measureDistanceAction);
+    
+    /* Other Pannel */
+    m_otherPannel = m_analysisCategory->addPannel(tr("Other Tools")); // Adding to Analysis category for simplicity
     // explosion
     m_explosionAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("Explosion"), this); // Assuming an icon path
     connect(m_explosionAction, &QAction::triggered, this, &MainWindow::explosion);
     m_otherPannel->addSmallAction(m_explosionAction);
-
-    // measure distance
-    m_measureDistanceAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("Measure"), this); // Assuming an icon path
-    connect(m_measureDistanceAction, &QAction::triggered, this, &MainWindow::measureDistance);
-    m_otherPannel->addSmallAction(m_measureDistanceAction);
 
     // ---- Shape Group ----
     m_shapeCategory = m_ribbon->addCategoryPage(tr("Shape"));

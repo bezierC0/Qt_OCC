@@ -45,7 +45,7 @@ public:
   QSize sizeHint()        const override { return QSize(720, 480); }
 
   //! Update selection filter status.
-  void updateSelectionFilter( bool theIsActive);
+  void updateSelectionFilter(TopAbs_ShapeEnum target, bool theIsActive);
 
   void clearShape() ;
 
@@ -67,26 +67,23 @@ public:
 
   void explosion() const;
 
+  void setMouseMode(int mode) ;
+
   //! Handle subview focus change.
   void OnSubviewChanged(const Handle(AIS_InteractiveContext)&,
                         const Handle(V3d_View)&,
                         const Handle(V3d_View)& theNewView) override;
 
-protected: // OpenGL events
+protected:
 
   //! Initialize OpenGL.
-  //! Initialize OpenGL.
-  //! Paint OpenGL.
   void initializeGL() override;
+
   //! Paint OpenGL.
   void paintGL() override;
-  //virtual void resizeGL(int , int ) override;
 
-  //! Handle close event.
-protected: // user input events
-  //! Handle key press event.
+protected: 
 
-  //! Handle mouse press event.
   void closeEvent       (QCloseEvent*  theEvent) override;
   //! Handle mouse release event.
   void keyPressEvent    (QKeyEvent*    theEvent) override;
@@ -94,7 +91,9 @@ protected: // user input events
   void mousePressEvent  (QMouseEvent*  theEvent) override;
   //! Handle wheel event.
   void mouseReleaseEvent(QMouseEvent*  theEvent) override;
+  //! Handle mouse move event.
   void mouseMoveEvent   (QMouseEvent*  theEvent) override;
+  //! Handle mouse wheel event.
   void wheelEvent       (QWheelEvent*  theEvent) override;
 
 private:
@@ -115,34 +114,35 @@ private:
 
   //! View handle.
 private:
-  //! AIS context handle.
-  Handle(V3d_Viewer)             m_viewer;
-  //! View cube handle.
-  Handle(V3d_View)               m_view;
-  Handle(AIS_InteractiveContext) m_context;
+  
+  Handle(V3d_Viewer)                            m_viewer;//! AIS context handle.
+  
+  Handle(V3d_View)                              m_view;//! View cube handle.
+  Handle(AIS_InteractiveContext)                m_context;
 
-  Handle(AIS_ViewCube)           m_navigationView; // XYZ Navigation GuiDocument::setViewTrihedronMode
+  Handle(AIS_ViewCube)                          m_navigationView; // XYZ Navigation GuiDocument::setViewTrihedronMode
 
-  Handle(AIS_AnimationCamera)    m_animationCamera;
+  Handle(AIS_AnimationCamera)                   m_animationCamera;
 
   //! OpenGL info.
-  Handle(V3d_View)               myFocusView;
+  Handle(V3d_View)                              myFocusView;
   //! Core profile flag.
 
   std::vector<Handle(AIS_InteractiveObject)>    m_loadedObjects;
 
   std::vector<Handle(AIS_InteractiveObject)>    m_selectedObjects;
 
-  QString myGlInfo;
-  bool myIsCoreProfile;
+  QString                                       myGlInfo;
+  bool                                          myIsCoreProfile;
 
   //! Active selection filters map.
-  std::map<TopAbs_ShapeEnum, bool> m_selectionFilters{
-        { TopAbs_VERTEX, true },
-        { TopAbs_EDGE,   true },
-        { TopAbs_FACE,   true },
+  std::map<TopAbs_ShapeEnum, bool>              m_selectionFilters{
+        { TopAbs_VERTEX, false },
+        { TopAbs_EDGE,   false },
+        { TopAbs_FACE,   false },
         { TopAbs_SOLID,  true }
   };
 
-  Standard_Real m_duration{ 1 };
+  Standard_Real                                 m_animationDuration{ 1 }; // animation duration in seconds
+  int                                           m_mouseMode { 0 }; // 0 normal 1 select + normal 
 };

@@ -65,6 +65,11 @@
         <translation>选择</translation>
     </message>
     <message>
+        <location filename="../MainWindow.cpp" line="65"/>
+        <source>Tool</source>
+        <translation>工具</translation>
+    </message>
+    <message>
         <location filename="../MainWindow.cpp" line="66"/>
         <source>Analysis</source>
         <translation>分析</translation>

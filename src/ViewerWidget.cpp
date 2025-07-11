@@ -5,6 +5,8 @@
 #include "Tree.h"
 
 #include <QtWidgets/QVBoxLayout> // Corrected path
+#include <QMessageBox>
+#include <QCoreApplication>
 
 #include <STEPControl_Reader.hxx>
 #include <IGESControl_Reader.hxx>
@@ -148,7 +150,7 @@ void ViewerWidget::loadModel(const QString &filename) const
         IFSelect_ReturnStatus status = reader.ReadFile(filename.toStdString().c_str());
         if (status != IFSelect_RetDone)
         {
-            std::cout << "STEP file read failed";
+            QMessageBox::critical(nullptr, QCoreApplication::translate("ViewerWidget", "Error"), QCoreApplication::translate("ViewerWidget", "STEP file read failed"));
         }
         Handle(TDocStd_Document) doc;
         Handle(XCAFDoc_ShapeTool) shapeTool;
@@ -158,7 +160,7 @@ void ViewerWidget::loadModel(const QString &filename) const
 
         if (!reader.Transfer(doc))
         {
-            std::cout << "STEP transfer to document failed";
+            QMessageBox::critical(nullptr, QCoreApplication::translate("ViewerWidget", "Error"), QCoreApplication::translate("ViewerWidget", "STEP transfer to document failed"));
             return;
         }
 
@@ -232,7 +234,11 @@ void ViewerWidget::viewFit()
 
 void ViewerWidget::setFilters(const bool isElementOn)
 {
-    m_occView->updateSelectionFilter(isElementOn);
+    m_occView->setMouseMode(isElementOn ? 1 : 0);
+    m_occView->updateSelectionFilter(TopAbs_SOLID,!isElementOn);
+    m_occView->updateSelectionFilter(TopAbs_FACE,isElementOn);
+    m_occView->updateSelectionFilter(TopAbs_EDGE,isElementOn);
+    m_occView->updateSelectionFilter(TopAbs_VERTEX,isElementOn);
 }
 
 void ViewerWidget::transform()
@@ -266,7 +272,8 @@ void ViewerWidget::checkInterference()
                 const TopoDS_Shape &result = commonOp.Shape();
                 if (!result.IsNull())
                 {
-                    std::cout << "Shape " << i << " intersects with Shape " << j << std::endl;
+                    QMessageBox::information(this, QCoreApplication::translate("ViewerWidget", "Interference"),
+                                             QCoreApplication::translate("ViewerWidget", "Shape %1 intersects with Shape %2").arg(i).arg(j));
                     Handle(AIS_Shape) aisResult = new AIS_Shape(result);
                     aisResult->SetColor(Quantity_NOC_RED);
                     aisResult->SetDisplayMode(AIS_Shaded);
@@ -358,45 +365,38 @@ void ViewerWidget::measureDistance()
     const auto &selectedList = m_occView->getSelectedObjects();
     if (selectedList.size() != 2)
     {
-        std::cout << "Please select exactly two vertices." << std::endl;
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two vertices."));
         return;
     }
 
-    gp_Pnt pointA, pointB;
-    int vertexCount = 0;
+    const auto interactiveObject0 = selectedList.at(0);
+    const auto interactiveObject1 = selectedList.at(1);
+    if (interactiveObject0.IsNull() || interactiveObject1.IsNull())
+        return;
 
-    for (const auto &selectedObj : selectedList)
+    const auto aisShape0 = Handle(AIS_Shape)::DownCast(interactiveObject0);
+    const auto aisShape1 = Handle(AIS_Shape)::DownCast(interactiveObject1);
+    if (aisShape0.IsNull() || aisShape1.IsNull())
+        return;
+
+    const TopoDS_Shape &shape0 = aisShape0->Shape();
+    const TopoDS_Shape &shape1 = aisShape1->Shape();
+    if (shape0.IsNull() || shape1.IsNull() ||
+        shape0.ShapeType() != TopAbs_VERTEX || shape1.ShapeType() != TopAbs_VERTEX)
     {
-        auto aisShape = Handle(AIS_Shape)::DownCast(selectedObj);
-        if (aisShape.IsNull())
-            continue;
-
-        const TopoDS_Shape &shape = aisShape->Shape();
-        if (shape.IsNull() || shape.ShapeType() != TopAbs_VERTEX)
-            continue;
-
-        const TopoDS_Vertex &vertex = TopoDS::Vertex(shape);
-        if (vertexCount == 0)
-        {
-            pointA = BRep_Tool::Pnt(vertex);
-            vertexCount++;
-        }
-        else
-        {
-            pointB = BRep_Tool::Pnt(vertex);
-            vertexCount++;
-        }
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two vertices."));
+        return;
     }
 
-    if (vertexCount == 2)
-    {
-        const Standard_Real distance = pointA.Distance(pointB);
-        std::cout << "Distance between the two vertices: " << distance << std::endl;
-    }
-    else
-    {
-        std::cout << "Failed to extract two vertices. Please re-select." << std::endl;
-    }
+    const TopoDS_Vertex &vertex0 = TopoDS::Vertex(shape0);
+    const TopoDS_Vertex &vertex1 = TopoDS::Vertex(shape1);
+
+    const auto point0 = BRep_Tool::Pnt(vertex0);
+    const auto point1 = BRep_Tool::Pnt(vertex1);
+
+    const Standard_Real distance = point0.Distance(point1);
+    QMessageBox::information(this, QCoreApplication::translate("ViewerWidget", "Distance"),
+                             QCoreApplication::translate("ViewerWidget", "Distance between the two vertices: %1").arg(distance));
 }
 
 void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const double g, const double b)
