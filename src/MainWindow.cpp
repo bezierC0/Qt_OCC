@@ -9,6 +9,10 @@
 #include <QCoreApplication>
 #include <QTranslator>
 #include <QEvent>
+#include <QFile>
+#include <QTextStream>
+#include <QApplication>
+#include <QToolButton>
 #include <TopoDS_Shape.hxx> // This should be resolved by CMakeLists.txt fix
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
@@ -111,9 +115,24 @@ void MainWindow::setupUi()
     /* Measure Pannel */
     m_measurePannel = m_analysisCategory->addPannel(tr("Measure"));
     // measure distance
-    m_measureDistanceAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("MeasureDistance"), this); // Assuming an icon path
+    m_measureDistanceAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("MeasureDistance"), this);
     connect(m_measureDistanceAction, &QAction::triggered, this, &MainWindow::measureDistance);
     m_measurePannel->addSmallAction(m_measureDistanceAction);
+
+    // measure length
+    m_measureLengthAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("MeasureLength"), this);
+    connect(m_measureLengthAction, &QAction::triggered, this, &MainWindow::measureLength);
+    m_measurePannel->addSmallAction(m_measureLengthAction);
+
+    // measure arc length
+    m_measureArcLengthAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("MeasureArcLength"), this);
+    connect(m_measureArcLengthAction, &QAction::triggered, this, &MainWindow::measureArcLength);
+    m_measurePannel->addSmallAction(m_measureArcLengthAction);
+
+    // measure angle
+    m_measureAngleAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("MeasureAngle"), this); 
+    connect(m_measureAngleAction, &QAction::triggered, this, &MainWindow::measureAngle);
+    m_measurePannel->addSmallAction(m_measureAngleAction);
     
     /* Other Pannel */
     m_otherPannel = m_analysisCategory->addPannel(tr("Other Tools")); // Adding to Analysis category for simplicity
@@ -158,6 +177,8 @@ void MainWindow::setupUi()
     m_languageAction = new QAction(QIcon(), tr("Switch Language"), this);
     connect(m_languageAction, &QAction::triggered, this, &MainWindow::switchLanguage);
     m_languagePannel->addSmallAction(m_languageAction);
+
+    createThemeActions();
 }
 
 void MainWindow::openFile()
@@ -199,6 +220,21 @@ void MainWindow::explosion() const
 void MainWindow::measureDistance() const
 {
     m_viewerWidget->measureDistance();
+}
+
+void MainWindow::measureLength() const
+{
+    // TODO
+}
+
+void MainWindow::measureArcLength() const
+{
+    // TODO
+}
+
+void MainWindow::measureAngle() const
+{
+    // TODO
 }
 
 void MainWindow::version()
@@ -271,4 +307,52 @@ void MainWindow::switchLanguage()
     
     // Re-create the UI to apply the new language
     setupUi();
+}
+
+void MainWindow::createThemeActions()
+{
+    m_themePannel = m_helpCategory->addPannel(tr("Theme"));
+
+    m_themeMenu = new QMenu(this);
+    m_lightThemeAction = new QAction(tr("Light"), this);
+    m_darkThemeAction = new QAction(tr("Dark"), this);
+
+    m_themeMenu->addAction(m_lightThemeAction);
+    m_themeMenu->addAction(m_darkThemeAction);
+
+    connect(m_lightThemeAction, &QAction::triggered, this, &MainWindow::onSwitchTheme);
+    connect(m_darkThemeAction, &QAction::triggered, this, &MainWindow::onSwitchTheme);
+
+    QAction* themeAction = new QAction(this);
+    themeAction->setText(tr("Switch Theme"));
+    themeAction->setMenu(m_themeMenu);
+    m_themePannel->addSmallAction(themeAction);
+}
+
+void MainWindow::onSwitchTheme()
+{
+    QAction* action = qobject_cast<QAction*>(sender());
+    if (!action)
+    {
+        return;
+    }
+
+    QString themePath;
+    if (action == m_lightThemeAction)
+    {
+        themePath = ":/qss/qss/light.qss";
+    }
+    else if (action == m_darkThemeAction)
+    {
+        themePath = ":/qss/qss/dark.qss";
+    }
+
+    QFile file(themePath);
+    if (file.open(QFile::ReadOnly | QFile::Text))
+    {
+        QTextStream stream(&file);
+        QString styleSheet = stream.readAll();
+        qApp->setStyleSheet(styleSheet);
+        file.close();
+    }
 }

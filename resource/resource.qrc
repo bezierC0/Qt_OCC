@@ -17,4 +17,8 @@
         <file>i18n/qt_occ_zh.qm</file>
         <file>i18n/qt_occ_ja.qm</file>
     </qresource>
+    <qresource prefix="/qss">
+        <file>qss/light.qss</file>
+        <file>qss/dark.qss</file>
+    </qresource>
 </RCC>

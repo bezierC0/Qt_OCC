@@ -1,0 +1,47 @@
+/* dark.qss */
+QMainWindow {
+    background-color: #2E2E2E;
+}
+
+QMenuBar {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+}
+
+QMenuBar::item:selected {
+    background-color: #505050;
+}
+
+QMenu {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    border: 1px solid #505050;
+}
+
+QMenu::item:selected {
+    background-color: #505050;
+}
+
+QToolBar {
+    background-color: #3C3C3C;
+    border: none;
+}
+
+QWidget {
+    background-color: #2E2E2E;
+    color: #FFFFFF;
+}
+
+QTreeView {
+    background-color: #3C3C3C;
+    color: #FFFFFF;
+    border: 1px solid #505050;
+}
+
+QTreeView::item:hover {
+    background-color: #505050;
+}
+
+QTreeView::item:selected {
+    background-color: #606060;
+}

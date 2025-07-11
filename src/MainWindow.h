@@ -2,6 +2,9 @@
 
 #include "SARibbon.h"
 
+#include <QMenu>
+#include <QAction>
+
 class ViewerWidget;
 class ModelTreeWidget;
 class QTranslator;
@@ -20,16 +23,25 @@ private slots:
     void clipping() const;
     void version();
     void explosion() const;
+
+    /* measure */
     void measureDistance() const;
+    void measureLength() const;
+    void measureArcLength() const;
+    void measureAngle() const;
+    
+    /* shape */
     void createBox();
     void createSphere();
     void createCylinder();
     void createCone();
     void onSelectModeToggled(bool checked);
     void switchLanguage();
+    void onSwitchTheme();
 
 private:
     void setupUi();
+    void createThemeActions();
 
 private:
     ViewerWidget* m_viewerWidget;
@@ -58,6 +70,9 @@ private:
     QAction* m_clippingAction;
     QAction* m_explosionAction;
     QAction* m_measureDistanceAction;
+    QAction* m_measureLengthAction;
+    QAction* m_measureArcLengthAction;
+    QAction* m_measureAngleAction;
 
     SARibbonCategory* m_shapeCategory;
     SARibbonPannel* m_basicShapesPannel;
@@ -71,4 +86,9 @@ private:
     QAction* m_versionAction;
     SARibbonPannel* m_languagePannel;
     QAction* m_languageAction;
+
+    SARibbonPannel* m_themePannel;
+    QMenu* m_themeMenu;
+    QAction* m_lightThemeAction;
+    QAction* m_darkThemeAction;
 };
