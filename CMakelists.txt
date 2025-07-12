@@ -177,45 +177,28 @@ file(
 # qm
 #########
 set(QM_FILES)
-foreach(TS_FILE ${TS_FILES})
-    get_filename_component(TS_NAME ${TS_FILE} NAME_WE)
-    set(QM_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TS_NAME}.qm")
-    list(APPEND QM_FILES ${QM_FILE})
-    list(APPEND QM_FILES_FOR_QRC ${TS_NAME}.qm)
 
-    # qm 
-    add_custom_command(
-        OUTPUT ${QM_FILE}
-        COMMAND ${Qt5_LRELEASE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${TS_FILE} -qm ${QM_FILE}
-        DEPENDS ${TS_FILE}
-        COMMENT "Generating ${QM_FILE}"
-    )
-endforeach()
-
-add_custom_target(generate_qm_files ALL DEPENDS ${QM_FILES})
-qt5_add_translation(QM_FILES ${TS_FILES})
-
-# language qrc text
-set(QM_RESOURCES "")
-foreach(QM_FILE ${QM_FILES})
-    get_filename_component(QM_NAME ${QM_FILE} NAME)
-    set(QM_RESOURCES "${QM_RESOURCES}    <file alias=\"${QM_NAME}\">${QM_FILE}</file>\n")
-endforeach()
-
-# translations.qrc
-set(QRC_CONTENT "<!DOCTYPE RCC>\n<RCC version=\"1.0\">\n<qresource prefix=\"/translations\">\n${QM_RESOURCES}</qresource>\n</RCC>")
-file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/translations.qrc" CONTENT "${QRC_CONTENT}")
-set(TRANSLATIONS_QRC_FILE "${CMAKE_CURRENT_BINARY_DIR}/translations.qrc")
+configure_file(${RESOURCE_DIR}/translations.qrc ${CMAKE_BINARY_DIR} COPYONLY)
+option(UPDATE_TRANSLATIONS "Creating/updating translation files from source" OFF)
+if(UPDATE_TRANSLATIONS)
+    message(STATUS "Creating/updating translation files from source")
+    qt5_create_translation(QM_FILES ${CMAKE_CURRENT_SOURCE_DIR} ${TS_FILES})
+else()
+    message(STATUS "Compiling existing translation files")
+    qt5_add_translation(QM_FILES ${TS_FILES})
+endif()
 
 add_executable(${PROJECT_NAME} 
     ${SOURCES} 
     ${HEADERS} 
-    resource/resource.qrc 
-    ${TRANSLATIONS_QRC_FILE}
+    ${RESOURCE_DIR}/resource.qrc 
+    ${CMAKE_BINARY_DIR}/translations.qrc
+    ${QM_FILES}
 )
 
-add_dependencies(${PROJECT_NAME} generate_qm_files)
-
+#########
+# copy dll
+#########
 option(IS_COPY_DLLS "Copy OpenCASCADE and 3rd-party DLLs" ON)
 if(IS_COPY_DLLS)
     if(WIN32)

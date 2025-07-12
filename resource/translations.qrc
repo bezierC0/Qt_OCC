@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/translations" lang="en">
+        <file alias="qt_occ_en.qm">qt_occ_en.qm</file>
+    </qresource>
+    <qresource prefix="/translations" lang="zh">
+        <file alias="qt_occ_zh.qm">qt_occ_zh.qm</file>
+    </qresource>
+    <qresource prefix="/translations" lang="ja">
+        <file alias="qt_occ_ja.qm">qt_occ_ja.qm</file>
+    </qresource>
+</RCC>
