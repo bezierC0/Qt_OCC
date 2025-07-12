@@ -173,7 +173,9 @@ file(
     src/*.h
 )
 
-# ts to qm
+#########
+# qm
+#########
 set(QM_FILES)
 foreach(TS_FILE ${TS_FILES})
     get_filename_component(TS_NAME ${TS_FILE} NAME_WE)
@@ -191,15 +193,19 @@ foreach(TS_FILE ${TS_FILES})
 endforeach()
 
 add_custom_target(generate_qm_files ALL DEPENDS ${QM_FILES})
+qt5_add_translation(QM_FILES ${TS_FILES})
 
-set(TRANSLATIONS_QRC_CONTENT "<!DOCTYPE RCC>\n<RCC version=\"1.0\">\n<qresource prefix=\"/translations\">\n")
-foreach(QM_FILE_NAME ${QM_FILES_FOR_QRC})
-    set(TRANSLATIONS_QRC_CONTENT "${TRANSLATIONS_QRC_CONTENT}    <file alias=\"${QM_FILE_NAME}\">${CMAKE_CURRENT_BINARY_DIR}/${QM_FILE_NAME}</file>\n")
+# language qrc text
+set(QM_RESOURCES "")
+foreach(QM_FILE ${QM_FILES})
+    get_filename_component(QM_NAME ${QM_FILE} NAME)
+    set(QM_RESOURCES "${QM_RESOURCES}    <file alias=\"${QM_NAME}\">${QM_FILE}</file>\n")
 endforeach()
-set(TRANSLATIONS_QRC_CONTENT "${TRANSLATIONS_QRC_CONTENT}</qresource>\n</RCC>")
 
+# translations.qrc
+set(QRC_CONTENT "<!DOCTYPE RCC>\n<RCC version=\"1.0\">\n<qresource prefix=\"/translations\">\n${QM_RESOURCES}</qresource>\n</RCC>")
+file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/translations.qrc" CONTENT "${QRC_CONTENT}")
 set(TRANSLATIONS_QRC_FILE "${CMAKE_CURRENT_BINARY_DIR}/translations.qrc")
-file(WRITE ${TRANSLATIONS_QRC_FILE} ${TRANSLATIONS_QRC_CONTENT})
 
 add_executable(${PROJECT_NAME} 
     ${SOURCES} 
