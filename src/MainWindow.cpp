@@ -300,13 +300,12 @@ void MainWindow::switchLanguage()
     }
 
     QCoreApplication::removeTranslator(m_translator);
-    if (m_translator->load(QString(":/language/i18n/qt_occ_") + langCode))
-    {
-        QCoreApplication::installTranslator( m_translator );
+    QString qmFile = QString(":/translations/qt_occ_%1.qm").arg(langCode);
+    if (m_translator->load(qmFile)) {
+        QCoreApplication::installTranslator(m_translator);
+        // Re-create the UI to apply the new language
+        setupUi();
     }
-    
-    // Re-create the UI to apply the new language
-    setupUi();
 }
 
 void MainWindow::createThemeActions()

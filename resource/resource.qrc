@@ -12,11 +12,6 @@
         <file>icon/sphere.png</file>
         <file>icon/version.svg</file>
     </qresource>
-    <qresource prefix="/language">
-        <file>i18n/qt_occ_en.qm</file>
-        <file>i18n/qt_occ_zh.qm</file>
-        <file>i18n/qt_occ_ja.qm</file>
-    </qresource>
     <qresource prefix="/qss">
         <file>qss/light.qss</file>
         <file>qss/dark.qss</file>

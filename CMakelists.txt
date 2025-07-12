@@ -179,8 +179,9 @@ foreach(TS_FILE ${TS_FILES})
     get_filename_component(TS_NAME ${TS_FILE} NAME_WE)
     set(QM_FILE "${CMAKE_CURRENT_BINARY_DIR}/${TS_NAME}.qm")
     list(APPEND QM_FILES ${QM_FILE})
-    
-    # 
+    list(APPEND QM_FILES_FOR_QRC ${TS_NAME}.qm)
+
+    # qm 
     add_custom_command(
         OUTPUT ${QM_FILE}
         COMMAND ${Qt5_LRELEASE_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/${TS_FILE} -qm ${QM_FILE}
@@ -189,7 +190,25 @@ foreach(TS_FILE ${TS_FILES})
     )
 endforeach()
 
-add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS} resource/resource.qrc ${QM_FILES})
+add_custom_target(generate_qm_files ALL DEPENDS ${QM_FILES})
+
+set(TRANSLATIONS_QRC_CONTENT "<!DOCTYPE RCC>\n<RCC version=\"1.0\">\n<qresource prefix=\"/translations\">\n")
+foreach(QM_FILE_NAME ${QM_FILES_FOR_QRC})
+    set(TRANSLATIONS_QRC_CONTENT "${TRANSLATIONS_QRC_CONTENT}    <file alias=\"${QM_FILE_NAME}\">${CMAKE_CURRENT_BINARY_DIR}/${QM_FILE_NAME}</file>\n")
+endforeach()
+set(TRANSLATIONS_QRC_CONTENT "${TRANSLATIONS_QRC_CONTENT}</qresource>\n</RCC>")
+
+set(TRANSLATIONS_QRC_FILE "${CMAKE_CURRENT_BINARY_DIR}/translations.qrc")
+file(WRITE ${TRANSLATIONS_QRC_FILE} ${TRANSLATIONS_QRC_CONTENT})
+
+add_executable(${PROJECT_NAME} 
+    ${SOURCES} 
+    ${HEADERS} 
+    resource/resource.qrc 
+    ${TRANSLATIONS_QRC_FILE}
+)
+
+add_dependencies(${PROJECT_NAME} generate_qm_files)
 
 option(IS_COPY_DLLS "Copy OpenCASCADE and 3rd-party DLLs" ON)
 if(IS_COPY_DLLS)
