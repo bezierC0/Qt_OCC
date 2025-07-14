@@ -18,12 +18,17 @@
 #include <AIS_AnimationCamera.hxx>
 #include <Aspect_DisplayConnection.hxx>
 #include <Aspect_NeutralWindow.hxx>
+#include <Bnd_Box.hxx>
+#include <BRepBndLib.hxx>
+#include <gp_Trsf.hxx>
+#include <gp_Vec.hxx>
 #include <TopoDS_Shape.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <Message.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <OpenGl_FrameBuffer.hxx>
+
 
 namespace
 {
@@ -781,8 +786,58 @@ void OCCView::clipping() const
 {
 }
 
-void OCCView::explosion() const
+void OCCView::explosion(const double theFactor) const
 {
+    auto applyExplosion = [&](const std::vector<Handle(AIS_InteractiveObject)> &objectList, const double distanceMultiplier = 50.0)
+    {
+        auto computeShapeCenter = [](const TopoDS_Shape &shape) -> gp_Pnt
+        {
+            Bnd_Box bbox;
+            BRepBndLib::Add(shape, bbox);
+            Standard_Real xMin{}, yMin{}, zMin{}, xMax{}, yMax{}, zMax{};
+            bbox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
+            return gp_Pnt((xMin + xMax) / 2.0, (yMin + yMax) / 2.0, (zMin + zMax) / 2.0);
+        };
+
+        gp_Pnt globalCenter(0, 0, 0);
+        if (!objectList.empty())
+        {
+            Bnd_Box globalBox;
+            for (const auto &object : objectList)
+            {
+                const auto aisShape = Handle(AIS_Shape)::DownCast(object);
+                const auto &shape = aisShape->Shape();
+                BRepBndLib::Add(shape, globalBox);
+            }
+            Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
+            globalBox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
+            globalCenter = gp_Pnt((xMin + xMax) / 2.0, (yMin + yMax) / 2.0, (zMin + zMax) / 2.0);
+        }
+        
+        // transform
+        for (const auto &object : objectList)
+        {
+            const auto aisShape = Handle(AIS_Shape)::DownCast(object);
+            const auto &shape = aisShape->Shape();
+            gp_Pnt center = computeShapeCenter(shape);
+            gp_Vec moveDir(globalCenter, center);
+            if (moveDir.Magnitude() > 0.0)
+            {
+                moveDir.Normalize();
+                moveDir *= distanceMultiplier;
+            }
+            gp_Trsf currentTrsf = aisShape->LocalTransformation();
+            gp_Trsf transform;
+            transform.SetTranslation(moveDir);
+            currentTrsf.Multiply(transform);
+            aisShape->SetLocalTransformation(currentTrsf);
+        }
+
+    };
+
+    applyExplosion(m_loadedObjects, theFactor * 100);
+
+    reDraw();
 }
 
 void OCCView::setMouseMode(const int mode)

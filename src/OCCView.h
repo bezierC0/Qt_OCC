@@ -65,7 +65,7 @@ public:
 
   void clipping() const;
 
-  void explosion() const;
+  void explosion(double theFactor) const;
 
   void setMouseMode(int mode) ;
 

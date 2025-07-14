@@ -9,6 +9,8 @@ class ViewerWidget;
 class ModelTreeWidget;
 class QTranslator;
 
+class WidgetExplodeAssembly;
+
 class MainWindow : public SARibbonMainWindow {
     Q_OBJECT
 public:
@@ -22,7 +24,7 @@ private slots:
     void transform() const;
     void clipping() const;
     void version();
-    void explosion() const;
+    void explosion();
 
     /* measure */
     void measureDistance() const;
@@ -91,4 +93,6 @@ private:
     QMenu* m_themeMenu;
     QAction* m_lightThemeAction;
     QAction* m_darkThemeAction;
+
+    WidgetExplodeAssembly* m_widgetExplodeAsm { nullptr } ;
 };

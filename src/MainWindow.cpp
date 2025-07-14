@@ -23,6 +23,7 @@
 #include "ViewerWidget.h"
 #include "WidgetModelTree.h"
 #include "DialogAbout.h"
+#include "widget_explode_assembly.h"
 
 
 MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
@@ -178,6 +179,8 @@ void MainWindow::setupUi()
     connect(m_languageAction, &QAction::triggered, this, &MainWindow::switchLanguage);
     m_languagePannel->addSmallAction(m_languageAction);
 
+    m_widgetExplodeAsm = new WidgetExplodeAssembly();
+
     createThemeActions();
 }
 
@@ -212,9 +215,12 @@ void MainWindow::clipping() const
     m_viewerWidget->clipping( normal , point );
 }
 
-void MainWindow::explosion() const
+void MainWindow::explosion()
 {
-    m_viewerWidget->explosion();
+    if(!m_widgetExplodeAsm)
+        return;
+    m_widgetExplodeAsm->show();
+    m_widgetExplodeAsm->adjustSize();
 }
 
 void MainWindow::measureDistance() const

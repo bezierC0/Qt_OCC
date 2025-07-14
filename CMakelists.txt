@@ -159,7 +159,7 @@ file(
     GLOB SOURCES
     src/*.cpp
     # ui
-    src/dialog_about.ui
+    src/*.ui
     # external
     external/SARibbon/SARibbon.cpp
 )

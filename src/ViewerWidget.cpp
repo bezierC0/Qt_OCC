@@ -3,6 +3,7 @@
 #include "WidgetModelTree.h"
 #include "OCCView.h"
 #include "Tree.h"
+#include "ViewManager.h"
 
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
@@ -27,9 +28,6 @@
 #include <AIS_InteractiveObject.hxx>
 #include <Graphic3d_ClipPlane.hxx> // Added missing include for clipping
 #include <gp_Pln.hxx>              // Added missing include for clipping
-#include <Bnd_Box.hxx>             // Added missing include for explosion
-#include <gp_Trsf.hxx>             // Added missing include for explosion
-#include <gp_Vec.hxx>              // Added missing include for explosion
 #include <Quantity_Color.hxx>      // Added missing include for colors
 #include <BRep_Tool.hxx>
 #include <TopoDS.hxx>
@@ -130,6 +128,7 @@ ViewerWidget::ViewerWidget(QWidget *parent) : QWidget(parent)
     layout->setMargin(0);
 
     m_doc = std::make_shared<Document>();
+    ViewManager::getInstance().addView(m_occView);
 }
 
 ViewerWidget::~ViewerWidget()
@@ -296,68 +295,7 @@ void ViewerWidget::clipping(const gp_Dir &normal, const gp_Pnt &point, const boo
 
 void ViewerWidget::explosion()
 {
-    auto applyExplosion = [](const std::vector<Handle(AIS_InteractiveObject)> &objectList, const double distanceMultiplier = 50.0)
-    {
-        auto computeShapeCenter = [](const TopoDS_Shape &shape) -> gp_Pnt
-        {
-            Bnd_Box bbox;
-            BRepBndLib::Add(shape, bbox);
-            Standard_Real xMin{}, yMin{}, zMin{}, xMax{}, yMax{}, zMax{};
-            bbox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
-            return gp_Pnt((xMin + xMax) / 2.0, (yMin + yMax) / 2.0, (zMin + zMax) / 2.0);
-        };
 
-        std::vector<TopoDS_Shape> explodedShapes;
-
-        gp_Pnt globalCenter(0, 0, 0);
-        if (!objectList.empty())
-        {
-            Bnd_Box globalBox;
-            for (const auto &object : objectList)
-            {
-                const auto aisShape = Handle(AIS_Shape)::DownCast(object);
-                const auto &shape = aisShape->Shape();
-                BRepBndLib::Add(shape, globalBox);
-            }
-            Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
-            globalBox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
-            globalCenter = gp_Pnt((xMin + xMax) / 2.0, (yMin + yMax) / 2.0, (zMin + zMax) / 2.0);
-        }
-
-        for (const auto &object : objectList)
-        {
-            const auto aisShape = Handle(AIS_Shape)::DownCast(object);
-            const auto &shape = aisShape->Shape();
-            gp_Pnt center = computeShapeCenter(shape);
-            gp_Vec moveDir(globalCenter, center);
-            if (moveDir.Magnitude() > 0.0)
-            {
-                moveDir.Normalize();
-                moveDir *= distanceMultiplier;
-            }
-
-            gp_Trsf transform;
-            transform.SetTranslation(moveDir);
-            BRepBuilderAPI_Transform transformer(shape, transform, true);
-            explodedShapes.emplace_back(transformer.Shape());
-        }
-
-        return explodedShapes;
-    };
-
-    const auto explodedShapes = applyExplosion(m_doc->m_list, 80.0);
-
-    m_occView->clearShape();
-    for (const auto &shape : explodedShapes)
-    {
-        if (shape.IsNull())
-            continue;
-        Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
-        aisShape->SetDisplayMode(AIS_Shaded);
-        aisShape->SetColor(Quantity_NOC_SKYBLUE);
-        m_occView->setShape(aisShape);
-    }
-    m_occView->reDraw();
 }
 
 void ViewerWidget::measureDistance()
