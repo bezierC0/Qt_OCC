@@ -63,12 +63,14 @@ private:
     QAction* m_fitAction;
     QAction* m_selectAction;
 
-    SARibbonCategory* m_analysisCategory;
+    SARibbonCategory* m_toolCategory;
+    SARibbonPannel* m_transformToolPannel;
     SARibbonPannel* m_analysisPannel;
     SARibbonPannel* m_clippingPannel;
     SARibbonPannel* m_measurePannel;
-    QAction* m_interferenceAction;
     SARibbonPannel* m_otherPannel;
+    QAction* m_transformAction;
+    QAction* m_interferenceAction;
     QAction* m_clippingAction;
     QAction* m_explosionAction;
     QAction* m_measureDistanceAction;

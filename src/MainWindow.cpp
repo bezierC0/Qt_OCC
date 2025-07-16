@@ -56,7 +56,7 @@ void MainWindow::setupUi()
         m_ribbon->clear();
         m_ribbon->removeCategory( m_fileCategory );
         m_ribbon->removeCategory( m_viewCategory );
-        m_ribbon->removeCategory( m_analysisCategory );
+        m_ribbon->removeCategory( m_toolCategory );
         m_ribbon->removeCategory( m_shapeCategory );
         m_ribbon->removeCategory( m_helpCategory );
 
@@ -97,24 +97,31 @@ void MainWindow::setupUi()
     m_viewPannel->addLargeAction(m_selectAction);
 
     // ---- Tool Group ----
-    m_analysisCategory = m_ribbon->addCategoryPage(tr("Tool"));
+    m_toolCategory = m_ribbon->addCategoryPage(tr("Tool"));
+
+    /* Transform Pannel*/
+    m_transformToolPannel = m_toolCategory->addPannel(tr("Transform Tool"));
+    // analysisPannel interference
+    m_transformAction = new QAction(QIcon(":/icons/icon/interference.png"), tr("Transform"), this); // Assuming an icon path
+    connect(m_transformAction, &QAction::triggered, this, &MainWindow::transform);
+    m_transformToolPannel->addLargeAction(m_transformAction);
     
     /* Analysis Pannel*/
-    m_analysisPannel = m_analysisCategory->addPannel(tr("Analysis"));
+    m_analysisPannel = m_toolCategory->addPannel(tr("Analysis"));
     // analysisPannel interference
     m_interferenceAction = new QAction(QIcon(":/icons/icon/interference.png"), tr("Interference"), this); // Assuming an icon path
     connect(m_interferenceAction, &QAction::triggered, this, &MainWindow::checkInterference);
     m_analysisPannel->addLargeAction(m_interferenceAction);
 
     /* Clipping Pannel */
-    m_clippingPannel = m_analysisCategory->addPannel(tr("Clipping Tool"));
+    m_clippingPannel = m_toolCategory->addPannel(tr("Clipping Tool"));
     // clipping
     m_clippingAction = new QAction(QIcon(":/icons/icon/clipping.svg"), tr("Clipping"), this); // Assuming an icon path
     connect(m_clippingAction, &QAction::triggered, this, &MainWindow::clipping);
     m_clippingPannel->addSmallAction(m_clippingAction);
 
     /* Measure Pannel */
-    m_measurePannel = m_analysisCategory->addPannel(tr("Measure"));
+    m_measurePannel = m_toolCategory->addPannel(tr("Measure"));
     // measure distance
     m_measureDistanceAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("MeasureDistance"), this);
     connect(m_measureDistanceAction, &QAction::triggered, this, &MainWindow::measureDistance);
@@ -136,7 +143,7 @@ void MainWindow::setupUi()
     m_measurePannel->addSmallAction(m_measureAngleAction);
     
     /* Other Pannel */
-    m_otherPannel = m_analysisCategory->addPannel(tr("Other Tools")); // Adding to Analysis category for simplicity
+    m_otherPannel = m_toolCategory->addPannel(tr("Other Tools")); // Adding to Analysis category for simplicity
     // explosion
     m_explosionAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("Explosion"), this); // Assuming an icon path
     connect(m_explosionAction, &QAction::triggered, this, &MainWindow::explosion);

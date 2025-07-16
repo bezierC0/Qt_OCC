@@ -13,6 +13,7 @@
 #include <map>
 
 class AIS_ViewCube;
+class AIS_Manipulator;
 
 //! OCCT 3D View.
 class OCCView : public QOpenGLWidget, public AIS_ViewController
@@ -56,6 +57,8 @@ public:
   const std::vector<Handle( AIS_InteractiveObject )>& getSelectedObjects( ) const;
 
   void clearSelectedObjects( ) ;
+
+  void attachManipulator( const Handle(AIS_InteractiveObject) object ) ;
 
   void transform() ;
 
@@ -123,6 +126,8 @@ private:
   Handle(AIS_ViewCube)                          m_navigationView; // XYZ Navigation GuiDocument::setViewTrihedronMode
 
   Handle(AIS_AnimationCamera)                   m_animationCamera;
+
+  Handle(AIS_Manipulator)                       m_manipulator;
 
   //! OpenGL info.
   Handle(V3d_View)                              myFocusView;

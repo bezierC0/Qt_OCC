@@ -15,6 +15,7 @@
 
 #include <AIS_Shape.hxx>
 #include <AIS_ViewCube.hxx>
+#include <AIS_Manipulator.hxx>
 #include <AIS_AnimationCamera.hxx>
 #include <Aspect_DisplayConnection.hxx>
 #include <Aspect_NeutralWindow.hxx>
@@ -320,6 +321,9 @@ OCCView::OCCView(QWidget *theParent)
     myViewAnimation->SetOwnDuration(m_animationDuration);
     myViewAnimation->SetView(m_view);
 
+    // Manipulator setup
+    m_manipulator = new AIS_Manipulator();
+
     // Qt widget setup
     setMouseTracking(true);
     setBackgroundRole(QPalette::NoRole); // or NoBackground
@@ -471,13 +475,13 @@ void OCCView::keyPressEvent(QKeyEvent *theEvent)
 void OCCView::mousePressEvent(QMouseEvent *theEvent)
 {
     if( m_mouseMode == 1){
-        // Perform selection
-        const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier) ? AIS_SelectionScheme_Add : AIS_SelectionScheme_Replace;
-        m_context->SelectDetected(aScheme);
-
-        // If something is selected, update the view and return
-        if (m_context->NbSelected() > 0)
-        {
+        auto selectFun = [&](){
+            // Perform selection
+            const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier) ? AIS_SelectionScheme_Add : AIS_SelectionScheme_Replace;
+            m_context->SelectDetected(aScheme);
+            // If something is selected, update the view and return
+            if (m_context->NbSelected() <= 0)
+                return ;
             for (m_context->InitSelected(); m_context->MoreSelected(); m_context->NextSelected())
             {
                 const TopoDS_Shape &detectedShape = m_context->SelectedShape();
@@ -487,11 +491,13 @@ void OCCView::mousePressEvent(QMouseEvent *theEvent)
                     m_selectedObjects.emplace_back(selectedSubShape);
                 }
             }
-            updateView();
-        }
-        return; // Selection was made, do not proceed to view navigation
+        };
+        selectFun();
     }
-    m_selectedObjects.clear();
+    else{
+        if( !m_selectedObjects.empty() )
+            m_selectedObjects.clear();
+    }
 
     const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
     // If nothing was selected, proceed with view navigation
@@ -675,51 +681,48 @@ void OCCView::clearSelectedObjects()
     m_selectedObjects.clear();
 }
 
+void OCCView::attachManipulator(const Handle(AIS_InteractiveObject) object)
+{
+    if( !m_manipulator )
+        return ;
+    
+    m_manipulator->Attach(object);
+    const auto aisShape = Handle(AIS_Shape)::DownCast(object);
+    if( !aisShape || aisShape.IsNull() )
+        return ;
+    TopoDS_Shape shape = aisShape->Shape();
+    Bnd_Box boundingBox;
+    BRepBndLib::Add(shape, boundingBox);
+    if (boundingBox.IsVoid()) {
+        return;
+    }
+    Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
+    boundingBox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
+    const gp_Pnt point((xMin + xMax) / 2.0, 
+                       (yMin + yMax) / 2.0, 
+                       (zMin + zMax) / 2.0);
+
+    const gp_Dir dir(0.0,0.0,1.0);
+    const gp_Ax2 theA2(point,dir);
+    m_manipulator->SetPosition(theA2);
+}
+
 void OCCView::transform()
 {
     if (!m_loadedObjects.empty())
     {
         Handle(AIS_InteractiveObject) obj = m_loadedObjects.at(0);
         auto aisShape = Handle(AIS_Shape)::DownCast(obj);
-        if (aisShape.IsNull())
+        if ( !aisShape || aisShape.IsNull())
         {
             return;
         }
 
-#if 0
-        gp_Trsf trsf;
-        trsf.SetTranslation( gp_Vec( 100.0, 0.0, 0.0 ) );
-        aisShape->SetLocalTransformation( trsf );
-        const TopoDS_Shape& shape = aisShape->Shape();
-        TopLoc_Location location = shape.Location();
-        gp_Trsf shapeTrsf = location.Transformation();
+        attachManipulator(obj);
 
-        std::cout << "\n=== before ===" << std::endl;
-        std::cout << "- LocalTransformation: " << aisShape->LocalTransformation().Form() << std::endl;
-        std::cout << "- Shape Location Trsf: " << shapeTrsf.Form() << std::endl;
-        if ( shapeTrsf.Form() != gp_Identity ) {
-            gp_XYZ trans = shapeTrsf.TranslationPart();
-            std::cout << "  Translation: (" << trans.X() << ", " << trans.Y() << ", " << trans.Z() << ")" << std::endl;
-        }
-
-
-
-        TopoDS_Shape newShape = BRepBuilderAPI_Transform( shape, trsf ).Shape();
-        aisShape->SetShape( newShape );
-        aisShape->ResetTransformation();
-
-        std::cout << "\n=== after ===" << std::endl;
-        std::cout << "- LocalTransformation: " << aisShape->LocalTransformation().Form() << std::endl;
-        TopLoc_Location newLocation = newShape.Location();
-        gp_Trsf newTrsf = newLocation.Transformation();
-        std::cout << "- New Shape Location Trsf: " << newTrsf.Form() << std::endl;
-        if ( newTrsf.Form() != gp_Identity ) {
-            gp_XYZ newTrans = newTrsf.TranslationPart();
-            std::cout << "  Translation: (" << newTrans.X() << ", " << newTrans.Y() << ", " << newTrans.Z() << ")" << std::endl;
-        }
-        Context()->Redisplay( aisShape, true );
-#else
+        #if 0
         gp_Trsf currentTrsf = aisShape->LocalTransformation();
+
 
         gp_Trsf translation;
         translation.SetTranslation(gp_Vec(100.0, 0.0, 0.0));
@@ -728,7 +731,7 @@ void OCCView::transform()
         aisShape->SetLocalTransformation(currentTrsf);
 
         Context()->Redisplay(aisShape, true);
-#endif
+        #endif
     }
     reDraw();
 }
