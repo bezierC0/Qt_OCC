@@ -39,6 +39,7 @@ private slots:
     void measureAngle() const;
     
     /* shape */
+    void createPoint();
     void createLine();
     void createRectangle();
     void createCircle();
@@ -102,6 +103,7 @@ private:
     QAction* m_cylinderAction;
     QAction* m_coneAction;
 
+    QAction* m_pointAction;
     QAction* m_lineAction;
     QAction* m_rectangleAction;
     QAction* m_circleAction;

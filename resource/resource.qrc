@@ -19,6 +19,7 @@
         <file>icon/shape_circle.svg</file>
         <file>icon/shape_bezier.svg</file>
         <file>icon/shape_nurbs.svg</file>
+        <file>icon/shape_point.svg</file>
         <file>icon/shape_ellipse.svg</file>
         <file>icon/shape_line.svg</file>
         <file>icon/shape_polyline.svg</file>

@@ -18,6 +18,7 @@
 #include <BRepPrimAPI_MakeSphere.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakeCone.hxx>
+#include <BRepBuilderAPI_MakeVertex.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
 #include <BRepBuilderAPI_MakePolygon.hxx>
@@ -167,6 +168,11 @@ void MainWindow::setupUi()
 
     // ---- 2D Shape Pannel ----
     m_2dShapesPannel = m_shapeCategory->addPannel(tr("2D"));
+
+    // point
+    m_pointAction = new QAction(QIcon(":/icons/icon/shape_point.svg"),tr("Point"), this);
+    connect(m_pointAction, &QAction::triggered, this, &MainWindow::createPoint);
+    m_2dShapesPannel->addSmallAction(m_pointAction);
 
     // line
     m_lineAction = new QAction(QIcon(":/icons/icon/shape_line.svg"),tr("Line"), this);
@@ -318,6 +324,16 @@ void MainWindow::version()
 {
     DialogAbout dlg(this);
     dlg.exec();
+}
+
+void MainWindow::createPoint()
+{
+    gp_Pnt p(10, 20, 30);
+    BRepBuilderAPI_MakeVertex vertexMaker(p);
+    if (vertexMaker.IsDone())
+    {
+        m_viewerWidget->displayShape(vertexMaker.Shape(), 1.0, 1.0, 1.0); 
+    }
 }
 
 void MainWindow::createLine()
