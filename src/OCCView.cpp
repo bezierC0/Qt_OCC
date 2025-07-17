@@ -725,6 +725,11 @@ void OCCView::attachManipulator(const Handle(AIS_InteractiveObject) object)
     m_manipulator->SetPosition(theA2);
 }
 
+const std::map<TopAbs_ShapeEnum, bool>& OCCView::getSelectionFilters() const
+{
+    return m_selectionFilters;
+}
+
 void OCCView::transform()
 {
     if (!m_loadedObjects.empty())

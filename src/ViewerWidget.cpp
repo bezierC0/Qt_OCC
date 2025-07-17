@@ -236,13 +236,21 @@ void ViewerWidget::viewFit()
     m_occView->fit();
 }
 
-void ViewerWidget::setFilters(const bool isElementOn)
+void ViewerWidget::setFilters(const std::map<TopAbs_ShapeEnum, bool>& filters)
 {
-    m_occView->setMouseMode(isElementOn ? 1 : 0);
-    m_occView->updateSelectionFilter(TopAbs_SOLID,!isElementOn);
-    m_occView->updateSelectionFilter(TopAbs_FACE,isElementOn);
-    m_occView->updateSelectionFilter(TopAbs_EDGE,isElementOn);
-    m_occView->updateSelectionFilter(TopAbs_VERTEX,isElementOn);
+    // Ensure selection mode is enabled if any filters are active
+    bool anyFilterActive = false;
+    for (const auto& pair : filters) {
+        if (pair.second) {
+            anyFilterActive = true;
+            break;
+        }
+    }
+    m_occView->setMouseMode(anyFilterActive ? 1 : 0);
+
+    for (const auto& pair : filters) {
+        m_occView->updateSelectionFilter(pair.first, pair.second);
+    }
 }
 
 void ViewerWidget::transform()
@@ -454,6 +462,17 @@ void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const
     m_occView->fit(); // Fit view to the new shape
 }
 
+void ViewerWidget::removeShape(const TopoDS_Shape &shape)
+{
+}
+
+const std::map<TopAbs_ShapeEnum, bool>& ViewerWidget::getSelectionFilters() const {
+    const auto acitveView = ViewManager::getInstance().getActiveView();
+    if( !acitveView )
+        return std::map<TopAbs_ShapeEnum, bool>();
+    return acitveView->getSelectionFilters();
+}
+
 bool ViewerWidget::getBooleanTargets(TopoDS_Shape &target1, TopoDS_Shape &target2)
 {
     const auto acitveView = ViewManager::getInstance().getActiveView();
@@ -476,3 +495,4 @@ bool ViewerWidget::getBooleanTargets(TopoDS_Shape &target1, TopoDS_Shape &target
     target2 = shapeB ;
     return true ;
 }
+

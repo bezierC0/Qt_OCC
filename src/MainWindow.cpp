@@ -126,6 +126,45 @@ void MainWindow::createViewGroup()
     m_selectAction->setCheckable(true);
     connect(m_selectAction, &QAction::toggled, this, &MainWindow::onSelectModeToggled);
     m_viewPannel->addLargeAction(m_selectAction);
+
+    // Select Filter
+    QToolButton* selectFilterButton = new QToolButton(this);
+    selectFilterButton->setText(tr("Select Filter"));
+    selectFilterButton->setIcon(QIcon(":/icons/icon/select_filter.svg"));
+    selectFilterButton->setPopupMode(QToolButton::MenuButtonPopup);
+
+    QMenu* filterMenu = new QMenu(selectFilterButton);
+
+    // Create checkboxes for each filter type
+    QCheckBox* vertexCheckBox = new QCheckBox(tr("Vertices"), filterMenu);
+    QCheckBox* edgeCheckBox = new QCheckBox(tr("Edges"), filterMenu);
+    QCheckBox* faceCheckBox = new QCheckBox(tr("Faces"), filterMenu);
+    QCheckBox* solidCheckBox = new QCheckBox(tr("Solids"), filterMenu);
+
+    // Set initial checkbox states based on current filters
+    const auto& currentFilters = m_viewerWidget->getSelectionFilters();
+    vertexCheckBox->setChecked(currentFilters.at(TopAbs_VERTEX));
+    edgeCheckBox->setChecked(currentFilters.at(TopAbs_EDGE));
+    faceCheckBox->setChecked(currentFilters.at(TopAbs_FACE));
+    solidCheckBox->setChecked(currentFilters.at(TopAbs_SOLID));
+
+    // Create actions for checkboxes and make them checkable
+    auto addCheckableAction = [&](QCheckBox* checkBox) {
+        QAction* action = new QAction(checkBox->text(), filterMenu);
+        action->setCheckable(true);
+        action->setChecked(checkBox->isChecked());
+        checkBox->connect(action, &QAction::toggled, checkBox, &QCheckBox::setChecked); // Keep checkbox and action in sync
+        filterMenu->addAction(action);
+    };
+
+    addCheckableAction(vertexCheckBox);
+    addCheckableAction(edgeCheckBox);
+    addCheckableAction(faceCheckBox);
+    addCheckableAction(solidCheckBox);
+
+    selectFilterButton->setMenu(filterMenu);
+    SARibbonPannelItem::RowProportion rp;
+    m_viewPannel->addWidget(selectFilterButton, SARibbonPannelItem::Large);
 }
 
 void MainWindow::createToolGroup()
@@ -343,7 +382,11 @@ void MainWindow::viewFit() const
 
 void MainWindow::onSelectModeToggled(bool checked)
 {
-    m_viewerWidget->setFilters(checked);
+    //m_viewerWidget->setFilters(checked);
+}
+
+void MainWindow::onSelectFilter(int index) const
+{
 }
 
 void MainWindow::checkInterference() const

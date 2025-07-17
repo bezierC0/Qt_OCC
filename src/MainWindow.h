@@ -24,6 +24,7 @@ private slots:
     /* view */
     void viewFit() const;
     void onSelectModeToggled(bool checked);
+    void onSelectFilter(int index) const;
 
     /* tool */
     void checkInterference() const;

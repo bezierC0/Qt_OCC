@@ -31,7 +31,7 @@ public:
 
     //view
     void viewFit();
-    void setFilters(bool isElementOn);
+    void setFilters(const std::map<TopAbs_ShapeEnum, bool>& filters);
 
     // tool
     void checkInterference();
@@ -61,6 +61,7 @@ public:
     
     void displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0); // Add this function
     void removeShape(const TopoDS_Shape& shape);
+    const std::map<TopAbs_ShapeEnum, bool>& getSelectionFilters() const ;
 
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);

@@ -62,6 +62,8 @@ public:
 
   void attachManipulator( const Handle(AIS_InteractiveObject) object ) ;
 
+  const std::map<TopAbs_ShapeEnum, bool>& getSelectionFilters() const ;
+
   void transform() ;
 
   void reDraw() const ;
