@@ -62,6 +62,14 @@ private:
     void setupUi();
     void createThemeActions();
 
+    // Ribbon creation helper functions
+    void createRibbon(); // Create ribbon bar
+    void createFileGroup(); // Create file group
+    void createViewGroup(); // Create view group
+    void createToolGroup(); // Create tool group
+    void createShapeGroup(); // Create shape group
+    void createHelpGroup(); // Create help group
+
 private:
     ViewerWidget* m_viewerWidget;
     ModelTreeWidget* m_modelTreeWidget;
@@ -70,16 +78,19 @@ private:
 
     // UI elements
     SARibbonBar* m_ribbon = nullptr;
+    // ---- File Group ----
     SARibbonCategory* m_fileCategory;
     SARibbonPannel* m_filePannel;
     QAction* m_newAction;
     QAction* m_openAction;
 
+    // ---- View Group ----
     SARibbonCategory* m_viewCategory;
     SARibbonPannel* m_viewPannel;
     QAction* m_fitAction;
     QAction* m_selectAction;
 
+    // ---- Tool Group ----
     SARibbonCategory* m_toolCategory;
     SARibbonPannel* m_transformToolPannel;
     SARibbonPannel* m_analysisPannel;
@@ -95,9 +106,10 @@ private:
     QAction* m_measureArcLengthAction;
     QAction* m_measureAngleAction;
 
+    // ---- Shape Group ----
     SARibbonCategory* m_shapeCategory;
     SARibbonPannel* m_basicShapesPannel;
-    SARibbonPannel* m_2dShapesPannel;
+    SARibbonPannel* m_Shape2dPannel;
     QAction* m_boxAction;
     QAction* m_sphereAction;
     QAction* m_cylinderAction;
@@ -113,6 +125,7 @@ private:
     QAction* m_bezierCurveAction;
     QAction* m_nurbsCurveAction;
 
+    // ---- help Group ----
     SARibbonCategory* m_helpCategory;
     SARibbonPannel* m_versionPannel;
     QAction* m_versionAction;
