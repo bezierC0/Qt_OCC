@@ -1,5 +1,6 @@
 <RCC>
     <qresource prefix="/icons">
+        <file>icon/open.png</file>
         <file>icon/box.png</file>
         <file>icon/clipping.svg</file>
         <file>icon/cone.png</file>
@@ -7,9 +8,23 @@
         <file>icon/file_new.svg</file>
         <file>icon/fit.png</file>
         <file>icon/interference.png</file>
-        <file>icon/open.png</file>
         <file>icon/select.svg</file>
+        <file>icon/tool_transform.svg</file>
+        <file>icon/measure_angle.svg</file>
+        <file>icon/measure_arc_length.svg</file>
+        <file>icon/measure_distance.svg</file>
+        <file>icon/measure_length.svg</file>
         <file>icon/sphere.png</file>
+        <file>icon/shape_arc.svg</file>
+        <file>icon/shape_circle.svg</file>
+        <file>icon/shape_bezier.svg</file>
+        <file>icon/shape_nurbs.svg</file>
+        <file>icon/shape_ellipse.svg</file>
+        <file>icon/shape_line.svg</file>
+        <file>icon/shape_polyline.svg</file>
+        <file>icon/shape_rectangle.svg</file>
+        <file>icon/help_language.svg</file>
+        <file>icon/help_theme.svg</file>
         <file>icon/version.svg</file>
     </qresource>
     <qresource prefix="/qss">

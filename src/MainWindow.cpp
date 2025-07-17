@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+﻿#include "MainWindow.h"
 #include <QtCore>
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QToolButton>
@@ -18,6 +18,19 @@
 #include <BRepPrimAPI_MakeSphere.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakeCone.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
+#include <BRepBuilderAPI_MakePolygon.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
+#include <GC_MakeArcOfCircle.hxx>
+#include <Geom_BezierCurve.hxx>
+#include <Geom_BSplineCurve.hxx>
+#include <TColStd_Array1OfInteger.hxx>
+#include <TColStd_Array1OfReal.hxx>
+#include <TColgp_Array1OfPnt.hxx>
+#include <gp_Ax2.hxx>
+#include <gp_Circ.hxx>
+#include <gp_Elips.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Dir.hxx>
 #include "ViewerWidget.h"
@@ -102,7 +115,7 @@ void MainWindow::setupUi()
     /* Transform Pannel*/
     m_transformToolPannel = m_toolCategory->addPannel(tr("Transform Tool"));
     // analysisPannel interference
-    m_transformAction = new QAction(QIcon(":/icons/icon/interference.png"), tr("Transform"), this); // Assuming an icon path
+    m_transformAction = new QAction(QIcon(":/icons/icon/tool_transform.svg"), tr("Transform"), this); // Assuming an icon path
     connect(m_transformAction, &QAction::triggered, this, &MainWindow::transform);
     m_transformToolPannel->addLargeAction(m_transformAction);
     
@@ -123,22 +136,22 @@ void MainWindow::setupUi()
     /* Measure Pannel */
     m_measurePannel = m_toolCategory->addPannel(tr("Measure"));
     // measure distance
-    m_measureDistanceAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("MeasureDistance"), this);
+    m_measureDistanceAction = new QAction(QIcon(":/icons/icon/measure_distance.svg"), tr("MeasureDistance"), this);
     connect(m_measureDistanceAction, &QAction::triggered, this, &MainWindow::measureDistance);
     m_measurePannel->addSmallAction(m_measureDistanceAction);
 
     // measure length
-    m_measureLengthAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("MeasureLength"), this);
+    m_measureLengthAction = new QAction(QIcon(":/icons/icon/measure_length.svg"), tr("MeasureLength"), this);
     connect(m_measureLengthAction, &QAction::triggered, this, &MainWindow::measureLength);
     m_measurePannel->addSmallAction(m_measureLengthAction);
 
     // measure arc length
-    m_measureArcLengthAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("MeasureArcLength"), this);
+    m_measureArcLengthAction = new QAction(QIcon(":/icons/icon/measure_arc_length.svg"), tr("MeasureArcLength"), this);
     connect(m_measureArcLengthAction, &QAction::triggered, this, &MainWindow::measureArcLength);
     m_measurePannel->addSmallAction(m_measureArcLengthAction);
 
     // measure angle
-    m_measureAngleAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("MeasureAngle"), this); 
+    m_measureAngleAction = new QAction(QIcon(":/icons/icon/measure_angle.svg"), tr("MeasureAngle"), this); 
     connect(m_measureAngleAction, &QAction::triggered, this, &MainWindow::measureAngle);
     m_measurePannel->addSmallAction(m_measureAngleAction);
     
@@ -151,7 +164,52 @@ void MainWindow::setupUi()
 
     // ---- Shape Group ----
     m_shapeCategory = m_ribbon->addCategoryPage(tr("Shape"));
-    m_basicShapesPannel = m_shapeCategory->addPannel(tr("Basic Shapes"));
+
+    // ---- 2D Shape Pannel ----
+    m_2dShapesPannel = m_shapeCategory->addPannel(tr("2D"));
+
+    // line
+    m_lineAction = new QAction(QIcon(":/icons/icon/shape_line.svg"),tr("Line"), this);
+    connect(m_lineAction, &QAction::triggered, this, &MainWindow::createLine);
+    m_2dShapesPannel->addSmallAction(m_lineAction);
+
+    // rectangle
+    m_rectangleAction = new QAction(QIcon(":/icons/icon/shape_rectangle.svg"),tr("Rectangle"), this);
+    connect(m_rectangleAction, &QAction::triggered, this, &MainWindow::createRectangle);
+    m_2dShapesPannel->addSmallAction(m_rectangleAction);
+
+    // circle
+    m_circleAction = new QAction(QIcon(":/icons/icon/shape_circle.svg"),tr("Circle"), this);
+    connect(m_circleAction, &QAction::triggered, this, &MainWindow::createCircle);
+    m_2dShapesPannel->addSmallAction(m_circleAction);
+
+    // arc
+    m_arcAction = new QAction(QIcon(":/icons/icon/shape_arc.svg"),tr("Arc"), this);
+    connect(m_arcAction, &QAction::triggered, this, &MainWindow::createArc);
+    m_2dShapesPannel->addSmallAction(m_arcAction);
+
+    // ellipse
+    m_ellipseAction = new QAction(QIcon(":/icons/icon/shape_ellipse.svg"),tr("Ellipse"), this);
+    connect(m_ellipseAction, &QAction::triggered, this, &MainWindow::createEllipse);
+    m_2dShapesPannel->addSmallAction(m_ellipseAction);
+
+    // polygon
+    m_polygonAction = new QAction(QIcon(":/icons/icon/shape_polyline.svg"),tr("Polygon"), this);
+    connect(m_polygonAction, &QAction::triggered, this, &MainWindow::createPolygon);
+    m_2dShapesPannel->addSmallAction(m_polygonAction);
+
+    // bezier
+    m_bezierCurveAction = new QAction(QIcon(":/icons/icon/shape_bezier.svg"),tr("Bezier"), this);
+    connect(m_bezierCurveAction, &QAction::triggered, this, &MainWindow::createBezierCurve);
+    m_2dShapesPannel->addSmallAction(m_bezierCurveAction);
+
+    // nurbs
+    m_nurbsCurveAction = new QAction(QIcon(":/icons/icon/shape_nurbs.svg"),tr("Nurbs"), this);
+    connect(m_nurbsCurveAction, &QAction::triggered, this, &MainWindow::createNurbsCurve);
+    m_2dShapesPannel->addSmallAction(m_nurbsCurveAction);
+
+    // ---- 3D Shape Pannel ----
+    m_basicShapesPannel = m_shapeCategory->addPannel(tr("3D"));
 
     // box
     m_boxAction = new QAction(QIcon(":/icons/icon/box.png"), tr("Box"), this);
@@ -168,6 +226,7 @@ void MainWindow::setupUi()
     connect(m_cylinderAction, &QAction::triggered, this, &MainWindow::createCylinder);
     m_basicShapesPannel->addLargeAction(m_cylinderAction);
 
+    // cone
     m_coneAction = new QAction(QIcon(":/icons/icon/cone.png"), tr("Cone"), this);
     connect(m_coneAction, &QAction::triggered, this, &MainWindow::createCone);
     m_basicShapesPannel->addLargeAction(m_coneAction);
@@ -182,7 +241,7 @@ void MainWindow::setupUi()
     m_versionPannel->addSmallAction(m_versionAction);
 
     m_languagePannel = m_helpCategory->addPannel(tr("Language"));
-    m_languageAction = new QAction(QIcon(), tr("Switch Language"), this);
+    m_languageAction = new QAction(QIcon(":/icons/icon/help_language.svg"), tr("Switch Language"), this);
     connect(m_languageAction, &QAction::triggered, this, &MainWindow::switchLanguage);
     m_languagePannel->addSmallAction(m_languageAction);
 
@@ -203,6 +262,11 @@ void MainWindow::openFile()
 void MainWindow::viewFit() const
 {
     m_viewerWidget->viewFit();
+}
+
+void MainWindow::onSelectModeToggled(bool checked)
+{
+    m_viewerWidget->setFilters(checked);
 }
 
 void MainWindow::checkInterference() const
@@ -256,10 +320,141 @@ void MainWindow::version()
     dlg.exec();
 }
 
+void MainWindow::createLine()
+{
+    gp_Pnt p1(0, 0, 0);
+    gp_Pnt p2(50, 50, 50);
+    BRepBuilderAPI_MakeEdge edge(p1, p2);
+    if (edge.IsDone())
+    {
+        m_viewerWidget->displayShape(edge.Shape(), 1.0, 0.0, 0.0);
+    }
+}
+
+void MainWindow::createRectangle()
+{
+    gp_Pnt p1(0, 0, 0);
+    gp_Pnt p2(40, 0, 0);
+    gp_Pnt p3(40, 30, 0);
+    gp_Pnt p4(0, 30, 0);
+    BRepBuilderAPI_MakePolygon poly;
+    poly.Add(p1);
+    poly.Add(p2);
+    poly.Add(p3);
+    poly.Add(p4);
+    poly.Add(p1); // Close the polygon
+    if (poly.IsDone())
+    {
+        BRepBuilderAPI_MakeFace face(poly.Wire());
+        if (face.IsDone())
+        {
+            m_viewerWidget->displayShape(face.Shape(), 0.0, 1.0, 0.0);
+        }
+    }
+}
+
+void MainWindow::createCircle()
+{
+    gp_Ax2 axis(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)); // Z axis
+    gp_Circ circle(axis, 25.0);                   // Radius 25
+    BRepBuilderAPI_MakeEdge edge(circle);
+    if (edge.IsDone())
+    {
+        m_viewerWidget->displayShape(edge.Shape(), 0.0, 0.0, 1.0);
+    }
+}
+
+void MainWindow::createArc()
+{
+    gp_Pnt center(0, 0, 0);
+    gp_Pnt p1(30, 0, 0);
+    gp_Pnt p2(0, 30, 0);
+    GC_MakeArcOfCircle arc(center, p1, p2);
+    if (arc.IsDone())
+    {
+        BRepBuilderAPI_MakeEdge edge(arc.Value());
+        if (edge.IsDone())
+        {
+            m_viewerWidget->displayShape(edge.Shape(), 1.0, 1.0, 0.0);
+        }
+    }
+}
+
+void MainWindow::createEllipse()
+{
+    gp_Ax2 axis(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)); // Z axis
+    gp_Elips ellipse(axis, 30.0, 15.0);           // Major radius 30, minor 15
+    BRepBuilderAPI_MakeEdge edge(ellipse);
+    if (edge.IsDone())
+    {
+        m_viewerWidget->displayShape(edge.Shape(), 1.0, 0.0, 1.0);
+    }
+}
+
+void MainWindow::createPolygon()
+{
+    BRepBuilderAPI_MakePolygon poly;
+    poly.Add(gp_Pnt(0, 0, 0));
+    poly.Add(gp_Pnt(20, 10, 0));
+    poly.Add(gp_Pnt(30, 30, 0));
+    poly.Add(gp_Pnt(10, 40, 0));
+    poly.Add(gp_Pnt(-10, 20, 0));
+    poly.Add(gp_Pnt(0, 0, 0)); // Close it
+    if (poly.IsDone())
+    {
+        m_viewerWidget->displayShape(poly.Wire(), 0.0, 1.0, 1.0);
+    }
+}
+
+void MainWindow::createBezierCurve()
+{
+    TColgp_Array1OfPnt poles(1, 4);
+    poles.SetValue(1, gp_Pnt(0, 0, 0));
+    poles.SetValue(2, gp_Pnt(10, 40, 0));
+    poles.SetValue(3, gp_Pnt(40, 40, 0));
+    poles.SetValue(4, gp_Pnt(50, 0, 0));
+    Handle(Geom_BezierCurve) bezier = new Geom_BezierCurve(poles);
+    BRepBuilderAPI_MakeEdge edge(bezier);
+    if (edge.IsDone())
+    {
+        m_viewerWidget->displayShape(edge.Shape(), 0.5, 0.5, 0.5);
+    }
+}
+
+void MainWindow::createNurbsCurve()
+{
+    TColgp_Array1OfPnt poles(1, 4);
+    poles.SetValue(1, gp_Pnt(0, 0, 0));
+    poles.SetValue(2, gp_Pnt(10, 40, 0));
+    poles.SetValue(3, gp_Pnt(40, -40, 0));
+    poles.SetValue(4, gp_Pnt(50, 0, 0));
+
+    TColStd_Array1OfReal knots(1, 2);
+    knots.SetValue(1, 0.0);
+    knots.SetValue(2, 1.0);
+
+    TColStd_Array1OfInteger mults(1, 2);
+    mults.SetValue(1, 4);
+    mults.SetValue(2, 4);
+
+    Standard_Integer degree = 3;
+
+    Handle(Geom_BSplineCurve) bspline = new Geom_BSplineCurve(poles, knots, mults, degree);
+    BRepBuilderAPI_MakeEdge edge(bspline);
+    if (edge.IsDone())
+    {
+        m_viewerWidget->displayShape(edge.Shape(), 0.2, 0.8, 0.2);
+    }
+}
+
 void MainWindow::createBox()
 {
     BRepPrimAPI_MakeBox box(10.0, 10.0, 10.0);
     m_viewerWidget->displayShape(box.Shape(), 1.0, 0.0, 1.0);
+}
+
+void MainWindow::createPyramid()
+{
 }
 
 void MainWindow::createSphere()
@@ -288,11 +483,6 @@ ViewerWidget* MainWindow::GetViewerWidget() const
 ModelTreeWidget* MainWindow::GetModelTreeWidget() const
 {
     return m_modelTreeWidget;
-}
-
-void MainWindow::onSelectModeToggled(bool checked)
-{
-    m_viewerWidget->setFilters(checked);
 }
 
 void MainWindow::switchLanguage()
@@ -335,8 +525,7 @@ void MainWindow::createThemeActions()
     connect(m_lightThemeAction, &QAction::triggered, this, &MainWindow::onSwitchTheme);
     connect(m_darkThemeAction, &QAction::triggered, this, &MainWindow::onSwitchTheme);
 
-    QAction* themeAction = new QAction(this);
-    themeAction->setText(tr("Switch Theme"));
+    QAction* themeAction = new QAction(QIcon(":/icons/icon/help_theme.svg"), tr("Switch Theme"),this);
     themeAction->setMenu(m_themeMenu);
     m_themePannel->addSmallAction(themeAction);
 }

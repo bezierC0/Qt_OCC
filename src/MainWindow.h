@@ -18,8 +18,14 @@ public:
     ViewerWidget* GetViewerWidget() const;
     ModelTreeWidget* GetModelTreeWidget() const;
 private slots:
+    /* file */
     void openFile();
+
+    /* view */
     void viewFit() const;
+    void onSelectModeToggled(bool checked);
+
+    /* tool */
     void checkInterference() const;
     void transform() const;
     void clipping() const;
@@ -33,11 +39,21 @@ private slots:
     void measureAngle() const;
     
     /* shape */
+    void createLine();
+    void createRectangle();
+    void createCircle();
+    void createArc();
+    void createEllipse();
+    void createPolygon();
+    void createBezierCurve();
+    void createNurbsCurve();
     void createBox();
+    void createPyramid();
     void createSphere();
     void createCylinder();
     void createCone();
-    void onSelectModeToggled(bool checked);
+
+    /* help */
     void switchLanguage();
     void onSwitchTheme();
 
@@ -80,10 +96,20 @@ private:
 
     SARibbonCategory* m_shapeCategory;
     SARibbonPannel* m_basicShapesPannel;
+    SARibbonPannel* m_2dShapesPannel;
     QAction* m_boxAction;
     QAction* m_sphereAction;
     QAction* m_cylinderAction;
     QAction* m_coneAction;
+
+    QAction* m_lineAction;
+    QAction* m_rectangleAction;
+    QAction* m_circleAction;
+    QAction* m_arcAction;
+    QAction* m_ellipseAction;
+    QAction* m_polygonAction;
+    QAction* m_bezierCurveAction;
+    QAction* m_nurbsCurveAction;
 
     SARibbonCategory* m_helpCategory;
     SARibbonPannel* m_versionPannel;
