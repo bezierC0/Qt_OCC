@@ -53,6 +53,9 @@ private slots:
     void createSphere();
     void createCylinder();
     void createCone();
+    void booleanUnionAction();
+    void booleanIntersection();
+    void booleanDifference();
 
     /* help */
     void switchLanguage();
@@ -108,8 +111,9 @@ private:
 
     // ---- Shape Group ----
     SARibbonCategory* m_shapeCategory;
-    SARibbonPannel* m_basicShapesPannel;
-    SARibbonPannel* m_Shape2dPannel;
+    SARibbonPannel* m_shape3dPannel;
+    SARibbonPannel* m_shape2dPannel;
+    SARibbonPannel* m_shapeBooleanPannel;
     QAction* m_boxAction;
     QAction* m_sphereAction;
     QAction* m_cylinderAction;
@@ -124,6 +128,10 @@ private:
     QAction* m_polygonAction;
     QAction* m_bezierCurveAction;
     QAction* m_nurbsCurveAction;
+    QAction* m_booleanUnionAction;
+    QAction* m_booleanIntersectionAction;
+    QAction* m_booleanDifferenceAction;
+
 
     // ---- help Group ----
     SARibbonCategory* m_helpCategory;

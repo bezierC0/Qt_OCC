@@ -39,8 +39,31 @@ public:
     void clipping(const gp_Dir& normal, const gp_Pnt& point, bool isOn = true);
     void explosion();
     void measureDistance();
+
+    /* shape */
+    void createPoint();
+    void createLine();
+    void createRectangle();
+    void createCircle();
+    void createArc();
+    void createEllipse();
+    void createPolygon();
+    void createBezierCurve();
+    void createNurbsCurve();
+    void createBox();
+    void createPyramid();
+    void createSphere();
+    void createCylinder();
+    void createCone();
+    void booleanUnion();
+    void booleanIntersection();
+    void booleanDifference();
     
     void displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0); // Add this function
+    void removeShape(const TopoDS_Shape& shape);
+
+private:
+    bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
 
 private:
     OCCView* m_occView;

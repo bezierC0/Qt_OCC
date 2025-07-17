@@ -681,6 +681,24 @@ void OCCView::clearSelectedObjects()
     m_selectedObjects.clear();
 }
 
+std::vector<Handle( AIS_Shape )> OCCView::getSelectedAisShape( const int count ) const
+{
+    std::vector<Handle( AIS_Shape )> selectedAisShapes;
+    if ( m_selectedObjects.size() != count )
+        return selectedAisShapes;
+    for( int i = 0; i < count; ++i ){
+        const auto obj = m_selectedObjects.at(i);
+        if ( obj.IsNull() )
+            return selectedAisShapes;
+            
+        const auto aisShape = Handle(AIS_Shape)::DownCast(obj);
+        if (aisShape.IsNull() )
+            return selectedAisShapes;
+        selectedAisShapes.emplace_back(aisShape);
+    }
+    return selectedAisShapes;
+}
+
 void OCCView::attachManipulator(const Handle(AIS_InteractiveObject) object)
 {
     if( !m_manipulator )

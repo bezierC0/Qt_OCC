@@ -133,130 +133,181 @@ void MainWindow::createToolGroup()
     // ---- Tool Group ----
     m_toolCategory = m_ribbon->addCategoryPage(tr("Tool"));
 
-    /* Transform Pannel*/
-    m_transformToolPannel = m_toolCategory->addPannel(tr("Transform Tool"));
-    // analysisPannel interference
-    m_transformAction = new QAction(QIcon(":/icons/icon/tool_transform.svg"), tr("Transform"), this); // Assuming an icon path
-    connect(m_transformAction, &QAction::triggered, this, &MainWindow::transform);
-    m_transformToolPannel->addLargeAction(m_transformAction);
-    
-    /* Analysis Pannel*/
-    m_analysisPannel = m_toolCategory->addPannel(tr("Analysis"));
-    // analysisPannel interference
-    m_interferenceAction = new QAction(QIcon(":/icons/icon/interference.png"), tr("Interference"), this); // Assuming an icon path
-    connect(m_interferenceAction, &QAction::triggered, this, &MainWindow::checkInterference);
-    m_analysisPannel->addLargeAction(m_interferenceAction);
+    /* Create Transform Pannel*/
+    auto createTransformToolPannel = [&](){
+        /* Transform Pannel*/
+        m_transformToolPannel = m_toolCategory->addPannel(tr("Transform Tool"));
+        // analysisPannel interference
+        m_transformAction = new QAction(QIcon(":/icons/icon/tool_transform.svg"), tr("Transform"), this); // Assuming an icon path
+        connect(m_transformAction, &QAction::triggered, this, &MainWindow::transform);
+        m_transformToolPannel->addLargeAction(m_transformAction);
+    };
+    createTransformToolPannel();
 
-    /* Clipping Pannel */
-    m_clippingPannel = m_toolCategory->addPannel(tr("Clipping Tool"));
-    // clipping
-    m_clippingAction = new QAction(QIcon(":/icons/icon/clipping.svg"), tr("Clipping"), this); // Assuming an icon path
-    connect(m_clippingAction, &QAction::triggered, this, &MainWindow::clipping);
-    m_clippingPannel->addLargeAction(m_clippingAction);
+    /* Create Analysis Pannel*/
+    auto createAnalysisPannel = [&](){
+        /* Analysis Pannel*/
+        m_analysisPannel = m_toolCategory->addPannel(tr("Analysis"));
+        // analysisPannel interference
+        m_interferenceAction = new QAction(QIcon(":/icons/icon/interference.png"), tr("Interference"), this); // Assuming an icon path
+        connect(m_interferenceAction, &QAction::triggered, this, &MainWindow::checkInterference);
+        m_analysisPannel->addLargeAction(m_interferenceAction);
+    };
+    createAnalysisPannel();
 
-    /* Measure Pannel */
-    m_measurePannel = m_toolCategory->addPannel(tr("Measure"));
-    // measure distance
-    m_measureDistanceAction = new QAction(QIcon(":/icons/icon/measure_distance.svg"), tr("MeasureDistance"), this);
-    connect(m_measureDistanceAction, &QAction::triggered, this, &MainWindow::measureDistance);
-    m_measurePannel->addLargeAction(m_measureDistanceAction);
+    /* Create Clipping Pannel*/
+    auto createClippingPannel = [&](){
+        /* Clipping Pannel */
+        m_clippingPannel = m_toolCategory->addPannel(tr("Clipping Tool"));
+        // clipping
+        m_clippingAction = new QAction(QIcon(":/icons/icon/clipping.svg"), tr("Clipping"), this); // Assuming an icon path
+        connect(m_clippingAction, &QAction::triggered, this, &MainWindow::clipping);
+        m_clippingPannel->addLargeAction(m_clippingAction);
+    };
+    createClippingPannel();
 
-    // measure length
-    m_measureLengthAction = new QAction(QIcon(":/icons/icon/measure_length.svg"), tr("MeasureLength"), this);
-    connect(m_measureLengthAction, &QAction::triggered, this, &MainWindow::measureLength);
-    m_measurePannel->addLargeAction(m_measureLengthAction);
+    /* create Measure Pannel */
+    auto createMeasurePannel = [&](){
+        /* Measure Pannel */
+        m_measurePannel = m_toolCategory->addPannel(tr("Measure"));
+        // measure distance
+        m_measureDistanceAction = new QAction(QIcon(":/icons/icon/measure_distance.svg"), tr("MeasureDistance"), this);
+        connect(m_measureDistanceAction, &QAction::triggered, this, &MainWindow::measureDistance);
+        m_measurePannel->addSmallAction(m_measureDistanceAction);
 
-    // measure arc length
-    m_measureArcLengthAction = new QAction(QIcon(":/icons/icon/measure_arc_length.svg"), tr("MeasureArcLength"), this);
-    connect(m_measureArcLengthAction, &QAction::triggered, this, &MainWindow::measureArcLength);
-    m_measurePannel->addLargeAction(m_measureArcLengthAction);
+        // measure length
+        m_measureLengthAction = new QAction(QIcon(":/icons/icon/measure_length.svg"), tr("MeasureLength"), this);
+        connect(m_measureLengthAction, &QAction::triggered, this, &MainWindow::measureLength);
+        m_measurePannel->addSmallAction(m_measureLengthAction);
 
-    // measure angle
-    m_measureAngleAction = new QAction(QIcon(":/icons/icon/measure_angle.svg"), tr("MeasureAngle"), this); 
-    connect(m_measureAngleAction, &QAction::triggered, this, &MainWindow::measureAngle);
-    m_measurePannel->addLargeAction(m_measureAngleAction);
-    
-    /* Other Pannel */
-    m_otherPannel = m_toolCategory->addPannel(tr("Other Tools")); // Adding to Analysis category for simplicity
-    // explosion
-    m_explosionAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("Explosion"), this); // Assuming an icon path
-    connect(m_explosionAction, &QAction::triggered, this, &MainWindow::explosion);
-    m_otherPannel->addLargeAction(m_explosionAction);
+        // measure arc length
+        m_measureArcLengthAction = new QAction(QIcon(":/icons/icon/measure_arc_length.svg"), tr("MeasureArcLength"), this);
+        connect(m_measureArcLengthAction, &QAction::triggered, this, &MainWindow::measureArcLength);
+        m_measurePannel->addSmallAction(m_measureArcLengthAction);
+
+        // measure angle
+        m_measureAngleAction = new QAction(QIcon(":/icons/icon/measure_angle.svg"), tr("MeasureAngle"), this); 
+        connect(m_measureAngleAction, &QAction::triggered, this, &MainWindow::measureAngle);
+        m_measurePannel->addSmallAction(m_measureAngleAction);
+    };
+    createMeasurePannel();
+
+    /* Create Other Pannel */
+    auto createOtherPannel = [&](){
+        /* Other Pannel */
+        m_otherPannel = m_toolCategory->addPannel(tr("Other Tools")); // Adding to Analysis category for simplicity
+        // explosion
+        m_explosionAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("Explosion"), this); // Assuming an icon path
+        connect(m_explosionAction, &QAction::triggered, this, &MainWindow::explosion);
+        m_otherPannel->addLargeAction(m_explosionAction);
+    };
+    createOtherPannel();
+
 }
 
 void MainWindow::createShapeGroup()
 {
     // ---- Shape Group ----
     m_shapeCategory = m_ribbon->addCategoryPage(tr("Shape"));
-    m_Shape2dPannel = m_shapeCategory->addPannel(tr("2D"));
+    
+    // ---- 2d Shape Pannel ----
+    auto createShape2dPannel = [&](){
+        m_shape2dPannel = m_shapeCategory->addPannel(tr("2D"));
 
-    // point
-    m_pointAction = new QAction(QIcon(":/icons/icon/shape_point.svg"),tr("Point"), this);
-    connect(m_pointAction, &QAction::triggered, this, &MainWindow::createPoint);
-    m_Shape2dPannel->addSmallAction(m_pointAction);
+        // point
+        m_pointAction = new QAction(QIcon(":/icons/icon/shape_point.svg"),tr("Point"), this);
+        connect(m_pointAction, &QAction::triggered, this, &MainWindow::createPoint);
+        m_shape2dPannel->addSmallAction(m_pointAction);
 
-    // line
-    m_lineAction = new QAction(QIcon(":/icons/icon/shape_line.svg"),tr("Line"), this);
-    connect(m_lineAction, &QAction::triggered, this, &MainWindow::createLine);
-    m_Shape2dPannel->addSmallAction(m_lineAction);
+        // line
+        m_lineAction = new QAction(QIcon(":/icons/icon/shape_line.svg"),tr("Line"), this);
+        connect(m_lineAction, &QAction::triggered, this, &MainWindow::createLine);
+        m_shape2dPannel->addSmallAction(m_lineAction);
 
-    // rectangle
-    m_rectangleAction = new QAction(QIcon(":/icons/icon/shape_rectangle.svg"),tr("Rectangle"), this);
-    connect(m_rectangleAction, &QAction::triggered, this, &MainWindow::createRectangle);
-    m_Shape2dPannel->addSmallAction(m_rectangleAction);
+        // rectangle
+        m_rectangleAction = new QAction(QIcon(":/icons/icon/shape_rectangle.svg"),tr("Rectangle"), this);
+        connect(m_rectangleAction, &QAction::triggered, this, &MainWindow::createRectangle);
+        m_shape2dPannel->addSmallAction(m_rectangleAction);
 
-    // circle
-    m_circleAction = new QAction(QIcon(":/icons/icon/shape_circle.svg"),tr("Circle"), this);
-    connect(m_circleAction, &QAction::triggered, this, &MainWindow::createCircle);
-    m_Shape2dPannel->addSmallAction(m_circleAction);
+        // circle
+        m_circleAction = new QAction(QIcon(":/icons/icon/shape_circle.svg"),tr("Circle"), this);
+        connect(m_circleAction, &QAction::triggered, this, &MainWindow::createCircle);
+        m_shape2dPannel->addSmallAction(m_circleAction);
 
-    // arc
-    m_arcAction = new QAction(QIcon(":/icons/icon/shape_arc.svg"),tr("Arc"), this);
-    connect(m_arcAction, &QAction::triggered, this, &MainWindow::createArc);
-    m_Shape2dPannel->addSmallAction(m_arcAction);
+        // arc
+        m_arcAction = new QAction(QIcon(":/icons/icon/shape_arc.svg"),tr("Arc"), this);
+        connect(m_arcAction, &QAction::triggered, this, &MainWindow::createArc);
+        m_shape2dPannel->addSmallAction(m_arcAction);
 
-    // ellipse
-    m_ellipseAction = new QAction(QIcon(":/icons/icon/shape_ellipse.svg"),tr("Ellipse"), this);
-    connect(m_ellipseAction, &QAction::triggered, this, &MainWindow::createEllipse);
-    m_Shape2dPannel->addSmallAction(m_ellipseAction);
+        // ellipse
+        m_ellipseAction = new QAction(QIcon(":/icons/icon/shape_ellipse.svg"),tr("Ellipse"), this);
+        connect(m_ellipseAction, &QAction::triggered, this, &MainWindow::createEllipse);
+        m_shape2dPannel->addSmallAction(m_ellipseAction);
 
-    // polygon
-    m_polygonAction = new QAction(QIcon(":/icons/icon/shape_polyline.svg"),tr("Polygon"), this);
-    connect(m_polygonAction, &QAction::triggered, this, &MainWindow::createPolygon);
-    m_Shape2dPannel->addSmallAction(m_polygonAction);
+        // polygon
+        m_polygonAction = new QAction(QIcon(":/icons/icon/shape_polyline.svg"),tr("Polygon"), this);
+        connect(m_polygonAction, &QAction::triggered, this, &MainWindow::createPolygon);
+        m_shape2dPannel->addSmallAction(m_polygonAction);
 
-    // bezier
-    m_bezierCurveAction = new QAction(QIcon(":/icons/icon/shape_bezier.svg"),tr("Bezier"), this);
-    connect(m_bezierCurveAction, &QAction::triggered, this, &MainWindow::createBezierCurve);
-    m_Shape2dPannel->addSmallAction(m_bezierCurveAction);
+        // bezier
+        m_bezierCurveAction = new QAction(QIcon(":/icons/icon/shape_bezier.svg"),tr("Bezier"), this);
+        connect(m_bezierCurveAction, &QAction::triggered, this, &MainWindow::createBezierCurve);
+        m_shape2dPannel->addSmallAction(m_bezierCurveAction);
 
-    // nurbs
-    m_nurbsCurveAction = new QAction(QIcon(":/icons/icon/shape_nurbs.svg"),tr("Nurbs"), this);
-    connect(m_nurbsCurveAction, &QAction::triggered, this, &MainWindow::createNurbsCurve);
-    m_Shape2dPannel->addSmallAction(m_nurbsCurveAction);
+        // nurbs
+        m_nurbsCurveAction = new QAction(QIcon(":/icons/icon/shape_nurbs.svg"),tr("Nurbs"), this);
+        connect(m_nurbsCurveAction, &QAction::triggered, this, &MainWindow::createNurbsCurve);
+        m_shape2dPannel->addSmallAction(m_nurbsCurveAction);
+    };
+    createShape2dPannel();
 
-    // ---- 3D Shape Pannel ----
-    m_basicShapesPannel = m_shapeCategory->addPannel(tr("3D"));
+    auto createShape3dPannel = [&](){
+        // ---- 3D Shape Pannel ----
+        m_shape3dPannel = m_shapeCategory->addPannel(tr("3D"));
 
-    // box
-    m_boxAction = new QAction(QIcon(":/icons/icon/box.png"), tr("Box"), this);
-    connect(m_boxAction, &QAction::triggered, this, &MainWindow::createBox);
-    m_basicShapesPannel->addLargeAction(m_boxAction);
+        // box
+        m_boxAction = new QAction(QIcon(":/icons/icon/box.png"), tr("Box"), this);
+        connect(m_boxAction, &QAction::triggered, this, &MainWindow::createBox);
+        m_shape3dPannel->addLargeAction(m_boxAction);
 
-    // sphere
-    m_sphereAction = new QAction(QIcon(":/icons/icon/sphere.png"), tr("Sphere"), this);
-    connect(m_sphereAction, &QAction::triggered, this, &MainWindow::createSphere);
-    m_basicShapesPannel->addLargeAction(m_sphereAction);
+        // sphere
+        m_sphereAction = new QAction(QIcon(":/icons/icon/sphere.png"), tr("Sphere"), this);
+        connect(m_sphereAction, &QAction::triggered, this, &MainWindow::createSphere);
+        m_shape3dPannel->addLargeAction(m_sphereAction);
 
-    // cylinder
-    m_cylinderAction = new QAction(QIcon(":/icons/icon/cylinder.png"), tr("Cylinder"), this);
-    connect(m_cylinderAction, &QAction::triggered, this, &MainWindow::createCylinder);
-    m_basicShapesPannel->addLargeAction(m_cylinderAction);
+        // cylinder
+        m_cylinderAction = new QAction(QIcon(":/icons/icon/cylinder.png"), tr("Cylinder"), this);
+        connect(m_cylinderAction, &QAction::triggered, this, &MainWindow::createCylinder);
+        m_shape3dPannel->addLargeAction(m_cylinderAction);
 
-    // cone
-    m_coneAction = new QAction(QIcon(":/icons/icon/cone.png"), tr("Cone"), this);
-    connect(m_coneAction, &QAction::triggered, this, &MainWindow::createCone);
-    m_basicShapesPannel->addLargeAction(m_coneAction);
+        // cone
+        m_coneAction = new QAction(QIcon(":/icons/icon/cone.png"), tr("Cone"), this);
+        connect(m_coneAction, &QAction::triggered, this, &MainWindow::createCone);
+        m_shape3dPannel->addLargeAction(m_coneAction);
+    };
+    createShape3dPannel();
+
+    /* shape Boolean Pannel Pannel  */
+    auto createShapeBooleanPannel = [&](){
+        m_shapeBooleanPannel = m_shapeCategory->addPannel(tr("Boolean"));
+
+        // boolean union
+        m_booleanUnionAction = new QAction(QIcon(":/icons/icon/boolean_union.svg"), tr("Union"), this);
+        connect(m_booleanUnionAction, &QAction::triggered, this, &MainWindow::booleanUnionAction);
+        m_shapeBooleanPannel->addLargeAction(m_booleanUnionAction);
+
+        // boolean Intersection
+        m_booleanIntersectionAction = new QAction(QIcon(":/icons/icon/boolean_intersection.svg"), tr("Intersection"), this);
+        connect(m_booleanIntersectionAction, &QAction::triggered, this, &MainWindow::booleanIntersection);
+        m_shapeBooleanPannel->addLargeAction(m_booleanIntersectionAction);
+
+        // boolean difference
+        m_booleanDifferenceAction = new QAction(QIcon(":/icons/icon/boolean_difference.svg"), tr("Difference"), this);
+        connect(m_booleanDifferenceAction, &QAction::triggered, this, &MainWindow::booleanDifference);
+        m_shapeBooleanPannel->addLargeAction(m_booleanDifferenceAction);
+    };
+    createShapeBooleanPannel();
+
 }
 
 void MainWindow::createHelpGroup()
@@ -491,6 +542,7 @@ void MainWindow::createBox()
 
 void MainWindow::createPyramid()
 {
+    m_viewerWidget->createPyramid();
 }
 
 void MainWindow::createSphere()
@@ -509,6 +561,21 @@ void MainWindow::createCone()
 {
     BRepPrimAPI_MakeCone cone(5.0, 0.0, 10.0);
     m_viewerWidget->displayShape(cone.Shape(), 0.0, 1.0, 1.0);
+}
+
+void MainWindow::booleanUnionAction()
+{
+    m_viewerWidget->booleanUnion();
+}
+
+void MainWindow::booleanIntersection()
+{
+    m_viewerWidget->booleanIntersection();
+}
+
+void MainWindow::booleanDifference()
+{
+    m_viewerWidget->booleanDifference();
 }
 
 ViewerWidget* MainWindow::GetViewerWidget() const

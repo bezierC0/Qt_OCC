@@ -56,6 +56,8 @@ public:
 
   const std::vector<Handle( AIS_InteractiveObject )>& getSelectedObjects( ) const;
 
+  std::vector<Handle( AIS_Shape )> getSelectedAisShape( int count ) const;
+
   void clearSelectedObjects( ) ;
 
   void attachManipulator( const Handle(AIS_InteractiveObject) object ) ;

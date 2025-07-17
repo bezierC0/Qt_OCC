@@ -9,12 +9,17 @@
 #include <QMessageBox>
 #include <QCoreApplication>
 
+/* read */
 #include <STEPControl_Reader.hxx>
 #include <IGESControl_Reader.hxx>
-#include <BRepAlgoAPI_Common.hxx>
 #include <STEPCAFControl_Reader.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TDocStd_Document.hxx>
+/* boolean */
+#include <BRepAlgoAPI_Common.hxx>
+#include <BRepAlgoAPI_Fuse.hxx>
+#include <BRepAlgoAPI_Cut.hxx>
+
 #include <TopoDS_Shape.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
 #include <XCAFDoc_ShapeTool.hxx>
@@ -337,6 +342,108 @@ void ViewerWidget::measureDistance()
                              QCoreApplication::translate("ViewerWidget", "Distance between the two vertices: %1").arg(distance));
 }
 
+void ViewerWidget::createPoint()
+{
+}
+
+void ViewerWidget::createLine()
+{
+}
+
+void ViewerWidget::createRectangle()
+{
+}
+
+void ViewerWidget::createCircle()
+{
+}
+
+void ViewerWidget::createArc()
+{
+}
+
+void ViewerWidget::createEllipse()
+{
+}
+
+void ViewerWidget::createPolygon()
+{
+}
+
+void ViewerWidget::createBezierCurve()
+{
+}
+
+void ViewerWidget::createNurbsCurve()
+{
+}
+
+void ViewerWidget::createBox()
+{
+}
+
+void ViewerWidget::createPyramid()
+{
+}
+
+void ViewerWidget::createSphere()
+{
+}
+
+void ViewerWidget::createCylinder()
+{
+}
+
+void ViewerWidget::createCone()
+{
+}
+
+void ViewerWidget::booleanUnion()
+{
+    TopoDS_Shape shapeA, shapeB;
+    if( !getBooleanTargets(shapeA, shapeB) )
+        return ;
+
+    BRepAlgoAPI_Fuse booleanFun(shapeA, shapeB);
+    if ( booleanFun.IsDone()) {
+        TopoDS_Shape result = booleanFun.Shape();
+        displayShape(result, 1.0, 0.0, 1.0); 
+        m_occView->clearSelectedObjects(); 
+    } else {
+        QMessageBox::warning(this, tr("Boolean Operation Failed"), tr("Boolean Union operation failed!"));
+    }
+}
+
+void ViewerWidget::booleanIntersection()
+{
+    TopoDS_Shape shape1, shape2;
+    if( !getBooleanTargets(shape1, shape2) )
+        return ;
+    BRepAlgoAPI_Common booleanFun(shape1, shape2);
+    if ( booleanFun.IsDone()) {
+        TopoDS_Shape result = booleanFun.Shape();
+        displayShape(result, 0.0, 1.0, 0.0); 
+        m_occView->clearSelectedObjects();
+    }  else {
+        QMessageBox::warning(this, tr("Boolean Operation Failed"), tr("Boolean Intersection operation failed!"));
+    }
+}
+
+void ViewerWidget::booleanDifference()
+{
+    TopoDS_Shape shape1, shape2;
+    if( !getBooleanTargets(shape1, shape2) )
+        return ;
+    BRepAlgoAPI_Cut booleanFun(shape1, shape2);
+    if ( booleanFun.IsDone()) {
+        TopoDS_Shape result = booleanFun.Shape();
+        displayShape(result, 0.0, 0.0, 1.0); 
+        m_occView->clearSelectedObjects();
+    } else {
+        QMessageBox::warning(this, tr("Boolean Operation Failed"), tr("Boolean Difference operation failed!"));
+    }
+}
+
 void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const double g, const double b)
 {
     Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
@@ -345,4 +452,27 @@ void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const
     m_occView->setShape(aisShape);
     m_occView->reDraw();
     m_occView->fit(); // Fit view to the new shape
+}
+
+bool ViewerWidget::getBooleanTargets(TopoDS_Shape &target1, TopoDS_Shape &target2)
+{
+    const auto acitveView = ViewManager::getInstance().getActiveView();
+    if( !acitveView )
+        return false ;
+    const auto& selectedList = acitveView->getSelectedAisShape(2);
+    if (selectedList.size() != 2)
+        return false ;
+
+    const auto aisShapeA = selectedList.at(0);
+    const auto aisshapeB = selectedList.at(1);
+    if( aisShapeA.IsNull() || aisshapeB.IsNull() )
+        return false ;
+
+    const auto shapeA = aisShapeA->Shape();
+    const auto shapeB = aisshapeB->Shape();
+    if( shapeA.IsNull() || shapeB.IsNull() )
+        return false ;
+    target1 = shapeA ;
+    target2 = shapeB ;
+    return true ;
 }
