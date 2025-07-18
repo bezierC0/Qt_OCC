@@ -160,6 +160,11 @@ void MainWindow::createViewGroup()
         connect(m_viewBackAction, &QAction::triggered, this, &MainWindow::onChangeViewBack);
         m_viewPannel->addSmallAction(m_viewBackAction);
 
+        // display mode
+        m_displayMode = new QAction(QIcon(":/icons/icon/display_mode.svg"), tr("Display Mode"), this);
+        connect(m_displayMode, &QAction::triggered, this, &MainWindow::onSetDisplayMode);
+        m_viewPannel->addSmallAction(m_displayMode);
+
     };
     createViewPannel();
 

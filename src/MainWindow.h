@@ -107,13 +107,14 @@ private:
     SARibbonPannel* m_viewPannel;
     SARibbonPannel* m_toolSelectPannel;
     QAction* m_fitAction;
+    QAction* m_viewIsometricAction;
     QAction* m_viewTopAction;
     QAction* m_viewBottomAction;
     QAction* m_viewLeftAction;
     QAction* m_viewRightAction;
     QAction* m_viewFrontAction;
     QAction* m_viewBackAction;
-    QAction* m_viewIsometricAction;
+    QAction* m_displayMode;
     QAction* m_selectAction;
     QAction* m_selectFilterAction;
 
