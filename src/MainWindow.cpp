@@ -126,7 +126,7 @@ void MainWindow::createViewGroup()
         m_viewPannel->addLargeAction(m_fitAction);
 
         // isometric
-        m_viewIsometricAction = new QAction(QIcon(":/icons/icon/view_iso.svg"), tr("Isometric"), this);
+        m_viewIsometricAction = new QAction(QIcon(":/icons/icon/view_isometric.svg"), tr("Isometric"), this);
         connect(m_viewIsometricAction, &QAction::triggered, this, &MainWindow::onChangeViewIsometric);
         m_viewPannel->addSmallAction(m_viewIsometricAction);
 

@@ -1,5 +1,8 @@
 <RCC>
     <qresource prefix="/icons">
+        <file>icon/boolean_difference.svg</file>
+        <file>icon/boolean_intersection.svg</file>
+        <file>icon/boolean_union.svg</file>
         <file>icon/open.png</file>
         <file>icon/box.png</file>
         <file>icon/clipping.svg</file>
@@ -28,6 +31,7 @@
         <file>icon/help_language.svg</file>
         <file>icon/help_theme.svg</file>
         <file>icon/version.svg</file>
+        <file>icon/view_isometric.svg</file>
     </qresource>
     <qresource prefix="/qss">
         <file>qss/light.qss</file>
