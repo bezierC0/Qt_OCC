@@ -31,6 +31,14 @@ public:
 
     //view
     void viewFit();
+    void viewIsometric() const;
+    void viewTop() const ;
+    void viewBottom() const ;
+    void viewLeft() const ;
+    void viewRight() const ;
+    void viewFront() const ;
+    void viewBack() const ;
+
     void switchSelect(bool checked);
     void setFilters(const std::map<TopAbs_ShapeEnum, bool>& filters);
     void updateSelectionFilter(TopAbs_ShapeEnum filter, bool isActive);

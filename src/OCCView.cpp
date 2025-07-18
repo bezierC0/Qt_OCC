@@ -21,6 +21,7 @@
 #include <Aspect_NeutralWindow.hxx>
 #include <Bnd_Box.hxx>
 #include <BRepBndLib.hxx>
+#include <Graphic3d_Camera.hxx>
 #include <gp_Trsf.hxx>
 #include <gp_Vec.hxx>
 #include <TopoDS_Shape.hxx>
@@ -779,7 +780,7 @@ void OCCView::reDraw() const
     m_view->Redraw();
 }
 
-void OCCView::fit()
+void OCCView::viewfit()
 {
     // Create a copy of the camera *before* fitting, this is our starting point.
     Handle(Graphic3d_Camera) aCamStart = new Graphic3d_Camera();
@@ -799,6 +800,42 @@ void OCCView::fit()
     animateCamera(aCamStart, aCamEnd);
 }
 
+void OCCView::viewIsometric()
+{
+    animateViewChange(V3d_TypeOfOrientation_Zup_AxoRight);
+}
+
+void OCCView::viewTop()
+{
+    animateViewChange(V3d_TypeOfOrientation_Zup_Top);
+}
+
+void OCCView::viewBottom()
+{
+    animateViewChange(V3d_TypeOfOrientation_Zup_Bottom);
+}
+
+void OCCView::viewLeft()
+{
+    animateViewChange(V3d_TypeOfOrientation_Zup_Left);
+}
+
+void OCCView::viewRight()
+{
+    animateViewChange(V3d_TypeOfOrientation_Zup_Right);
+}
+
+void OCCView::viewFront()
+{
+    animateViewChange(V3d_TypeOfOrientation_Zup_Front);
+}
+
+void OCCView::viewBack()
+{
+    animateViewChange(V3d_TypeOfOrientation_Zup_Back);
+}
+
+
 void OCCView::animateCamera(const Handle(Graphic3d_Camera) & theCamStart, const Handle(Graphic3d_Camera) & theCamEnd)
 {
     myViewAnimation->SetCameraStart(theCamStart);
@@ -806,6 +843,21 @@ void OCCView::animateCamera(const Handle(Graphic3d_Camera) & theCamStart, const 
     myViewAnimation->StartTimer(0, 1, true, false);
     myViewAnimation->Start(false);
     updateView();
+}
+
+void OCCView::animateViewChange(V3d_TypeOfOrientation theOrientation)
+{
+    Handle(Graphic3d_Camera) aCamStart = new Graphic3d_Camera();
+    aCamStart->Copy(m_view->Camera());
+
+    m_view->SetProj(theOrientation);
+
+    Handle(Graphic3d_Camera) aCamEnd = new Graphic3d_Camera();
+    aCamEnd->Copy(m_view->Camera());
+
+    m_view->SetCamera(aCamStart);
+
+    animateCamera(aCamStart, aCamEnd);
 }
 
 void OCCView::clipping() const

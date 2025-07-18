@@ -117,63 +117,108 @@ void MainWindow::createViewGroup()
 {
     // ---- View Group ----
     m_viewCategory = m_ribbon->addCategoryPage(tr("View"));
-    m_viewPannel = m_viewCategory->addPannel(tr("View Operations"));
-    m_fitAction = new QAction(QIcon(":/icons/icon/fit.png"), tr("Fit"), this); // Assuming an icon path
-    connect(m_fitAction, &QAction::triggered, this, &MainWindow::onViewFit);
-    m_viewPannel->addLargeAction(m_fitAction);
 
-    // select
-    m_selectAction = new QAction(QIcon(":/icons/icon/select.svg"), tr("Select"), this);
-    m_selectAction->setCheckable(true);
-    connect(m_selectAction, &QAction::toggled, this, &MainWindow::onSwitchSelect);
-    m_viewPannel->addLargeAction(m_selectAction);
+    // view panel
+    auto createViewPannel = [&](){
+        m_viewPannel = m_viewCategory->addPannel(tr("View Operations"));
+        m_fitAction = new QAction(QIcon(":/icons/icon/fit.png"), tr("Fit"), this); // Assuming an icon path
+        connect(m_fitAction, &QAction::triggered, this, &MainWindow::onViewFit);
+        m_viewPannel->addLargeAction(m_fitAction);
 
-    // Select Filter
-    auto createAction = [&](const QString& text, const QString& iconurl)
-    {
-        QAction *act = new QAction(this);
-        act->setText(text);
-        act->setIcon(QIcon(iconurl));
-        act->setObjectName(text);
-        return act;
+        // isometric
+        m_viewIsometricAction = new QAction(QIcon(":/icons/icon/view_iso.svg"), tr("Isometric"), this);
+        connect(m_viewIsometricAction, &QAction::triggered, this, &MainWindow::onChangeViewIsometric);
+        m_viewPannel->addSmallAction(m_viewIsometricAction);
+
+        // top
+        m_viewTopAction = new QAction(QIcon(":/icons/icon/view_top.svg"), tr("Top"), this);
+        connect(m_viewTopAction, &QAction::triggered, this, &MainWindow::onChangeViewTop);
+        m_viewPannel->addSmallAction(m_viewTopAction);
+
+        // bottom
+        m_viewBottomAction = new QAction(QIcon(":/icons/icon/view_bottom.svg"), tr("Bottom"), this);
+        connect(m_viewBottomAction, &QAction::triggered, this, &MainWindow::onChangeViewBottom);
+        m_viewPannel->addSmallAction(m_viewBottomAction);
+
+        // left
+        m_viewLeftAction = new QAction(QIcon(":/icons/icon/view_left.svg"), tr("Left"), this);
+        connect(m_viewLeftAction, &QAction::triggered, this, &MainWindow::onChangeViewLeft);
+        m_viewPannel->addSmallAction(m_viewLeftAction);
+
+        // right
+        m_viewRightAction = new QAction(QIcon(":/icons/icon/view_right.svg"), tr("Right"), this);
+        connect(m_viewRightAction, &QAction::triggered, this, &MainWindow::onChangeViewRight);
+        m_viewPannel->addSmallAction(m_viewRightAction);
+
+        // front
+        m_viewFrontAction = new QAction(QIcon(":/icons/icon/view_front.svg"), tr("Front"), this);
+        connect(m_viewFrontAction, &QAction::triggered, this, &MainWindow::onChangeViewFront);
+        m_viewPannel->addSmallAction(m_viewFrontAction);
+
+        // back
+        m_viewBackAction = new QAction(QIcon(":/icons/icon/view_back.svg"), tr("Back"), this);
+        connect(m_viewBackAction, &QAction::triggered, this, &MainWindow::onChangeViewBack);
+        m_viewPannel->addSmallAction(m_viewBackAction);
+
     };
-    m_selectFilterAction = createAction(tr("Select Filter"), ":/icons/icon/select_filter.svg");
+    createViewPannel();
 
-    SARibbonMenu* filterMenu = new SARibbonMenu(this);
-    m_selectFilterAction->setMenu(filterMenu);
+    // select panel
+    auto createViewSelectPannel = [&](){
+        m_viewSelectPannel = m_viewCategory->addPannel(tr("Select Operations"));
+        // select
+        m_selectAction = new QAction(QIcon(":/icons/icon/select.svg"), tr("Select"), this);
+        m_selectAction->setCheckable(true);
+        connect(m_selectAction, &QAction::toggled, this, &MainWindow::onSwitchSelect);
+        m_viewSelectPannel->addLargeAction(m_selectAction);
 
-    // Create checkboxes for each filter type
-    QCheckBox* vertexCheckBox = new QCheckBox(tr("Vertex"));
-    QCheckBox* edgeCheckBox = new QCheckBox(tr("Edge"));
-    QCheckBox* faceCheckBox = new QCheckBox(tr("Face"));
-    QCheckBox* solidCheckBox = new QCheckBox(tr("Solid"));
+        // Select Filter
+        auto createAction = [&](const QString& text, const QString& iconurl)
+        {
+            QAction *act = new QAction(this);
+            act->setText(text);
+            act->setIcon(QIcon(iconurl));
+            act->setObjectName(text);
+            return act;
+        };
+        m_selectFilterAction = createAction(tr("Select Filter"), ":/icons/icon/select_filter.svg");
 
-    // Set initial checkbox states based on current filters
-    const auto& currentFilters = m_viewerWidget->getSelectionFilters();
-    vertexCheckBox->setChecked(currentFilters.at(TopAbs_VERTEX));
-    edgeCheckBox->setChecked(currentFilters.at(TopAbs_EDGE));
-    faceCheckBox->setChecked(currentFilters.at(TopAbs_FACE));
-    solidCheckBox->setChecked(currentFilters.at(TopAbs_SOLID));
+        SARibbonMenu* filterMenu = new SARibbonMenu(this);
+        m_selectFilterAction->setMenu(filterMenu);
 
-    connect(vertexCheckBox, &QCheckBox::stateChanged, this, [this](int state) {
-        onFilterStateChanged(TopAbs_VERTEX, state == Qt::Checked);
-    });
-    connect(edgeCheckBox, &QCheckBox::stateChanged, this, [this](int state) {
-        onFilterStateChanged(TopAbs_EDGE, state == Qt::Checked);
-    });
-    connect(faceCheckBox, &QCheckBox::stateChanged, this, [this](int state) {
-        onFilterStateChanged(TopAbs_FACE, state == Qt::Checked);
-    });
-    connect(solidCheckBox, &QCheckBox::stateChanged, this, [this](int state) {
-        onFilterStateChanged(TopAbs_SOLID, state == Qt::Checked);
-    });
+        // Create checkboxes for each filter type
+        QCheckBox* vertexCheckBox = new QCheckBox(tr("Vertex"));
+        QCheckBox* edgeCheckBox = new QCheckBox(tr("Edge"));
+        QCheckBox* faceCheckBox = new QCheckBox(tr("Face"));
+        QCheckBox* solidCheckBox = new QCheckBox(tr("Solid"));
 
-    filterMenu->addWidget(vertexCheckBox);
-    filterMenu->addWidget(edgeCheckBox);
-    filterMenu->addWidget(faceCheckBox);
-    filterMenu->addWidget(solidCheckBox);
+        // Set initial checkbox states based on current filters
+        const auto& currentFilters = m_viewerWidget->getSelectionFilters();
+        vertexCheckBox->setChecked(currentFilters.at(TopAbs_VERTEX));
+        edgeCheckBox->setChecked(currentFilters.at(TopAbs_EDGE));
+        faceCheckBox->setChecked(currentFilters.at(TopAbs_FACE));
+        solidCheckBox->setChecked(currentFilters.at(TopAbs_SOLID));
 
-    m_viewPannel->addAction(m_selectFilterAction);
+        connect(vertexCheckBox, &QCheckBox::stateChanged, this, [this](int state) {
+            onFilterStateChanged(TopAbs_VERTEX, state == Qt::Checked);
+        });
+        connect(edgeCheckBox, &QCheckBox::stateChanged, this, [this](int state) {
+            onFilterStateChanged(TopAbs_EDGE, state == Qt::Checked);
+        });
+        connect(faceCheckBox, &QCheckBox::stateChanged, this, [this](int state) {
+            onFilterStateChanged(TopAbs_FACE, state == Qt::Checked);
+        });
+        connect(solidCheckBox, &QCheckBox::stateChanged, this, [this](int state) {
+            onFilterStateChanged(TopAbs_SOLID, state == Qt::Checked);
+        });
+
+        filterMenu->addWidget(vertexCheckBox);
+        filterMenu->addWidget(edgeCheckBox);
+        filterMenu->addWidget(faceCheckBox);
+        filterMenu->addWidget(solidCheckBox);
+        m_viewSelectPannel->addAction(m_selectFilterAction);
+    };
+    createViewSelectPannel();
 }
 
 void MainWindow::createToolGroup()
@@ -375,6 +420,10 @@ void MainWindow::createHelpGroup()
     m_languagePannel->addLargeAction(m_languageAction);
 }
 
+void MainWindow::onNewFile()
+{
+    // TODO
+}
 void MainWindow::onOpenFile()
 {
     QString filename = QFileDialog::getOpenFileName(this, "Open CAD File", "", "STEP (*.step *.stp);;IGES (*.iges *.igs)");
@@ -384,9 +433,64 @@ void MainWindow::onOpenFile()
     }
 }
 
+void MainWindow::onSaveFile()
+{
+    // TODO
+}
+
+void MainWindow::onSaveAsFile()
+{
+    // TODO
+}
+
+void MainWindow::onExportFile()
+{
+    // TODO
+}
+
+void MainWindow::onExit()
+{
+    // TODO
+}
+
 void MainWindow::onViewFit() const
 {
     m_viewerWidget->viewFit();
+}
+
+void MainWindow::onChangeViewTop() const
+{
+    m_viewerWidget->viewTop();
+}
+
+void MainWindow::onChangeViewBottom() const
+{
+    m_viewerWidget->viewBottom();
+}
+
+void MainWindow::onChangeViewLeft() const
+{
+    m_viewerWidget->viewLeft();
+}
+
+void MainWindow::onChangeViewRight() const
+{
+    m_viewerWidget->viewRight();
+}
+
+void MainWindow::onChangeViewFront() const
+{
+    m_viewerWidget->viewFront();
+}
+
+void MainWindow::onChangeViewBack() const
+{
+    m_viewerWidget->viewBack();
+}
+
+void MainWindow::onChangeViewIsometric() const
+{
+    m_viewerWidget->viewIsometric();
 }
 
 void MainWindow::onSwitchSelect(bool checked)
@@ -397,10 +501,6 @@ void MainWindow::onSwitchSelect(bool checked)
 void MainWindow::onFilterStateChanged(const int filterType, const bool isChecked)
 {
     m_viewerWidget->updateSelectionFilter(static_cast<TopAbs_ShapeEnum>(filterType), isChecked);
-}
-
-void MainWindow::onSelectFilter(int index) const
-{
 }
 
 void MainWindow::onCheckInterference() const

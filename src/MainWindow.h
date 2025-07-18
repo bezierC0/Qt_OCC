@@ -19,12 +19,23 @@ public:
     ModelTreeWidget* GetModelTreeWidget() const;
 private slots:
     /* file */
+    void onNewFile();
     void onOpenFile();
+    void onSaveFile();
+    void onSaveAsFile();
+    void onExportFile();
+    void onExit();
 
     /* view */
     void onViewFit() const;
+    void onChangeViewTop() const;
+    void onChangeViewBottom() const;
+    void onChangeViewLeft() const;
+    void onChangeViewRight() const;
+    void onChangeViewFront() const;
+    void onChangeViewBack() const;
+    void onChangeViewIsometric() const;
     void onSwitchSelect(bool checked);
-    void onSelectFilter(int index) const;
     void onFilterStateChanged(int filterType, bool isChecked);
 
     /* tool */
@@ -83,6 +94,7 @@ private:
 
     // UI elements
     SARibbonBar* m_ribbon = nullptr;
+    
     // ---- File Group ----
     SARibbonCategory* m_fileCategory;
     SARibbonPannel* m_filePannel;
@@ -92,7 +104,15 @@ private:
     // ---- View Group ----
     SARibbonCategory* m_viewCategory;
     SARibbonPannel* m_viewPannel;
+    SARibbonPannel* m_viewSelectPannel;
     QAction* m_fitAction;
+    QAction* m_viewTopAction;
+    QAction* m_viewBottomAction;
+    QAction* m_viewLeftAction;
+    QAction* m_viewRightAction;
+    QAction* m_viewFrontAction;
+    QAction* m_viewBackAction;
+    QAction* m_viewIsometricAction;
     QAction* m_selectAction;
     QAction* m_selectFilterAction;
 
@@ -139,12 +159,11 @@ private:
     // ---- help Group ----
     SARibbonCategory* m_helpCategory;
     SARibbonPannel* m_versionPannel;
-    QAction* m_versionAction;
     SARibbonPannel* m_languagePannel;
-    QAction* m_languageAction;
-
     SARibbonPannel* m_themePannel;
     QMenu* m_themeMenu;
+    QAction* m_versionAction;
+    QAction* m_languageAction;
     QAction* m_lightThemeAction;
     QAction* m_darkThemeAction;
 

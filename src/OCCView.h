@@ -76,7 +76,16 @@ public:
 
   void reDraw() const ;
 
-  void fit();
+  void viewfit();
+
+  /* view change */
+  void viewIsometric();
+  void viewTop() ;
+  void viewBottom() ;
+  void viewLeft() ;
+  void viewRight() ;
+  void viewFront() ;
+  void viewBack() ;
 
   void clipping() const;
 
@@ -118,6 +127,9 @@ private:
 
   //! Animate camera transition from one state to another.
   void animateCamera (const Handle(Graphic3d_Camera)& theCamStart, const Handle(Graphic3d_Camera)& theCamEnd);
+
+  //! Animate view change to a specific orientation.
+  void animateViewChange(V3d_TypeOfOrientation theOrientation);
 
   //! Request widget paintGL() event.
   void updateView();

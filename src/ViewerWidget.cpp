@@ -233,8 +233,44 @@ void ViewerWidget::loadModel(const QString &filename) const
 
 void ViewerWidget::viewFit()
 {
-    m_occView->fit();
+    m_occView->viewfit();
 }
+
+void ViewerWidget::viewIsometric() const
+{
+    m_occView->viewIsometric();
+}
+
+void ViewerWidget::viewTop() const
+{
+    m_occView->viewTop();
+}
+
+void ViewerWidget::viewBottom() const
+{
+    m_occView->viewBottom();
+}
+
+void ViewerWidget::viewLeft() const
+{
+    m_occView->viewLeft();
+}
+
+void ViewerWidget::viewRight() const
+{
+    m_occView->viewRight();
+}
+
+void ViewerWidget::viewFront() const
+{
+    m_occView->viewFront();
+}
+
+void ViewerWidget::viewBack() const
+{
+    m_occView->viewBack();
+}
+
 
 void ViewerWidget::switchSelect(bool checked)
 {
@@ -481,11 +517,12 @@ void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const
     aisShape->SetColor(Quantity_Color(r, g, b, Quantity_TOC_RGB));
     m_occView->setShape(aisShape);
     m_occView->reDraw();
-    m_occView->fit(); // Fit view to the new shape
+    m_occView->viewfit(); // Fit view to the new shape
 }
 
 void ViewerWidget::removeShape(const TopoDS_Shape &shape)
 {
+    // TODO
 }
 
 const std::map<TopAbs_ShapeEnum, bool>& ViewerWidget::getSelectionFilters() const {
