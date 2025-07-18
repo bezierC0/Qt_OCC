@@ -15,174 +15,161 @@
 class AIS_ViewCube;
 class AIS_Manipulator;
 
-namespace View{
-  enum MouseMode{
-    NONE,
-    SELECTION,
-    END
-  };
-  enum DisplayMode 
-  {
-      MODE_SHADED = 0, 
-      MODE_WIREFRAME,
-      MODE_WIREFRAME_SHADED,
-      MODE_HIDDEN_LINE,
-      MODE_SHADED_WITH_EDGES,
-      MODE_END
-  };
-}
+namespace View
+{
+enum MouseMode { NONE, SELECTION, END };
+enum DisplayMode {
+    MODE_SHADED = 0,
+    MODE_WIREFRAME,
+    MODE_WIREFRAME_SHADED,
+    MODE_HIDDEN_LINE,
+    MODE_SHADED_WITH_EDGES,
+    MODE_END
+};
+} // namespace View
 
 //! OCCT 3D View.
 class OCCView : public QOpenGLWidget, public AIS_ViewController
 {
-  Q_OBJECT
+    Q_OBJECT
 public:
+    //! Main constructor.
+    OCCView(QWidget *theParent = nullptr);
 
-  //! Main constructor.
-  OCCView (QWidget* theParent = nullptr);
+    //! Destructor.
+    ~OCCView() override;
 
-  //! Destructor.
-  ~OCCView() override;
+    //! Return Viewer.
+    const Handle(V3d_Viewer) & Viewer() const { return m_viewer; }
 
-  //! Return Viewer.
-  const Handle(V3d_Viewer)& Viewer() const { return m_viewer; }
+    //! Return View.
+    const Handle(V3d_View) & View() const { return m_view; }
 
-  //! Return View.
-  const Handle(V3d_View)& View() const { return m_view; }
+    //! Return AIS context.
+    const Handle(AIS_InteractiveContext) & Context() const { return m_context; }
 
-  //! Return AIS context.
-  const Handle(AIS_InteractiveContext)& Context() const { return m_context; }
+    //! Return OpenGL info.
+    const QString &getGlInfo() const { return myGlInfo; }
 
-  //! Return OpenGL info.
-  const QString& getGlInfo() const { return myGlInfo; }
+    //! Minial widget size.
+    QSize minimumSizeHint() const override { return QSize(400, 400); }
 
-  //! Minial widget size.
-  QSize minimumSizeHint() const override { return QSize(400, 400); }
+    //! Default widget size.
+    QSize sizeHint() const override { return QSize(720, 480); }
 
-  //! Default widget size.
-  QSize sizeHint()        const override { return QSize(720, 480); }
+    //! Update selection filter status.
+    void updateSelectionFilter(TopAbs_ShapeEnum target, bool theIsActive);
 
-  //! Update selection filter status.
-  void updateSelectionFilter(TopAbs_ShapeEnum target, bool theIsActive);
+    void clearShape();
 
-  void clearShape() ;
+    void setShape(const Handle(AIS_InteractiveObject) & loadedShape);
 
-  void setShape( const Handle(AIS_InteractiveObject)& loadedShape );
+    const std::vector<Handle(AIS_InteractiveObject)> &getShapeObjects() const;
 
-  const std::vector<Handle(AIS_InteractiveObject)>& getShapeObjects( ) const;
+    const std::vector<Handle(AIS_InteractiveObject)> &getSelectedObjects() const;
 
-  const std::vector<Handle( AIS_InteractiveObject )>& getSelectedObjects( ) const;
+    std::vector<Handle(AIS_Shape)> getSelectedAisShape(int count) const;
 
-  std::vector<Handle( AIS_Shape )> getSelectedAisShape( int count ) const;
+    void clearSelectedObjects();
 
-  void clearSelectedObjects( ) ;
+    void attachManipulator(const Handle(AIS_InteractiveObject) object);
 
-  void attachManipulator( const Handle(AIS_InteractiveObject) object ) ;
+    const std::map<TopAbs_ShapeEnum, bool> &getSelectionFilters() const;
 
-  const std::map<TopAbs_ShapeEnum, bool>& getSelectionFilters() const ;
+    void transform();
 
-  void transform() ;
+    void reDraw() const;
 
-  void reDraw() const ;
+    void viewfit();
 
-  void viewfit();
+    /* view change */
+    void viewIsometric();
+    void viewTop();
+    void viewBottom();
+    void viewLeft();
+    void viewRight();
+    void viewFront();
+    void viewBack();
+    void setDisplayMode(View::DisplayMode mode);
 
-  /* view change */
-  void viewIsometric();
-  void viewTop() ;
-  void viewBottom() ;
-  void viewLeft() ;
-  void viewRight() ;
-  void viewFront() ;
-  void viewBack() ;
-  void setDisplayMode(View::DisplayMode mode);
+    void clipping() const;
 
-  void clipping() const;
+    void explosion(double theFactor) const;
 
-  void explosion(double theFactor) const;
+    void setMouseMode(View::MouseMode mode);
 
-  void setMouseMode(View::MouseMode mode) ;
-
-  //! Handle subview focus change.
-  void OnSubviewChanged(const Handle(AIS_InteractiveContext)&,
-                        const Handle(V3d_View)&,
-                        const Handle(V3d_View)& theNewView) override;
+    //! Handle subview focus change.
+    void OnSubviewChanged(const Handle(AIS_InteractiveContext) &, const Handle(V3d_View) &,
+                          const Handle(V3d_View) & theNewView) override;
 
 protected:
+    //! Initialize OpenGL.
+    void initializeGL() override;
 
-  //! Initialize OpenGL.
-  void initializeGL() override;
+    //! Paint OpenGL.
+    void paintGL() override;
 
-  //! Paint OpenGL.
-  void paintGL() override;
-
-protected: 
-
-  void closeEvent       (QCloseEvent*  theEvent) override;
-  //! Handle mouse release event.
-  void keyPressEvent    (QKeyEvent*    theEvent) override;
-  //! Handle mouse move event.
-  void mousePressEvent  (QMouseEvent*  theEvent) override;
-  //! Handle wheel event.
-  void mouseReleaseEvent(QMouseEvent*  theEvent) override;
-  //! Handle mouse move event.
-  void mouseMoveEvent   (QMouseEvent*  theEvent) override;
-  //! Handle mouse wheel event.
-  void wheelEvent       (QWheelEvent*  theEvent) override;
+protected:
+    void closeEvent(QCloseEvent *theEvent) override;
+    //! Handle mouse release event.
+    void keyPressEvent(QKeyEvent *theEvent) override;
+    //! Handle mouse move event.
+    void mousePressEvent(QMouseEvent *theEvent) override;
+    //! Handle wheel event.
+    void mouseReleaseEvent(QMouseEvent *theEvent) override;
+    //! Handle mouse move event.
+    void mouseMoveEvent(QMouseEvent *theEvent) override;
+    //! Handle mouse wheel event.
+    void wheelEvent(QWheelEvent *theEvent) override;
 
 private:
+    //! Dump OpenGL info.
+    void dumpGlInfo(bool theIsBasic, bool theToPrint);
 
-  //! Dump OpenGL info.
-  void dumpGlInfo (bool theIsBasic, bool theToPrint);
+    //! Animate camera transition from one state to another.
+    void animateCamera(const Handle(Graphic3d_Camera) & theCamStart,
+                       const Handle(Graphic3d_Camera) & theCamEnd);
 
-  //! Animate camera transition from one state to another.
-  void animateCamera (const Handle(Graphic3d_Camera)& theCamStart, const Handle(Graphic3d_Camera)& theCamEnd);
+    //! Animate view change to a specific orientation.
+    void animateViewChange(V3d_TypeOfOrientation theOrientation);
 
-  //! Animate view change to a specific orientation.
-  void animateViewChange(V3d_TypeOfOrientation theOrientation);
+    //! Request widget paintGL() event.
+    void updateView();
 
-  //! Request widget paintGL() event.
-  void updateView();
+    //! Handle view redraw.
+    void handleViewRedraw(const Handle(AIS_InteractiveContext) & theCtx,
+                          const Handle(V3d_View) & theView) override;
+    //! Viewer handle.
 
-  //! Handle view redraw.
-  void handleViewRedraw (const Handle(AIS_InteractiveContext)& theCtx,
-                                 const Handle(V3d_View)& theView) override;
-  //! Viewer handle.
-
-  //! View handle.
+    //! View handle.
 private:
-  
-  Handle(V3d_Viewer)                            m_viewer;//! AIS context handle.
-  
-  Handle(V3d_View)                              m_view;//! View cube handle.
-  Handle(AIS_InteractiveContext)                m_context;
+    Handle(V3d_Viewer) m_viewer; //! AIS context handle.
 
-  Handle(AIS_ViewCube)                          m_navigationView; // XYZ Navigation GuiDocument::setViewTrihedronMode
+    Handle(V3d_View) m_view; //! View cube handle.
+    Handle(AIS_InteractiveContext) m_context;
 
-  Handle(AIS_AnimationCamera)                   m_animationCamera;
+    Handle(AIS_ViewCube) m_navigationView; // XYZ Navigation GuiDocument::setViewTrihedronMode
 
-  Handle(AIS_Manipulator)                       m_manipulator;
+    Handle(AIS_AnimationCamera) m_animationCamera;
 
-  //! OpenGL info.
-  Handle(V3d_View)                              myFocusView;
-  //! Core profile flag.
+    Handle(AIS_Manipulator) m_manipulator;
 
-  std::vector<Handle(AIS_InteractiveObject)>    m_loadedObjects;
+    //! OpenGL info.
+    Handle(V3d_View) myFocusView;
+    //! Core profile flag.
 
-  std::vector<Handle(AIS_InteractiveObject)>    m_selectedObjects;
+    std::vector<Handle(AIS_InteractiveObject)> m_loadedObjects;
 
-  QString                                       myGlInfo;
-  bool                                          myIsCoreProfile;
+    std::vector<Handle(AIS_InteractiveObject)> m_selectedObjects;
 
-  //! Active selection filters map.
-  std::map<TopAbs_ShapeEnum, bool>              m_selectionFilters{
-        { TopAbs_VERTEX, false },
-        { TopAbs_EDGE,   false },
-        { TopAbs_FACE,   false },
-        { TopAbs_SOLID,  true }
-  };
+    QString myGlInfo;
+    bool myIsCoreProfile;
 
-  Standard_Real                                 m_animationDuration{ 1 }; // animation duration in seconds
-  int                                           m_mouseMode { 0 }; // 0 normal 1 select + normal 
-  View::DisplayMode                             m_displayMode { View::DisplayMode::MODE_SHADED };
+    //! Active selection filters map.
+    std::map<TopAbs_ShapeEnum, bool> m_selectionFilters{
+        {TopAbs_VERTEX, false}, {TopAbs_EDGE, false}, {TopAbs_FACE, false}, {TopAbs_SOLID, true}};
+
+    Standard_Real m_animationDuration{1}; // animation duration in seconds
+    int m_mouseMode{0};                   // 0 normal 1 select + normal
+    View::DisplayMode m_displayMode{View::DisplayMode::MODE_SHADED};
 };
