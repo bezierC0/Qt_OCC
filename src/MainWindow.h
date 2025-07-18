@@ -28,17 +28,17 @@ private slots:
 
     /* view */
     void onViewFit() const;
+    void onChangeViewIsometric() const;
     void onChangeViewTop() const;
     void onChangeViewBottom() const;
     void onChangeViewLeft() const;
     void onChangeViewRight() const;
     void onChangeViewFront() const;
     void onChangeViewBack() const;
-    void onChangeViewIsometric() const;
-    void onSwitchSelect(bool checked);
-    void onFilterStateChanged(int filterType, bool isChecked);
 
     /* tool */
+    void onSwitchSelect(bool checked);
+    void onFilterStateChanged(int filterType, bool isChecked);
     void onCheckInterference() const;
     void onTransform() const;
     void onClipping() const;
@@ -104,7 +104,7 @@ private:
     // ---- View Group ----
     SARibbonCategory* m_viewCategory;
     SARibbonPannel* m_viewPannel;
-    SARibbonPannel* m_viewSelectPannel;
+    SARibbonPannel* m_toolSelectPannel;
     QAction* m_fitAction;
     QAction* m_viewTopAction;
     QAction* m_viewBottomAction;

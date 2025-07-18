@@ -163,14 +163,22 @@ void MainWindow::createViewGroup()
     };
     createViewPannel();
 
-    // select panel
-    auto createViewSelectPannel = [&](){
-        m_viewSelectPannel = m_viewCategory->addPannel(tr("Select Operations"));
+
+}
+
+void MainWindow::createToolGroup()
+{
+    // ---- Tool Group ----
+    m_toolCategory = m_ribbon->addCategoryPage(tr("Tool"));
+
+    /* Create select panel*/
+    auto createToolSelectPannel = [&](){
+        m_toolSelectPannel = m_toolCategory->addPannel(tr("Select Operations"));
         // select
         m_selectAction = new QAction(QIcon(":/icons/icon/select.svg"), tr("Select"), this);
         m_selectAction->setCheckable(true);
         connect(m_selectAction, &QAction::toggled, this, &MainWindow::onSwitchSelect);
-        m_viewSelectPannel->addLargeAction(m_selectAction);
+        m_toolSelectPannel->addLargeAction(m_selectAction);
 
         // Select Filter
         auto createAction = [&](const QString& text, const QString& iconurl)
@@ -216,15 +224,10 @@ void MainWindow::createViewGroup()
         filterMenu->addWidget(edgeCheckBox);
         filterMenu->addWidget(faceCheckBox);
         filterMenu->addWidget(solidCheckBox);
-        m_viewSelectPannel->addAction(m_selectFilterAction);
-    };
-    createViewSelectPannel();
-}
 
-void MainWindow::createToolGroup()
-{
-    // ---- Tool Group ----
-    m_toolCategory = m_ribbon->addCategoryPage(tr("Tool"));
+        m_toolSelectPannel->addAction(m_selectFilterAction);
+    };
+    createToolSelectPannel();
 
     /* Create Transform Pannel*/
     auto createTransformToolPannel = [&](){
@@ -407,17 +410,17 @@ void MainWindow::createHelpGroup()
 {
     // ---- help Group ----
     m_helpCategory = m_ribbon->addCategoryPage(tr("Help"));
-    // ---- help ----
-    // These actions can be added to an existing pannel or a new one
-    m_versionPannel = m_helpCategory->addPannel( tr("Version") );  // Adding to Analysis category for simplicity
-    m_versionAction = new QAction(QIcon(":/icons/icon/version.svg"), tr("Version"), this);  // Assuming an icon path
-    connect(m_versionAction, &QAction::triggered, this, &MainWindow::onVersion);
-    m_versionPannel->addLargeAction(m_versionAction);
-
+    // ---- language Pannel ----
     m_languagePannel = m_helpCategory->addPannel(tr("Language"));
     m_languageAction = new QAction(QIcon(":/icons/icon/help_language.svg"), tr("Switch Language"), this);
     connect(m_languageAction, &QAction::triggered, this, &MainWindow::onSwitchLanguage);
     m_languagePannel->addLargeAction(m_languageAction);
+
+    // version pannel
+    m_versionPannel = m_helpCategory->addPannel( tr("Version") );  // Adding to Analysis category for simplicity
+    m_versionAction = new QAction(QIcon(":/icons/icon/version.svg"), tr("Version"), this);  // Assuming an icon path
+    connect(m_versionAction, &QAction::triggered, this, &MainWindow::onVersion);
+    m_versionPannel->addLargeAction(m_versionAction);
 }
 
 void MainWindow::onNewFile()
@@ -458,6 +461,11 @@ void MainWindow::onViewFit() const
     m_viewerWidget->viewFit();
 }
 
+void MainWindow::onChangeViewIsometric() const
+{
+    m_viewerWidget->viewIsometric();
+}
+
 void MainWindow::onChangeViewTop() const
 {
     m_viewerWidget->viewTop();
@@ -486,11 +494,6 @@ void MainWindow::onChangeViewFront() const
 void MainWindow::onChangeViewBack() const
 {
     m_viewerWidget->viewBack();
-}
-
-void MainWindow::onChangeViewIsometric() const
-{
-    m_viewerWidget->viewIsometric();
 }
 
 void MainWindow::onSwitchSelect(bool checked)
