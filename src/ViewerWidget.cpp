@@ -271,6 +271,10 @@ void ViewerWidget::viewBack() const
     m_occView->viewBack();
 }
 
+void ViewerWidget::setDisplayMode(const int mode)
+{
+    m_occView->setDisplayMode(static_cast<View::DisplayMode>(mode));
+}
 
 void ViewerWidget::switchSelect(bool checked)
 {

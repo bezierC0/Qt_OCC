@@ -496,6 +496,11 @@ void MainWindow::onChangeViewBack() const
     m_viewerWidget->viewBack();
 }
 
+void MainWindow::onSetDisplayMode() const
+{
+    m_viewerWidget->setDisplayMode(1);
+}
+
 void MainWindow::onSwitchSelect(bool checked)
 {
     m_viewerWidget->switchSelect(checked);

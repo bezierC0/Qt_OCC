@@ -38,6 +38,7 @@ public:
     void viewRight() const ;
     void viewFront() const ;
     void viewBack() const ;
+    void setDisplayMode( int mode ) ;
 
     void switchSelect(bool checked);
     void setFilters(const std::map<TopAbs_ShapeEnum, bool>& filters);

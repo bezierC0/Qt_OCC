@@ -21,6 +21,15 @@ namespace View{
     SELECTION,
     END
   };
+  enum DisplayMode 
+  {
+      MODE_SHADED = 0, 
+      MODE_WIREFRAME,
+      MODE_WIREFRAME_SHADED,
+      MODE_HIDDEN_LINE,
+      MODE_SHADED_WITH_EDGES,
+      MODE_END
+  };
 }
 
 //! OCCT 3D View.
@@ -86,6 +95,7 @@ public:
   void viewRight() ;
   void viewFront() ;
   void viewBack() ;
+  void setDisplayMode(View::DisplayMode mode);
 
   void clipping() const;
 
@@ -174,4 +184,5 @@ private:
 
   Standard_Real                                 m_animationDuration{ 1 }; // animation duration in seconds
   int                                           m_mouseMode { 0 }; // 0 normal 1 select + normal 
+  View::DisplayMode                             m_displayMode { View::DisplayMode::MODE_SHADED };
 };

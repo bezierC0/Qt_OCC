@@ -35,6 +35,7 @@ private slots:
     void onChangeViewRight() const;
     void onChangeViewFront() const;
     void onChangeViewBack() const;
+    void onSetDisplayMode() const;
 
     /* tool */
     void onSwitchSelect(bool checked);

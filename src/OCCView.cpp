@@ -835,6 +835,19 @@ void OCCView::viewBack()
     animateViewChange(V3d_TypeOfOrientation_Zup_Back);
 }
 
+void OCCView::setDisplayMode(View::DisplayMode mode)
+{
+    // TODO: Implement
+    if ( mode == View::DisplayMode::MODE_WIREFRAME )
+    {
+        //AIS_DisplayMode::AIS_WireFrame
+    }else if ( mode == View::DisplayMode::MODE_SHADED )
+    {
+        //AIS_DisplayMode::AIS_Shaded
+    }
+
+    updateView();
+}
 
 void OCCView::animateCamera(const Handle(Graphic3d_Camera) & theCamStart, const Handle(Graphic3d_Camera) & theCamEnd)
 {
