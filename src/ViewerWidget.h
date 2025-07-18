@@ -31,7 +31,9 @@ public:
 
     //view
     void viewFit();
+    void switchSelect(bool checked);
     void setFilters(const std::map<TopAbs_ShapeEnum, bool>& filters);
+    void updateSelectionFilter(TopAbs_ShapeEnum filter, bool isActive);
 
     // tool
     void checkInterference();

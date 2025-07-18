@@ -14,6 +14,7 @@
 #include <QApplication>
 #include <QToolButton>
 #include <TopoDS_Shape.hxx> // This should be resolved by CMakeLists.txt fix
+#include <TopAbs_ShapeEnum.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
@@ -124,22 +125,28 @@ void MainWindow::createViewGroup()
     // select
     m_selectAction = new QAction(QIcon(":/icons/icon/select.svg"), tr("Select"), this);
     m_selectAction->setCheckable(true);
-    connect(m_selectAction, &QAction::toggled, this, &MainWindow::onSelectModeToggled);
+    connect(m_selectAction, &QAction::toggled, this, &MainWindow::onSwitchSelect);
     m_viewPannel->addLargeAction(m_selectAction);
 
     // Select Filter
-    QToolButton* selectFilterButton = new QToolButton(this);
-    selectFilterButton->setText(tr("Select Filter"));
-    selectFilterButton->setIcon(QIcon(":/icons/icon/select_filter.svg"));
-    selectFilterButton->setPopupMode(QToolButton::MenuButtonPopup);
+    auto createAction = [&](const QString& text, const QString& iconurl)
+    {
+        QAction *act = new QAction(this);
+        act->setText(text);
+        act->setIcon(QIcon(iconurl));
+        act->setObjectName(text);
+        return act;
+    };
+    m_selectFilterAction = createAction(tr("Select Filter"), ":/icons/icon/select_filter.svg");
 
-    QMenu* filterMenu = new QMenu(selectFilterButton);
+    SARibbonMenu* filterMenu = new SARibbonMenu(this);
+    m_selectFilterAction->setMenu(filterMenu);
 
     // Create checkboxes for each filter type
-    QCheckBox* vertexCheckBox = new QCheckBox(tr("Vertices"), filterMenu);
-    QCheckBox* edgeCheckBox = new QCheckBox(tr("Edges"), filterMenu);
-    QCheckBox* faceCheckBox = new QCheckBox(tr("Faces"), filterMenu);
-    QCheckBox* solidCheckBox = new QCheckBox(tr("Solids"), filterMenu);
+    QCheckBox* vertexCheckBox = new QCheckBox(tr("Vertex"));
+    QCheckBox* edgeCheckBox = new QCheckBox(tr("Edge"));
+    QCheckBox* faceCheckBox = new QCheckBox(tr("Face"));
+    QCheckBox* solidCheckBox = new QCheckBox(tr("Solid"));
 
     // Set initial checkbox states based on current filters
     const auto& currentFilters = m_viewerWidget->getSelectionFilters();
@@ -148,23 +155,25 @@ void MainWindow::createViewGroup()
     faceCheckBox->setChecked(currentFilters.at(TopAbs_FACE));
     solidCheckBox->setChecked(currentFilters.at(TopAbs_SOLID));
 
-    // Create actions for checkboxes and make them checkable
-    auto addCheckableAction = [&](QCheckBox* checkBox) {
-        QAction* action = new QAction(checkBox->text(), filterMenu);
-        action->setCheckable(true);
-        action->setChecked(checkBox->isChecked());
-        checkBox->connect(action, &QAction::toggled, checkBox, &QCheckBox::setChecked); // Keep checkbox and action in sync
-        filterMenu->addAction(action);
-    };
+    connect(vertexCheckBox, &QCheckBox::stateChanged, this, [this](int state) {
+        onFilterStateChanged(TopAbs_VERTEX, state == Qt::Checked);
+    });
+    connect(edgeCheckBox, &QCheckBox::stateChanged, this, [this](int state) {
+        onFilterStateChanged(TopAbs_EDGE, state == Qt::Checked);
+    });
+    connect(faceCheckBox, &QCheckBox::stateChanged, this, [this](int state) {
+        onFilterStateChanged(TopAbs_FACE, state == Qt::Checked);
+    });
+    connect(solidCheckBox, &QCheckBox::stateChanged, this, [this](int state) {
+        onFilterStateChanged(TopAbs_SOLID, state == Qt::Checked);
+    });
 
-    addCheckableAction(vertexCheckBox);
-    addCheckableAction(edgeCheckBox);
-    addCheckableAction(faceCheckBox);
-    addCheckableAction(solidCheckBox);
+    filterMenu->addWidget(vertexCheckBox);
+    filterMenu->addWidget(edgeCheckBox);
+    filterMenu->addWidget(faceCheckBox);
+    filterMenu->addWidget(solidCheckBox);
 
-    selectFilterButton->setMenu(filterMenu);
-    SARibbonPannelItem::RowProportion rp;
-    m_viewPannel->addWidget(selectFilterButton, SARibbonPannelItem::Large);
+    m_viewPannel->addAction(m_selectFilterAction);
 }
 
 void MainWindow::createToolGroup()
@@ -380,9 +389,14 @@ void MainWindow::viewFit() const
     m_viewerWidget->viewFit();
 }
 
-void MainWindow::onSelectModeToggled(bool checked)
+void MainWindow::onSwitchSelect(bool checked)
 {
-    //m_viewerWidget->setFilters(checked);
+    m_viewerWidget->switchSelect(checked);
+}
+
+void MainWindow::onFilterStateChanged(const int filterType, const bool isChecked)
+{
+    m_viewerWidget->updateSelectionFilter(static_cast<TopAbs_ShapeEnum>(filterType), isChecked);
 }
 
 void MainWindow::onSelectFilter(int index) const

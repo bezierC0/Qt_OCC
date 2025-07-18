@@ -23,8 +23,9 @@ private slots:
 
     /* view */
     void viewFit() const;
-    void onSelectModeToggled(bool checked);
+    void onSwitchSelect(bool checked);
     void onSelectFilter(int index) const;
+    void onFilterStateChanged(int filterType, bool isChecked);
 
     /* tool */
     void checkInterference() const;
@@ -93,6 +94,7 @@ private:
     SARibbonPannel* m_viewPannel;
     QAction* m_fitAction;
     QAction* m_selectAction;
+    QAction* m_selectFilterAction;
 
     // ---- Tool Group ----
     SARibbonCategory* m_toolCategory;

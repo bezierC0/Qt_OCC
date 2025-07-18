@@ -15,6 +15,14 @@
 class AIS_ViewCube;
 class AIS_Manipulator;
 
+namespace View{
+  enum MouseMode{
+    NONE,
+    SELECTION,
+    END
+  };
+}
+
 //! OCCT 3D View.
 class OCCView : public QOpenGLWidget, public AIS_ViewController
 {
@@ -74,7 +82,7 @@ public:
 
   void explosion(double theFactor) const;
 
-  void setMouseMode(int mode) ;
+  void setMouseMode(View::MouseMode mode) ;
 
   //! Handle subview focus change.
   void OnSubviewChanged(const Handle(AIS_InteractiveContext)&,

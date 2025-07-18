@@ -236,6 +236,11 @@ void ViewerWidget::viewFit()
     m_occView->fit();
 }
 
+void ViewerWidget::switchSelect(bool checked)
+{
+    m_occView->setMouseMode( checked ? View::MouseMode::SELECTION : View::MouseMode::NONE );
+}
+
 void ViewerWidget::setFilters(const std::map<TopAbs_ShapeEnum, bool>& filters)
 {
     // Ensure selection mode is enabled if any filters are active
@@ -246,11 +251,28 @@ void ViewerWidget::setFilters(const std::map<TopAbs_ShapeEnum, bool>& filters)
             break;
         }
     }
-    m_occView->setMouseMode(anyFilterActive ? 1 : 0);
+    m_occView->setMouseMode(anyFilterActive ? View::MouseMode::SELECTION : View::MouseMode::NONE);
 
     for (const auto& pair : filters) {
         m_occView->updateSelectionFilter(pair.first, pair.second);
     }
+}
+
+void ViewerWidget::updateSelectionFilter(TopAbs_ShapeEnum filter, bool isActive)
+{
+    m_occView->updateSelectionFilter(filter, isActive);
+
+    // When a filter changes, we might need to update the mouse selection mode.
+    // If any filter is active, selection mode should be on. Otherwise, it should be off.
+    const auto& filters = m_occView->getSelectionFilters();
+    bool anyFilterActive = false;
+    for (const auto& pair : filters) {
+        if (pair.second) {
+            anyFilterActive = true;
+            break;
+        }
+    }
+    m_occView->setMouseMode(anyFilterActive ? View::MouseMode::SELECTION : View::MouseMode::NONE);
 }
 
 void ViewerWidget::transform()
@@ -467,10 +489,9 @@ void ViewerWidget::removeShape(const TopoDS_Shape &shape)
 }
 
 const std::map<TopAbs_ShapeEnum, bool>& ViewerWidget::getSelectionFilters() const {
-    const auto acitveView = ViewManager::getInstance().getActiveView();
-    if( !acitveView )
-        return std::map<TopAbs_ShapeEnum, bool>();
-    return acitveView->getSelectionFilters();
+    const auto acitveView = ViewManager::getInstance().getActiveView() ;
+    assert(acitveView);
+    return acitveView->getSelectionFilters() ;
 }
 
 bool ViewerWidget::getBooleanTargets(TopoDS_Shape &target1, TopoDS_Shape &target2)
@@ -495,4 +516,3 @@ bool ViewerWidget::getBooleanTargets(TopoDS_Shape &target1, TopoDS_Shape &target
     target2 = shapeB ;
     return true ;
 }
-

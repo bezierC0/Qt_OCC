@@ -866,7 +866,7 @@ void OCCView::explosion(const double theFactor) const
     reDraw();
 }
 
-void OCCView::setMouseMode(const int mode)
+void OCCView::setMouseMode(const View::MouseMode mode)
 {
     m_mouseMode = mode;
 }
