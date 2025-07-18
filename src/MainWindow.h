@@ -19,48 +19,48 @@ public:
     ModelTreeWidget* GetModelTreeWidget() const;
 private slots:
     /* file */
-    void openFile();
+    void onOpenFile();
 
     /* view */
-    void viewFit() const;
+    void onViewFit() const;
     void onSwitchSelect(bool checked);
     void onSelectFilter(int index) const;
     void onFilterStateChanged(int filterType, bool isChecked);
 
     /* tool */
-    void checkInterference() const;
-    void transform() const;
-    void clipping() const;
-    void version();
-    void explosion();
+    void onCheckInterference() const;
+    void onTransform() const;
+    void onClipping() const;
+    void onVersion();
+    void onExplosion();
 
     /* measure */
-    void measureDistance() const;
-    void measureLength() const;
-    void measureArcLength() const;
-    void measureAngle() const;
+    void onMeasureDistance() const;
+    void onMeasureLength() const;
+    void onMeasureArcLength() const;
+    void onMeasureAngle() const;
     
     /* shape */
-    void createPoint();
-    void createLine();
-    void createRectangle();
-    void createCircle();
-    void createArc();
-    void createEllipse();
-    void createPolygon();
-    void createBezierCurve();
-    void createNurbsCurve();
-    void createBox();
-    void createPyramid();
-    void createSphere();
-    void createCylinder();
-    void createCone();
-    void booleanUnionAction();
-    void booleanIntersection();
-    void booleanDifference();
+    void onCreatePoint();
+    void onCreateLine();
+    void onCreateRectangle();
+    void onCreateCircle();
+    void onCreateArc();
+    void onCreateEllipse();
+    void onCreatePolygon();
+    void onCreateBezierCurve();
+    void onCreateNurbsCurve();
+    void onCreateBox();
+    void onCreatePyramid();
+    void onCreateSphere();
+    void onCreateCylinder();
+    void onCreateCone();
+    void onBooleanUnionAction();
+    void onBooleanIntersection();
+    void onBooleanDifference();
 
     /* help */
-    void switchLanguage();
+    void onSwitchLanguage();
     void onSwitchTheme();
 
 private:
