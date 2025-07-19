@@ -175,23 +175,17 @@ private:
 
     //! View handle.
 private:
-    Handle(V3d_Viewer) m_viewer; //! AIS context handle.
-
-    Handle(V3d_View) m_view; //! View cube handle.
-    Handle(AIS_InteractiveContext) m_context;
-
-    Handle(AIS_ViewCube) m_navigationView; // XYZ Navigation GuiDocument::setViewTrihedronMode
-
-    Handle(AIS_AnimationCamera) m_animationCamera;
-
-    Handle(AIS_Manipulator) m_manipulator;
+    Handle(V3d_Viewer)              m_viewer; //! AIS context handle.
+    Handle(V3d_View)                m_view; //! View cube handle.
+    Handle(AIS_InteractiveContext)  m_context;
+    Handle(AIS_ViewCube)            m_navigationView; // XYZ Navigation GuiDocument::setViewTrihedronMode
+    Handle(AIS_Manipulator)         m_manipulator;
 
     //! OpenGL info.
     Handle(V3d_View) myFocusView;
     //! Core profile flag.
 
     std::vector<Handle(AIS_InteractiveObject)> m_loadedObjects;
-
     std::vector<Handle(AIS_InteractiveObject)> m_selectedObjects;
 
     QString myGlInfo;
@@ -201,7 +195,7 @@ private:
     std::map<TopAbs_ShapeEnum, bool> m_selectionFilters{
         {TopAbs_VERTEX, false}, {TopAbs_EDGE, false}, {TopAbs_FACE, false}, {TopAbs_SOLID, true}};
 
-    Standard_Real m_animationDuration{1}; // animation duration in seconds
-    int m_mouseMode{0};                   // 0 normal 1 select + normal
-    View::DisplayMode m_displayModeAction{View::DisplayMode::MODE_SHADED};
+    Standard_Real                               m_animationDuration{1}; // animation duration in seconds
+    int                                         m_mouseMode{0};                   // 0 normal 1 select + normal
+    View::DisplayMode                           m_displayModeAction{View::DisplayMode::MODE_SHADED};
 };
