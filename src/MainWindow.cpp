@@ -121,53 +121,62 @@ void MainWindow::createViewGroup()
     // view panel
     auto createViewPannel = [&](){
         m_viewPannel = m_viewCategory->addPannel(tr("View Operations"));
+
         m_fitAction = new QAction(QIcon(":/icons/icon/fit.png"), tr("Fit"), this); // Assuming an icon path
         connect(m_fitAction, &QAction::triggered, this, &MainWindow::onViewFit);
         m_viewPannel->addLargeAction(m_fitAction);
+    };
+    createViewPannel();
 
+    // view change
+    auto createViewChangePannel = [&](){
+        m_viewChangePannel = m_viewCategory->addPannel(tr("View Change"));
         // isometric
         m_viewIsometricAction = new QAction(QIcon(":/icons/icon/view_isometric.svg"), tr("Isometric"), this);
         connect(m_viewIsometricAction, &QAction::triggered, this, &MainWindow::onChangeViewIsometric);
-        m_viewPannel->addSmallAction(m_viewIsometricAction);
+        m_viewChangePannel->addSmallAction(m_viewIsometricAction);
 
         // top
         m_viewTopAction = new QAction(QIcon(":/icons/icon/view_top.svg"), tr("Top"), this);
         connect(m_viewTopAction, &QAction::triggered, this, &MainWindow::onChangeViewTop);
-        m_viewPannel->addSmallAction(m_viewTopAction);
+        m_viewChangePannel->addSmallAction(m_viewTopAction);
 
         // bottom
         m_viewBottomAction = new QAction(QIcon(":/icons/icon/view_bottom.svg"), tr("Bottom"), this);
         connect(m_viewBottomAction, &QAction::triggered, this, &MainWindow::onChangeViewBottom);
-        m_viewPannel->addSmallAction(m_viewBottomAction);
+        m_viewChangePannel->addSmallAction(m_viewBottomAction);
 
         // left
         m_viewLeftAction = new QAction(QIcon(":/icons/icon/view_left.svg"), tr("Left"), this);
         connect(m_viewLeftAction, &QAction::triggered, this, &MainWindow::onChangeViewLeft);
-        m_viewPannel->addSmallAction(m_viewLeftAction);
+        m_viewChangePannel->addSmallAction(m_viewLeftAction);
 
         // right
         m_viewRightAction = new QAction(QIcon(":/icons/icon/view_right.svg"), tr("Right"), this);
         connect(m_viewRightAction, &QAction::triggered, this, &MainWindow::onChangeViewRight);
-        m_viewPannel->addSmallAction(m_viewRightAction);
+        m_viewChangePannel->addSmallAction(m_viewRightAction);
 
         // front
         m_viewFrontAction = new QAction(QIcon(":/icons/icon/view_front.svg"), tr("Front"), this);
         connect(m_viewFrontAction, &QAction::triggered, this, &MainWindow::onChangeViewFront);
-        m_viewPannel->addSmallAction(m_viewFrontAction);
+        m_viewChangePannel->addSmallAction(m_viewFrontAction);
 
         // back
         m_viewBackAction = new QAction(QIcon(":/icons/icon/view_back.svg"), tr("Back"), this);
         connect(m_viewBackAction, &QAction::triggered, this, &MainWindow::onChangeViewBack);
-        m_viewPannel->addSmallAction(m_viewBackAction);
+        m_viewChangePannel->addSmallAction(m_viewBackAction);
+    };
+    createViewChangePannel();
 
+    // display Mode Pannel
+    auto createViewDisplayModePannel = [&](){
+        m_displayModePannel = m_viewCategory->addPannel(tr("Mode"));
         // display mode
         m_displayMode = new QAction(QIcon(":/icons/icon/display_mode.svg"), tr("Display Mode"), this);
         connect(m_displayMode, &QAction::triggered, this, &MainWindow::onSetDisplayMode);
-        m_viewPannel->addSmallAction(m_displayMode);
-
+        m_displayModePannel->addSmallAction(m_displayMode);
     };
-    createViewPannel();
-
+    createViewDisplayModePannel();
 
 }
 

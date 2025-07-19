@@ -105,7 +105,8 @@ private:
     // ---- View Group ----
     SARibbonCategory* m_viewCategory;
     SARibbonPannel* m_viewPannel;
-    SARibbonPannel* m_toolSelectPannel;
+    SARibbonPannel* m_viewChangePannel;
+    SARibbonPannel* m_displayModePannel;
     QAction* m_fitAction;
     QAction* m_viewIsometricAction;
     QAction* m_viewTopAction;
@@ -120,6 +121,7 @@ private:
 
     // ---- Tool Group ----
     SARibbonCategory* m_toolCategory;
+    SARibbonPannel* m_toolSelectPannel;
     SARibbonPannel* m_transformToolPannel;
     SARibbonPannel* m_analysisPannel;
     SARibbonPannel* m_clippingPannel;
