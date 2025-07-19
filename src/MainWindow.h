@@ -70,6 +70,8 @@ private slots:
     void onBooleanUnionAction();
     void onBooleanIntersection();
     void onBooleanDifference();
+    void onMirrorByPlane();
+    void onMirrorByAxis();
 
     /* help */
     void onSwitchLanguage();
@@ -141,6 +143,7 @@ private:
     SARibbonPannel* m_shape3dPannel;
     SARibbonPannel* m_shape2dPannel;
     SARibbonPannel* m_shapeBooleanPannel;
+    SARibbonPannel* m_mirrorPannel;
     QAction* m_boxAction;
     QAction* m_sphereAction;
     QAction* m_cylinderAction;
@@ -158,6 +161,8 @@ private:
     QAction* m_booleanUnionAction;
     QAction* m_booleanIntersectionAction;
     QAction* m_booleanDifferenceAction;
+    QAction* m_mirrorByPlaneAction;
+    QAction* m_mirrorByAxisAction;
 
 
     // ---- help Group ----

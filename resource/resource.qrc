@@ -22,6 +22,8 @@
         <file>icon/measure_arc_length.svg</file>
         <file>icon/measure_distance.svg</file>
         <file>icon/measure_length.svg</file>
+        <file>icon/mirror_axis.svg</file>
+        <file>icon/mirror_plane.svg</file>
         <file>icon/sphere.png</file>
         <file>icon/shape_arc.svg</file>
         <file>icon/shape_circle.svg</file>

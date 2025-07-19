@@ -109,6 +109,27 @@ public:
 
     void makeCutout();
 
+    /* Pattern(linear) */
+    void patternLinear(const TopoDS_Shape& baseShape,
+        const gp_Vec& direction,
+        Standard_Real spacing,
+        Standard_Integer count);
+
+    /* Pattern(Circular) */
+    void patternCircular(
+        const TopoDS_Shape& baseShape,
+        const gp_Ax1& axis,
+        Standard_Real angleStep,
+        Standard_Integer count);
+
+    /* mirrorByPlane */
+    void mirrorByPlane(const TopoDS_Shape& shape,
+        const gp_Pln& mirrorPlane);
+
+    /* mirrorByAxis */
+    void mirrorByAxis(const TopoDS_Shape& shape,
+        const gp_Ax1& mirrorAxis);
+
     //! Handle subview focus change.
     void OnSubviewChanged(const Handle(AIS_InteractiveContext) &, const Handle(V3d_View) &,
                           const Handle(V3d_View) & theNewView) override;

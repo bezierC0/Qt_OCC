@@ -443,6 +443,20 @@ void MainWindow::createShapeGroup()
     };
     createShapeBooleanPannel();
 
+    /* mirror panel */
+    auto createMirrorPannel = [&](){
+        m_mirrorPannel = m_shapeCategory->addPannel(tr("Mirror"));
+
+        m_mirrorByPlaneAction = new QAction(QIcon(":/icons/icon/mirror_plane.svg"), tr("Mirror Plane"), this);
+        connect(m_mirrorByPlaneAction, &QAction::triggered, this, &MainWindow::onMirrorByPlane);
+        m_mirrorPannel->addLargeAction(m_mirrorByPlaneAction);
+
+        m_mirrorByAxisAction = new QAction(QIcon(":/icons/icon/mirror_axis.svg"), tr("Mirror Axis"), this);
+        connect(m_mirrorByAxisAction, &QAction::triggered, this, &MainWindow::onMirrorByAxis);
+        m_mirrorPannel->addLargeAction(m_mirrorByAxisAction);
+    };
+    createMirrorPannel();
+
 }
 
 void MainWindow::createHelpGroup()
@@ -780,6 +794,16 @@ void MainWindow::onBooleanIntersection()
 void MainWindow::onBooleanDifference()
 {
     m_viewerWidget->booleanDifference();
+}
+
+void MainWindow::onMirrorByPlane()
+{
+    m_viewerWidget->mirrorByPlane();
+}
+
+void MainWindow::onMirrorByAxis()
+{
+    m_viewerWidget->mirrorByAxis();
 }
 
 ViewerWidget* MainWindow::GetViewerWidget() const

@@ -514,6 +514,74 @@ void ViewerWidget::booleanDifference()
     }
 }
 
+void ViewerWidget::mirrorByPlane()
+{
+    auto selectedObjects = m_occView->getSelectedObjects();
+    if ( selectedObjects.size() != 2 )
+    {
+        return ;
+    }
+    auto interactiveObjectShape = selectedObjects.at(0);
+    auto interactiveObjectPlane = selectedObjects.at(1);
+    if ( interactiveObjectShape.IsNull() || interactiveObjectPlane.IsNull() )
+    {
+        return ;
+    }
+
+    const auto aisShape = Handle(AIS_Shape)::DownCast(interactiveObjectShape);
+    const auto aisPlane = Handle(AIS_Shape)::DownCast(interactiveObjectPlane);
+
+    if ( aisShape.IsNull() || aisPlane.IsNull() )
+    {
+        return ;
+    }
+
+    const auto shape = aisShape->Shape();
+    const auto plane = aisPlane->Shape();
+
+    if ( shape.IsNull() || plane.IsNull() )
+    {
+        return ;
+    }
+    
+    gp_Pln mirrorPlane { };
+
+    m_occView->mirrorByPlane(shape, mirrorPlane);
+}
+
+void ViewerWidget::mirrorByAxis()
+{
+    auto selectedObjects = m_occView->getSelectedObjects();
+    if ( selectedObjects.size() != 2 )
+    {
+        return ;
+    }
+    auto interactiveObject0 = selectedObjects.at(0);
+    auto interactiveObject1 = selectedObjects.at(1);
+    if ( interactiveObject0.IsNull() || interactiveObject1.IsNull() )
+    {
+        return ;
+    }
+
+    const auto aisShape0 = Handle(AIS_Shape)::DownCast(interactiveObject0);
+    const auto aisShape1 = Handle(AIS_Shape)::DownCast(interactiveObject1);
+
+    if ( aisShape0.IsNull() || aisShape1.IsNull() )
+    {
+        return ;
+    }
+
+    const auto shape = aisShape0->Shape();
+    const auto plane = aisShape1->Shape();
+
+    if ( shape.IsNull() || plane.IsNull() )
+    {
+        return ;
+    }
+    const gp_Ax1 mirrorAxis;
+    m_occView->mirrorByAxis(shape, mirrorAxis);
+}
+
 void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const double g, const double b)
 {
     Handle(AIS_Shape) aisShape = new AIS_Shape(shape);

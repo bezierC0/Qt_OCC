@@ -942,8 +942,37 @@ void OCCView::setMouseMode(const View::MouseMode mode)
     m_mouseMode = mode;
 }
 
-void OCCView::OnSubviewChanged(const Handle(AIS_InteractiveContext) &,
-                               const Handle(V3d_View) &,
+void OCCView::mirrorByPlane(const TopoDS_Shape &shape, const gp_Pln &mirrorPlane)
+{
+    gp_Trsf mirrorTransform;
+    mirrorTransform.SetMirror(mirrorPlane.Position().Ax2());
+
+    BRepBuilderAPI_Transform transformer(shape, mirrorTransform);
+
+    if (transformer.IsDone()) {
+        auto shape =  transformer.Shape();
+        Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
+        m_loadedObjects.emplace_back(aisShape);
+    }
+    reDraw();
+}
+
+void OCCView::mirrorByAxis(const TopoDS_Shape &shape, const gp_Ax1 &mirrorAxis)
+{
+    gp_Trsf mirrorTransform;
+    mirrorTransform.SetMirror(mirrorAxis);
+
+    BRepBuilderAPI_Transform transformer(shape, mirrorTransform);
+
+    if (transformer.IsDone()) {
+        auto shape = transformer.Shape();
+        Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
+        m_loadedObjects.emplace_back(aisShape);
+    }
+    reDraw();
+}
+
+void OCCView::OnSubviewChanged(const Handle(AIS_InteractiveContext) &, const Handle(V3d_View) &,
                                const Handle(V3d_View) & theNewView)
 {
     myFocusView = theNewView;
