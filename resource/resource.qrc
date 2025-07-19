@@ -8,6 +8,10 @@
         <file>icon/clipping.svg</file>
         <file>icon/cone.png</file>
         <file>icon/cylinder.png</file>
+        <file>icon/display_mode_hidden_line.svg</file>
+        <file>icon/display_mode_shading_edge.svg</file>
+        <file>icon/display_mode_shading.svg</file>
+        <file>icon/display_mode_wireframe.svg</file>
         <file>icon/file_new.svg</file>
         <file>icon/fit.png</file>
         <file>icon/interference.png</file>

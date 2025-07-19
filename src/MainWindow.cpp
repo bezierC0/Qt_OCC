@@ -85,7 +85,6 @@ void MainWindow::createRibbon() {
         m_ribbon->removeCategory( m_toolCategory );
         m_ribbon->removeCategory( m_shapeCategory );
         m_ribbon->removeCategory( m_helpCategory );
-
     }
     else
     {
@@ -170,11 +169,37 @@ void MainWindow::createViewGroup()
 
     // display Mode Pannel
     auto createViewDisplayModePannel = [&](){
-        m_displayModePannel = m_viewCategory->addPannel(tr("Mode"));
+        m_displayModePannel = m_viewCategory->addPannel(tr("Display Mode"));
         // display mode
-        m_displayMode = new QAction(QIcon(":/icons/icon/display_mode.svg"), tr("Display Mode"), this);
-        connect(m_displayMode, &QAction::triggered, this, &MainWindow::onSetDisplayMode);
-        m_displayModePannel->addSmallAction(m_displayMode);
+        m_displayModeAction = new QAction(QIcon(":/icons/icon/display_mode.svg"), tr("Style"), this);
+        m_displayModePannel->addSmallAction(m_displayModeAction);
+
+        SARibbonMenu* menu = new SARibbonMenu(this);
+        m_displayModeAction->setMenu(menu);
+        m_displayModeAction->setToolTip(tr("Display Mode"));
+        menu->setStyleSheet("QMenu::item { padding-left: 25px; }");
+
+        QActionGroup* displayModeGroup = new QActionGroup(this);
+        displayModeGroup->setExclusive(true);
+
+        auto createDisplayAction = [&](QIcon& icon,const QString& text, int mode) {
+            //auto action = new QAction(icon,text, this);
+            auto action = new QAction(text, this);
+            action->setCheckable(true);
+            connect(action, &QAction::triggered, this, [this, mode]() {
+                m_viewerWidget->setDisplayMode(mode);
+            });
+            displayModeGroup->addAction(action);
+            menu->addAction(action);
+            return action;
+        };
+
+        auto shadingAction = createDisplayAction(QIcon(":/icons/icon/display_mode_shading.svg"),tr("Shading"), 0);
+        auto wireframeAction = createDisplayAction(QIcon(":/icons/icon/display_mode_wireframe.svg"),tr("Wireframe"), 1);
+        auto hiddenLineAction = createDisplayAction(QIcon(":/icons/icon/display_mode_hidden_line.svg"),tr("Hidden Line"), 2);
+        auto shadingEdgeAction = createDisplayAction(QIcon(":/icons/icon/display_mode_shading_edge.svg"),tr("Shading with edge"), 10);
+
+        shadingAction->setChecked(true); // Default selection
     };
     createViewDisplayModePannel();
 
@@ -510,9 +535,9 @@ void MainWindow::onChangeViewBack() const
     m_viewerWidget->viewBack();
 }
 
-void MainWindow::onSetDisplayMode() const
+void MainWindow::onSetDisplayMode(int mode) const
 {
-    m_viewerWidget->setDisplayMode(1);
+    m_viewerWidget->setDisplayMode(mode);
 }
 
 void MainWindow::onSwitchSelect(bool checked)

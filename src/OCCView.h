@@ -14,6 +14,8 @@
 
 class AIS_ViewCube;
 class AIS_Manipulator;
+class TopoDS_Face;
+class TopoDS_Shape;
 
 namespace View
 {
@@ -21,7 +23,6 @@ enum MouseMode { NONE, SELECTION, END };
 enum DisplayMode {
     MODE_SHADED = 0,
     MODE_WIREFRAME,
-    MODE_WIREFRAME_SHADED,
     MODE_HIDDEN_LINE,
     MODE_SHADED_WITH_EDGES,
     MODE_END
@@ -98,6 +99,16 @@ public:
 
     void setMouseMode(View::MouseMode mode);
 
+    /* BRepOffsetAPI_MakeThickSolid */
+    void makeHollow(const TopoDS_Shape shape, const TopoDS_Face& face);
+
+    /* MakeOffsetShape */
+    void makeThickness(const TopoDS_Shape shape, const Standard_Real thickness);
+
+    void makeHole();
+
+    void makeCutout();
+
     //! Handle subview focus change.
     void OnSubviewChanged(const Handle(AIS_InteractiveContext) &, const Handle(V3d_View) &,
                           const Handle(V3d_View) & theNewView) override;
@@ -171,5 +182,5 @@ private:
 
     Standard_Real m_animationDuration{1}; // animation duration in seconds
     int m_mouseMode{0};                   // 0 normal 1 select + normal
-    View::DisplayMode m_displayMode{View::DisplayMode::MODE_SHADED};
+    View::DisplayMode m_displayModeAction{View::DisplayMode::MODE_SHADED};
 };

@@ -35,7 +35,7 @@ private slots:
     void onChangeViewRight() const;
     void onChangeViewFront() const;
     void onChangeViewBack() const;
-    void onSetDisplayMode() const;
+    void onSetDisplayMode(int mode) const;
 
     /* tool */
     void onSwitchSelect(bool checked);
@@ -115,7 +115,7 @@ private:
     QAction* m_viewRightAction;
     QAction* m_viewFrontAction;
     QAction* m_viewBackAction;
-    QAction* m_displayMode;
+    QAction* m_displayModeAction;
     QAction* m_selectAction;
     QAction* m_selectFilterAction;
 
