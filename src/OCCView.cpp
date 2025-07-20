@@ -946,13 +946,18 @@ void OCCView::mirrorByPlane(const TopoDS_Shape &shape, const gp_Pln &mirrorPlane
 {
     gp_Trsf mirrorTransform;
     mirrorTransform.SetMirror(mirrorPlane.Position().Ax2());
-
     BRepBuilderAPI_Transform transformer(shape, mirrorTransform);
 
     if (transformer.IsDone()) {
-        auto shape =  transformer.Shape();
-        Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
-        m_loadedObjects.emplace_back(aisShape);
+        auto result =  transformer.Shape();
+        for(auto &aisShape : m_loadedObjects) {
+            auto target = Handle(AIS_Shape)::DownCast(aisShape);
+            if (target->Shape() == shape) {
+                target->SetShape(result);
+                continue;
+                //aisShape = mirrorAisShape;
+            }
+        }
     }
     reDraw();
 }
@@ -965,9 +970,15 @@ void OCCView::mirrorByAxis(const TopoDS_Shape &shape, const gp_Ax1 &mirrorAxis)
     BRepBuilderAPI_Transform transformer(shape, mirrorTransform);
 
     if (transformer.IsDone()) {
-        auto shape = transformer.Shape();
-        Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
-        m_loadedObjects.emplace_back(aisShape);
+        auto result =  transformer.Shape();
+        for(auto &aisShape : m_loadedObjects) {
+            auto target = Handle(AIS_Shape)::DownCast(aisShape);
+            if (target->Shape() == shape) {
+                target->SetShape(result);
+                continue;
+                //aisShape = mirrorAisShape;
+            }
+        }
     }
     reDraw();
 }

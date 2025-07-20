@@ -37,6 +37,13 @@
 #include <BRep_Tool.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Vertex.hxx>
+#include <Geom_Plane.hxx>
+#include <Geom_Surface.hxx>
+#include <Geom_Line.hxx>
+#include <Geom_Curve.hxx>
+#include <GeomLib_IsPlanarSurface.hxx>
+#include <GeomAdaptor_Curve.hxx>
+#include <GeomAbs_CurveType.hxx>
 
 namespace
 {
@@ -543,10 +550,19 @@ void ViewerWidget::mirrorByPlane()
     {
         return ;
     }
-    
-    gp_Pln mirrorPlane { };
 
-    m_occView->mirrorByPlane(shape, mirrorPlane);
+    if ( shape.ShapeType() != TopAbs_SHAPE && plane.ShapeType() != TopAbs_FACE ){
+        return ;
+    } 
+
+    TopoDS_Face face = TopoDS::Face(plane);
+    Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
+    Handle(Geom_Plane) geomPlane = Handle(Geom_Plane)::DownCast(surface);
+
+    if (!geomPlane.IsNull()) {
+        return;
+    }
+    m_occView->mirrorByPlane(shape, geomPlane->Pln());
 }
 
 void ViewerWidget::mirrorByAxis()
@@ -571,15 +587,31 @@ void ViewerWidget::mirrorByAxis()
         return ;
     }
 
-    const auto shape = aisShape0->Shape();
-    const auto plane = aisShape1->Shape();
+    const auto shape0 = aisShape0->Shape();
+    const auto shape1 = aisShape1->Shape();
 
-    if ( shape.IsNull() || plane.IsNull() )
+    if ( shape0.IsNull() || shape1.IsNull() )
     {
         return ;
     }
+
+    if ( shape0.ShapeType() != TopAbs_SHAPE && shape1.ShapeType() != TopAbs_EDGE ){
+        return;
+    }
+
+    TopoDS_Edge edge = TopoDS::Edge(shape1);
+    Standard_Real first, last;
+    Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, first, last);
+
+    if (curve.IsNull()) {
+        return;
+    }
+
+    Handle(Geom_Curve) geomCurve = Handle(Geom_Curve)::DownCast(curve);
+
+
     const gp_Ax1 mirrorAxis;
-    m_occView->mirrorByAxis(shape, mirrorAxis);
+    m_occView->mirrorByAxis(shape0, mirrorAxis);
 }
 
 void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const double g, const double b)

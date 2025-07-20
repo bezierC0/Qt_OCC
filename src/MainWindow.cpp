@@ -754,7 +754,7 @@ void MainWindow::onCreateNurbsCurve()
 
 void MainWindow::onCreateBox()
 {
-    BRepPrimAPI_MakeBox box(10.0, 10.0, 10.0);
+    BRepPrimAPI_MakeBox box(10.0, 20.0, 30.0);
     m_viewerWidget->displayShape(box.Shape(), 1.0, 0.0, 1.0);
 }
 
