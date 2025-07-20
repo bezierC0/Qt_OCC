@@ -942,6 +942,48 @@ void OCCView::setMouseMode(const View::MouseMode mode)
     m_mouseMode = mode;
 }
 
+void OCCView::patternLinear(const TopoDS_Shape &baseShape, const gp_Vec &direction,
+                            Standard_Real spacing, Standard_Integer count)
+{
+    TopoDS_Compound compound;
+    BRep_Builder builder;
+    builder.MakeCompound(compound);
+
+    builder.Add(compound, baseShape);
+
+    for (Standard_Integer i = 1; i < count; i++) {
+        gp_Trsf transform;
+        gp_Vec translation = direction.Normalized() * (spacing * i);
+        transform.SetTranslation(translation);
+
+        BRepBuilderAPI_Transform transformer(baseShape, transform);
+        if (transformer.IsDone()) {
+            builder.Add(compound, transformer.Shape());
+        }
+    }
+}
+
+void OCCView::patternCircular(const TopoDS_Shape &baseShape, const gp_Ax1 &axis,
+                              Standard_Real angleStep, Standard_Integer count)
+{
+    TopoDS_Compound compound;
+    BRep_Builder builder;
+    builder.MakeCompound(compound);
+
+    builder.Add(compound, baseShape);
+
+    for (Standard_Integer i = 1; i < count; i++) {
+        gp_Trsf transform;
+        Standard_Real angle = angleStep * i;
+        transform.SetRotation(axis, angle);
+
+        BRepBuilderAPI_Transform transformer(baseShape, transform);
+        if (transformer.IsDone()) {
+            builder.Add(compound, transformer.Shape());
+        }
+    }
+}
+
 void OCCView::mirrorByPlane(const TopoDS_Shape &shape, const gp_Pln &mirrorPlane)
 {
     gp_Trsf mirrorTransform;

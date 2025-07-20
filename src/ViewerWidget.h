@@ -69,6 +69,8 @@ public:
     void booleanUnion();
     void booleanIntersection();
     void booleanDifference();
+    void patternLinear();// Pattern(linear) 
+    void patternCircular();// Pattern(Circular) 
     void mirrorByPlane();
     void mirrorByAxis();
     

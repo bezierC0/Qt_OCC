@@ -457,6 +457,19 @@ void MainWindow::createShapeGroup()
     };
     createMirrorPannel();
 
+    /* pattern panel */
+    auto createPatternPannel = [&](){
+        m_patternPannel = m_shapeCategory->addPannel(tr("Pattern"));
+
+        m_patternLinearAction = new QAction(QIcon(":/icons/icon/patter_linear.svg"), tr("Linear Pattern"), this);
+        connect(m_patternLinearAction, &QAction::triggered, this, &MainWindow::onPatternLinear);
+        m_patternPannel->addLargeAction(m_patternLinearAction);
+
+        m_patternCircularAction = new QAction(QIcon(":/icons/icon/pattern_circular.svg"), tr("Circular Pattern"), this);
+        connect(m_patternCircularAction, &QAction::triggered, this, &MainWindow::onPatternCircular);
+        m_patternPannel->addLargeAction(m_patternCircularAction);
+    };
+    createPatternPannel();
 }
 
 void MainWindow::createHelpGroup()
@@ -804,6 +817,16 @@ void MainWindow::onMirrorByPlane()
 void MainWindow::onMirrorByAxis()
 {
     m_viewerWidget->mirrorByAxis();
+}
+
+void MainWindow::onPatternLinear()
+{
+    m_viewerWidget->patternLinear();
+}
+
+void MainWindow::onPatternCircular()
+{
+    m_viewerWidget->patternCircular();
 }
 
 ViewerWidget* MainWindow::GetViewerWidget() const

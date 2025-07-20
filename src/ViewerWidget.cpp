@@ -521,6 +521,91 @@ void ViewerWidget::booleanDifference()
     }
 }
 
+void ViewerWidget::patternLinear()
+{
+    auto selectedObjects = m_occView->getSelectedObjects();
+    if ( selectedObjects.size() != 2 )
+    {
+        return ;
+    }
+    auto interactiveObject0 = selectedObjects.at(0);
+    auto interactiveObject1 = selectedObjects.at(1);
+    if ( interactiveObject0.IsNull() || interactiveObject1.IsNull() )
+    {
+        return ;
+    }
+
+    const auto aisShape0 = Handle(AIS_Shape)::DownCast(interactiveObject0);
+    const auto aisShape1 = Handle(AIS_Shape)::DownCast(interactiveObject1);
+
+    if ( aisShape0.IsNull() || aisShape1.IsNull() )
+    {
+        return ;
+    }
+
+    const auto shape0 = aisShape0->Shape();
+    const auto shape1 = aisShape1->Shape();
+
+    if ( shape0.IsNull() || shape1.IsNull() )
+    {
+        return ;
+    }
+    
+    if ( shape0.ShapeType() != TopAbs_SHAPE && shape1.ShapeType() != TopAbs_EDGE ){
+        return;
+    }
+
+    Standard_Real first, last;
+    auto geomLine = Handle(Geom_Line)::DownCast(BRep_Tool::Curve(TopoDS::Edge(shape1),first,last));
+    if (geomLine.IsNull()) {
+        return;
+    }
+
+    const TopoDS_Shape baseShape = shape0;
+    const gp_Vec direction = geomLine->Position().Direction();
+    Standard_Real spacing = 10;
+    Standard_Integer count = 3;
+
+    m_occView->patternLinear(baseShape, direction, spacing, count);
+}
+
+void ViewerWidget::patternCircular()
+{
+    auto selectedObjects = m_occView->getSelectedObjects();
+    if ( selectedObjects.size() != 2 )
+    {
+        return ;
+    }
+    auto interactiveObject0 = selectedObjects.at(0);
+    auto interactiveObject1 = selectedObjects.at(1);
+    if ( interactiveObject0.IsNull() || interactiveObject1.IsNull() )
+    {
+        return ;
+    }
+
+    const auto aisShape0 = Handle(AIS_Shape)::DownCast(interactiveObject0);
+    const auto aisShape1 = Handle(AIS_Shape)::DownCast(interactiveObject1);
+
+    if ( aisShape0.IsNull() || aisShape1.IsNull() )
+    {
+        return ;
+    }
+
+    const auto shape0 = aisShape0->Shape();
+    const auto shape1 = aisShape1->Shape();
+
+    if ( shape0.IsNull() || shape1.IsNull() )
+    {
+        return ;
+    }
+
+    const TopoDS_Shape baseShape;
+    const gp_Ax1 axis;
+    Standard_Real angleStep;
+    Standard_Integer count;
+    m_occView->patternCircular(baseShape, axis, angleStep, count);
+}
+
 void ViewerWidget::mirrorByPlane()
 {
     auto selectedObjects = m_occView->getSelectedObjects();

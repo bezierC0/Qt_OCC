@@ -15,6 +15,9 @@
         <file>icon/file_new.svg</file>
         <file>icon/fit.png</file>
         <file>icon/interference.png</file>
+        <file>icon/patter_2d_linear.svg</file>
+        <file>icon/patter_linear.svg</file>
+        <file>icon/pattern_circular.svg</file>
         <file>icon/select.svg</file>
         <file>icon/select_filter.svg</file>
         <file>icon/tool_transform.svg</file>

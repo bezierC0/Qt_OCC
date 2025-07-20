@@ -72,6 +72,8 @@ private slots:
     void onBooleanDifference();
     void onMirrorByPlane();
     void onMirrorByAxis();
+    void onPatternLinear();
+    void onPatternCircular();
 
     /* help */
     void onSwitchLanguage();
@@ -144,6 +146,7 @@ private:
     SARibbonPannel* m_shape2dPannel;
     SARibbonPannel* m_shapeBooleanPannel;
     SARibbonPannel* m_mirrorPannel;
+    SARibbonPannel* m_patternPannel;
     QAction* m_boxAction;
     QAction* m_sphereAction;
     QAction* m_cylinderAction;
@@ -163,6 +166,8 @@ private:
     QAction* m_booleanDifferenceAction;
     QAction* m_mirrorByPlaneAction;
     QAction* m_mirrorByAxisAction;
+    QAction* m_patternLinearAction;
+    QAction* m_patternCircularAction;
 
 
     // ---- help Group ----
