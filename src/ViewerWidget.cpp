@@ -608,9 +608,13 @@ void ViewerWidget::mirrorByAxis()
     }
 
     Handle(Geom_Curve) geomCurve = Handle(Geom_Curve)::DownCast(curve);
+    Handle(Geom_Line) geomLine = Handle(Geom_Line)::DownCast(geomCurve);
 
+    if (geomLine.IsNull()) {
+        return;
+    }
 
-    const gp_Ax1 mirrorAxis;
+    const gp_Ax1 mirrorAxis = geomLine->Position();
     m_occView->mirrorByAxis(shape0, mirrorAxis);
 }
 
