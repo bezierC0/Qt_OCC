@@ -475,33 +475,35 @@ void OCCView::keyPressEvent(QKeyEvent *theEvent)
 
 void OCCView::mousePressEvent(QMouseEvent *theEvent)
 {
-    if( m_mouseMode == 1){
-        auto selectFun = [&](){
-            // Perform selection
-            const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier) ? AIS_SelectionScheme_Add : AIS_SelectionScheme_Replace;
-            m_context->SelectDetected(aScheme);
-            // If something is selected, update the view and return
-            if (m_context->NbSelected() <= 0)
-                return ;
-            for (m_context->InitSelected(); m_context->MoreSelected(); m_context->NextSelected())
+    if (m_mouseMode == View::MouseMode::SELECTION)
+    {
+        const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier) ? AIS_SelectionScheme_Add : AIS_SelectionScheme_Replace;
+        m_context->SelectDetected(aScheme);
+
+        if (m_context->HasDetected())
+        {
+            const Handle(AIS_InteractiveObject) &detectedObject = m_context->DetectedInteractive();
+            if (!detectedObject.IsNull())
             {
-                const TopoDS_Shape &detectedShape = m_context->SelectedShape();
-                if (!detectedShape.IsNull())
+                // Check if the object is already in the list to avoid duplicates
+                auto it = std::find(m_selectedObjects.begin(), m_selectedObjects.end(), detectedObject);
+                if (it == m_selectedObjects.end())
                 {
-                    Handle(AIS_Shape) selectedSubShape = new AIS_Shape(detectedShape);
-                    m_selectedObjects.emplace_back(selectedSubShape);
+                    m_selectedObjects.emplace_back(detectedObject);
                 }
             }
-        };
-        selectFun();
+        }
     }
-    else{
-        if( !m_selectedObjects.empty() )
+    else
+    {
+        if (!m_selectedObjects.empty())
+        {
+            m_context->ClearSelected(false);
             m_selectedObjects.clear();
+        }
     }
 
     const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
-    // If nothing was selected, proceed with view navigation
     QOpenGLWidget::mousePressEvent(theEvent);
     const Aspect_VKeyFlags aFlags = qtMouseModifiers2VKeys(theEvent->modifiers());
     if (!m_view.IsNull() && UpdateMouseButtons(aPnt, qtMouseButtons2VKeys(theEvent->buttons()), aFlags, false))
