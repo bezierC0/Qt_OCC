@@ -12,6 +12,7 @@
         <file>icon/display_mode_shading_edge.svg</file>
         <file>icon/display_mode_shading.svg</file>
         <file>icon/display_mode_wireframe.svg</file>
+        <file>icon/display_mode.svg</file>
         <file>icon/file_new.svg</file>
         <file>icon/fit.png</file>
         <file>icon/interference.png</file>
@@ -20,6 +21,7 @@
         <file>icon/pattern_circular.svg</file>
         <file>icon/select.svg</file>
         <file>icon/select_filter.svg</file>
+        <file>icon/tool_explosion.svg</file>
         <file>icon/tool_transform.svg</file>
         <file>icon/measure_angle.svg</file>
         <file>icon/measure_arc_length.svg</file>
@@ -40,7 +42,13 @@
         <file>icon/help_language.svg</file>
         <file>icon/help_theme.svg</file>
         <file>icon/version.svg</file>
+        <file>icon/view_back.svg</file>
+        <file>icon/view_bottom.svg</file>
+        <file>icon/view_front.svg</file>
         <file>icon/view_isometric.svg</file>
+        <file>icon/view_left.svg</file>
+        <file>icon/view_right.svg</file>
+        <file>icon/view_top.svg</file>
     </qresource>
     <qresource prefix="/qss">
         <file>qss/light.qss</file>

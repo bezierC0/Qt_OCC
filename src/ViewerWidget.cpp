@@ -4,6 +4,7 @@
 #include "OCCView.h"
 #include "Tree.h"
 #include "ViewManager.h"
+#include "CollisionDetector.h"
 
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
@@ -329,12 +330,16 @@ void ViewerWidget::transform()
 
 void ViewerWidget::checkInterference()
 {
-    for (size_t i = 0; i < m_doc->m_list.size(); ++i)
+    CollisionDetector collsion { m_occView->Context() };
+    const auto& selectObjects = m_occView->getSelectedObjects();
+
+    std::vector<Handle(AIS_InteractiveObject)> results;
+    for (size_t i = 0; i < selectObjects.size(); ++i)
     {
-        for (size_t j = i + 1; j < m_doc->m_list.size(); ++j)
+        for (size_t j = i + 1; j < selectObjects.size(); ++j)
         {
-            Handle(AIS_InteractiveObject) objA = m_doc->m_list[i];
-            Handle(AIS_InteractiveObject) objB = m_doc->m_list[j];
+            Handle(AIS_InteractiveObject) objA = selectObjects.at(i);
+            Handle(AIS_InteractiveObject) objB = selectObjects.at(j);
 
             const auto aisShapeA = Handle(AIS_Shape)::DownCast(objA);
             const auto aisShapeB = Handle(AIS_Shape)::DownCast(objA);
@@ -345,24 +350,26 @@ void ViewerWidget::checkInterference()
             const auto &shapeA = aisShapeA->Shape();
             const auto &shapeB = aisShapeB->Shape();
 
-            BRepAlgoAPI_Common commonOp(shapeA, shapeB);
-            commonOp.Build();
+            if( !collsion.DetectAndHighlightCollision(shapeA, shapeB))
+                continue;
 
-            if (commonOp.IsDone())
-            {
-                const TopoDS_Shape &result = commonOp.Shape();
-                if (!result.IsNull())
-                {
-                    QMessageBox::information(this, QCoreApplication::translate("ViewerWidget", "Interference"),
-                                             QCoreApplication::translate("ViewerWidget", "Shape %1 intersects with Shape %2").arg(i).arg(j));
-                    Handle(AIS_Shape) aisResult = new AIS_Shape(result);
-                    aisResult->SetColor(Quantity_NOC_RED);
-                    aisResult->SetDisplayMode(AIS_Shaded);
-                    m_occView->setShape(aisResult);
-                }
+            const auto &result = collsion.GetResult();
+            if (result.IsNull()) {
+                continue;
             }
+
+            objA->SetTransparency(0.4);
+            objB->SetTransparency(0.4);
+
+            results.emplace_back(result);
         }
     }
+
+    for( const auto& result : results){
+        m_occView->setShape(result);
+    }
+
+    m_occView->reDraw();
 }
 
 void ViewerWidget::clipping(const gp_Dir &normal, const gp_Pnt &point, const bool isOn)
@@ -477,7 +484,8 @@ void ViewerWidget::createCone()
 
 void ViewerWidget::booleanUnion()
 {
-    TopoDS_Shape shapeA, shapeB;
+    TopoDS_Shape shapeA;
+    TopoDS_Shape shapeB;
     if( !getBooleanTargets(shapeA, shapeB) )
         return ;
 
@@ -493,7 +501,8 @@ void ViewerWidget::booleanUnion()
 
 void ViewerWidget::booleanIntersection()
 {
-    TopoDS_Shape shape1, shape2;
+    TopoDS_Shape shape1;
+    TopoDS_Shape shape2;
     if( !getBooleanTargets(shape1, shape2) )
         return ;
     BRepAlgoAPI_Common booleanFun(shape1, shape2);
@@ -508,7 +517,8 @@ void ViewerWidget::booleanIntersection()
 
 void ViewerWidget::booleanDifference()
 {
-    TopoDS_Shape shape1, shape2;
+    TopoDS_Shape shape1;
+    TopoDS_Shape shape2;
     if( !getBooleanTargets(shape1, shape2) )
         return ;
     BRepAlgoAPI_Cut booleanFun(shape1, shape2);
@@ -591,18 +601,18 @@ void ViewerWidget::patternCircular()
         return ;
     }
 
-    const auto shape0 = aisShape0->Shape();
-    const auto shape1 = aisShape1->Shape();
+    const auto& shape0 = aisShape0->Shape();
+    const auto& shape1 = aisShape1->Shape();
 
     if ( shape0.IsNull() || shape1.IsNull() )
     {
         return ;
     }
 
-    const TopoDS_Shape baseShape;
-    const gp_Ax1 axis;
-    Standard_Real angleStep;
-    Standard_Integer count;
+    const TopoDS_Shape baseShape = shape0;
+    const gp_Ax1 axis = gp_Ax1();
+    Standard_Real angleStep{};
+    Standard_Integer count{};
     m_occView->patternCircular(baseShape, axis, angleStep, count);
 }
 

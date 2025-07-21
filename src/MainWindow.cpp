@@ -332,7 +332,7 @@ void MainWindow::createToolGroup()
         /* Other Pannel */
         m_otherPannel = m_toolCategory->addPannel(tr("Other Tools")); // Adding to Analysis category for simplicity
         // explosion
-        m_explosionAction = new QAction(QIcon(":/icons/icon/explosion.png"), tr("Explosion"), this); // Assuming an icon path
+        m_explosionAction = new QAction(QIcon(":/icons/icon/tool_explosion.svg"), tr("Explosion"), this); // Assuming an icon path
         connect(m_explosionAction, &QAction::triggered, this, &MainWindow::onExplosion);
         m_otherPannel->addLargeAction(m_explosionAction);
     };
