@@ -11,6 +11,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QMouseEvent>
+#include <iostream>
 #include <Standard_WarningsRestore.hxx>
 
 #include <AIS_Shape.hxx>
@@ -23,6 +24,8 @@
 #include <BRepBndLib.hxx>
 #include <Graphic3d_Camera.hxx>
 #include <gp_Trsf.hxx>
+#include <gp_Pnt.hxx>
+#include <gp_Dir.hxx>
 #include <gp_Vec.hxx>
 #include <TopoDS_Shape.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
@@ -800,41 +803,50 @@ void OCCView::viewfit()
 
     // Start the animation from the start state to the end state.
     animateCamera(aCamStart, aCamEnd);
+
+    updateView();
 }
 
 void OCCView::viewIsometric()
 {
     animateViewChange(V3d_TypeOfOrientation_Zup_AxoRight);
+    updateView();
 }
 
 void OCCView::viewTop()
 {
     animateViewChange(V3d_TypeOfOrientation_Zup_Top);
+    updateView();
 }
 
 void OCCView::viewBottom()
 {
     animateViewChange(V3d_TypeOfOrientation_Zup_Bottom);
+    updateView();
 }
 
 void OCCView::viewLeft()
 {
     animateViewChange(V3d_TypeOfOrientation_Zup_Left);
+    updateView();
 }
 
 void OCCView::viewRight()
 {
     animateViewChange(V3d_TypeOfOrientation_Zup_Right);
+    updateView();
 }
 
 void OCCView::viewFront()
 {
     animateViewChange(V3d_TypeOfOrientation_Zup_Front);
+    updateView();
 }
 
 void OCCView::viewBack()
 {
     animateViewChange(V3d_TypeOfOrientation_Zup_Back);
+    updateView();
 }
 
 void OCCView::setDisplayMode( View::DisplayMode mode )
@@ -859,11 +871,11 @@ void OCCView::setDisplayMode( View::DisplayMode mode )
 
 void OCCView::animateCamera(const Handle(Graphic3d_Camera) & theCamStart, const Handle(Graphic3d_Camera) & theCamEnd)
 {
+    myViewAnimation->SetView(m_view);
     myViewAnimation->SetCameraStart(theCamStart);
     myViewAnimation->SetCameraEnd(theCamEnd);
     myViewAnimation->StartTimer(0, 1, true, false);
     myViewAnimation->Start(false);
-    updateView();
 }
 
 void OCCView::animateViewChange(V3d_TypeOfOrientation theOrientation)
