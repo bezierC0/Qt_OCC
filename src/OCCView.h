@@ -197,5 +197,5 @@ private:
 
     Standard_Real                               m_animationDuration{1}; // animation duration in seconds
     int                                         m_mouseMode{0};                   // 0 normal 1 select + normal
-    View::DisplayMode                           m_displayModeAction{View::DisplayMode::MODE_SHADED};
+    View::DisplayMode                           m_displayMode{View::DisplayMode::MODE_SHADED};
 };

@@ -569,6 +569,7 @@ void ViewerWidget::patternLinear()
     auto selectedObjects = m_occView->getSelectedObjects();
     if ( selectedObjects.size() != 2 )
     {
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
         return ;
     }
     auto interactiveObject0 = selectedObjects.at(0);
@@ -617,6 +618,7 @@ void ViewerWidget::patternCircular()
     auto selectedObjects = m_occView->getSelectedObjects();
     if ( selectedObjects.size() != 2 )
     {
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
         return ;
     }
     auto interactiveObject0 = selectedObjects.at(0);
@@ -654,12 +656,14 @@ void ViewerWidget::mirrorByPlane()
     auto selectedObjects = m_occView->getSelectedObjects();
     if ( selectedObjects.size() != 2 )
     {
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
         return ;
     }
     auto interactiveObjectShape = selectedObjects.at(0);
     auto interactiveObjectPlane = selectedObjects.at(1);
     if ( interactiveObjectShape.IsNull() || interactiveObjectPlane.IsNull() )
     {
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Interactive object is null."));
         return ;
     }
 
@@ -668,6 +672,7 @@ void ViewerWidget::mirrorByPlane()
 
     if ( aisShape.IsNull() || aisPlane.IsNull() )
     {
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "AisShape is null."));
         return ;
     }
 
@@ -698,12 +703,14 @@ void ViewerWidget::mirrorByAxis()
     auto selectedObjects = m_occView->getSelectedObjects();
     if ( selectedObjects.size() != 2 )
     {
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
         return ;
     }
     auto interactiveObject0 = selectedObjects.at(0);
     auto interactiveObject1 = selectedObjects.at(1);
     if ( interactiveObject0.IsNull() || interactiveObject1.IsNull() )
     {
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Interactive object is null."));
         return ;
     }
 
@@ -712,6 +719,7 @@ void ViewerWidget::mirrorByAxis()
 
     if ( aisShape0.IsNull() || aisShape1.IsNull() )
     {
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "AisShape is null."));
         return ;
     }
 

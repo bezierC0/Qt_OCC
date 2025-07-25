@@ -33,6 +33,9 @@
 #include <Message.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <OpenGl_FrameBuffer.hxx>
+#include <TopoDS_Iterator.hxx>
+#include <TopoDS_Compound.hxx>
+#include <BRep_Builder.hxx>
 
 
 namespace
@@ -767,6 +770,22 @@ void OCCView::transform()
 
 void OCCView::reDraw() const
 {
+    auto reDisplayMode = [&](const Handle(AIS_InteractiveObject)& object){
+        AIS_DisplayMode aMode = AIS_Shaded ;
+        if ( m_displayMode == View::DisplayMode::MODE_WIREFRAME )
+        {
+            aMode = AIS_WireFrame ;
+        }
+        else if ( m_displayMode == View::DisplayMode::MODE_SHADED )
+        {
+            aMode = AIS_Shaded ;
+        }
+
+        for ( const auto& object : m_loadedObjects )
+        {
+            m_context->SetDisplayMode( object, aMode, false ) ;
+        }
+    };
     for (const auto &object : m_loadedObjects)
     {
         // void GraphicsScene::addObject(const GraphicsObjectPtr& object, AddObjectFlags flags)
@@ -780,8 +799,10 @@ void OCCView::reDraw() const
         {
             m_context->Display(object, object->DisplayMode(), 0, false);
         }
+        reDisplayMode(object);
         m_context->SetAutoActivateSelection(onEntry_AutoActivateSelection);
     }
+    m_context->UpdateCurrentViewer() ;
     m_view->Redraw();
 }
 
@@ -792,7 +813,7 @@ void OCCView::viewfit()
     aCamStart->Copy(m_view->Camera());
 
     // This modifies the view's internal camera to the "fitted" state.
-    m_view->FitAll(0.3, false);
+    m_view->FitAll();
 
     // Create a copy of the new (end) camera state.
     Handle(Graphic3d_Camera) aCamEnd = new Graphic3d_Camera();
@@ -851,22 +872,9 @@ void OCCView::viewBack()
 
 void OCCView::setDisplayMode( View::DisplayMode mode )
 {
-    AIS_DisplayMode aMode = AIS_Shaded ;
-    if ( mode == View::DisplayMode::MODE_WIREFRAME )
-    {
-        aMode = AIS_WireFrame ;
-    }
-    else if ( mode == View::DisplayMode::MODE_SHADED )
-    {
-        aMode = AIS_Shaded ;
-    }
-
-    for ( const auto& object : m_loadedObjects )
-    {
-        m_context->SetDisplayMode( object, aMode, false ) ;
-    }
-    m_context->UpdateCurrentViewer() ;
-    updateView() ;
+    m_displayMode = mode ;
+    reDraw();
+    updateView();
 }
 
 void OCCView::animateCamera(const Handle(Graphic3d_Camera) & theCamStart, const Handle(Graphic3d_Camera) & theCamEnd)
@@ -959,43 +967,46 @@ void OCCView::setMouseMode(const View::MouseMode mode)
 void OCCView::patternLinear(const TopoDS_Shape &baseShape, const gp_Vec &direction,
                             Standard_Real spacing, Standard_Integer count)
 {
-    TopoDS_Compound compound;
-    BRep_Builder builder;
-    builder.MakeCompound(compound);
-
-    builder.Add(compound, baseShape);
-
-    for (Standard_Integer i = 1; i < count; i++) {
+    for (Standard_Integer i = 1; i < count; i++)
+    {
         gp_Trsf transform;
         gp_Vec translation = direction.Normalized() * (spacing * i);
         transform.SetTranslation(translation);
 
         BRepBuilderAPI_Transform transformer(baseShape, transform);
-        if (transformer.IsDone()) {
-            builder.Add(compound, transformer.Shape());
+        if (transformer.IsDone())
+        {
+            Handle(AIS_Shape) anAisShape = new AIS_Shape(transformer.Shape());
+            setShape(anAisShape);
+            m_context->Display(anAisShape, AIS_Shaded, 0, false);
         }
     }
+    // m_context->UpdateCurrentViewer();
+    // m_view->FitAll();
+    // updateView();
+    reDraw();
 }
 
 void OCCView::patternCircular(const TopoDS_Shape &baseShape, const gp_Ax1 &axis,
                               Standard_Real angleStep, Standard_Integer count)
 {
-    TopoDS_Compound compound;
-    BRep_Builder builder;
-    builder.MakeCompound(compound);
-
-    builder.Add(compound, baseShape);
-
-    for (Standard_Integer i = 1; i < count; i++) {
+    for (Standard_Integer i = 1; i < count; i++)
+    {
         gp_Trsf transform;
         Standard_Real angle = angleStep * i;
         transform.SetRotation(axis, angle);
 
         BRepBuilderAPI_Transform transformer(baseShape, transform);
-        if (transformer.IsDone()) {
-            builder.Add(compound, transformer.Shape());
+        if (transformer.IsDone())
+        {
+            Handle(AIS_Shape) anAisShape = new AIS_Shape(transformer.Shape());
+            setShape(anAisShape);
+            m_context->Display(anAisShape, AIS_Shaded, 0, false);
         }
     }
+    m_context->UpdateCurrentViewer();
+    m_view->FitAll();
+    updateView();
 }
 
 void OCCView::mirrorByPlane(const TopoDS_Shape &shape, const gp_Pln &mirrorPlane)
