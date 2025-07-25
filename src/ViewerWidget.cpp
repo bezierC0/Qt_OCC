@@ -41,6 +41,7 @@
 #include <Geom_Plane.hxx>
 #include <Geom_Surface.hxx>
 #include <Geom_Line.hxx>
+#include <Geom_Circle.hxx>
 #include <Geom_Curve.hxx>
 #include <GeomLib_IsPlanarSurface.hxx>
 #include <GeomAdaptor_Curve.hxx>
@@ -644,10 +645,20 @@ void ViewerWidget::patternCircular()
         return ;
     }
 
+    if ( shape0.ShapeType() != TopAbs_SHAPE && shape1.ShapeType() != TopAbs_EDGE ){
+        return;
+    }
+
+    Standard_Real first, last;
+    auto geomCircle = Handle(Geom_Circle)::DownCast(BRep_Tool::Curve(TopoDS::Edge(shape1),first,last));
+    if (geomCircle.IsNull()) {
+        return;
+    }
+
     const TopoDS_Shape baseShape = shape0;
-    const gp_Ax1 axis = gp_Ax1();
-    Standard_Real angleStep{};
-    Standard_Integer count{};
+    const gp_Ax1 axis = geomCircle->Axis();
+    Standard_Real angleStep{ 10.0 };
+    Standard_Integer count{ 3 };
     m_occView->patternCircular(baseShape, axis, angleStep, count);
 }
 

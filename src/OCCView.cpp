@@ -997,12 +997,9 @@ void OCCView::patternCircular(const TopoDS_Shape &baseShape, const gp_Ax1 &axis,
         {
             Handle(AIS_Shape) anAisShape = new AIS_Shape(transformer.Shape());
             setShape(anAisShape);
-            m_context->Display(anAisShape, AIS_Shaded, 0, false);
         }
     }
-    m_context->UpdateCurrentViewer();
-    m_view->FitAll();
-    updateView();
+    reDraw();
 }
 
 void OCCView::mirrorByPlane(const TopoDS_Shape &shape, const gp_Pln &mirrorPlane)
