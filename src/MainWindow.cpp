@@ -335,6 +335,11 @@ void MainWindow::createToolGroup()
         m_explosionAction = new QAction(QIcon(":/icons/icon/tool_explosion.svg"), tr("Explosion"), this); // Assuming an icon path
         connect(m_explosionAction, &QAction::triggered, this, &MainWindow::onExplosion);
         m_otherPannel->addLargeAction(m_explosionAction);
+
+        // createWorkPlaneAction
+        m_createWorkPlaneAction = new QAction(QIcon(":/icons/icon/work_plane.svg"), tr("Work Plane"), this);
+        connect(m_createWorkPlaneAction, &QAction::triggered, this, &MainWindow::onCreateWorkPlane);
+        m_otherPannel->addLargeAction(m_createWorkPlaneAction);
     };
     createOtherPannel();
 
@@ -575,6 +580,11 @@ void MainWindow::onSwitchSelect(bool checked)
 void MainWindow::onFilterStateChanged(const int filterType, const bool isChecked)
 {
     m_viewerWidget->updateSelectionFilter(static_cast<TopAbs_ShapeEnum>(filterType), isChecked);
+}
+
+void MainWindow::onCreateWorkPlane()
+{
+    m_viewerWidget->createWorkPlane();
 }
 
 void MainWindow::onCheckInterference() const

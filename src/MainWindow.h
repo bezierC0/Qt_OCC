@@ -40,6 +40,7 @@ private slots:
     /* tool */
     void onSwitchSelect(bool checked);
     void onFilterStateChanged(int filterType, bool isChecked);
+    void onCreateWorkPlane();
     void onCheckInterference() const;
     void onTransform() const;
     void onClipping() const;
@@ -120,8 +121,7 @@ private:
     QAction* m_viewFrontAction;
     QAction* m_viewBackAction;
     QAction* m_displayModeAction;
-    QAction* m_selectAction;
-    QAction* m_selectFilterAction;
+
 
     // ---- Tool Group ----
     SARibbonCategory* m_toolCategory;
@@ -131,6 +131,9 @@ private:
     SARibbonPannel* m_clippingPannel;
     SARibbonPannel* m_measurePannel;
     SARibbonPannel* m_otherPannel;
+    QAction* m_selectAction;
+    QAction* m_selectFilterAction;
+    QAction* m_createWorkPlaneAction;
     QAction* m_transformAction;
     QAction* m_interferenceAction;
     QAction* m_clippingAction;

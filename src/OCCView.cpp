@@ -901,8 +901,14 @@ void OCCView::animateViewChange(V3d_TypeOfOrientation theOrientation)
     animateCamera(aCamStart, aCamEnd);
 }
 
-void OCCView::clipping() const
+void OCCView::clipping(const gp_Dir& normal,const gp_Pnt& point, const bool isOn) const
 {
+    const Handle(Graphic3d_ClipPlane) clipPlane = new Graphic3d_ClipPlane(gp_Pln(point, normal));
+    clipPlane->SetCapping(false);
+    clipPlane->SetOn(isOn);
+
+    m_view->AddClipPlane(clipPlane);
+    m_view->Update();
 }
 
 void OCCView::explosion(const double theFactor) const

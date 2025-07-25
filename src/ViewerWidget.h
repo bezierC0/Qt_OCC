@@ -40,15 +40,17 @@ public:
     void viewBack() const ;
     void setDisplayMode( int mode ) ;
 
+    // tool
     void switchSelect(bool checked);
     void setFilters(const std::map<TopAbs_ShapeEnum, bool>& filters);
     void updateSelectionFilter(TopAbs_ShapeEnum filter, bool isActive);
-
-    // tool
+    void createWorkPlane();
     void checkInterference();
     void transform();
     void clipping(const gp_Dir& normal, const gp_Pnt& point, bool isOn = true);
     void explosion();
+    
+    /* measure */
     void measureDistance();
 
     /* shape */

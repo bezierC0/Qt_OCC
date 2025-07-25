@@ -324,6 +324,12 @@ void ViewerWidget::updateSelectionFilter(TopAbs_ShapeEnum filter, bool isActive)
     m_occView->setMouseMode(anyFilterActive ? View::MouseMode::SELECTION : View::MouseMode::NONE);
 }
 
+void ViewerWidget::createWorkPlane()
+{
+    const gp_Dir normal(0.0, 0.0, 1.0);
+    const gp_Pnt point(0.0, 0.0, 10.0);
+}
+
 void ViewerWidget::transform()
 {
     m_occView->transform();
@@ -408,12 +414,7 @@ void ViewerWidget::checkInterference()
 
 void ViewerWidget::clipping(const gp_Dir &normal, const gp_Pnt &point, const bool isOn)
 {
-    const Handle(Graphic3d_ClipPlane) clipPlane = new Graphic3d_ClipPlane(gp_Pln(point, normal));
-    clipPlane->SetCapping(false);
-    clipPlane->SetOn(isOn);
-
-    m_occView->View()->AddClipPlane(clipPlane);
-    m_occView->View()->Update();
+    m_occView->clipping(normal, point);
 }
 
 void ViewerWidget::explosion()

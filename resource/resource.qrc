@@ -49,6 +49,7 @@
         <file>icon/view_left.svg</file>
         <file>icon/view_right.svg</file>
         <file>icon/view_top.svg</file>
+        <file>icon/work_plane.svg</file>
     </qresource>
     <qresource prefix="/qss">
         <file>qss/light.qss</file>

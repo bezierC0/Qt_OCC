@@ -93,7 +93,7 @@ public:
     void viewBack();
     void setDisplayMode(View::DisplayMode mode);
 
-    void clipping() const;
+    void clipping(const gp_Dir& normal,const gp_Pnt& point, const bool isOn = true) const;
 
     void explosion(double theFactor) const;
 
