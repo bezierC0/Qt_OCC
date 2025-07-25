@@ -978,12 +978,8 @@ void OCCView::patternLinear(const TopoDS_Shape &baseShape, const gp_Vec &directi
         {
             Handle(AIS_Shape) anAisShape = new AIS_Shape(transformer.Shape());
             setShape(anAisShape);
-            m_context->Display(anAisShape, AIS_Shaded, 0, false);
         }
     }
-    // m_context->UpdateCurrentViewer();
-    // m_view->FitAll();
-    // updateView();
     reDraw();
 }
 
