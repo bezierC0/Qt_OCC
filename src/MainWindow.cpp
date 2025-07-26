@@ -39,6 +39,7 @@
 #include "WidgetModelTree.h"
 #include "DialogAbout.h"
 #include "widget_explode_assembly.h"
+#include "widget_set_coordinate_system.h"
 
 
 MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
@@ -74,6 +75,8 @@ void MainWindow::setupUi()
 
     m_widgetExplodeAsm = new WidgetExplodeAssembly();
     createThemeActions();
+
+    m_widgetSetCoordinateSystem = new WidgetSetCoordinateSystem();
 }
 
 void MainWindow::createRibbon() {
@@ -585,6 +588,10 @@ void MainWindow::onFilterStateChanged(const int filterType, const bool isChecked
 void MainWindow::onCreateWorkPlane()
 {
     m_viewerWidget->createWorkPlane();
+    if (m_widgetSetCoordinateSystem)
+    {
+        m_widgetSetCoordinateSystem->show();
+    }
 }
 
 void MainWindow::onCheckInterference() const

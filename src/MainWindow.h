@@ -8,6 +8,7 @@
 class ViewerWidget;
 class ModelTreeWidget;
 class QTranslator;
+class WidgetSetCoordinateSystem;
 
 class WidgetExplodeAssembly;
 
@@ -185,4 +186,5 @@ private:
     QAction* m_darkThemeAction;
 
     WidgetExplodeAssembly* m_widgetExplodeAsm { nullptr } ;
+    WidgetSetCoordinateSystem* m_widgetSetCoordinateSystem { nullptr };
 };

@@ -14,6 +14,9 @@
    <string>Set Coordinate System</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="sizeConstraint">
+    <enum>QLayout::SetFixedSize</enum>
+   </property>
    <item>
     <layout class="QGridLayout" name="gridLayout">
      <item row="0" column="0">
@@ -24,13 +27,43 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QLineEdit" name="lineEditPointX"/>
+      <widget class="QDoubleSpinBox" name="coordinateEditPointX">
+       <property name="decimals">
+        <number>3</number>
+       </property>
+       <property name="minimum">
+        <double>-10000</double>
+       </property>
+       <property name="maximum">
+        <double>10000</double>
+       </property>
+      </widget>
      </item>
      <item row="0" column="2">
-      <widget class="QLineEdit" name="lineEditPointY"/>
+      <widget class="QDoubleSpinBox" name="coordinateEditPointY">
+       <property name="decimals">
+        <number>3</number>
+       </property>
+       <property name="minimum">
+        <double>-10000</double>
+       </property>
+       <property name="maximum">
+        <double>10000</double>
+       </property>
+      </widget>
      </item>
      <item row="0" column="3">
-      <widget class="QLineEdit" name="lineEditPointZ"/>
+      <widget class="QDoubleSpinBox" name="coordinateEditPointZ">
+       <property name="decimals">
+        <number>3</number>
+       </property>
+       <property name="minimum">
+        <double>-10000</double>
+       </property>
+       <property name="maximum">
+        <double>10000</double>
+       </property>
+      </widget>
      </item>
      <item row="1" column="0">
       <widget class="QLabel" name="labelNormal">
@@ -40,13 +73,46 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="lineEditNormalX"/>
+      <widget class="QDoubleSpinBox" name="coordinateEditNormalX">
+       <property name="decimals">
+        <number>3</number>
+       </property>
+       <property name="minimum">
+        <double>-10000</double>
+       </property>
+       <property name="maximum">
+        <double>10000</double>
+       </property>
+      </widget>
      </item>
      <item row="1" column="2">
-      <widget class="QLineEdit" name="lineEditNormalY"/>
+      <widget class="QDoubleSpinBox" name="coordinateEditNormalY">
+       <property name="decimals">
+        <number>3</number>
+       </property>
+       <property name="minimum">
+        <double>-10000</double>
+       </property>
+       <property name="maximum">
+        <double>10000</double>
+       </property>
+      </widget>
      </item>
      <item row="1" column="3">
-      <widget class="QLineEdit" name="lineEditNormalZ"/>
+      <widget class="QDoubleSpinBox" name="coordinateEditNormalZ">
+       <property name="decimals">
+        <number>3</number>
+       </property>
+       <property name="minimum">
+        <double>-10000</double>
+       </property>
+       <property name="maximum">
+        <double>10000</double>
+       </property>
+       <property name="value">
+        <double>1</double>
+       </property>
+      </widget>
      </item>
     </layout>
    </item>

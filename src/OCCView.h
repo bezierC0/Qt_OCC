@@ -92,6 +92,7 @@ public:
     void viewFront();
     void viewBack();
     void setDisplayMode(View::DisplayMode mode);
+    void createWorkPlane(double x, double y, double z, double dx, double dy, double dz);
 
     void clipping(const gp_Dir& normal,const gp_Pnt& point, const bool isOn = true) const;
 

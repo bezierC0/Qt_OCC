@@ -14,6 +14,14 @@ public:
     explicit WidgetSetCoordinateSystem(QWidget *parent = nullptr);
     ~WidgetSetCoordinateSystem();
 
+
+private slots:
+    void onCoordinateChanged();
+    void onPushButtonCancel();
+
+private:
+    void createWorkPlane();
+
 private:
     Ui::WidgetSetCoordinateSystem *ui;
 };

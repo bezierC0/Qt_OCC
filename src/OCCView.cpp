@@ -877,6 +877,11 @@ void OCCView::setDisplayMode( View::DisplayMode mode )
     updateView();
 }
 
+void OCCView::createWorkPlane(double x, double y, double z, double dx, double dy, double dz)
+{
+    
+}
+
 void OCCView::animateCamera(const Handle(Graphic3d_Camera) & theCamStart, const Handle(Graphic3d_Camera) & theCamEnd)
 {
     myViewAnimation->SetView(m_view);
