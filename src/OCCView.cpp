@@ -304,7 +304,7 @@ OCCView::OCCView(QWidget *theParent)
     m_viewer->SetDefaultBackgroundColor(Quantity_NOC_CADETBLUE);
     m_viewer->SetDefaultLights();
     m_viewer->SetLightOn();
-    m_viewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines); // show grid grand
+    //m_viewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines); // show grid grand
 
     // create AIS context
     m_context = new AIS_InteractiveContext(m_viewer);
@@ -879,7 +879,36 @@ void OCCView::setDisplayMode( View::DisplayMode mode )
 
 void OCCView::createWorkPlane(double x, double y, double z, double dx, double dy, double dz)
 {
-    
+    if( !m_viewer->IsActive() ){
+        m_viewer->ActivateGrid(m_workPlane.m_gridType, m_workPlane.m_gridDrawMode); // show grid grand
+    }
+    auto isValidDirection =[](double dx, double dy, double dz) {
+        try {
+            gp_Dir dir(dx, dy, dz);
+            return true;
+        }
+        catch (const Standard_ConstructionError&) {
+            return false;
+        };
+    };
+    if( isValidDirection(dx, dy, dz) )
+        m_viewer->SetPrivilegedPlane({ gp_Pnt(x, y, z), gp_Dir(dx, dy, dz) });
+    reDraw();
+    updateView();
+}
+
+bool OCCView::isWorkPlaneActive() const
+{
+    return m_viewer->IsActive();
+}
+
+void OCCView::deactivateWorkPlane()
+{
+    if( m_viewer->IsActive() ){
+        m_viewer->DeactivateGrid();
+    }
+    reDraw();
+    updateView();
 }
 
 void OCCView::animateCamera(const Handle(Graphic3d_Camera) & theCamStart, const Handle(Graphic3d_Camera) & theCamEnd)

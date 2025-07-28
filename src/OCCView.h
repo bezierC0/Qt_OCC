@@ -27,6 +27,11 @@ enum DisplayMode {
     MODE_SHADED_WITH_EDGES,
     MODE_END
 };
+class WorkPlane{
+public:
+    Aspect_GridType m_gridType{Aspect_GridType::Aspect_GT_Rectangular};
+    Aspect_GridDrawMode m_gridDrawMode{Aspect_GridDrawMode::Aspect_GDM_Lines};
+};
 } // namespace View
 
 //! OCCT 3D View.
@@ -93,6 +98,8 @@ public:
     void viewBack();
     void setDisplayMode(View::DisplayMode mode);
     void createWorkPlane(double x, double y, double z, double dx, double dy, double dz);
+    bool isWorkPlaneActive() const;
+    void deactivateWorkPlane();
 
     void clipping(const gp_Dir& normal,const gp_Pnt& point, const bool isOn = true) const;
 
@@ -199,4 +206,5 @@ private:
     Standard_Real                               m_animationDuration{1}; // animation duration in seconds
     int                                         m_mouseMode{0};                   // 0 normal 1 select + normal
     View::DisplayMode                           m_displayMode{View::DisplayMode::MODE_SHADED};
+    View::WorkPlane                             m_workPlane{};
 };

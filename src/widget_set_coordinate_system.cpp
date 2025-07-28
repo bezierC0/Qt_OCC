@@ -29,9 +29,33 @@ WidgetSetCoordinateSystem::~WidgetSetCoordinateSystem()
     delete ui;
 }
 
+void WidgetSetCoordinateSystem::closeEvent(QCloseEvent *event)
+{
+    auto view = ViewManager::getInstance().getActiveView();
+    if(view){
+        view->deactivateWorkPlane();
+    }
+    QWidget::closeEvent(event);
+}
+
+void WidgetSetCoordinateSystem::show()
+{
+    createWorkPlane();
+    QWidget::show();
+}
+
+void WidgetSetCoordinateSystem::hide()
+{
+    auto view = ViewManager::getInstance().getActiveView();
+    if(view){
+        view->deactivateWorkPlane();
+    }
+    QWidget::hide();
+}
+
 void WidgetSetCoordinateSystem::onPushButtonCancel()
 {
-    close();
+    hide();
 }
 
 void WidgetSetCoordinateSystem::createWorkPlane()
@@ -51,6 +75,5 @@ void WidgetSetCoordinateSystem::createWorkPlane()
 
 void WidgetSetCoordinateSystem::onCoordinateChanged()
 {
-    qDebug() << "Coordinate changed!";
     createWorkPlane();
 }
