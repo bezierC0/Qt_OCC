@@ -76,7 +76,7 @@ void MainWindow::setupUi()
     m_widgetExplodeAsm = new WidgetExplodeAssembly();
     createThemeActions();
 
-    m_widgetSetCoordinateSystem = new WidgetSetCoordinateSystem();
+    m_widgetSetCoordinateSystem = new WidgetSetCoordinateSystem(this);
 }
 
 void MainWindow::createRibbon() {

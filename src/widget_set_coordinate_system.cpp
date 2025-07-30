@@ -13,7 +13,7 @@ WidgetSetCoordinateSystem::WidgetSetCoordinateSystem(QWidget *parent) :
     ui(new Ui::WidgetSetCoordinateSystem)
 {
     ui->setupUi(this);
-    setWindowFlags(Qt::Window | Qt::WindowCloseButtonHint );
+    setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint );
 
     connect(ui->pushButtonCancel, &QPushButton::clicked, this, &WidgetSetCoordinateSystem::onPushButtonCancel);
     connect(ui->coordinateEditPointX, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &WidgetSetCoordinateSystem::onCoordinateChanged);
