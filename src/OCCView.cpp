@@ -254,6 +254,18 @@ namespace
 
 }
 
+namespace View
+{
+ClippingPlane::ClippingPlane() = default;
+ClippingPlane::ClippingPlane(const Handle(Graphic3d_ClipPlane)& clipPlane, const bool isOn,const bool isCapping)
+    : m_clipPlane(clipPlane)
+{
+    m_clipPlane->SetOn(isOn);
+    m_clipPlane->SetCapping(isCapping);
+}
+} 
+
+
 //! OpenGL FBO subclass for wrapping FBO created by Qt using GL_RGBA8 texture format instead of GL_SRGB8_ALPHA8.
 //! This FBO is set to OpenGl_Context::SetDefaultFrameBuffer() as a final target.
 //! Subclass calls OpenGl_Context::SetFrameBufferSRGB() with sRGB=false flag,
@@ -935,17 +947,45 @@ void OCCView::animateViewChange(V3d_TypeOfOrientation theOrientation)
     animateCamera(aCamStart, aCamEnd);
 }
 
-void OCCView::clipping(const gp_Dir& normal,const gp_Pnt& point, const bool isOn) const
+void OCCView::addClippingPlane(const gp_Pnt& point, const gp_Dir& normal, const bool isOn,const bool isCap) 
 {
-    const Handle(Graphic3d_ClipPlane) clipPlane = new Graphic3d_ClipPlane(gp_Pln(point, normal));
-    clipPlane->SetCapping(false);
-    clipPlane->SetOn(isOn);
-
-    m_view->AddClipPlane(clipPlane);
-    m_view->Update();
+    std::shared_ptr<View::ClippingPlane> clipPlane { nullptr };
+    // only one
+    if( m_clippingPlanes.size() < 1 ){
+        clipPlane = std::make_shared<View::ClippingPlane>(new Graphic3d_ClipPlane(gp_Pln(point, normal)),isOn);
+        m_clippingPlanes.emplace_back(clipPlane);
+        m_view->AddClipPlane(clipPlane->m_clipPlane);
+    }else{
+        clipPlane = m_clippingPlanes.at(0);
+    }
+    //m_view->Update();
+    //updateView();
+    reDraw();
 }
 
-void OCCView::explosion(const double theFactor) const
+void OCCView::setClippingPlaneIsOn(const bool isOn)
+{
+    if( m_clippingPlanes.size() != 1 ){
+        return;
+    }
+    m_clippingPlanes.at(0)->m_clipPlane->SetOn(isOn);
+    //m_view->Update();
+    //updateView();
+    reDraw();
+}
+
+void OCCView::setCappingPlaneIsCap(const bool isCap)
+{
+    if( m_clippingPlanes.size() != 1 ){
+        return;
+    }
+    m_clippingPlanes.at(0)->m_clipPlane->SetCapping(isCap);
+    //m_view->Update();
+    updateView();
+    reDraw();
+}
+
+void OCCView::explosion(const double theFactor) 
 {
     auto applyExplosion = [&](const std::vector<Handle(AIS_InteractiveObject)> &objectList, const double distanceMultiplier = 50.0)
     {
@@ -997,6 +1037,7 @@ void OCCView::explosion(const double theFactor) const
     applyExplosion(m_loadedObjects, theFactor * 100);
 
     reDraw();
+    updateView();
 }
 
 void OCCView::setMouseMode(const View::MouseMode mode)

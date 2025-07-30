@@ -39,6 +39,7 @@
 #include "WidgetModelTree.h"
 #include "DialogAbout.h"
 #include "widget_explode_assembly.h"
+#include "widget_clipping.h"
 #include "widget_set_coordinate_system.h"
 
 
@@ -77,6 +78,7 @@ void MainWindow::setupUi()
     createThemeActions();
 
     m_widgetSetCoordinateSystem = new WidgetSetCoordinateSystem(this);
+    m_widgetClipping = new WidgetClipping(this);
 }
 
 void MainWindow::createRibbon() {
@@ -606,9 +608,10 @@ void MainWindow::onTransform() const
 
 void MainWindow::onClipping() const
 {
-    const gp_Dir normal(0.0, 0.0, 1.0);
-    const gp_Pnt point(0.0, 0.0, 10.0);
-    m_viewerWidget->clipping( normal , point );
+    // const gp_Dir normal(0.0, 0.0, 1.0);
+    // const gp_Pnt point(0.0, 0.0, 10.0);
+    // m_viewerWidget->clipping( normal , point );
+    m_widgetClipping->show();
 }
 
 void MainWindow::onExplosion()
@@ -784,7 +787,9 @@ void MainWindow::onCreateNurbsCurve()
 
 void MainWindow::onCreateBox()
 {
-    BRepPrimAPI_MakeBox box(10.0, 20.0, 30.0);
+    const gp_Pnt P1{-10,-20,-30};
+    const gp_Pnt P2{30,20,15};
+    BRepPrimAPI_MakeBox box(P1,P2);
     m_viewerWidget->displayShape(box.Shape(), 1.0, 0.0, 1.0);
 }
 

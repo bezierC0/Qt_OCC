@@ -414,7 +414,7 @@ void ViewerWidget::checkInterference()
 
 void ViewerWidget::clipping(const gp_Dir &normal, const gp_Pnt &point, const bool isOn)
 {
-    m_occView->clipping(normal, point);
+    m_occView->addClippingPlane( point,normal );
 }
 
 void ViewerWidget::explosion()

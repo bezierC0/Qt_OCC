@@ -1,4 +1,7 @@
 #pragma once
+#include <map>
+#include <vector>
+#include <memory>
 
 #include <Standard_WarningsDisable.hxx>
 #include <QOpenGLWidget>
@@ -10,7 +13,7 @@
 #include <V3d_View.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 
-#include <map>
+
 
 class AIS_ViewCube;
 class AIS_Manipulator;
@@ -32,6 +35,13 @@ public:
     Aspect_GridType m_gridType{Aspect_GridType::Aspect_GT_Rectangular};
     Aspect_GridDrawMode m_gridDrawMode{Aspect_GridDrawMode::Aspect_GDM_Lines};
 };
+class ClippingPlane{
+public:
+    ClippingPlane();
+    explicit ClippingPlane(const Handle(Graphic3d_ClipPlane)& clipPlane, bool isOn = false,bool isCapping = false) ;
+    Handle(Graphic3d_ClipPlane) m_clipPlane{nullptr};
+};
+
 } // namespace View
 
 //! OCCT 3D View.
@@ -101,9 +111,12 @@ public:
     bool isWorkPlaneActive() const;
     void deactivateWorkPlane();
 
-    void clipping(const gp_Dir& normal,const gp_Pnt& point, const bool isOn = true) const;
+    void addClippingPlane(const gp_Pnt& point,const gp_Dir& normal, bool isOn = true, bool isCap = true) ;
+    void setClippingPlaneIsOn(const bool isOn) ;
+    void setCappingPlaneIsCap(const bool isCap) ;
+    //void removeClippingPlane() ;
 
-    void explosion(double theFactor) const;
+    void explosion(double theFactor) ;
 
     void setMouseMode(View::MouseMode mode);
 
@@ -203,8 +216,9 @@ private:
     std::map<TopAbs_ShapeEnum, bool> m_selectionFilters{
         {TopAbs_VERTEX, false}, {TopAbs_EDGE, false}, {TopAbs_FACE, false}, {TopAbs_SOLID, true}};
 
-    Standard_Real                               m_animationDuration{1}; // animation duration in seconds
-    int                                         m_mouseMode{0};                   // 0 normal 1 select + normal
-    View::DisplayMode                           m_displayMode{View::DisplayMode::MODE_SHADED};
-    View::WorkPlane                             m_workPlane{};
+    Standard_Real                                                       m_animationDuration{1}; // animation duration in seconds
+    int                                                                 m_mouseMode{0};                   // 0 normal 1 select + normal
+    View::DisplayMode                                                   m_displayMode{View::DisplayMode::MODE_SHADED};
+    View::WorkPlane                                                     m_workPlane{};
+    std::vector<std::shared_ptr<View::ClippingPlane>>                   m_clippingPlanes{};
 };

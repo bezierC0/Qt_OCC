@@ -12,6 +12,8 @@ class WidgetSetCoordinateSystem;
 
 class WidgetExplodeAssembly;
 
+class WidgetClipping;
+
 class MainWindow : public SARibbonMainWindow {
     Q_OBJECT
 public:
@@ -185,6 +187,7 @@ private:
     QAction* m_lightThemeAction;
     QAction* m_darkThemeAction;
 
-    WidgetExplodeAssembly* m_widgetExplodeAsm { nullptr } ;
-    WidgetSetCoordinateSystem* m_widgetSetCoordinateSystem { nullptr };
+    WidgetExplodeAssembly*          m_widgetExplodeAsm { nullptr } ;
+    WidgetSetCoordinateSystem*      m_widgetSetCoordinateSystem { nullptr };
+    WidgetClipping*                 m_widgetClipping { nullptr };
 };
