@@ -699,6 +699,10 @@ const std::vector<Handle(AIS_InteractiveObject)> &OCCView::getSelectedObjects() 
 
 void OCCView::clearSelectedObjects()
 {
+    if (!m_selectedObjects.empty())
+    {
+        m_context->ClearSelected(false);
+    }
     m_selectedObjects.clear();
 }
 

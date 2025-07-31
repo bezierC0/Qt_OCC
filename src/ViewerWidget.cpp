@@ -154,9 +154,36 @@ ViewerWidget::~ViewerWidget()
     }
 }
 
-void ViewerWidget::loadModel(const QString &filename) const
+void ViewerWidget::clearAll()
 {
-    static Tree<TDF_Label> modelTree;
+    if (m_doc)
+    {
+        m_doc->m_list.clear();
+    }
+
+    if (m_occView)
+    {
+        m_occView->clearShape();
+        m_occView->clearSelectedObjects();
+        m_occView->reDraw();
+    }
+
+    const MainWindow* mainWindow = qobject_cast<MainWindow*>(this->window());
+    if (mainWindow)
+    {
+        ModelTreeWidget* treeWidget = mainWindow->GetModelTreeWidget();
+        if (treeWidget)
+        {
+            Tree<TDF_Label> emptyTree;
+            treeWidget->setModelTree(emptyTree);
+        }
+    }
+}
+
+void ViewerWidget::loadModel(const QString &filename) 
+{
+    clearAll(); 
+    Tree<TDF_Label> modelTree; 
     if (filename.endsWith(".step") || filename.endsWith(".stp"))
     {
         STEPCAFControl_Reader reader;

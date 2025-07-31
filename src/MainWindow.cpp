@@ -108,7 +108,7 @@ void MainWindow::createFileGroup()
 
     // new
     m_newAction = new QAction(QIcon(":/icons/icon/file_new.svg"), tr("New"), this); // Assuming an icon path
-    //connect(m_newAction, &QAction::triggered, this, &MainWindow::newFile);
+    connect(m_newAction, &QAction::triggered, this, &MainWindow::onNewFile);
     m_filePannel->addLargeAction(m_newAction);
 
     // open
@@ -501,7 +501,7 @@ void MainWindow::createHelpGroup()
 
 void MainWindow::onNewFile()
 {
-    // TODO
+    m_viewerWidget->clearAll();
 }
 void MainWindow::onOpenFile()
 {

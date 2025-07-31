@@ -27,7 +27,8 @@ public:
     explicit ViewerWidget(QWidget* parent = nullptr);
     ~ViewerWidget() override;
 
-    void loadModel(const QString& filename) const;
+    void clearAll();
+    void loadModel(const QString& filename);
 
     //view
     void viewFit();
