@@ -591,7 +591,7 @@ void OCCView::wheelEvent(QWheelEvent *theEvent)
 void OCCView::updateView()
 {
     update();
-    // if (window() != NULL) { window()->update(); }
+    if (window() != NULL) { window()->update(); }
 }
 
 void OCCView::paintGL()
@@ -780,7 +780,7 @@ void OCCView::transform()
     reDraw();
 }
 
-void OCCView::reDraw() const
+void OCCView::reDraw()
 {
     auto reDisplayMode = [&](const Handle(AIS_InteractiveObject)& object){
         AIS_DisplayMode aMode = AIS_Shaded ;
@@ -812,7 +812,6 @@ void OCCView::reDraw() const
             m_context->Display(object, object->DisplayMode(), 0, false);
         }
         reDisplayMode(object);
-        m_context->SetAutoActivateSelection(onEntry_AutoActivateSelection);
     }
     m_context->UpdateCurrentViewer() ;
     m_view->Redraw();
@@ -837,6 +836,14 @@ void OCCView::viewfit()
     // Start the animation from the start state to the end state.
     animateCamera(aCamStart, aCamEnd);
 
+    updateView();
+}
+
+void OCCView::viewUpdate()
+{
+    if (!m_view.IsNull()) {
+        m_view->Update();
+    }
     updateView();
 }
 
@@ -950,39 +957,40 @@ void OCCView::animateViewChange(V3d_TypeOfOrientation theOrientation)
 void OCCView::addClippingPlane(const gp_Pnt& point, const gp_Dir& normal, const bool isOn,const bool isCap) 
 {
     std::shared_ptr<View::ClippingPlane> clipPlane { nullptr };
-    // only one
-    if( m_clippingPlanes.size() < 1 ){
-        clipPlane = std::make_shared<View::ClippingPlane>(new Graphic3d_ClipPlane(gp_Pln(point, normal)),isOn);
+    if (m_clippingPlanes.empty())
+    {
+        clipPlane = std::make_shared<View::ClippingPlane>(new Graphic3d_ClipPlane(gp_Pln(point, normal)), isOn, isCap);
         m_clippingPlanes.emplace_back(clipPlane);
         m_view->AddClipPlane(clipPlane->m_clipPlane);
-    }else{
-        clipPlane = m_clippingPlanes.at(0);
     }
-    //m_view->Update();
-    //updateView();
-    reDraw();
+    else
+    {
+        clipPlane = m_clippingPlanes.at(0);
+        clipPlane->m_clipPlane->SetEquation(gp_Pln(point, normal));
+        clipPlane->m_clipPlane->SetOn(isOn);
+        clipPlane->m_clipPlane->SetCapping(isCap);
+    }
+
+    viewUpdate();
 }
 
 void OCCView::setClippingPlaneIsOn(const bool isOn)
 {
-    if( m_clippingPlanes.size() != 1 ){
+    if (m_clippingPlanes.empty()){
         return;
     }
     m_clippingPlanes.at(0)->m_clipPlane->SetOn(isOn);
-    //m_view->Update();
-    //updateView();
-    reDraw();
+    viewUpdate();
 }
 
 void OCCView::setCappingPlaneIsCap(const bool isCap)
 {
-    if( m_clippingPlanes.size() != 1 ){
+    if (m_clippingPlanes.empty()){
         return;
     }
     m_clippingPlanes.at(0)->m_clipPlane->SetCapping(isCap);
-    //m_view->Update();
-    updateView();
-    reDraw();
+
+    viewUpdate();
 }
 
 void OCCView::explosion(const double theFactor) 

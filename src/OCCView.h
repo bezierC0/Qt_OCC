@@ -92,11 +92,13 @@ public:
 
     const std::map<TopAbs_ShapeEnum, bool> &getSelectionFilters() const;
 
-    void transform();
+    void transform(); 
 
-    void reDraw() const;
+    void reDraw();
 
     void viewfit();
+
+    void viewUpdate();
 
     /* view change */
     void viewIsometric();
