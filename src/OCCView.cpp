@@ -1,6 +1,7 @@
 #include "OCCView.h"
 #include "CollisionDetector.h"
 #include "OcctGlTools.h"
+#include "TopoShapeUtil.h"
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -899,7 +900,7 @@ void OCCView::reDraw()
             m_context->Display(object, object->DisplayMode(), 0, false);
         }
         m_context->SetDisplayMode( object, AIS_DisplayMode::AIS_Shaded, false ) ;
-        m_context->SetDisplayPriority(object, 100);
+        m_context->SetDisplayPriority(object, 10);
     };
     for( const auto &object : m_interferenceObjects )
     {
