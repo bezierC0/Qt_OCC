@@ -1,11 +1,10 @@
+#include "OCCView.h"
+#include "CollisionDetector.h"
+#include "OcctGlTools.h"
 #ifdef _WIN32
 #include <windows.h>
 #endif
 #include <OpenGl_Context.hxx>
-
-#include "OCCView.h"
-
-#include "OcctGlTools.h"
 
 #include <Standard_WarningsDisable.hxx>
 #include <QApplication>
@@ -36,6 +35,11 @@
 #include <TopoDS_Iterator.hxx>
 #include <TopoDS_Compound.hxx>
 #include <BRep_Builder.hxx>
+#include <XCAFDoc_DocumentTool.hxx>
+#include <XCAFDoc_ShapeTool.hxx>
+#include <XCAFApp_Application.hxx>
+#include <XCAFDoc_ColorTool.hxx>
+#include <XCAFPrs_AISObject.hxx>
 
 
 namespace
@@ -680,6 +684,13 @@ void OCCView::clearShape()
         m_context->Erase(object, false);
     }
     m_loadedObjects.clear();
+
+    // clear interference
+    for (const auto &object : m_interferenceObjects)
+    {
+        m_context->Erase(object, false);
+    }
+    m_interferenceObjects.clear();
 }
 
 void OCCView::setShape(const Handle(AIS_InteractiveObject) & loadedShape)
@@ -784,6 +795,67 @@ void OCCView::transform()
     reDraw();
 }
 
+void OCCView::checkInterference()
+{
+    auto getShape = [](const Handle(AIS_InteractiveObject) & object) -> TopoDS_Shape
+    {
+        if (object.IsNull())
+        {
+            return {};
+        }
+        if (object->IsKind(STANDARD_TYPE(AIS_Shape)))
+        {
+            return Handle(AIS_Shape)::DownCast(object)->Shape();
+        }
+        if (object->IsKind(STANDARD_TYPE(XCAFPrs_AISObject)))
+        {
+            auto xcafObj = Handle(XCAFPrs_AISObject)::DownCast(object);
+            return {}; // Returning empty shape for now.
+        }
+        return {};
+    };
+
+    CollisionDetector collsion { m_context };
+    const auto &selectObjects = getSelectedObjects();
+
+    std::vector<Handle(AIS_InteractiveObject)> results;
+    for (size_t i = 0; i < selectObjects.size(); ++i)
+    {
+        for (size_t j = i + 1; j < selectObjects.size(); ++j)
+        {
+            Handle(AIS_InteractiveObject) objA = selectObjects.at(i);
+            Handle(AIS_InteractiveObject) objB = selectObjects.at(j);
+
+            const auto shapeA = getShape(objA);
+            const auto shapeB = getShape(objB); // Fixed bug: was using objA for both
+
+            if (shapeA.IsNull() || shapeB.IsNull())
+                continue;
+
+            if (!collsion.DetectAndHighlightCollision(shapeA, shapeB))
+                continue;
+
+            const auto &result = collsion.GetResult();
+            if (result.IsNull())
+            {
+                continue;
+            }
+
+            objA->SetTransparency(0.1);
+            objB->SetTransparency(0.1);
+            
+            results.emplace_back(result);
+        }
+    }
+
+    for (const auto &result : results)
+    {
+        m_interferenceObjects.emplace_back(result);
+    }
+
+    reDraw();
+}
+
 void OCCView::reDraw()
 {
     auto reDisplayMode = [&](const Handle(AIS_InteractiveObject)& object){
@@ -804,9 +876,6 @@ void OCCView::reDraw()
     };
     for (const auto &object : m_loadedObjects)
     {
-        // void GraphicsScene::addObject(const GraphicsObjectPtr& object, AddObjectFlags flags)
-        const bool onEntry_AutoActivateSelection = m_context->GetAutoActivateSelection();
-        object->Attributes()->SetIsoOnTriangulation(true);
         if (m_context->IsDisplayed(object))
         {
             m_context->Redisplay(object, false);
@@ -817,6 +886,26 @@ void OCCView::reDraw()
         }
         reDisplayMode(object);
     }
+
+    auto reDisplayInterference = [&](const Handle(AIS_InteractiveObject)& object){
+        const bool onEntry_AutoActivateSelection = m_context->GetAutoActivateSelection();
+        object->Attributes()->SetIsoOnTriangulation(true);
+        if (m_context->IsDisplayed(object))
+        {
+            m_context->Redisplay(object, false);
+        }
+        else
+        {
+            m_context->Display(object, object->DisplayMode(), 0, false);
+        }
+        m_context->SetDisplayMode( object, AIS_DisplayMode::AIS_Shaded, false ) ;
+        m_context->SetDisplayPriority(object, 100);
+    };
+    for( const auto &object : m_interferenceObjects )
+    {
+        reDisplayInterference(object);
+    }
+
     m_context->UpdateCurrentViewer() ;
     m_view->Redraw();
 }

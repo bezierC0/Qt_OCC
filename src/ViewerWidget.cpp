@@ -4,7 +4,7 @@
 #include "OCCView.h"
 #include "Tree.h"
 #include "ViewManager.h"
-#include "CollisionDetector.h"
+
 
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
@@ -364,79 +364,7 @@ void ViewerWidget::transform()
 
 void ViewerWidget::checkInterference()
 {
-    // Helper function to get a TopoDS_Shape from an AIS_InteractiveObject.
-    // This is necessary because selected objects can be simple AIS_Shape or complex XCAFPrs_AISObject from STEP files.
-    auto getShape = [](const Handle(AIS_InteractiveObject) & object) -> TopoDS_Shape
-    {
-        if (object.IsNull())
-        {
-            return {};
-        }
-        if (object->IsKind(STANDARD_TYPE(AIS_Shape)))
-        {
-            return Handle(AIS_Shape)::DownCast(object)->Shape();
-        }
-        if (object->IsKind(STANDARD_TYPE(XCAFPrs_AISObject)))
-        {
-            // TODO: Getting the shape from XCAFPrs_AISObject requires access to the TDocStd_Document and XCAFDoc_ShapeTool.
-            // This requires an architectural change to store the document handle after loading a STEP file.
-            // Without it, collision detection on complex STEP models will not work.
-            auto xcafObj = Handle(XCAFPrs_AISObject)::DownCast(object);
-            // The following is pseudo-code for what's needed:
-            // TDF_Label label = xcafObj->GetLabel();
-            // TopoDS_Shape shape;
-            // shapeTool->GetShape(label, shape);
-            // return shape;
-            return {}; // Returning empty shape for now.
-        }
-        return {};
-    };
-
-    CollisionDetector collsion { m_occView->Context() };
-    const auto &selectObjects = m_occView->getSelectedObjects();
-
-    // The user's report indicates a problem with selection logic in OCCView.cpp,
-    // where temporary objects are created for selection instead of using the original objects.
-    // This causes transparency changes to be lost.
-    // The following code assumes that OCCView.cpp is fixed to return the *original* displayed objects.
-
-    std::vector<Handle(AIS_InteractiveObject)> results;
-    for (size_t i = 0; i < selectObjects.size(); ++i)
-    {
-        for (size_t j = i + 1; j < selectObjects.size(); ++j)
-        {
-            Handle(AIS_InteractiveObject) objA = selectObjects.at(i);
-            Handle(AIS_InteractiveObject) objB = selectObjects.at(j);
-
-            const auto shapeA = getShape(objA);
-            const auto shapeB = getShape(objB); // Fixed bug: was using objA for both
-
-            if (shapeA.IsNull() || shapeB.IsNull())
-                continue;
-
-            if (!collsion.DetectAndHighlightCollision(shapeA, shapeB))
-                continue;
-
-            const auto &result = collsion.GetResult();
-            if (result.IsNull())
-            {
-                continue;
-            }
-
-            // This will now work if getSelectedObjects() returns the original, displayed objects.
-            objA->SetTransparency(0.1);
-            objB->SetTransparency(0.1);
-
-            results.emplace_back(result);
-        }
-    }
-
-    for (const auto &result : results)
-    {
-        m_occView->setShape(result);
-    }
-
-    m_occView->reDraw();
+    m_occView->checkInterference();
 }
 
 void ViewerWidget::clipping(const gp_Dir &normal, const gp_Pnt &point, const bool isOn)
@@ -446,7 +374,7 @@ void ViewerWidget::clipping(const gp_Dir &normal, const gp_Pnt &point, const boo
 
 void ViewerWidget::explosion()
 {
-
+    m_occView->checkInterference();
 }
 
 void ViewerWidget::measureDistance()

@@ -642,12 +642,6 @@ void MainWindow::onMeasureAngle() const
     // TODO
 }
 
-void MainWindow::onVersion()
-{
-    DialogAbout dlg(this);
-    dlg.exec();
-}
-
 void MainWindow::onCreatePoint()
 {
     gp_Pnt p(10, 20, 30);
@@ -932,4 +926,11 @@ void MainWindow::onSwitchTheme()
         qApp->setStyleSheet(styleSheet);
         file.close();
     }
+}
+
+
+void MainWindow::onVersion()
+{
+    DialogAbout dlg(this);
+    dlg.exec();
 }

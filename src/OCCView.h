@@ -94,6 +94,8 @@ public:
 
     void transform(); 
 
+    void checkInterference();
+
     void reDraw();
 
     void viewfit();
@@ -210,6 +212,7 @@ private:
 
     std::vector<Handle(AIS_InteractiveObject)> m_loadedObjects;
     std::vector<Handle(AIS_InteractiveObject)> m_selectedObjects;
+    std::vector<Handle(AIS_InteractiveObject)> m_interferenceObjects;
 
     QString myGlInfo;
     bool myIsCoreProfile;

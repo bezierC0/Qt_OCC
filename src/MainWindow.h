@@ -47,7 +47,6 @@ private slots:
     void onCheckInterference() const;
     void onTransform() const;
     void onClipping() const;
-    void onVersion();
     void onExplosion();
 
     /* measure */
@@ -82,6 +81,7 @@ private slots:
     /* help */
     void onSwitchLanguage();
     void onSwitchTheme();
+    void onVersion();
 
 private:
     void setupUi();
