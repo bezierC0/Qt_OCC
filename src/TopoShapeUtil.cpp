@@ -1,6 +1,9 @@
 #include "TopoShapeUtil.h"
 #include <TopoDS_Shape.hxx>
 #include <Standard_TypeDef.hxx>
+#include <BRepPrimAPI_MakeBox.hxx>
+#include <BRepBndLib.hxx>
+#include <Bnd_Box.hxx>
 
 TopoDS_Shape TopoShape::Util::CreateBoundingBoxWireframe(const TopoDS_Shape &shape)
 {
