@@ -43,6 +43,8 @@
 #include <XCAFPrs_AISObject.hxx>
 
 
+View::InterfereceSetting OCCView::m_interfereceSetting{ 1.0, 0.0, 0.0, 0.0, 10, true };
+
 namespace
 {
     //! Map Qt buttons bitmask to virtual keys.
@@ -689,7 +691,11 @@ void OCCView::clearShape()
     // clear interference
     for (const auto &object : m_interferenceObjects)
     {
-        m_context->Erase(object, false);
+        if (const auto objectImpl = std::reinterpret_pointer_cast<View::InterfereceImpl>(object))
+        {
+            m_context->Erase(objectImpl->m_object, false);
+            m_context->Erase(objectImpl->m_boundingBox, false);
+        }
     }
     m_interferenceObjects.clear();
 }
@@ -848,10 +854,56 @@ void OCCView::checkInterference()
             results.emplace_back(result);
         }
     }
+    auto createThickWireframe =[](const TopoDS_Shape& shape, 
+                                                const Quantity_Color& color, 
+                                                Standard_Real width) -> Handle(AIS_Shape)
+    {
+        Handle(AIS_Shape) wireframe = new AIS_Shape(shape);
+        wireframe->SetDisplayMode(AIS_WireFrame);
+        wireframe->SetColor(color);
+
+        Handle(Prs3d_Drawer) drawer = wireframe->Attributes();
+        
+        Handle(Prs3d_LineAspect) lineAspect = new Prs3d_LineAspect(color, Aspect_TOL_SOLID, width);
+        
+        drawer->SetWireAspect(lineAspect);
+        drawer->SetLineAspect(lineAspect);
+        drawer->SetFreeBoundaryAspect(lineAspect);
+        drawer->SetUnFreeBoundaryAspect(lineAspect);
+        
+        Handle(Prs3d_LineAspect) edgeAspect = new Prs3d_LineAspect(color, Aspect_TOL_SOLID, width);
+        drawer->SetFaceBoundaryAspect(edgeAspect);
+        
+        drawer->SetFaceBoundaryDraw(Standard_True);
+        
+        return wireframe;
+    };
 
     for (const auto &result : results)
     {
-        m_interferenceObjects.emplace_back(result);
+        std::shared_ptr<View::InterfereceImpl> resultImpl = std::make_shared<View::InterfereceImpl>();
+        resultImpl->m_object = result;
+
+        resultImpl->m_boundingBox = new AIS_Shape(TopoShape::Util::CreateBoundingBox(Handle(AIS_Shape)::DownCast(result)->Shape()));
+
+        resultImpl->m_boundingBox->SetDisplayMode(AIS_WireFrame);
+        resultImpl->m_boundingBox->SetColor(Quantity_Color(m_interfereceSetting.m_colorR, m_interfereceSetting.m_colorG, m_interfereceSetting.m_colorB, Quantity_TOC_RGB));
+        // TODO BUG: width is not working
+        resultImpl->m_boundingBox->SetWidth(m_interfereceSetting.m_width);
+        //auto width = resultImpl->m_boundingBox->Width();
+        // Handle(Prs3d_Drawer) drawer = resultImpl->m_boundingBox->Attributes();
+        // Handle(Prs3d_LineAspect) lineAspect =
+        //     new Prs3d_LineAspect(Quantity_Color(m_interfereceSetting.m_colorR, m_interfereceSetting.m_colorG, m_interfereceSetting.m_colorB, Quantity_TOC_RGB),
+        //                          Aspect_TOL_SOLID,
+        //                          m_interfereceSetting.m_width);
+        // drawer->SetWireAspect(lineAspect);
+
+        // resultImpl->m_boundingBox = createThickWireframe(
+        //     TopoShape::Util::CreateBoundingBox(Handle(AIS_Shape)::DownCast(result)->Shape()),
+        //     Quantity_Color(m_interfereceSetting.m_colorR, m_interfereceSetting.m_colorG, m_interfereceSetting.m_colorB, Quantity_TOC_RGB),
+        //     m_interfereceSetting.m_width
+        // );
+        m_interferenceObjects.emplace_back(resultImpl);
     }
 
     reDraw();
@@ -888,7 +940,7 @@ void OCCView::reDraw()
         reDisplayMode(object);
     }
 
-    auto reDisplayInterference = [&](const Handle(AIS_InteractiveObject)& object){
+    auto reDisplayInterference = [&](const Handle(AIS_InteractiveObject)& object, AIS_DisplayMode displayMode = AIS_DisplayMode::AIS_Shaded){
         const bool onEntry_AutoActivateSelection = m_context->GetAutoActivateSelection();
         object->Attributes()->SetIsoOnTriangulation(true);
         if (m_context->IsDisplayed(object))
@@ -899,12 +951,33 @@ void OCCView::reDraw()
         {
             m_context->Display(object, object->DisplayMode(), 0, false);
         }
-        m_context->SetDisplayMode( object, AIS_DisplayMode::AIS_Shaded, false ) ;
+        m_context->SetDisplayMode( object, displayMode, false ) ;
         m_context->SetDisplayPriority(object, 10);
     };
+
+    auto reDisplayInterferenceBoundingBox = [&](const Handle(AIS_InteractiveObject)& object, AIS_DisplayMode displayMode = AIS_DisplayMode::AIS_Shaded){
+        if (m_context->IsDisplayed(object))
+        {
+            m_context->Redisplay(object, false);
+        }
+        else
+        {
+            m_context->Display(object, object->DisplayMode(), 0, false);
+        }
+        m_context->SetDisplayMode( object, displayMode, false ) ;
+        m_context->SetDisplayPriority(object, 10);
+    };
+
     for( const auto &object : m_interferenceObjects )
     {
-        reDisplayInterference(object);
+        if (const auto objectImpl = std::reinterpret_pointer_cast<View::InterfereceImpl>(object))
+        {
+            reDisplayInterference(objectImpl->m_object);
+            if( objectImpl->m_boundingBox )
+            {
+                reDisplayInterferenceBoundingBox(objectImpl->m_boundingBox, AIS_DisplayMode::AIS_WireFrame);
+            }
+        }
     }
 
     m_context->UpdateCurrentViewer() ;

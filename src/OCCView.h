@@ -41,6 +41,37 @@ public:
     explicit ClippingPlane(const Handle(Graphic3d_ClipPlane)& clipPlane, bool isOn = false,bool isCapping = false) ;
     Handle(Graphic3d_ClipPlane) m_clipPlane{nullptr};
 };
+class IInterferece{
+public:
+    virtual ~IInterferece() = default;
+};
+class InterfereceImpl
+    : public IInterferece
+{
+public:
+    Handle(AIS_InteractiveObject)       m_object          {nullptr};
+    Handle(AIS_InteractiveObject)       m_boundingBox     {nullptr};
+};
+
+class InterfereceSetting{
+public:
+    InterfereceSetting( double r = 0.0, double g = 0.0, double b = 0.0, double a = 0.0, double width = 0.0, bool display = true )
+        : m_colorR( r ),
+          m_colorG( g ),
+          m_colorB( b ),
+          m_colorA( a ),
+          m_width( width ),
+          isDisplayBoundingBox( display )
+    {
+    }
+
+    double m_colorR;
+    double m_colorG;
+    double m_colorB;
+    double m_colorA;
+    double m_width;
+    bool isDisplayBoundingBox;
+};
 
 } // namespace View
 
@@ -212,7 +243,7 @@ private:
 
     std::vector<Handle(AIS_InteractiveObject)> m_loadedObjects;
     std::vector<Handle(AIS_InteractiveObject)> m_selectedObjects;
-    std::vector<Handle(AIS_InteractiveObject)> m_interferenceObjects;
+    std::vector<std::shared_ptr<View::IInterferece>> m_interferenceObjects;
 
     QString myGlInfo;
     bool myIsCoreProfile;
@@ -226,4 +257,5 @@ private:
     View::DisplayMode                                                   m_displayMode{View::DisplayMode::MODE_SHADED};
     View::WorkPlane                                                     m_workPlane{};
     std::vector<std::shared_ptr<View::ClippingPlane>>                   m_clippingPlanes{};
+    static View::InterfereceSetting                                     m_interfereceSetting ;
 };

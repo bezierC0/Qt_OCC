@@ -6,6 +6,6 @@ namespace TopoShape
 class Util
 {
 public:
-    static TopoDS_Shape CreateBoundingBoxWireframe(const TopoDS_Shape& shape);
+    static TopoDS_Shape CreateBoundingBox(const TopoDS_Shape& shape);
 };
 } // namespace View

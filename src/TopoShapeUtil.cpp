@@ -5,7 +5,7 @@
 #include <BRepBndLib.hxx>
 #include <Bnd_Box.hxx>
 
-TopoDS_Shape TopoShape::Util::CreateBoundingBoxWireframe(const TopoDS_Shape &shape)
+TopoDS_Shape TopoShape::Util::CreateBoundingBox(const TopoDS_Shape &shape)
 {
     Bnd_Box box;
     BRepBndLib::Add(shape, box);
@@ -21,6 +21,6 @@ TopoDS_Shape TopoShape::Util::CreateBoundingBoxWireframe(const TopoDS_Shape &sha
         gp_Pnt(xmin, ymin, zmin),
         gp_Pnt(xmax, ymax, zmax)
     ).Shape();
-    
+
     return boundingBoxShape;
 }
