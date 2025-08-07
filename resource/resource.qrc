@@ -51,6 +51,9 @@
         <file>icon/view_top.svg</file>
         <file>icon/work_plane.svg</file>
     </qresource>
+    <qresource prefix="/images">
+        <file>images/logo.png</file>
+    </qresource>
     <qresource prefix="/qss">
         <file>qss/light.qss</file>
         <file>qss/dark.qss</file>
