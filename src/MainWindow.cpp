@@ -644,147 +644,52 @@ void MainWindow::onMeasureAngle() const
 
 void MainWindow::onCreatePoint()
 {
-    gp_Pnt p(10, 20, 30);
-    BRepBuilderAPI_MakeVertex vertexMaker(p);
-    if (vertexMaker.IsDone())
-    {
-        m_viewerWidget->displayShape(vertexMaker.Shape(), 1.0, 1.0, 1.0); 
-    }
+    m_viewerWidget->createPoint();
 }
 
 void MainWindow::onCreateLine()
 {
-    gp_Pnt p1(0, 0, 0);
-    gp_Pnt p2(50, 50, 50);
-    BRepBuilderAPI_MakeEdge edge(p1, p2);
-    if (edge.IsDone())
-    {
-        m_viewerWidget->displayShape(edge.Shape(), 1.0, 0.0, 0.0);
-    }
+    m_viewerWidget->createLine();
 }
 
 void MainWindow::onCreateRectangle()
 {
-    gp_Pnt p1(0, 0, 0);
-    gp_Pnt p2(40, 0, 0);
-    gp_Pnt p3(40, 30, 0);
-    gp_Pnt p4(0, 30, 0);
-    BRepBuilderAPI_MakePolygon poly;
-    poly.Add(p1);
-    poly.Add(p2);
-    poly.Add(p3);
-    poly.Add(p4);
-    poly.Add(p1); // Close the polygon
-    if (poly.IsDone())
-    {
-        BRepBuilderAPI_MakeFace face(poly.Wire());
-        if (face.IsDone())
-        {
-            m_viewerWidget->displayShape(face.Shape(), 0.0, 1.0, 0.0);
-        }
-    }
+    m_viewerWidget->createRectangle();
 }
 
 void MainWindow::onCreateCircle()
 {
-    gp_Ax2 axis(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)); // Z axis
-    gp_Circ circle(axis, 25.0);                   // Radius 25
-    BRepBuilderAPI_MakeEdge edge(circle);
-    if (edge.IsDone())
-    {
-        m_viewerWidget->displayShape(edge.Shape(), 0.0, 0.0, 1.0);
-    }
+    m_viewerWidget->createCircle();
 }
 
 void MainWindow::onCreateArc()
 {
-    gp_Pnt center(0, 0, 0);
-    gp_Pnt p1(30, 0, 0);
-    gp_Pnt p2(0, 30, 0);
-    GC_MakeArcOfCircle arc(center, p1, p2);
-    if (arc.IsDone())
-    {
-        BRepBuilderAPI_MakeEdge edge(arc.Value());
-        if (edge.IsDone())
-        {
-            m_viewerWidget->displayShape(edge.Shape(), 1.0, 1.0, 0.0);
-        }
-    }
+    m_viewerWidget->createArc();
 }
 
 void MainWindow::onCreateEllipse()
 {
-    gp_Ax2 axis(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)); // Z axis
-    gp_Elips ellipse(axis, 30.0, 15.0);           // Major radius 30, minor 15
-    BRepBuilderAPI_MakeEdge edge(ellipse);
-    if (edge.IsDone())
-    {
-        m_viewerWidget->displayShape(edge.Shape(), 1.0, 0.0, 1.0);
-    }
+    m_viewerWidget->createEllipse();
 }
 
 void MainWindow::onCreatePolygon()
 {
-    BRepBuilderAPI_MakePolygon poly;
-    poly.Add(gp_Pnt(0, 0, 0));
-    poly.Add(gp_Pnt(20, 10, 0));
-    poly.Add(gp_Pnt(30, 30, 0));
-    poly.Add(gp_Pnt(10, 40, 0));
-    poly.Add(gp_Pnt(-10, 20, 0));
-    poly.Add(gp_Pnt(0, 0, 0)); // Close it
-    if (poly.IsDone())
-    {
-        m_viewerWidget->displayShape(poly.Wire(), 0.0, 1.0, 1.0);
-    }
+    m_viewerWidget->createPolygon();
 }
 
 void MainWindow::onCreateBezierCurve()
 {
-    TColgp_Array1OfPnt poles(1, 4);
-    poles.SetValue(1, gp_Pnt(0, 0, 0));
-    poles.SetValue(2, gp_Pnt(10, 40, 0));
-    poles.SetValue(3, gp_Pnt(40, 40, 0));
-    poles.SetValue(4, gp_Pnt(50, 0, 0));
-    Handle(Geom_BezierCurve) bezier = new Geom_BezierCurve(poles);
-    BRepBuilderAPI_MakeEdge edge(bezier);
-    if (edge.IsDone())
-    {
-        m_viewerWidget->displayShape(edge.Shape(), 0.5, 0.5, 0.5);
-    }
+    m_viewerWidget->createBezierCurve();
 }
 
 void MainWindow::onCreateNurbsCurve()
 {
-    TColgp_Array1OfPnt poles(1, 4);
-    poles.SetValue(1, gp_Pnt(0, 0, 0));
-    poles.SetValue(2, gp_Pnt(10, 40, 0));
-    poles.SetValue(3, gp_Pnt(40, -40, 0));
-    poles.SetValue(4, gp_Pnt(50, 0, 0));
-
-    TColStd_Array1OfReal knots(1, 2);
-    knots.SetValue(1, 0.0);
-    knots.SetValue(2, 1.0);
-
-    TColStd_Array1OfInteger mults(1, 2);
-    mults.SetValue(1, 4);
-    mults.SetValue(2, 4);
-
-    Standard_Integer degree = 3;
-
-    Handle(Geom_BSplineCurve) bspline = new Geom_BSplineCurve(poles, knots, mults, degree);
-    BRepBuilderAPI_MakeEdge edge(bspline);
-    if (edge.IsDone())
-    {
-        m_viewerWidget->displayShape(edge.Shape(), 0.2, 0.8, 0.2);
-    }
+    m_viewerWidget->createNurbsCurve();
 }
 
 void MainWindow::onCreateBox()
 {
-    const gp_Pnt P1{-10,-20,-30};
-    const gp_Pnt P2{30,20,15};
-    BRepPrimAPI_MakeBox box(P1,P2);
-    m_viewerWidget->displayShape(box.Shape(), 1.0, 0.0, 1.0);
+    m_viewerWidget->createBox();
 }
 
 void MainWindow::onCreatePyramid()
@@ -794,20 +699,17 @@ void MainWindow::onCreatePyramid()
 
 void MainWindow::onCreateSphere()
 {
-    BRepPrimAPI_MakeSphere sphere( gp_Pnt( 0, 0, 0 ), 5.0 ) ;
-    m_viewerWidget->displayShape( sphere.Shape(), 1.0, 0.0, 0.0 ) ;  // NOLINT
+    m_viewerWidget->createSphere();
 }
 
 void MainWindow::onCreateCylinder()
 {
-    BRepPrimAPI_MakeCylinder cylinder(5.0, 10.0);
-    m_viewerWidget->displayShape(cylinder.Shape(), 0.0, 1.0, 0.0);
+    m_viewerWidget->createCylinder();
 }
 
 void MainWindow::onCreateCone()
 {
-    BRepPrimAPI_MakeCone cone(5.0, 0.0, 10.0);
-    m_viewerWidget->displayShape(cone.Shape(), 0.0, 1.0, 1.0);
+    m_viewerWidget->createCone();
 }
 
 void MainWindow::onBooleanUnionAction()

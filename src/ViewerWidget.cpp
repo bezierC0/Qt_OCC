@@ -21,6 +21,18 @@
 #include <BRepAlgoAPI_Fuse.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
 
+#include <BRepPrimAPI_MakeBox.hxx>
+#include <BRepPrimAPI_MakeSphere.hxx>
+#include <BRepPrimAPI_MakeCylinder.hxx>
+#include <BRepPrimAPI_MakeCone.hxx>
+/* builder */
+#include <BRepBuilderAPI_MakeVertex.hxx>
+#include <BRepBuilderAPI_MakeEdge.hxx>
+#include <BRepBuilderAPI_MakeFace.hxx>
+#include <BRepBuilderAPI_MakePolygon.hxx>
+#include <BRepBuilderAPI_MakeWire.hxx>
+#include <GC_MakeArcOfCircle.hxx>
+
 #include <TopoDS_Shape.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
 #include <XCAFDoc_ShapeTool.hxx>
@@ -38,6 +50,9 @@
 #include <BRep_Tool.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Vertex.hxx>
+/* geomtry */
+#include <Geom_BezierCurve.hxx>
+#include <Geom_BSplineCurve.hxx>
 #include <Geom_Plane.hxx>
 #include <Geom_Surface.hxx>
 #include <Geom_Line.hxx>
@@ -418,42 +433,147 @@ void ViewerWidget::measureDistance()
 
 void ViewerWidget::createPoint()
 {
+    gp_Pnt p(10, 20, 30);
+    BRepBuilderAPI_MakeVertex vertexMaker(p);
+    if (vertexMaker.IsDone())
+    {
+        displayShape(vertexMaker.Shape(), 1.0, 1.0, 1.0); 
+    }
 }
 
 void ViewerWidget::createLine()
 {
+    gp_Pnt p1(0, 0, 0);
+    gp_Pnt p2(50, 50, 50);
+    BRepBuilderAPI_MakeEdge edge(p1, p2);
+    if (edge.IsDone())
+    {
+        displayShape(edge.Shape(), 1.0, 0.0, 0.0);
+    }
 }
 
 void ViewerWidget::createRectangle()
 {
+    gp_Pnt p1(0, 0, 0);
+    gp_Pnt p2(40, 0, 0);
+    gp_Pnt p3(40, 30, 0);
+    gp_Pnt p4(0, 30, 0);
+    BRepBuilderAPI_MakePolygon poly;
+    poly.Add(p1);
+    poly.Add(p2);
+    poly.Add(p3);
+    poly.Add(p4);
+    poly.Add(p1); // Close the polygon
+    if (poly.IsDone())
+    {
+        BRepBuilderAPI_MakeFace face(poly.Wire());
+        if (face.IsDone())
+        {
+            displayShape(face.Shape(), 0.0, 1.0, 0.0);
+        }
+    }
 }
 
 void ViewerWidget::createCircle()
 {
+    gp_Ax2 axis(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)); // Z axis
+    gp_Circ circle(axis, 25.0);                   // Radius 25
+    BRepBuilderAPI_MakeEdge edge(circle);
+    if (edge.IsDone())
+    {
+        displayShape(edge.Shape(), 0.0, 0.0, 1.0);
+    }
 }
 
 void ViewerWidget::createArc()
 {
+    gp_Pnt center(0, 0, 0);
+    gp_Pnt p1(30, 0, 0);
+    gp_Pnt p2(0, 30, 0);
+    GC_MakeArcOfCircle arc(center, p1, p2);
+    if (arc.IsDone())
+    {
+        BRepBuilderAPI_MakeEdge edge(arc.Value());
+        if (edge.IsDone())
+        {
+            displayShape(edge.Shape(), 1.0, 1.0, 0.0);
+        }
+    }
 }
 
 void ViewerWidget::createEllipse()
 {
+    gp_Ax2 axis(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)); // Z axis
+    gp_Elips ellipse(axis, 30.0, 15.0);           // Major radius 30, minor 15
+    BRepBuilderAPI_MakeEdge edge(ellipse);
+    if (edge.IsDone())
+    {
+        displayShape(edge.Shape(), 1.0, 0.0, 1.0);
+    }
 }
 
 void ViewerWidget::createPolygon()
 {
+    BRepBuilderAPI_MakePolygon poly;
+    poly.Add(gp_Pnt(0, 0, 0));
+    poly.Add(gp_Pnt(20, 10, 0));
+    poly.Add(gp_Pnt(30, 30, 0));
+    poly.Add(gp_Pnt(10, 40, 0));
+    poly.Add(gp_Pnt(-10, 20, 0));
+    poly.Add(gp_Pnt(0, 0, 0)); // Close it
+    if (poly.IsDone())
+    {
+        displayShape(poly.Wire(), 0.0, 1.0, 1.0);
+    }
 }
 
 void ViewerWidget::createBezierCurve()
 {
+    TColgp_Array1OfPnt poles(1, 4);
+    poles.SetValue(1, gp_Pnt(0, 0, 0));
+    poles.SetValue(2, gp_Pnt(10, 40, 0));
+    poles.SetValue(3, gp_Pnt(40, 40, 0));
+    poles.SetValue(4, gp_Pnt(50, 0, 0));
+    Handle(Geom_BezierCurve) bezier = new Geom_BezierCurve(poles);
+    BRepBuilderAPI_MakeEdge edge(bezier);
+    if (edge.IsDone())
+    {
+        displayShape(edge.Shape(), 0.5, 0.5, 0.5);
+    }
 }
 
 void ViewerWidget::createNurbsCurve()
 {
+    TColgp_Array1OfPnt poles(1, 4);
+    poles.SetValue(1, gp_Pnt(0, 0, 0));
+    poles.SetValue(2, gp_Pnt(10, 40, 0));
+    poles.SetValue(3, gp_Pnt(40, -40, 0));
+    poles.SetValue(4, gp_Pnt(50, 0, 0));
+
+    TColStd_Array1OfReal knots(1, 2);
+    knots.SetValue(1, 0.0);
+    knots.SetValue(2, 1.0);
+
+    TColStd_Array1OfInteger mults(1, 2);
+    mults.SetValue(1, 4);
+    mults.SetValue(2, 4);
+
+    Standard_Integer degree = 3;
+
+    Handle(Geom_BSplineCurve) bspline = new Geom_BSplineCurve(poles, knots, mults, degree);
+    BRepBuilderAPI_MakeEdge edge(bspline);
+    if (edge.IsDone())
+    {
+        displayShape(edge.Shape(), 0.2, 0.8, 0.2);
+    }
 }
 
 void ViewerWidget::createBox()
 {
+    const gp_Pnt P1{-10,-20,-30};
+    const gp_Pnt P2{30,20,15};
+    BRepPrimAPI_MakeBox box(P1,P2);
+    displayShape(box.Shape(), 1.0, 0.0, 1.0);
 }
 
 void ViewerWidget::createPyramid()
@@ -462,14 +582,20 @@ void ViewerWidget::createPyramid()
 
 void ViewerWidget::createSphere()
 {
+    BRepPrimAPI_MakeSphere sphere( gp_Pnt( 0, 0, 0 ), 5.0 ) ;
+    displayShape( sphere.Shape(), 1.0, 0.0, 0.0 ) ;  // NOLINT
 }
 
 void ViewerWidget::createCylinder()
 {
+    BRepPrimAPI_MakeCylinder cylinder(5.0, 10.0);
+    displayShape(cylinder.Shape(), 0.0, 1.0, 0.0);
 }
 
 void ViewerWidget::createCone()
 {
+    BRepPrimAPI_MakeCone cone(5.0, 0.0, 10.0);
+    displayShape(cone.Shape(), 0.0, 1.0, 1.0);
 }
 
 void ViewerWidget::booleanUnion()
