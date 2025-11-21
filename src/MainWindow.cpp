@@ -202,7 +202,7 @@ void MainWindow::createViewGroup()
         auto shadingAction = createDisplayAction(QIcon(":/icons/icon/display_mode_shading.svg"),tr("Shading"), 0);
         auto wireframeAction = createDisplayAction(QIcon(":/icons/icon/display_mode_wireframe.svg"),tr("Wireframe"), 1);
         auto hiddenLineAction = createDisplayAction(QIcon(":/icons/icon/display_mode_hidden_line.svg"),tr("Hidden Line"), 2);
-        auto shadingEdgeAction = createDisplayAction(QIcon(":/icons/icon/display_mode_shading_edge.svg"),tr("Shading with edge"), 10);
+        auto shadingEdgeAction = createDisplayAction(QIcon(":/icons/icon/display_mode_shading_edge.svg"),tr("Shading with edge"), 3);
 
         shadingAction->setChecked(true); // Default selection
     };

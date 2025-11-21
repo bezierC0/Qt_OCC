@@ -912,46 +912,46 @@ void OCCView::checkInterference()
 
 void OCCView::reDraw()
 {
-    auto reDisplayMode = [&](const Handle(AIS_InteractiveObject)& object){
-        AIS_DisplayMode aMode = AIS_Shaded ;
-        if ( m_displayMode == View::DisplayMode::MODE_WIREFRAME )
-        {
-            aMode = AIS_WireFrame ;
+    auto reDisplayMode = [&](const Handle(AIS_InteractiveObject) & object) {
+
+        auto fnSetViewComputedMode = [=](bool on) {
+            for (auto it = m_context->CurrentViewer()->DefinedViewIterator(); it.More(); it.Next())
+                it.Value()->SetComputedMode(on);
+        };
+        if(m_displayMode == View::DisplayMode::MODE_HIDDEN_LINE){
+            m_context->DefaultDrawer()->SetTypeOfHLR(Prs3d_TOH_PolyAlgo);
+            m_context->DefaultDrawer()->EnableDrawHiddenLine();
+            fnSetViewComputedMode(true);
         }
-        else if ( m_displayMode == View::DisplayMode::MODE_SHADED )
-        {
-            aMode = AIS_Shaded ;
+        else{
+            m_context->DefaultDrawer()->SetTypeOfHLR(Prs3d_TOH_NotSet);
+            m_context->DefaultDrawer()->DisableDrawHiddenLine();
+            fnSetViewComputedMode(false);
+
+            AIS_DisplayMode aisDispMode = AIS_Shaded;
+            if (m_displayMode == View::DisplayMode::MODE_WIREFRAME) {
+                aisDispMode = AIS_WireFrame;
+            } else if (m_displayMode == View::DisplayMode::MODE_SHADED) {
+                aisDispMode = AIS_Shaded;
+            }
+            if (aisDispMode != object->DisplayMode() )
+                m_context->SetDisplayMode(object, aisDispMode, false);
+            const bool showFaceBounds = m_displayMode == View::DisplayMode::MODE_SHADED_WITH_EDGES;
+            if (object->Attributes()->FaceBoundaryDraw() != showFaceBounds) {
+                object->Attributes()->SetFaceBoundaryDraw(showFaceBounds);
+                Handle(Prs3d_LineAspect) visibleLineAspect =
+                    new Prs3d_LineAspect(Quantity_NOC_BLACK, Aspect_TOL_SOLID, 2.0);
+                object->Attributes()->SetFaceBoundaryAspect(visibleLineAspect);
+                auto aisLink = Handle_AIS_ConnectedInteractive::DownCast(object);
+                if (aisLink && aisLink->HasConnection()) {
+                    aisLink->ConnectedTo()->Attributes()->SetFaceBoundaryDraw(showFaceBounds);
+                    aisLink->ConnectedTo()->Redisplay(true);
+                } else {
+                    object->Redisplay(true /*AllModes*/);
+                }
+            }
+            
         }
-
-        // m_context->DefaultDrawer()->SetTypeOfHLR(Prs3d_TOH_PolyAlgo);
-        // m_context->DefaultDrawer()->EnableDrawHiddenLine();
-
-        /*
-        * mayo\src\graphics\graphics_shape_object_driver.cpp
-        * GraphicsShapeObjectDriver::applyDisplayMode
-        */
-
-        // m_context->DefaultDrawer()->SetTypeOfHLR(Prs3d_TOH_NotSet);
-        // m_context->DefaultDrawer()->DisableDrawHiddenLine();
-        // auto fnSetViewComputedMode = [=](bool on) {
-        // for (auto it = m_context->CurrentViewer()->DefinedViewIterator(); it.More(); it.Next())
-        //     it.Value()->SetComputedMode(on);
-        // };
-        // fnSetViewComputedMode(false);
-        // const bool showFaceBounds = true;
-        // if (showFaceBounds) {
-        //     object->Attributes()->SetFaceBoundaryDraw(showFaceBounds);
-        //     auto aisLink = Handle_AIS_ConnectedInteractive::DownCast(object);
-        //     if (aisLink && aisLink->HasConnection()) {
-        //         aisLink->ConnectedTo()->Attributes()->SetFaceBoundaryDraw(showFaceBounds);
-        //         aisLink->ConnectedTo()->Redisplay(true);
-        //     }
-        //     else {
-        //         object->Redisplay(true/*AllModes*/);
-        //     }
-        // }
-        
-        m_context->SetDisplayMode( object, aMode, false ) ;
     };
     for (const auto &object : m_loadedObjects)
     {
