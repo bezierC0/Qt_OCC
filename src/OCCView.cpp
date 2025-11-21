@@ -18,6 +18,7 @@
 #include <AIS_ViewCube.hxx>
 #include <AIS_Manipulator.hxx>
 #include <AIS_AnimationCamera.hxx>
+#include <AIS_ConnectedInteractive.hxx>
 #include <Aspect_DisplayConnection.hxx>
 #include <Aspect_NeutralWindow.hxx>
 #include <Bnd_Box.hxx>
@@ -922,10 +923,35 @@ void OCCView::reDraw()
             aMode = AIS_Shaded ;
         }
 
-        for ( const auto& object : m_loadedObjects )
-        {
-            m_context->SetDisplayMode( object, aMode, false ) ;
-        }
+        // m_context->DefaultDrawer()->SetTypeOfHLR(Prs3d_TOH_PolyAlgo);
+        // m_context->DefaultDrawer()->EnableDrawHiddenLine();
+
+        /*
+        * mayo\src\graphics\graphics_shape_object_driver.cpp
+        * GraphicsShapeObjectDriver::applyDisplayMode
+        */
+
+        // m_context->DefaultDrawer()->SetTypeOfHLR(Prs3d_TOH_NotSet);
+        // m_context->DefaultDrawer()->DisableDrawHiddenLine();
+        // auto fnSetViewComputedMode = [=](bool on) {
+        // for (auto it = m_context->CurrentViewer()->DefinedViewIterator(); it.More(); it.Next())
+        //     it.Value()->SetComputedMode(on);
+        // };
+        // fnSetViewComputedMode(false);
+        // const bool showFaceBounds = true;
+        // if (showFaceBounds) {
+        //     object->Attributes()->SetFaceBoundaryDraw(showFaceBounds);
+        //     auto aisLink = Handle_AIS_ConnectedInteractive::DownCast(object);
+        //     if (aisLink && aisLink->HasConnection()) {
+        //         aisLink->ConnectedTo()->Attributes()->SetFaceBoundaryDraw(showFaceBounds);
+        //         aisLink->ConnectedTo()->Redisplay(true);
+        //     }
+        //     else {
+        //         object->Redisplay(true/*AllModes*/);
+        //     }
+        // }
+        
+        m_context->SetDisplayMode( object, aMode, false ) ;
     };
     for (const auto &object : m_loadedObjects)
     {
