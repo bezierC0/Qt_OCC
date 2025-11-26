@@ -12,6 +12,7 @@
 #include <AIS_ViewController.hxx>
 #include <V3d_View.hxx>
 #include <TopAbs_ShapeEnum.hxx>
+#include <TopTools_ListOfShape.hxx>
 
 
 
@@ -22,6 +23,7 @@ class TopoDS_Shape;
 
 namespace View
 {
+class SelectedEntity;
 enum MouseMode { NONE, SELECTION, END };
 enum DisplayMode {
     MODE_SHADED = 0,
@@ -111,9 +113,11 @@ public:
 
     void setShape(const Handle(AIS_InteractiveObject) & loadedShape);
 
+    void removeShape(const TopoDS_Shape& removeShape);
+
     const std::vector<Handle(AIS_InteractiveObject)> &getShapeObjects() const;
 
-    const std::vector<Handle(AIS_InteractiveObject)> &getSelectedObjects() const;
+    const std::vector<std::shared_ptr<View::SelectedEntity>> &getSelectedObjects() const;
 
     std::vector<Handle(AIS_Shape)> getSelectedAisShape(int count) const;
 
@@ -186,6 +190,13 @@ public:
     void mirrorByAxis(const TopoDS_Shape& shape,
         const gp_Ax1& mirrorAxis);
 
+    /* shell (only box)*/
+    TopoDS_Shape shell(const TopoDS_Shape& box,
+        const TopTools_ListOfShape& facesToRemove,
+        const Standard_Real thickness = -5.0,
+        const Standard_Real tolerance = 1.0e-3
+    );
+
     //! Handle subview focus change.
     void OnSubviewChanged(const Handle(AIS_InteractiveContext) &, const Handle(V3d_View) &,
                           const Handle(V3d_View) & theNewView) override;
@@ -242,7 +253,7 @@ private:
     //! Core profile flag.
 
     std::vector<Handle(AIS_InteractiveObject)> m_loadedObjects;
-    std::vector<Handle(AIS_InteractiveObject)> m_selectedObjects;
+    std::vector<std::shared_ptr<View::SelectedEntity>> m_selectedObjects;
     std::vector<std::shared_ptr<View::IInterferece>> m_interferenceObjects;
 
     QString myGlInfo;
