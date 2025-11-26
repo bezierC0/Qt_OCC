@@ -76,6 +76,7 @@ public:
     void patternCircular();// Pattern(Circular) 
     void mirrorByPlane();
     void mirrorByAxis();
+    void shell();
     
     void displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0); // Add this function
     void removeShape(const TopoDS_Shape& shape);
