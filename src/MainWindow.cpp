@@ -480,6 +480,18 @@ void MainWindow::createShapeGroup()
         m_patternPannel->addLargeAction(m_patternCircularAction);
     };
     createPatternPannel();
+
+    /*   shape tool pannel   */
+    auto createShapeToolPannel = [&](){
+        m_shapeToolPannel = m_shapeCategory->addPannel(tr("Shape Tool"));
+
+        m_shapeToolShellAction = new QAction(QIcon(":/icons/icon/shape_tool_shell.svg"), tr("Shell"), this);
+        connect(m_shapeToolShellAction, &QAction::triggered, this, &MainWindow::onShapeToolShell);
+        m_shapeToolPannel->addLargeAction(m_shapeToolShellAction);
+
+        return;
+    };
+    createShapeToolPannel();
 }
 
 void MainWindow::createHelpGroup()
@@ -745,6 +757,11 @@ void MainWindow::onPatternLinear()
 void MainWindow::onPatternCircular()
 {
     m_viewerWidget->patternCircular();
+}
+
+void MainWindow::onShapeToolShell()
+{
+    m_viewerWidget->shell();
 }
 
 ViewerWidget* MainWindow::GetViewerWidget() const

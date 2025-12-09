@@ -1,6 +1,7 @@
 #include "ViewerWidget.h"
 #include "MainWindow.h"
 #include "WidgetModelTree.h"
+#include "SelectedEntity.h"
 #include "OCCView.h"
 #include "Tree.h"
 #include "ViewManager.h"
@@ -41,6 +42,7 @@
 #include <XCAFPrs_AISObject.hxx>
 #include <TDataStd_Name.hxx>
 #include <BRepBndLib.hxx>
+#include <BRepGProp.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <AIS_Shape.hxx>
 #include <AIS_InteractiveObject.hxx>
@@ -48,6 +50,7 @@
 #include <gp_Pln.hxx>              // Added missing include for clipping
 #include <Quantity_Color.hxx>      // Added missing include for colors
 #include <BRep_Tool.hxx>
+#include <GProp_GProps.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Vertex.hxx>
 /* geomtry */
@@ -61,6 +64,7 @@
 #include <GeomLib_IsPlanarSurface.hxx>
 #include <GeomAdaptor_Curve.hxx>
 #include <GeomAbs_CurveType.hxx>
+#include <TopTools_ListOfShape.hxx>
 
 namespace
 {
@@ -394,25 +398,18 @@ void ViewerWidget::explosion()
 
 void ViewerWidget::measureDistance()
 {
-    const auto &selectedList = m_occView->getSelectedObjects();
+    const auto acitveView = ViewManager::getInstance().getActiveView();
+    if( !acitveView )
+        return ;
+    const auto& selectedList = acitveView->getSelectedObjects();
     if (selectedList.size() != 2)
     {
         QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two vertices."));
         return;
     }
 
-    const auto interactiveObject0 = selectedList.at(0);
-    const auto interactiveObject1 = selectedList.at(1);
-    if (interactiveObject0.IsNull() || interactiveObject1.IsNull())
-        return;
-
-    const auto aisShape0 = Handle(AIS_Shape)::DownCast(interactiveObject0);
-    const auto aisShape1 = Handle(AIS_Shape)::DownCast(interactiveObject1);
-    if (aisShape0.IsNull() || aisShape1.IsNull())
-        return;
-
-    const TopoDS_Shape &shape0 = aisShape0->Shape();
-    const TopoDS_Shape &shape1 = aisShape1->Shape();
+    TopoDS_Shape shape0 = selectedList.at(0)->GetSelectedShape();
+    TopoDS_Shape shape1 = selectedList.at(1)->GetSelectedShape();
     if (shape0.IsNull() || shape1.IsNull() ||
         shape0.ShapeType() != TopAbs_VERTEX || shape1.ShapeType() != TopAbs_VERTEX)
     {
@@ -655,23 +652,9 @@ void ViewerWidget::patternLinear()
         QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
         return ;
     }
-    auto interactiveObject0 = selectedObjects.at(0);
-    auto interactiveObject1 = selectedObjects.at(1);
-    if ( interactiveObject0.IsNull() || interactiveObject1.IsNull() )
-    {
-        return ;
-    }
 
-    const auto aisShape0 = Handle(AIS_Shape)::DownCast(interactiveObject0);
-    const auto aisShape1 = Handle(AIS_Shape)::DownCast(interactiveObject1);
-
-    if ( aisShape0.IsNull() || aisShape1.IsNull() )
-    {
-        return ;
-    }
-
-    const auto shape0 = aisShape0->Shape();
-    const auto shape1 = aisShape1->Shape();
+    const auto& shape0 = selectedObjects.at(0)->GetSelectedShape();
+    const auto& shape1 = selectedObjects.at(1)->GetSelectedShape();
 
     if ( shape0.IsNull() || shape1.IsNull() )
     {
@@ -704,23 +687,9 @@ void ViewerWidget::patternCircular()
         QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
         return ;
     }
-    auto interactiveObject0 = selectedObjects.at(0);
-    auto interactiveObject1 = selectedObjects.at(1);
-    if ( interactiveObject0.IsNull() || interactiveObject1.IsNull() )
-    {
-        return ;
-    }
 
-    const auto aisShape0 = Handle(AIS_Shape)::DownCast(interactiveObject0);
-    const auto aisShape1 = Handle(AIS_Shape)::DownCast(interactiveObject1);
-
-    if ( aisShape0.IsNull() || aisShape1.IsNull() )
-    {
-        return ;
-    }
-
-    const auto& shape0 = aisShape0->Shape();
-    const auto& shape1 = aisShape1->Shape();
+    const auto& shape0 = selectedObjects.at(0)->GetSelectedShape();
+    const auto& shape1 = selectedObjects.at(1)->GetSelectedShape();
 
     if ( shape0.IsNull() || shape1.IsNull() )
     {
@@ -752,25 +721,9 @@ void ViewerWidget::mirrorByPlane()
         QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
         return ;
     }
-    auto interactiveObjectShape = selectedObjects.at(0);
-    auto interactiveObjectPlane = selectedObjects.at(1);
-    if ( interactiveObjectShape.IsNull() || interactiveObjectPlane.IsNull() )
-    {
-        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Interactive object is null."));
-        return ;
-    }
 
-    const auto aisShape = Handle(AIS_Shape)::DownCast(interactiveObjectShape);
-    const auto aisPlane = Handle(AIS_Shape)::DownCast(interactiveObjectPlane);
-
-    if ( aisShape.IsNull() || aisPlane.IsNull() )
-    {
-        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "AisShape is null."));
-        return ;
-    }
-
-    const auto shape = aisShape->Shape();
-    const auto plane = aisPlane->Shape();
+    const auto shape = selectedObjects.at(0)->GetSelectedShape();
+    const auto plane = selectedObjects.at(1)->GetSelectedShape();
 
     if ( shape.IsNull() || plane.IsNull() )
     {
@@ -799,25 +752,8 @@ void ViewerWidget::mirrorByAxis()
         QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
         return ;
     }
-    auto interactiveObject0 = selectedObjects.at(0);
-    auto interactiveObject1 = selectedObjects.at(1);
-    if ( interactiveObject0.IsNull() || interactiveObject1.IsNull() )
-    {
-        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Interactive object is null."));
-        return ;
-    }
-
-    const auto aisShape0 = Handle(AIS_Shape)::DownCast(interactiveObject0);
-    const auto aisShape1 = Handle(AIS_Shape)::DownCast(interactiveObject1);
-
-    if ( aisShape0.IsNull() || aisShape1.IsNull() )
-    {
-        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "AisShape is null."));
-        return ;
-    }
-
-    const auto shape0 = aisShape0->Shape();
-    const auto shape1 = aisShape1->Shape();
+    const auto shape0 = selectedObjects.at(0)->GetSelectedShape();
+    const auto shape1 = selectedObjects.at(1)->GetSelectedShape();
 
     if ( shape0.IsNull() || shape1.IsNull() )
     {
@@ -847,6 +783,62 @@ void ViewerWidget::mirrorByAxis()
     m_occView->mirrorByAxis(shape0, mirrorAxis);
 }
 
+void ViewerWidget::shell()
+{
+    const auto acitveView = ViewManager::getInstance().getActiveView();
+    if( !acitveView )
+        return ;
+    const auto& selectedList = acitveView->getSelectedObjects();
+    if ( selectedList.size() != 1 )
+    {
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly one face."));
+        return ;
+    }
+
+    const auto shape0 = selectedList.at(0)->GetSelectedShape();
+    if ( shape0.ShapeType() != TopAbs_FACE ){
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Type Error."));
+        return;
+    }
+    const auto boxObject = selectedList.at(0)->GetParentInteractiveObject();
+    const auto aisBox = Handle(AIS_Shape)::DownCast(boxObject);
+    const auto box = aisBox->Shape();
+    if(box.ShapeType() !=  TopAbs_SOLID){
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Type Error."));
+        return ;
+    }
+
+    Quantity_Color color;
+    boxObject->Color(color);
+
+    TopoDS_Face face = TopoDS::Face(shape0);
+    Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
+    Handle(Geom_Plane) geomPlane = Handle(Geom_Plane)::DownCast(surface);
+    if(geomPlane.IsNull()){
+        return ;
+    }
+    TopTools_ListOfShape facesToRemove;
+    Standard_Real maxZ = -1e10;
+    TopoDS_Face topFace;
+    for (TopExp_Explorer exp(box, TopAbs_FACE); exp.More(); exp.Next()) {
+        TopoDS_Face face = TopoDS::Face(exp.Current());
+        
+        GProp_GProps props;
+        BRepGProp::SurfaceProperties(face, props);
+        gp_Pnt center = props.CentreOfMass();
+        
+        if (center.Z() > maxZ) {
+            maxZ = center.Z();
+            topFace = face;
+        }
+    }
+    facesToRemove.Append(topFace);
+    m_occView->clearSelectedObjects();
+    auto newShape = m_occView->shell(box, facesToRemove);
+    removeShape(box); 
+    displayShape(newShape, color.Red(), color.Green(), color.Blue());
+}
+
 void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const double g, const double b)
 {
     Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
@@ -859,7 +851,9 @@ void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const
 
 void ViewerWidget::removeShape(const TopoDS_Shape &shape)
 {
-    // TODO
+    m_occView->removeShape(shape);
+    m_occView->reDraw();
+    m_occView->viewfit(); // Fit view to the new shape
 }
 
 const std::map<TopAbs_ShapeEnum, bool>& ViewerWidget::getSelectionFilters() const {

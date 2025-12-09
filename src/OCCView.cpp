@@ -2,6 +2,7 @@
 #include "CollisionDetector.h"
 #include "OcctGlTools.h"
 #include "TopoShapeUtil.h"
+#include "SelectedEntity.h"
 #ifdef _WIN32
 #include <windows.h>
 #endif
@@ -31,6 +32,9 @@
 #include <TopoDS_Shape.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
+#include <BRepOffsetAPI_MakeThickSolid.hxx>
+#include <SelectMgr_EntityOwner.hxx>
+#include <StdSelect_BRepOwner.hxx>
 #include <Message.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <OpenGl_FrameBuffer.hxx>
@@ -42,6 +46,7 @@
 #include <XCAFApp_Application.hxx>
 #include <XCAFDoc_ColorTool.hxx>
 #include <XCAFPrs_AISObject.hxx>
+
 
 
 View::InterfereceSetting OCCView::m_interfereceSetting{ 1.0, 0.0, 0.0, 0.0, 10, true };
@@ -394,11 +399,16 @@ OCCView::~OCCView()
 
 void OCCView::updateSelectionFilter(TopAbs_ShapeEnum target, bool theIsActive)
 {
+    /*
+    * graphics_scene.cpp
+    * GraphicsScene::activateObjectSelection
+    */
     m_selectionFilters.at(target) = theIsActive;
-    m_context->Deactivate();
     for (const auto &filter : m_selectionFilters) {
         if (filter.second) {
             m_context->Activate(AIS_Shape::SelectionMode(filter.first));
+        }else{
+            m_context->Deactivate(AIS_Shape::SelectionMode(filter.first));
         }
     }
 }
@@ -503,20 +513,36 @@ void OCCView::mousePressEvent(QMouseEvent *theEvent)
 {
     if (m_mouseMode == View::MouseMode::SELECTION)
     {
+        // Perform selection first before checking selected objects
         const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier) ? AIS_SelectionScheme_Add : AIS_SelectionScheme_Replace;
         m_context->SelectDetected(aScheme);
 
-        if (m_context->HasDetected())
+        // Now process the selected objects
+        if (m_context->NbSelected())
         {
-            const Handle(AIS_InteractiveObject) &detectedObject = m_context->DetectedInteractive();
-            if (!detectedObject.IsNull())
+            for (m_context->InitSelected(); m_context->MoreSelected(); m_context->NextSelected())
             {
-                // Check if the object is already in the list to avoid duplicates
-                auto it = std::find(m_selectedObjects.begin(), m_selectedObjects.end(), detectedObject);
-                if (it == m_selectedObjects.end())
+                Handle(SelectMgr_EntityOwner) owner = m_context->SelectedOwner();
+                if (!owner.IsNull())
                 {
-                    m_selectedObjects.emplace_back(detectedObject);
+                    Handle(StdSelect_BRepOwner) brepOwner =  Handle(StdSelect_BRepOwner)::DownCast(owner);
+                    if (!brepOwner.IsNull())
+                    {
+                        TopoDS_Shape selectedShape = brepOwner->Shape();
+                        auto it = std::find_if (m_selectedObjects.begin(),
+                                          m_selectedObjects.end(),
+                                          [&](const auto& it){
+                                            return selectedShape.IsSame(it->GetSelectedShape());
+                                          });
+                        if (it == m_selectedObjects.end())
+                        {
+                            Handle(AIS_InteractiveObject) parentObject = Handle(AIS_InteractiveObject)::DownCast(owner->Selectable());
+                            auto entity = std::make_shared<View::SelectedEntity>(parentObject,selectedShape);
+                            m_selectedObjects.emplace_back(entity);
+                        }
+                    }
                 }
+
             }
         }
     }
@@ -706,12 +732,40 @@ void OCCView::setShape(const Handle(AIS_InteractiveObject) & loadedShape)
     m_loadedObjects.emplace_back(loadedShape);
 }
 
+void OCCView::removeShape(const TopoDS_Shape& removeShape)
+{
+    auto it = std::find_if(m_loadedObjects.begin(), m_loadedObjects.end(), [&](const Handle(AIS_InteractiveObject)& obj) {
+        if (obj.IsNull()) {
+            return false;
+        }
+
+        TopoDS_Shape currentShape;
+        if (obj->IsKind(STANDARD_TYPE(AIS_Shape)))
+        {
+            currentShape = Handle(AIS_Shape)::DownCast(obj)->Shape();
+        }
+        else if (obj->IsKind(STANDARD_TYPE(XCAFPrs_AISObject)))
+        {
+            return false; 
+        }
+
+        return !currentShape.IsNull() && currentShape.IsSame(removeShape);
+    });
+
+    if (it != m_loadedObjects.end()) {
+        // remove from context (preview)
+        m_context->Erase(*it, false);
+        
+        m_loadedObjects.erase(it);
+    }
+    auto size1 = m_loadedObjects.size();
+}
 const std::vector<Handle(AIS_InteractiveObject)> &OCCView::getShapeObjects() const
 {
     return m_loadedObjects;
 }
 
-const std::vector<Handle(AIS_InteractiveObject)> &OCCView::getSelectedObjects() const
+const std::vector<std::shared_ptr<View::SelectedEntity>> &OCCView::getSelectedObjects() const
 {
     return m_selectedObjects;
 }
@@ -731,10 +785,10 @@ std::vector<Handle( AIS_Shape )> OCCView::getSelectedAisShape( const int count )
     if ( m_selectedObjects.size() != count )
         return selectedAisShapes;
     for( int i = 0; i < count; ++i ){
-        const auto obj = m_selectedObjects.at(i);
+        const auto obj = m_selectedObjects.at(i)->m_parentObject;
         if ( obj.IsNull() )
             return selectedAisShapes;
-            
+
         const auto aisShape = Handle(AIS_Shape)::DownCast(obj);
         if (aisShape.IsNull() )
             return selectedAisShapes;
@@ -831,8 +885,8 @@ void OCCView::checkInterference()
     {
         for (size_t j = i + 1; j < selectObjects.size(); ++j)
         {
-            Handle(AIS_InteractiveObject) objA = selectObjects.at(i);
-            Handle(AIS_InteractiveObject) objB = selectObjects.at(j);
+            Handle(AIS_InteractiveObject) objA = selectObjects.at(i)->GetParentInteractiveObject();
+            Handle(AIS_InteractiveObject) objB = selectObjects.at(j)->GetParentInteractiveObject();
 
             const auto shapeA = getShape(objA);
             const auto shapeB = getShape(objB); // Fixed bug: was using objA for both
@@ -1323,6 +1377,23 @@ void OCCView::mirrorByAxis(const TopoDS_Shape &shape, const gp_Ax1 &mirrorAxis)
         }
     }
     reDraw();
+}
+
+TopoDS_Shape OCCView::shell(const TopoDS_Shape &box, const TopTools_ListOfShape &facesToRemove,
+                    const Standard_Real thickness, const Standard_Real tolerance)
+{
+    BRepOffsetAPI_MakeThickSolid thickSolid;
+    thickSolid.MakeThickSolidByJoin(
+        box,
+        facesToRemove,
+        thickness,
+        tolerance
+    );
+    if (thickSolid.IsDone()) {
+        TopoDS_Shape shellShape = thickSolid.Shape();
+        return shellShape;
+    }
+    return {};
 }
 
 void OCCView::OnSubviewChanged(const Handle(AIS_InteractiveContext) &, const Handle(V3d_View) &,

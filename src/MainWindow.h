@@ -77,6 +77,7 @@ private slots:
     void onMirrorByAxis();
     void onPatternLinear();
     void onPatternCircular();
+    void onShapeToolShell();
 
     /* help */
     void onSwitchLanguage();
@@ -153,6 +154,7 @@ private:
     SARibbonPannel* m_shapeBooleanPannel;
     SARibbonPannel* m_mirrorPannel;
     SARibbonPannel* m_patternPannel;
+    SARibbonPannel* m_shapeToolPannel{};
     QAction* m_boxAction;
     QAction* m_sphereAction;
     QAction* m_cylinderAction;
@@ -174,6 +176,7 @@ private:
     QAction* m_mirrorByAxisAction;
     QAction* m_patternLinearAction;
     QAction* m_patternCircularAction;
+    QAction* m_shapeToolShellAction{};
 
 
     // ---- help Group ----
