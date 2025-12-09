@@ -513,9 +513,11 @@ void OCCView::mousePressEvent(QMouseEvent *theEvent)
 {
     if (m_mouseMode == View::MouseMode::SELECTION)
     {
-        // const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier) ? AIS_SelectionScheme_Add : AIS_SelectionScheme_Replace;
-        // m_context->SelectDetected(aScheme);
-        // TODO first click could not select
+        // Perform selection first before checking selected objects
+        const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier) ? AIS_SelectionScheme_Add : AIS_SelectionScheme_Replace;
+        m_context->SelectDetected(aScheme);
+
+        // Now process the selected objects
         if (m_context->NbSelected())
         {
             for (m_context->InitSelected(); m_context->MoreSelected(); m_context->NextSelected())
@@ -527,8 +529,8 @@ void OCCView::mousePressEvent(QMouseEvent *theEvent)
                     if (!brepOwner.IsNull())
                     {
                         TopoDS_Shape selectedShape = brepOwner->Shape();
-                        auto it = std::find_if (m_selectedObjects.begin(), 
-                                          m_selectedObjects.end(), 
+                        auto it = std::find_if (m_selectedObjects.begin(),
+                                          m_selectedObjects.end(),
                                           [&](const auto& it){
                                             return selectedShape.IsSame(it->GetSelectedShape());
                                           });
