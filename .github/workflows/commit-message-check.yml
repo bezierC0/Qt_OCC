@@ -1,0 +1,94 @@
+name: Check Commit Messages
+
+on:
+  push:  # Check all branches on push
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  commit-message:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Get full git history to check commit messages
+
+    - name: Get changed files
+      id: changed-files
+      uses: tj-actions/changed-files@v41
+      with:
+        since_last_remote_commit: true
+
+    - name: Check commit messages on push
+      if: github.event_name == 'push'
+      run: |
+        echo "Checking commit messages..."
+
+        # Get the latest commits
+        commits=${{ github.event.after }}
+
+        # Check each commit message
+        for commit in $(git rev-list origin/${{ github.ref_name }}..$commits); do
+          message=$(git log --format=%B -n 1 $commit)
+          echo "Commit: $commit"
+          echo "Message: $message"
+
+          # Check format - must start with one of these types
+          if ! echo "$message" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+'; then
+            echo "❌ Error: Commit message must start with one of the following types:"
+            echo "   feat: New feature"
+            echo "   fix: Bug fix"
+            echo "   docs: Documentation update"
+            echo "   style: Code formatting changes (no functional changes)"
+            echo "   refactor: Code refactoring"
+            echo "   test: Test related"
+            echo "   chore: Build process or auxiliary tool changes"
+            echo "   perf: Performance optimization"
+            echo "   ci: CI configuration file and script changes"
+            echo "   build: Build system or external dependency changes"
+            echo "   revert: Revert previous commit"
+            exit 1
+          fi
+
+          echo "✅ Format correct"
+        done
+
+    - name: Check commit messages on PR
+      if: github.event_name == 'pull_request'
+      run: |
+        echo "Checking PR commit messages..."
+
+        # Get all PR commits
+        commits=$(git rev-list origin/${{ github.base_ref }}..HEAD)
+
+        # Check each commit message
+        for commit in $commits; do
+          message=$(git log --format=%B -n 1 $commit)
+          echo "Commit: $commit"
+          echo "Message: $message"
+
+          # Check format
+          if ! echo "$message" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+'; then
+            echo "❌ Error: Commit message must start with one of the following types:"
+            echo "   feat: New feature"
+            echo "   fix: Bug fix"
+            echo "   docs: Documentation update"
+            echo "   style: Code formatting changes (no functional changes)"
+            echo "   refactor: Code refactoring"
+            echo "   test: Test related"
+            echo "   chore: Build process or auxiliary tool changes"
+            echo "   perf: Performance optimization"
+            echo "   ci: CI configuration file and script changes"
+            echo "   build: Build system or external dependency changes"
+            echo "   revert: Revert previous commit"
+            echo ""
+            echo "Example formats:"
+            echo "   feat: Add user login functionality"
+            echo "   fix: Fix login page display issue"
+            echo "   docs: Update README installation instructions"
+            exit 1
+          fi
+
+          echo "✅ Format correct"
+        done
