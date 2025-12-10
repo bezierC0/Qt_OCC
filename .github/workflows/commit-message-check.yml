@@ -35,7 +35,7 @@ jobs:
           echo "Message: $message"
 
           # Check format - must start with one of these types
-          if [[ ! "$message" =~ ^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+ ]]; then
+          if ! echo "$message" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+'; then
             echo "❌ Error: Commit message must start with one of the following types:"
             echo "   feat: New feature"
             echo "   fix: Bug fix"
@@ -69,7 +69,7 @@ jobs:
           echo "Message: $message"
 
           # Check format
-          if [[ ! "$message" =~ ^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+ ]]; then
+          if ! echo "$message" | grep -qE '^(feat|fix|docs|style|refactor|test|chore|perf|ci|build|revert)(\(.+\))?: .+'; then
             echo "❌ Error: Commit message must start with one of the following types:"
             echo "   feat: New feature"
             echo "   fix: Bug fix"
