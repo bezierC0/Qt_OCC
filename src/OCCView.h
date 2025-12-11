@@ -13,6 +13,11 @@
 #include <V3d_View.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopTools_ListOfShape.hxx>
+#include <gp_Pln.hxx>
+#include <gp_Pnt2d.hxx>
+#include <ProjLib.hxx>
+#include <ElSLib.hxx>
+#include <AIS_TextLabel.hxx>
 
 
 
@@ -235,12 +240,18 @@ private:
     //! Request widget paintGL() event.
     void updateView();
 
+    /*
+    * ! Convert screen coordinates to 3D world coordinates.
+    * graphics_utils.cpp GraphicsUtils::V3dView_to3dPosition
+    */
+    gp_Pnt screenToWorld(double x, double y);
+
+    //! Update coordinate text display.
+    void updateCoordinateDisplay(double screenX, double screenY);
+
     //! Handle view redraw.
     void handleViewRedraw(const Handle(AIS_InteractiveContext) & theCtx,
                           const Handle(V3d_View) & theView) override;
-    //! Viewer handle.
-
-    //! View handle.
 private:
     Handle(V3d_Viewer)              m_viewer; //! AIS context handle.
     Handle(V3d_View)                m_view; //! View cube handle.
@@ -269,4 +280,12 @@ private:
     View::WorkPlane                                                     m_workPlane{};
     std::vector<std::shared_ptr<View::ClippingPlane>>                   m_clippingPlanes{};
     static View::InterfereceSetting                                     m_interfereceSetting ;
+
+    // Coordinate display(TODO function has a bug: fit with Label)
+    gp_Pnt                                                              m_currentMouseWorldPos{0, 0, 0};        //! Current mouse world position
+    bool                                                                m_showMouseCoordinates{false};          //! Show coordinate text flag
+    Handle(AIS_TextLabel)                                               m_mouseCoordinateLabel{};               //! Coordinate text label for display
+    const double                                                        m_textOffsetX{10.0};                    // text label offset to the right
+    const double                                                        m_textOffsetY{-m_textOffsetX};          // text label offset to up
+
 };
