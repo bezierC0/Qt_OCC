@@ -8,12 +8,15 @@
 #endif
 #include <OpenGl_Context.hxx>
 
-#include <Standard_WarningsDisable.hxx>
 #include <QApplication>
 #include <QMessageBox>
 #include <QMouseEvent>
+
 #include <iostream>
+#include <cmath>
+
 #include <Standard_WarningsRestore.hxx>
+#include <Standard_WarningsDisable.hxx>
 
 #include <AIS_Shape.hxx>
 #include <AIS_ViewCube.hxx>
@@ -46,6 +49,12 @@
 #include <XCAFApp_Application.hxx>
 #include <XCAFDoc_ColorTool.hxx>
 #include <XCAFPrs_AISObject.hxx>
+#include <gp_Pln.hxx>
+#include <gp_Pnt2d.hxx>
+#include <ProjLib.hxx>
+#include <ElSLib.hxx>
+#include <NCollection_DataMap.hxx>
+
 
 
 
@@ -356,6 +365,18 @@ OCCView::OCCView(QWidget *theParent)
     // Manipulator setup
     m_manipulator = new AIS_Manipulator();
 
+    // Coordinate display setup
+    if( m_showMouseCoordinates ){
+        m_mouseCoordinateLabel = new AIS_TextLabel();
+        m_mouseCoordinateLabel->SetColor(Quantity_NOC_WHITE);
+        m_mouseCoordinateLabel->SetDisplayMode(AIS_WireFrame);
+        m_mouseCoordinateLabel->SetTransformPersistence(new Graphic3d_TransformPers(Graphic3d_TMF_ZoomRotatePers)); // not zoom and rotate
+        m_mouseCoordinateLabel->SetZLayer(Graphic3d_ZLayerId_Topmost);
+        m_mouseCoordinateLabel->SetInfiniteState(true);// not fit?
+        m_context->Display(m_mouseCoordinateLabel, false);
+    }
+
+
     // Qt widget setup
     setMouseTracking(true);
     setBackgroundRole(QPalette::NoRole); // or NoBackground
@@ -589,6 +610,12 @@ void OCCView::mouseMoveEvent(QMouseEvent *theEvent)
     {
         updateView();
     }
+
+    // Update coordinate display at mouse position
+    if( m_showMouseCoordinates )
+    {
+        updateCoordinateDisplay(theEvent->pos().x(), theEvent->pos().y());
+    }
 }
 
 void OCCView::wheelEvent(QWheelEvent *theEvent)
@@ -620,6 +647,61 @@ void OCCView::wheelEvent(QWheelEvent *theEvent)
     {
         updateView();
     }
+}
+
+gp_Pnt OCCView::screenToWorld(double x, double y)
+{
+    if (m_view.IsNull())
+    {
+        return gp_Pnt(0, 0, 0);
+    }
+
+    // Convert screen coordinates to 3D world coordinates directly
+    double px = 0.0, py = 0.0, pz = 0.0;
+    const int ix = std::lround(x);
+    const int iy = std::lround(y);
+    m_view->Convert(ix, iy, px, py, pz);
+
+    return gp_Pnt(px, py, pz);
+}
+
+void OCCView::updateCoordinateDisplay(double screenX, double screenY)
+{
+    if (!m_showMouseCoordinates || m_mouseCoordinateLabel.IsNull() || m_view.IsNull())
+    {
+        return;
+    }
+
+    if(AIS_MouseGesture::AIS_MouseGesture_NONE != myMouseActiveGesture && m_context->IsDisplayed(m_mouseCoordinateLabel))
+    {
+        m_context->Erase(m_mouseCoordinateLabel, false);
+        return;
+    }
+
+    // Update the stored world position
+    m_currentMouseWorldPos = screenToWorld(screenX, screenY);
+
+    // Format the coordinate text
+    std::ostringstream ss;
+    ss << std::fixed << std::setprecision(0);
+    ss << "X: " << m_currentMouseWorldPos.X()
+        << ", Y: " << m_currentMouseWorldPos.Y()
+        << ", Z: " << m_currentMouseWorldPos.Z();
+
+    TCollection_AsciiString coordText(ss.str().c_str());
+
+    m_mouseCoordinateLabel->SetText(coordText);
+
+    // Position the text near the mouse cursor (offset to the right and slightly up)
+    gp_Pnt textPos = screenToWorld(screenX + m_textOffsetX, screenY + m_textOffsetY);
+    m_mouseCoordinateLabel->SetPosition(textPos);
+
+    // Update the display
+    if (!m_context->IsDisplayed(m_mouseCoordinateLabel))
+    {
+        m_context->Display(m_mouseCoordinateLabel, false);
+    }
+    m_context->Redisplay(m_mouseCoordinateLabel, false);
 }
 
 void OCCView::updateView()
@@ -1071,7 +1153,7 @@ void OCCView::viewfit()
     aCamStart->Copy(m_view->Camera());
 
     // This modifies the view's internal camera to the "fitted" state.
-    m_view->FitAll();
+    m_view->FitAll(0.01, false);
 
     // Create a copy of the new (end) camera state.
     Handle(Graphic3d_Camera) aCamEnd = new Graphic3d_Camera();
