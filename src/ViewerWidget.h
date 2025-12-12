@@ -77,10 +77,11 @@ public:
     void mirrorByPlane();
     void mirrorByAxis();
     void shell();
-    
+
     void displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0); // Add this function
     void removeShape(const TopoDS_Shape& shape);
     const std::map<TopAbs_ShapeEnum, bool>& getSelectionFilters() const ;
+    void repairAndSave(const TopoDS_Shape& shape);
 
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
@@ -88,6 +89,7 @@ private:
 private:
     OCCView* m_occView;
     std::shared_ptr<Document> m_doc;
+    bool m_importWithHealing{false};
 
     //TopoDS_Shape m_loadedShape;
 };
