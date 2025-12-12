@@ -66,6 +66,28 @@
 #include <GeomAbs_CurveType.hxx>
 #include <TopTools_ListOfShape.hxx>
 
+/* healing */
+#include <ShapeFix_Shape.hxx>
+#include <STEPControl_Writer.hxx>
+#include <TopoDS_Compound.hxx>
+#include <BRep_Builder.hxx>
+#include <ShapeFix_Shape.hxx>
+#include <ShapeFix_Solid.hxx>
+#include <ShapeFix_Face.hxx>
+#include <ShapeFix_Wire.hxx>
+#include <ShapeFix_FixSmallFace.hxx>
+#include <ShapeFix.hxx>
+#include <ShapeUpgrade_UnifySameDomain.hxx>
+#include <ShapeBuild_ReShape.hxx>
+#include <BRepCheck_Analyzer.hxx>
+#include <BRepBuilderAPI_Sewing.hxx>
+#include <STEPControl_Writer.hxx>
+#include <IFSelect_ReturnStatus.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
+#include <QMessageBox>
+#include <QDebug>
+
 namespace
 {
     bool isShapeAssembly(const TDF_Label &lbl)
@@ -235,11 +257,29 @@ void ViewerWidget::loadModel(const QString &filename)
             deepBuildAssemblyTree(0, label, modelTree);
         }
 
-        for (const auto &it : modelTree.m_vecNode)
-        {
+        // Collect shapes for healing
+        if(m_importWithHealing){
+            TopoDS_Compound compound;
+            BRep_Builder builder;
+            builder.MakeCompound(compound);
+            bool hasShapes = false;
+            for (const TDF_Label &label : labels) {
+                TopoDS_Shape shape;
+                if (XCAFDoc_ShapeTool::GetShape(label, shape)) {
+                    builder.Add(compound, shape);
+                    hasShapes = true;
+                }
+            }
+
+            if (hasShapes) {
+                repairAndSave(compound);
+            }
+        }
+
+
+        for (const auto &it : modelTree.m_vecNode) {
             TDF_Label label = it.data;
-            if (isShapeReference(label))
-            {
+            if (isShapeReference(label)) {
                 TopoDS_Shape part;
 
                 Handle(XCAFPrs_AISObject) object = new XCAFPrs_AISObject(label);
@@ -625,6 +665,139 @@ void ViewerWidget::booleanIntersection()
         m_occView->clearSelectedObjects();
     }  else {
         QMessageBox::warning(this, tr("Boolean Operation Failed"), tr("Boolean Intersection operation failed!"));
+    }
+}
+
+void ViewerWidget::repairAndSave(const TopoDS_Shape &shape)
+{
+    TopoDS_Shape repairedShape = shape;
+    
+    // 1.  ShapeFix_Shape
+    qDebug() << "Step 1: Basic shape fixing...";
+    Handle(ShapeFix_Shape) shapeFixer = new ShapeFix_Shape(repairedShape);
+    shapeFixer->SetPrecision(1e-6);
+    shapeFixer->SetMinTolerance(1e-7);
+    shapeFixer->SetMaxTolerance(1.0);
+    
+    // 
+    shapeFixer->FixFreeShellMode() = 1;      
+    shapeFixer->FixFreeFaceMode() = 1;       
+    shapeFixer->FixFreeWireMode() = 1;       
+    shapeFixer->FixSameParameterMode() = 1;  
+    shapeFixer->FixVertexPositionMode() = 1; 
+    
+    shapeFixer->Perform();
+    repairedShape = shapeFixer->Shape();
+    
+    // 2. Fixing solids
+    qDebug() << "Step 2: Fixing solids...";
+    for (TopExp_Explorer exp(repairedShape, TopAbs_SOLID); exp.More(); exp.Next()) {
+        TopoDS_Solid solid = TopoDS::Solid(exp.Current());
+        Handle(ShapeFix_Solid) solidFixer = new ShapeFix_Solid();
+        solidFixer->Init(solid); 
+        solidFixer->SetPrecision(1e-6);
+        solidFixer->SetMaxTolerance(1.0);
+        solidFixer->FixShellMode() = 1;
+        solidFixer->Perform();
+    }
+    
+    // 3. Fixing face
+    qDebug() << "Step 3: Fixing face orientations...";
+    for (TopExp_Explorer exp(repairedShape, TopAbs_FACE); exp.More(); exp.Next()) {
+        TopoDS_Face face = TopoDS::Face(exp.Current());
+        Handle(ShapeFix_Face) faceFixer = new ShapeFix_Face(face);
+        faceFixer->SetPrecision(1e-6);
+        faceFixer->SetMaxTolerance(1.0);
+        faceFixer->FixOrientationMode() = 1;
+        faceFixer->FixAddNaturalBoundMode() = 1;
+        faceFixer->FixMissingSeamMode() = 1;
+        faceFixer->FixPeriodicDegeneratedMode() = 1;
+        faceFixer->Perform();
+    }
+    
+    // 4. Fixing wires
+    qDebug() << "Step 4: Fixing wires...";
+    for (TopExp_Explorer exp(repairedShape, TopAbs_WIRE); exp.More(); exp.Next()) {
+        TopoDS_Wire wire = TopoDS::Wire(exp.Current());
+        Handle(ShapeFix_Wire) wireFixer = new ShapeFix_Wire();
+        wireFixer->Load(wire);
+        wireFixer->SetPrecision(1e-6);
+        wireFixer->SetMaxTolerance(1.0);
+        wireFixer->FixReorder();           
+        wireFixer->FixConnected();         
+        wireFixer->FixEdgeCurves();        
+        wireFixer->FixDegenerated();       
+        wireFixer->FixSelfIntersection();  
+        wireFixer->FixLacking();           
+        wireFixer->FixClosed();            
+        wireFixer->FixGaps3d();            
+        wireFixer->FixGaps2d();            
+    }
+    
+    // 5. Removing small features
+    qDebug() << "Step 5: Removing small features...";
+    Handle(ShapeFix_FixSmallFace) smallFaceFixer = new ShapeFix_FixSmallFace();
+    smallFaceFixer->Init(repairedShape);
+    smallFaceFixer->SetPrecision(1e-6);
+    smallFaceFixer->Perform();
+    repairedShape = smallFaceFixer->Shape();
+    
+    // 6. Unifying same domain
+    qDebug() << "Step 6: Unifying same domain...";
+    ShapeUpgrade_UnifySameDomain unifier(repairedShape);
+    unifier.SetLinearTolerance(1e-6);
+    unifier.SetAngularTolerance(1e-4);
+    unifier.AllowInternalEdges(Standard_False); 
+    unifier.SetSafeInputMode(Standard_True);    
+    unifier.Build();
+    repairedShape = unifier.Shape();
+    
+    // 7.Simplifying shape
+    qDebug() << "Step 7: Simplifying shape...";
+    Handle(ShapeBuild_ReShape) reShape = new ShapeBuild_ReShape();
+    reShape->Apply(repairedShape);
+    repairedShape = reShape->Apply(repairedShape);
+    
+    // 8. Fixing tolerances.
+    qDebug() << "Step 8: Fixing tolerances...";
+    ShapeFix::SameParameter(repairedShape, Standard_False);
+    
+    // 9. Validating repaired shape.
+    qDebug() << "Step 9: Validating repaired shape...";
+    BRepCheck_Analyzer analyzer(repairedShape);
+    if (!analyzer.IsValid()) {
+        qDebug() << "Warning: Shape is still invalid after repair";
+        
+
+        qDebug() << "Attempting more aggressive repair...";
+        BRepBuilderAPI_Sewing sewing(1e-6);
+        sewing.Load(repairedShape);
+        sewing.Perform();
+        repairedShape = sewing.SewedShape();
+        
+
+        BRepCheck_Analyzer finalAnalyzer(repairedShape);
+        if (finalAnalyzer.IsValid()) {
+            qDebug() << "Shape repaired successfully after sewing";
+        } else {
+            qDebug() << "Shape remains invalid - saving anyway";
+        }
+    } else {
+        qDebug() << "Shape is valid!";
+    }
+    
+    // 10. Saving repaired shape
+    qDebug() << "Step 10: Saving repaired shape...";
+    STEPControl_Writer writer;
+    writer.Transfer(repairedShape, STEPControl_AsIs);
+    IFSelect_ReturnStatus status = writer.Write("fix.stp");
+    
+    if (status == IFSelect_RetDone) {
+        QMessageBox::information(this, "Success", 
+            "Shape repaired and saved to fix.stp successfully!");
+    } else {
+        QMessageBox::warning(this, "Error", 
+            "Failed to write fix.stp");
     }
 }
 
