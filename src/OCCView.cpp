@@ -373,8 +373,6 @@ OCCView::OCCView(QWidget *theParent)
     m_viewer->AddLight(aDirLight3);
     m_viewer->SetLightOn(aDirLight3);
 
-    // Keep reference to ambient light in m_light if needed, or just let it be.
-    m_light = aAmbLight;
     //m_viewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines); // show grid grand
 
     // create AIS context
