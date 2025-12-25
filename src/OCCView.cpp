@@ -18,6 +18,9 @@
 #include <Standard_WarningsRestore.hxx>
 #include <Standard_WarningsDisable.hxx>
 
+#include <V3d_AmbientLight.hxx>
+#include <V3d_DirectionalLight.hxx>
+
 #include <AIS_Shape.hxx>
 #include <AIS_ViewCube.hxx>
 #include <AIS_Manipulator.hxx>
@@ -285,8 +288,7 @@ ClippingPlane::ClippingPlane(const Handle(Graphic3d_ClipPlane)& clipPlane, const
     m_clipPlane->SetOn(isOn);
     m_clipPlane->SetCapping(isCapping);
 }
-} 
-
+} // namespace View
 
 //! OpenGL FBO subclass for wrapping FBO created by Qt using GL_RGBA8 texture format instead of GL_SRGB8_ALPHA8.
 //! This FBO is set to OpenGl_Context::SetDefaultFrameBuffer() as a final target.
@@ -336,8 +338,43 @@ OCCView::OCCView(QWidget *theParent)
     // create viewer
     m_viewer = new V3d_Viewer(aDriver);
     m_viewer->SetDefaultBackgroundColor(Quantity_NOC_CADETBLUE);
-    m_viewer->SetDefaultLights();
+
+    // light
     m_viewer->SetLightOn();
+
+    // Create and add ambient light with higher intensity
+    Handle(V3d_AmbientLight) aAmbLight = new V3d_AmbientLight(Quantity_NOC_WHITE);
+    aAmbLight->SetIntensity(0.3);  // Reduced ambient to avoid over-brightness
+    m_viewer->AddLight(aAmbLight);
+    m_viewer->SetLightOn(aAmbLight);
+
+    // Create multiple directional lights from different angles to avoid dark faces
+    // Main directional light from front-top
+    Handle(V3d_DirectionalLight) aDirLight1 =
+        new V3d_DirectionalLight(gp_Dir(-0.5, -0.5, -1.0), Quantity_NOC_WHITE, Standard_False);
+    aDirLight1->SetName("Light1");
+    aDirLight1->SetIntensity(0.6);
+    m_viewer->AddLight(aDirLight1);
+    m_viewer->SetLightOn(aDirLight1);
+
+    // Secondary light from opposite direction
+    Handle(V3d_DirectionalLight) aDirLight2 =
+        new V3d_DirectionalLight(gp_Dir(0.5, 0.5, 0.3), Quantity_NOC_WHITE, Standard_False);
+    aDirLight2->SetName("Light2");
+    aDirLight2->SetIntensity(0.4);
+    m_viewer->AddLight(aDirLight2);
+    m_viewer->SetLightOn(aDirLight2);
+
+    // Side light to illuminate edges
+    Handle(V3d_DirectionalLight) aDirLight3 =
+        new V3d_DirectionalLight(gp_Dir(1.0, 0.0, -0.2), Quantity_NOC_WHITE, Standard_False);
+    aDirLight3->SetName("Light3");
+    aDirLight3->SetIntensity(0.3);
+    m_viewer->AddLight(aDirLight3);
+    m_viewer->SetLightOn(aDirLight3);
+
+    // Keep reference to ambient light in m_light if needed, or just let it be.
+    m_light = aAmbLight;
     //m_viewer->ActivateGrid(Aspect_GT_Rectangular, Aspect_GDM_Lines); // show grid grand
 
     // create AIS context
@@ -375,7 +412,6 @@ OCCView::OCCView(QWidget *theParent)
         m_mouseCoordinateLabel->SetInfiniteState(true);// not fit?
         m_context->Display(m_mouseCoordinateLabel, false);
     }
-
 
     // Qt widget setup
     setMouseTracking(true);
@@ -923,7 +959,7 @@ void OCCView::transform()
 
         attachManipulator(obj);
 
-        #if 0
+#if 0
         gp_Trsf currentTrsf = aisShape->LocalTransformation();
 
 
@@ -934,7 +970,7 @@ void OCCView::transform()
         aisShape->SetLocalTransformation(currentTrsf);
 
         Context()->Redisplay(aisShape, true);
-        #endif
+#endif
     }
     reDraw();
 }
@@ -1000,19 +1036,19 @@ void OCCView::checkInterference()
         wireframe->SetColor(color);
 
         Handle(Prs3d_Drawer) drawer = wireframe->Attributes();
-        
+
         Handle(Prs3d_LineAspect) lineAspect = new Prs3d_LineAspect(color, Aspect_TOL_SOLID, width);
-        
+
         drawer->SetWireAspect(lineAspect);
         drawer->SetLineAspect(lineAspect);
         drawer->SetFreeBoundaryAspect(lineAspect);
         drawer->SetUnFreeBoundaryAspect(lineAspect);
-        
+
         Handle(Prs3d_LineAspect) edgeAspect = new Prs3d_LineAspect(color, Aspect_TOL_SOLID, width);
         drawer->SetFaceBoundaryAspect(edgeAspect);
-        
+
         drawer->SetFaceBoundaryDraw(Standard_True);
-        
+
         return wireframe;
     };
 
@@ -1049,7 +1085,6 @@ void OCCView::checkInterference()
 void OCCView::reDraw()
 {
     auto reDisplayMode = [&](const Handle(AIS_InteractiveObject) & object) {
-
         auto fnSetViewComputedMode = [=](bool on) {
             for (auto it = m_context->CurrentViewer()->DefinedViewIterator(); it.More(); it.Next())
                 it.Value()->SetComputedMode(on);
@@ -1086,7 +1121,6 @@ void OCCView::reDraw()
                     object->Redisplay(true /*AllModes*/);
                 }
             }
-            
         }
     };
     for (const auto &object : m_loadedObjects)
