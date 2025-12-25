@@ -27,6 +27,7 @@ private slots:
     void onSaveFile();
     void onSaveAsFile();
     void onExportFile();
+    void onExportThreeViewDrawing();
     void onExit();
 
     /* view */
@@ -108,8 +109,10 @@ private:
     // ---- File Group ----
     SARibbonCategory* m_fileCategory;
     SARibbonPannel* m_filePannel;
+    SARibbonPannel* m_exportPannel;
     QAction* m_newAction;
     QAction* m_openAction;
+    QAction* m_exportThreeViewDrawingAction;
 
     // ---- View Group ----
     SARibbonCategory* m_viewCategory;

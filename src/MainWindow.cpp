@@ -115,6 +115,17 @@ void MainWindow::createFileGroup()
     m_openAction = new QAction(QIcon(":/icons/icon/open.png"), tr("Open"), this); // Assuming an icon path
     connect(m_openAction, &QAction::triggered, this, &MainWindow::onOpenFile);
     m_filePannel->addLargeAction(m_openAction);
+
+    // export pannel
+    auto createExportPannel = [&](){
+        m_exportPannel = m_fileCategory->addPannel(tr("Export"));
+
+        m_exportThreeViewDrawingAction = new QAction(QIcon(":/icons/icon/export_three_view_drawing.svg"), tr("Three-View Drawing"), this); // Assuming an icon path
+        connect(m_exportThreeViewDrawingAction, &QAction::triggered, this, &MainWindow::onExportThreeViewDrawing);
+
+        m_exportPannel->addLargeAction(m_exportThreeViewDrawingAction);
+    };
+    createExportPannel();
 }
 
 void MainWindow::createViewGroup()
@@ -537,6 +548,11 @@ void MainWindow::onSaveAsFile()
 void MainWindow::onExportFile()
 {
     // TODO
+}
+
+void MainWindow::onExportThreeViewDrawing()
+{
+    m_viewerWidget->exportThreeViewDrawing();
 }
 
 void MainWindow::onExit()

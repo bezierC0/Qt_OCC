@@ -29,6 +29,7 @@ public:
 
     void clearAll();
     void loadModel(const QString& filename);
+    void exportThreeViewDrawing();
 
     //view
     void viewFit();
