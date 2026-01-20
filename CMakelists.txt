@@ -178,6 +178,8 @@ set(SOURCES)
 file(
     GLOB SOURCES
     src/*.cpp
+    src/ui/*.cpp
+    # Trigger Re-scan
     # ui
     src/*.ui
     # external
@@ -191,6 +193,7 @@ set(HEADERS)
 file(
     GLOB HEADERS
     src/*.h
+    src/ui/*.h
 )
 
 #########

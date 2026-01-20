@@ -6,7 +6,8 @@
 #include "Tree.h"
 #include "ViewManager.h"
 
-
+#include "ui/DialogCreatePoint.h"
+#include "ui/DialogCreateBox.h"
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -90,90 +91,87 @@
 
 namespace
 {
-    bool isShapeAssembly(const TDF_Label &lbl)
-    {
-        return XCAFDoc_ShapeTool::IsAssembly(lbl);
-    }
-
-    bool isShapeReference(const TDF_Label &lbl)
-    {
-        return XCAFDoc_ShapeTool::IsReference(lbl);
-    }
-
-    bool isShapeSimple(const TDF_Label &lbl)
-    {
-        return XCAFDoc_ShapeTool::IsSimpleShape(lbl);
-    }
-
-    bool isShapeComponent(const TDF_Label &lbl)
-    {
-        return XCAFDoc_ShapeTool::IsComponent(lbl);
-    }
-
-    bool isShapeCompound(const TDF_Label &lbl)
-    {
-        return XCAFDoc_ShapeTool::IsCompound(lbl);
-    }
-
-    bool isShapeSub(const TDF_Label &lbl)
-    {
-        return XCAFDoc_ShapeTool::IsSubShape(lbl);
-    }
-    bool isShape(const TDF_Label &lbl)
-    {
-        return XCAFDoc_ShapeTool::IsShape(lbl);
-    }
-
-    TDF_LabelSequence shapeComponents(const TDF_Label &lbl)
-    {
-        TDF_LabelSequence seq;
-        XCAFDoc_ShapeTool::GetComponents(lbl, seq);
-        return seq;
-    }
-
-    TDF_Label shapeReferred(const TDF_Label &lbl)
-    {
-        TDF_Label referred;
-        XCAFDoc_ShapeTool::GetReferredShape(lbl, referred);
-        return referred;
-    }
-
-    // mayo xcaf.cpp deepBuildAssemblyTree
-    uint32_t deepBuildAssemblyTree(uint32_t parentNode, const TDF_Label &label, Tree<TDF_Label> &modelTree)
-    {
-        const TreeNodeId node = modelTree.appendChild(parentNode, label);
-        // GraphicsObjectPtr GraphicsShapeObjectDriver::createObject(const TDF_Label& label) const
-        Handle_TDataStd_Name attrName;
-        if (label.FindAttribute(TDataStd_Name::GetID(), attrName))
-        {
-            std::cout << node << "  : " << attrName->Get() << std::endl;
-        }
-        if (isShapeAssembly(label))
-        {
-            // if (isShape(label))
-            //{
-            //     // GraphicsObjectPtr GraphicsShapeObjectDriver::createObject(const TDF_Label& label) const
-            //     std::cout << " isShape : \n";
-            // }
-            for (const TDF_Label &child : shapeComponents(label))
-                deepBuildAssemblyTree(node, child, modelTree);
-        }
-        else if (isShapeReference(label))
-        {
-            // Handle_TDataStd_Name attrName;
-            // if (isShape(label))
-            //{
-            //     // GraphicsObjectPtr GraphicsShapeObjectDriver::createObject(const TDF_Label& label) const
-            //     std::cout << " isShape : \n";
-            // }
-
-            const TDF_Label referred = shapeReferred(label);
-            deepBuildAssemblyTree(node, referred, modelTree);
-        }
-
-        return node;
-    }
+bool isShapeAssembly(const TDF_Label &lbl)
+{
+    return XCAFDoc_ShapeTool::IsAssembly(lbl);
 }
+
+bool isShapeReference(const TDF_Label &lbl)
+{
+    return XCAFDoc_ShapeTool::IsReference(lbl);
+}
+
+bool isShapeSimple(const TDF_Label &lbl)
+{
+    return XCAFDoc_ShapeTool::IsSimpleShape(lbl);
+}
+
+bool isShapeComponent(const TDF_Label &lbl)
+{
+    return XCAFDoc_ShapeTool::IsComponent(lbl);
+}
+
+bool isShapeCompound(const TDF_Label &lbl)
+{
+    return XCAFDoc_ShapeTool::IsCompound(lbl);
+}
+
+bool isShapeSub(const TDF_Label &lbl)
+{
+    return XCAFDoc_ShapeTool::IsSubShape(lbl);
+}
+bool isShape(const TDF_Label &lbl)
+{
+    return XCAFDoc_ShapeTool::IsShape(lbl);
+}
+
+TDF_LabelSequence shapeComponents(const TDF_Label &lbl)
+{
+    TDF_LabelSequence seq;
+    XCAFDoc_ShapeTool::GetComponents(lbl, seq);
+    return seq;
+}
+
+TDF_Label shapeReferred(const TDF_Label &lbl)
+{
+    TDF_Label referred;
+    XCAFDoc_ShapeTool::GetReferredShape(lbl, referred);
+    return referred;
+}
+
+// mayo xcaf.cpp deepBuildAssemblyTree
+uint32_t deepBuildAssemblyTree(uint32_t parentNode, const TDF_Label &label,
+                               Tree<TDF_Label> &modelTree)
+{
+    const TreeNodeId node = modelTree.appendChild(parentNode, label);
+    // GraphicsObjectPtr GraphicsShapeObjectDriver::createObject(const TDF_Label& label) const
+    Handle_TDataStd_Name attrName;
+    if (label.FindAttribute(TDataStd_Name::GetID(), attrName)) {
+        std::cout << node << "  : " << attrName->Get() << std::endl;
+    }
+    if (isShapeAssembly(label)) {
+        // if (isShape(label))
+        //{
+        //     // GraphicsObjectPtr GraphicsShapeObjectDriver::createObject(const TDF_Label& label) const
+        //     std::cout << " isShape : \n";
+        // }
+        for (const TDF_Label &child : shapeComponents(label))
+            deepBuildAssemblyTree(node, child, modelTree);
+    } else if (isShapeReference(label)) {
+        // Handle_TDataStd_Name attrName;
+        // if (isShape(label))
+        //{
+        //     // GraphicsObjectPtr GraphicsShapeObjectDriver::createObject(const TDF_Label& label) const
+        //     std::cout << " isShape : \n";
+        // }
+
+        const TDF_Label referred = shapeReferred(label);
+        deepBuildAssemblyTree(node, referred, modelTree);
+    }
+
+    return node;
+}
+} // namespace
 
 ViewerWidget::ViewerWidget(QWidget *parent) : QWidget(parent)
 {
@@ -188,8 +186,7 @@ ViewerWidget::ViewerWidget(QWidget *parent) : QWidget(parent)
 
 ViewerWidget::~ViewerWidget()
 {
-    if (m_occView)
-    {
+    if (m_occView) {
         delete m_occView;
         m_occView = nullptr;
     }
@@ -197,51 +194,49 @@ ViewerWidget::~ViewerWidget()
 
 void ViewerWidget::clearAll()
 {
-    if (m_doc)
-    {
+    if (m_doc) {
         m_doc->m_list.clear();
     }
 
-    if (m_occView)
-    {
+    if (m_occView) {
         m_occView->clearShape();
         m_occView->clearSelectedObjects();
         m_occView->reDraw();
     }
 
-    const MainWindow* mainWindow = qobject_cast<MainWindow*>(this->window());
-    if (mainWindow)
-    {
-        ModelTreeWidget* treeWidget = mainWindow->GetModelTreeWidget();
-        if (treeWidget)
-        {
+    const MainWindow *mainWindow = qobject_cast<MainWindow *>(this->window());
+    if (mainWindow) {
+        ModelTreeWidget *treeWidget = mainWindow->GetModelTreeWidget();
+        if (treeWidget) {
             Tree<TDF_Label> emptyTree;
             treeWidget->setModelTree(emptyTree);
         }
     }
 }
 
-void ViewerWidget::loadModel(const QString &filename) 
+void ViewerWidget::loadModel(const QString &filename)
 {
-    clearAll(); 
-    Tree<TDF_Label> modelTree; 
-    if (filename.endsWith(".step") || filename.endsWith(".stp"))
-    {
+    clearAll();
+    Tree<TDF_Label> modelTree;
+    if (filename.endsWith(".step") || filename.endsWith(".stp")) {
         STEPCAFControl_Reader reader;
         IFSelect_ReturnStatus status = reader.ReadFile(filename.toStdString().c_str());
-        if (status != IFSelect_RetDone)
-        {
-            QMessageBox::critical(nullptr, QCoreApplication::translate("ViewerWidget", "Error"), QCoreApplication::translate("ViewerWidget", "STEP file read failed"));
+        if (status != IFSelect_RetDone) {
+            QMessageBox::critical(
+                nullptr, QCoreApplication::translate("ViewerWidget", "Error"),
+                QCoreApplication::translate("ViewerWidget", "STEP file read failed"));
         }
         Handle(TDocStd_Document) doc;
         Handle(XCAFDoc_ShapeTool) shapeTool;
         Handle(XCAFDoc_ColorTool) colorTool;
 
-        Handle(XCAFApp_Application)::DownCast(XCAFApp_Application::GetApplication())->NewDocument("BinXCAF", doc);
+        Handle(XCAFApp_Application)::DownCast(XCAFApp_Application::GetApplication())
+            ->NewDocument("BinXCAF", doc);
 
-        if (!reader.Transfer(doc))
-        {
-            QMessageBox::critical(nullptr, QCoreApplication::translate("ViewerWidget", "Error"), QCoreApplication::translate("ViewerWidget", "STEP transfer to document failed"));
+        if (!reader.Transfer(doc)) {
+            QMessageBox::critical(
+                nullptr, QCoreApplication::translate("ViewerWidget", "Error"),
+                QCoreApplication::translate("ViewerWidget", "STEP transfer to document failed"));
             return;
         }
 
@@ -252,13 +247,12 @@ void ViewerWidget::loadModel(const QString &filename)
 
         TDF_LabelSequence labels;
         shapeTool->GetFreeShapes(labels);
-        for (const TDF_Label &label : labels)
-        {
+        for (const TDF_Label &label : labels) {
             deepBuildAssemblyTree(0, label, modelTree);
         }
 
         // Collect shapes for healing
-        if(m_importWithHealing){
+        if (m_importWithHealing) {
             TopoDS_Compound compound;
             BRep_Builder builder;
             builder.MakeCompound(compound);
@@ -275,7 +269,6 @@ void ViewerWidget::loadModel(const QString &filename)
                 repairAndSave(compound);
             }
         }
-
 
         for (const auto &it : modelTree.m_vecNode) {
             TDF_Label label = it.data;
@@ -294,16 +287,12 @@ void ViewerWidget::loadModel(const QString &filename)
                 m_doc->m_list.emplace_back(object);
             }
         }
-    }
-    else if (filename.endsWith(".iges") || filename.endsWith(".igs"))
-    {
+    } else if (filename.endsWith(".iges") || filename.endsWith(".igs")) {
         IGESControl_Reader reader;
-        if (reader.ReadFile(filename.toStdString().c_str()) == IFSelect_RetDone)
-        {
+        if (reader.ReadFile(filename.toStdString().c_str()) == IFSelect_RetDone) {
             reader.TransferRoots();
             int nbRoots = reader.NbRootsForTransfer();
-            for (int i = 1; i <= nbRoots; ++i)
-            {
+            for (int i = 1; i <= nbRoots; ++i) {
                 TopoDS_Shape subShape = reader.Shape(i);
                 if (subShape.IsNull())
                     continue;
@@ -315,8 +304,7 @@ void ViewerWidget::loadModel(const QString &filename)
         }
     }
 
-    for (const auto &aisObject : m_doc->m_list)
-    {
+    for (const auto &aisObject : m_doc->m_list) {
         m_occView->setShape(aisObject);
     }
 
@@ -373,14 +361,14 @@ void ViewerWidget::setDisplayMode(const int mode)
 
 void ViewerWidget::switchSelect(bool checked)
 {
-    m_occView->setMouseMode( checked ? View::MouseMode::SELECTION : View::MouseMode::NONE );
+    m_occView->setMouseMode(checked ? View::MouseMode::SELECTION : View::MouseMode::NONE);
 }
 
-void ViewerWidget::setFilters(const std::map<TopAbs_ShapeEnum, bool>& filters)
+void ViewerWidget::setFilters(const std::map<TopAbs_ShapeEnum, bool> &filters)
 {
     // Ensure selection mode is enabled if any filters are active
     bool anyFilterActive = false;
-    for (const auto& pair : filters) {
+    for (const auto &pair : filters) {
         if (pair.second) {
             anyFilterActive = true;
             break;
@@ -388,7 +376,7 @@ void ViewerWidget::setFilters(const std::map<TopAbs_ShapeEnum, bool>& filters)
     }
     m_occView->setMouseMode(anyFilterActive ? View::MouseMode::SELECTION : View::MouseMode::NONE);
 
-    for (const auto& pair : filters) {
+    for (const auto &pair : filters) {
         m_occView->updateSelectionFilter(pair.first, pair.second);
     }
 }
@@ -399,9 +387,9 @@ void ViewerWidget::updateSelectionFilter(TopAbs_ShapeEnum filter, bool isActive)
 
     // When a filter changes, we might need to update the mouse selection mode.
     // If any filter is active, selection mode should be on. Otherwise, it should be off.
-    const auto& filters = m_occView->getSelectionFilters();
+    const auto &filters = m_occView->getSelectionFilters();
     bool anyFilterActive = false;
-    for (const auto& pair : filters) {
+    for (const auto &pair : filters) {
         if (pair.second) {
             anyFilterActive = true;
             break;
@@ -428,7 +416,7 @@ void ViewerWidget::checkInterference()
 
 void ViewerWidget::clipping(const gp_Dir &normal, const gp_Pnt &point, const bool isOn)
 {
-    m_occView->addClippingPlane( point,normal );
+    m_occView->addClippingPlane(point, normal);
 }
 
 void ViewerWidget::explosion()
@@ -439,21 +427,23 @@ void ViewerWidget::explosion()
 void ViewerWidget::measureDistance()
 {
     const auto acitveView = ViewManager::getInstance().getActiveView();
-    if( !acitveView )
-        return ;
-    const auto& selectedList = acitveView->getSelectedObjects();
-    if (selectedList.size() != 2)
-    {
-        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two vertices."));
+    if (!acitveView)
+        return;
+    const auto &selectedList = acitveView->getSelectedObjects();
+    if (selectedList.size() != 2) {
+        QMessageBox::warning(
+            this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
+            QCoreApplication::translate("ViewerWidget", "Please select exactly two vertices."));
         return;
     }
 
     TopoDS_Shape shape0 = selectedList.at(0)->GetSelectedShape();
     TopoDS_Shape shape1 = selectedList.at(1)->GetSelectedShape();
-    if (shape0.IsNull() || shape1.IsNull() ||
-        shape0.ShapeType() != TopAbs_VERTEX || shape1.ShapeType() != TopAbs_VERTEX)
-    {
-        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two vertices."));
+    if (shape0.IsNull() || shape1.IsNull() || shape0.ShapeType() != TopAbs_VERTEX
+        || shape1.ShapeType() != TopAbs_VERTEX) {
+        QMessageBox::warning(
+            this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
+            QCoreApplication::translate("ViewerWidget", "Please select exactly two vertices."));
         return;
     }
 
@@ -464,17 +454,22 @@ void ViewerWidget::measureDistance()
     const auto point1 = BRep_Tool::Pnt(vertex1);
 
     const Standard_Real distance = point0.Distance(point1);
-    QMessageBox::information(this, QCoreApplication::translate("ViewerWidget", "Distance"),
-                             QCoreApplication::translate("ViewerWidget", "Distance between the two vertices: %1").arg(distance));
+    QMessageBox::information(
+        this, QCoreApplication::translate("ViewerWidget", "Distance"),
+        QCoreApplication::translate("ViewerWidget", "Distance between the two vertices: %1")
+            .arg(distance));
 }
 
 void ViewerWidget::createPoint()
 {
-    gp_Pnt p(10, 20, 30);
-    BRepBuilderAPI_MakeVertex vertexMaker(p);
-    if (vertexMaker.IsDone())
-    {
-        displayShape(vertexMaker.Shape(), 1.0, 1.0, 1.0); 
+    DialogCreatePoint dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        gp_Pnt p(dlg.x(), dlg.y(), dlg.z());
+        BRepBuilderAPI_MakeVertex vertexMaker(p);
+        if (vertexMaker.IsDone()) {
+            QColor c = dlg.color();
+            displayShape(vertexMaker.Shape(), c.redF(), c.greenF(), c.blueF());
+        }
     }
 }
 
@@ -483,8 +478,7 @@ void ViewerWidget::createLine()
     gp_Pnt p1(0, 0, 0);
     gp_Pnt p2(50, 50, 50);
     BRepBuilderAPI_MakeEdge edge(p1, p2);
-    if (edge.IsDone())
-    {
+    if (edge.IsDone()) {
         displayShape(edge.Shape(), 1.0, 0.0, 0.0);
     }
 }
@@ -501,11 +495,9 @@ void ViewerWidget::createRectangle()
     poly.Add(p3);
     poly.Add(p4);
     poly.Add(p1); // Close the polygon
-    if (poly.IsDone())
-    {
+    if (poly.IsDone()) {
         BRepBuilderAPI_MakeFace face(poly.Wire());
-        if (face.IsDone())
-        {
+        if (face.IsDone()) {
             displayShape(face.Shape(), 0.0, 1.0, 0.0);
         }
     }
@@ -514,10 +506,9 @@ void ViewerWidget::createRectangle()
 void ViewerWidget::createCircle()
 {
     gp_Ax2 axis(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)); // Z axis
-    gp_Circ circle(axis, 25.0);                   // Radius 25
+    gp_Circ circle(axis, 25.0);                    // Radius 25
     BRepBuilderAPI_MakeEdge edge(circle);
-    if (edge.IsDone())
-    {
+    if (edge.IsDone()) {
         displayShape(edge.Shape(), 0.0, 0.0, 1.0);
     }
 }
@@ -528,11 +519,9 @@ void ViewerWidget::createArc()
     gp_Pnt p1(30, 0, 0);
     gp_Pnt p2(0, 30, 0);
     GC_MakeArcOfCircle arc(center, p1, p2);
-    if (arc.IsDone())
-    {
+    if (arc.IsDone()) {
         BRepBuilderAPI_MakeEdge edge(arc.Value());
-        if (edge.IsDone())
-        {
+        if (edge.IsDone()) {
             displayShape(edge.Shape(), 1.0, 1.0, 0.0);
         }
     }
@@ -541,10 +530,9 @@ void ViewerWidget::createArc()
 void ViewerWidget::createEllipse()
 {
     gp_Ax2 axis(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)); // Z axis
-    gp_Elips ellipse(axis, 30.0, 15.0);           // Major radius 30, minor 15
+    gp_Elips ellipse(axis, 30.0, 15.0);            // Major radius 30, minor 15
     BRepBuilderAPI_MakeEdge edge(ellipse);
-    if (edge.IsDone())
-    {
+    if (edge.IsDone()) {
         displayShape(edge.Shape(), 1.0, 0.0, 1.0);
     }
 }
@@ -558,8 +546,7 @@ void ViewerWidget::createPolygon()
     poly.Add(gp_Pnt(10, 40, 0));
     poly.Add(gp_Pnt(-10, 20, 0));
     poly.Add(gp_Pnt(0, 0, 0)); // Close it
-    if (poly.IsDone())
-    {
+    if (poly.IsDone()) {
         displayShape(poly.Wire(), 0.0, 1.0, 1.0);
     }
 }
@@ -573,8 +560,7 @@ void ViewerWidget::createBezierCurve()
     poles.SetValue(4, gp_Pnt(50, 0, 0));
     Handle(Geom_BezierCurve) bezier = new Geom_BezierCurve(poles);
     BRepBuilderAPI_MakeEdge edge(bezier);
-    if (edge.IsDone())
-    {
+    if (edge.IsDone()) {
         displayShape(edge.Shape(), 0.5, 0.5, 0.5);
     }
 }
@@ -599,18 +585,21 @@ void ViewerWidget::createNurbsCurve()
 
     Handle(Geom_BSplineCurve) bspline = new Geom_BSplineCurve(poles, knots, mults, degree);
     BRepBuilderAPI_MakeEdge edge(bspline);
-    if (edge.IsDone())
-    {
+    if (edge.IsDone()) {
         displayShape(edge.Shape(), 0.2, 0.8, 0.2);
     }
 }
 
 void ViewerWidget::createBox()
 {
-    const gp_Pnt P1{-10,-20,-30};
-    const gp_Pnt P2{30,20,15};
-    BRepPrimAPI_MakeBox box(P1,P2);
-    displayShape(box.Shape(), 1.0, 0.0, 1.0);
+    DialogCreateBox dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        const gp_Pnt P1{dlg.x(), dlg.y(), dlg.z()};
+        const gp_Pnt P2{dlg.x() + dlg.dx(), dlg.y() + dlg.dy(), dlg.z() + dlg.dz()};
+        BRepPrimAPI_MakeBox box(P1, P2);
+        QColor c = dlg.color();
+        displayShape(box.Shape(), c.redF(), c.greenF(), c.blueF());
+    }
 }
 
 void ViewerWidget::createPyramid()
@@ -619,8 +608,8 @@ void ViewerWidget::createPyramid()
 
 void ViewerWidget::createSphere()
 {
-    BRepPrimAPI_MakeSphere sphere( gp_Pnt( 0, 0, 0 ), 5.0 ) ;
-    displayShape( sphere.Shape(), 1.0, 0.0, 0.0 ) ;  // NOLINT
+    BRepPrimAPI_MakeSphere sphere(gp_Pnt(0, 0, 0), 5.0);
+    displayShape(sphere.Shape(), 1.0, 0.0, 0.0); // NOLINT
 }
 
 void ViewerWidget::createCylinder()
@@ -639,16 +628,17 @@ void ViewerWidget::booleanUnion()
 {
     TopoDS_Shape shapeA;
     TopoDS_Shape shapeB;
-    if( !getBooleanTargets(shapeA, shapeB) )
-        return ;
+    if (!getBooleanTargets(shapeA, shapeB))
+        return;
 
     BRepAlgoAPI_Fuse booleanFun(shapeA, shapeB);
-    if ( booleanFun.IsDone()) {
+    if (booleanFun.IsDone()) {
         TopoDS_Shape result = booleanFun.Shape();
-        displayShape(result, 1.0, 0.0, 1.0); 
-        m_occView->clearSelectedObjects(); 
+        displayShape(result, 1.0, 0.0, 1.0);
+        m_occView->clearSelectedObjects();
     } else {
-        QMessageBox::warning(this, tr("Boolean Operation Failed"), tr("Boolean Union operation failed!"));
+        QMessageBox::warning(this, tr("Boolean Operation Failed"),
+                             tr("Boolean Union operation failed!"));
     }
 }
 
@@ -656,51 +646,52 @@ void ViewerWidget::booleanIntersection()
 {
     TopoDS_Shape shape1;
     TopoDS_Shape shape2;
-    if( !getBooleanTargets(shape1, shape2) )
-        return ;
+    if (!getBooleanTargets(shape1, shape2))
+        return;
     BRepAlgoAPI_Common booleanFun(shape1, shape2);
-    if ( booleanFun.IsDone()) {
+    if (booleanFun.IsDone()) {
         TopoDS_Shape result = booleanFun.Shape();
-        displayShape(result, 0.0, 1.0, 0.0); 
+        displayShape(result, 0.0, 1.0, 0.0);
         m_occView->clearSelectedObjects();
-    }  else {
-        QMessageBox::warning(this, tr("Boolean Operation Failed"), tr("Boolean Intersection operation failed!"));
+    } else {
+        QMessageBox::warning(this, tr("Boolean Operation Failed"),
+                             tr("Boolean Intersection operation failed!"));
     }
 }
 
 void ViewerWidget::repairAndSave(const TopoDS_Shape &shape)
 {
     TopoDS_Shape repairedShape = shape;
-    
+
     // 1.  ShapeFix_Shape
     qDebug() << "Step 1: Basic shape fixing...";
     Handle(ShapeFix_Shape) shapeFixer = new ShapeFix_Shape(repairedShape);
     shapeFixer->SetPrecision(1e-6);
     shapeFixer->SetMinTolerance(1e-7);
     shapeFixer->SetMaxTolerance(1.0);
-    
-    // 
-    shapeFixer->FixFreeShellMode() = 1;      
-    shapeFixer->FixFreeFaceMode() = 1;       
-    shapeFixer->FixFreeWireMode() = 1;       
-    shapeFixer->FixSameParameterMode() = 1;  
-    shapeFixer->FixVertexPositionMode() = 1; 
-    
+
+    //
+    shapeFixer->FixFreeShellMode() = 1;
+    shapeFixer->FixFreeFaceMode() = 1;
+    shapeFixer->FixFreeWireMode() = 1;
+    shapeFixer->FixSameParameterMode() = 1;
+    shapeFixer->FixVertexPositionMode() = 1;
+
     shapeFixer->Perform();
     repairedShape = shapeFixer->Shape();
-    
+
     // 2. Fixing solids
     qDebug() << "Step 2: Fixing solids...";
     for (TopExp_Explorer exp(repairedShape, TopAbs_SOLID); exp.More(); exp.Next()) {
         TopoDS_Solid solid = TopoDS::Solid(exp.Current());
         Handle(ShapeFix_Solid) solidFixer = new ShapeFix_Solid();
-        solidFixer->Init(solid); 
+        solidFixer->Init(solid);
         solidFixer->SetPrecision(1e-6);
         solidFixer->SetMaxTolerance(1.0);
         solidFixer->FixShellMode() = 1;
         solidFixer->Perform();
     }
-    
+
     // 3. Fixing face
     qDebug() << "Step 3: Fixing face orientations...";
     for (TopExp_Explorer exp(repairedShape, TopAbs_FACE); exp.More(); exp.Next()) {
@@ -714,7 +705,7 @@ void ViewerWidget::repairAndSave(const TopoDS_Shape &shape)
         faceFixer->FixPeriodicDegeneratedMode() = 1;
         faceFixer->Perform();
     }
-    
+
     // 4. Fixing wires
     qDebug() << "Step 4: Fixing wires...";
     for (TopExp_Explorer exp(repairedShape, TopAbs_WIRE); exp.More(); exp.Next()) {
@@ -723,17 +714,17 @@ void ViewerWidget::repairAndSave(const TopoDS_Shape &shape)
         wireFixer->Load(wire);
         wireFixer->SetPrecision(1e-6);
         wireFixer->SetMaxTolerance(1.0);
-        wireFixer->FixReorder();           
-        wireFixer->FixConnected();         
-        wireFixer->FixEdgeCurves();        
-        wireFixer->FixDegenerated();       
-        wireFixer->FixSelfIntersection();  
-        wireFixer->FixLacking();           
-        wireFixer->FixClosed();            
-        wireFixer->FixGaps3d();            
-        wireFixer->FixGaps2d();            
+        wireFixer->FixReorder();
+        wireFixer->FixConnected();
+        wireFixer->FixEdgeCurves();
+        wireFixer->FixDegenerated();
+        wireFixer->FixSelfIntersection();
+        wireFixer->FixLacking();
+        wireFixer->FixClosed();
+        wireFixer->FixGaps3d();
+        wireFixer->FixGaps2d();
     }
-    
+
     // 5. Removing small features
     qDebug() << "Step 5: Removing small features...";
     Handle(ShapeFix_FixSmallFace) smallFaceFixer = new ShapeFix_FixSmallFace();
@@ -741,40 +732,38 @@ void ViewerWidget::repairAndSave(const TopoDS_Shape &shape)
     smallFaceFixer->SetPrecision(1e-6);
     smallFaceFixer->Perform();
     repairedShape = smallFaceFixer->Shape();
-    
+
     // 6. Unifying same domain
     qDebug() << "Step 6: Unifying same domain...";
     ShapeUpgrade_UnifySameDomain unifier(repairedShape);
     unifier.SetLinearTolerance(1e-6);
     unifier.SetAngularTolerance(1e-4);
-    unifier.AllowInternalEdges(Standard_False); 
-    unifier.SetSafeInputMode(Standard_True);    
+    unifier.AllowInternalEdges(Standard_False);
+    unifier.SetSafeInputMode(Standard_True);
     unifier.Build();
     repairedShape = unifier.Shape();
-    
+
     // 7.Simplifying shape
     qDebug() << "Step 7: Simplifying shape...";
     Handle(ShapeBuild_ReShape) reShape = new ShapeBuild_ReShape();
     reShape->Apply(repairedShape);
     repairedShape = reShape->Apply(repairedShape);
-    
+
     // 8. Fixing tolerances.
     qDebug() << "Step 8: Fixing tolerances...";
     ShapeFix::SameParameter(repairedShape, Standard_False);
-    
+
     // 9. Validating repaired shape.
     qDebug() << "Step 9: Validating repaired shape...";
     BRepCheck_Analyzer analyzer(repairedShape);
     if (!analyzer.IsValid()) {
         qDebug() << "Warning: Shape is still invalid after repair";
-        
 
         qDebug() << "Attempting more aggressive repair...";
         BRepBuilderAPI_Sewing sewing(1e-6);
         sewing.Load(repairedShape);
         sewing.Perform();
         repairedShape = sewing.SewedShape();
-        
 
         BRepCheck_Analyzer finalAnalyzer(repairedShape);
         if (finalAnalyzer.IsValid()) {
@@ -785,19 +774,18 @@ void ViewerWidget::repairAndSave(const TopoDS_Shape &shape)
     } else {
         qDebug() << "Shape is valid!";
     }
-    
+
     // 10. Saving repaired shape
     qDebug() << "Step 10: Saving repaired shape...";
     STEPControl_Writer writer;
     writer.Transfer(repairedShape, STEPControl_AsIs);
     IFSelect_ReturnStatus status = writer.Write("fix.stp");
-    
+
     if (status == IFSelect_RetDone) {
-        QMessageBox::information(this, "Success", 
-            "Shape repaired and saved to fix.stp successfully!");
+        QMessageBox::information(this, "Success",
+                                 "Shape repaired and saved to fix.stp successfully!");
     } else {
-        QMessageBox::warning(this, "Error", 
-            "Failed to write fix.stp");
+        QMessageBox::warning(this, "Error", "Failed to write fix.stp");
     }
 }
 
@@ -805,41 +793,43 @@ void ViewerWidget::booleanDifference()
 {
     TopoDS_Shape shape1;
     TopoDS_Shape shape2;
-    if( !getBooleanTargets(shape1, shape2) )
-        return ;
+    if (!getBooleanTargets(shape1, shape2))
+        return;
     BRepAlgoAPI_Cut booleanFun(shape1, shape2);
-    if ( booleanFun.IsDone()) {
+    if (booleanFun.IsDone()) {
         TopoDS_Shape result = booleanFun.Shape();
-        displayShape(result, 0.0, 0.0, 1.0); 
+        displayShape(result, 0.0, 0.0, 1.0);
         m_occView->clearSelectedObjects();
     } else {
-        QMessageBox::warning(this, tr("Boolean Operation Failed"), tr("Boolean Difference operation failed!"));
+        QMessageBox::warning(this, tr("Boolean Operation Failed"),
+                             tr("Boolean Difference operation failed!"));
     }
 }
 
 void ViewerWidget::patternLinear()
 {
     auto selectedObjects = m_occView->getSelectedObjects();
-    if ( selectedObjects.size() != 2 )
-    {
-        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
-        return ;
+    if (selectedObjects.size() != 2) {
+        QMessageBox::warning(
+            this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
+            QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
+        return;
     }
 
-    const auto& shape0 = selectedObjects.at(0)->GetSelectedShape();
-    const auto& shape1 = selectedObjects.at(1)->GetSelectedShape();
+    const auto &shape0 = selectedObjects.at(0)->GetSelectedShape();
+    const auto &shape1 = selectedObjects.at(1)->GetSelectedShape();
 
-    if ( shape0.IsNull() || shape1.IsNull() )
-    {
-        return ;
+    if (shape0.IsNull() || shape1.IsNull()) {
+        return;
     }
-    
-    if ( shape0.ShapeType() != TopAbs_SHAPE && shape1.ShapeType() != TopAbs_EDGE ){
+
+    if (shape0.ShapeType() != TopAbs_SHAPE && shape1.ShapeType() != TopAbs_EDGE) {
         return;
     }
 
     Standard_Real first, last;
-    auto geomLine = Handle(Geom_Line)::DownCast(BRep_Tool::Curve(TopoDS::Edge(shape1),first,last));
+    auto geomLine =
+        Handle(Geom_Line)::DownCast(BRep_Tool::Curve(TopoDS::Edge(shape1), first, last));
     if (geomLine.IsNull()) {
         return;
     }
@@ -855,57 +845,58 @@ void ViewerWidget::patternLinear()
 void ViewerWidget::patternCircular()
 {
     auto selectedObjects = m_occView->getSelectedObjects();
-    if ( selectedObjects.size() != 2 )
-    {
-        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
-        return ;
+    if (selectedObjects.size() != 2) {
+        QMessageBox::warning(
+            this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
+            QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
+        return;
     }
 
-    const auto& shape0 = selectedObjects.at(0)->GetSelectedShape();
-    const auto& shape1 = selectedObjects.at(1)->GetSelectedShape();
+    const auto &shape0 = selectedObjects.at(0)->GetSelectedShape();
+    const auto &shape1 = selectedObjects.at(1)->GetSelectedShape();
 
-    if ( shape0.IsNull() || shape1.IsNull() )
-    {
-        return ;
+    if (shape0.IsNull() || shape1.IsNull()) {
+        return;
     }
 
-    if ( shape0.ShapeType() != TopAbs_SHAPE && shape1.ShapeType() != TopAbs_EDGE ){
+    if (shape0.ShapeType() != TopAbs_SHAPE && shape1.ShapeType() != TopAbs_EDGE) {
         return;
     }
 
     Standard_Real first, last;
-    auto geomCircle = Handle(Geom_Circle)::DownCast(BRep_Tool::Curve(TopoDS::Edge(shape1),first,last));
+    auto geomCircle =
+        Handle(Geom_Circle)::DownCast(BRep_Tool::Curve(TopoDS::Edge(shape1), first, last));
     if (geomCircle.IsNull()) {
         return;
     }
 
     const TopoDS_Shape baseShape = shape0;
     const gp_Ax1 axis = geomCircle->Axis();
-    Standard_Real angleStep{ 10.0 };
-    Standard_Integer count{ 3 };
+    Standard_Real angleStep{10.0};
+    Standard_Integer count{3};
     m_occView->patternCircular(baseShape, axis, angleStep, count);
 }
 
 void ViewerWidget::mirrorByPlane()
 {
     auto selectedObjects = m_occView->getSelectedObjects();
-    if ( selectedObjects.size() != 2 )
-    {
-        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
-        return ;
+    if (selectedObjects.size() != 2) {
+        QMessageBox::warning(
+            this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
+            QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
+        return;
     }
 
     const auto shape = selectedObjects.at(0)->GetSelectedShape();
     const auto plane = selectedObjects.at(1)->GetSelectedShape();
 
-    if ( shape.IsNull() || plane.IsNull() )
-    {
-        return ;
+    if (shape.IsNull() || plane.IsNull()) {
+        return;
     }
 
-    if ( shape.ShapeType() != TopAbs_SHAPE && plane.ShapeType() != TopAbs_FACE ){
-        return ;
-    } 
+    if (shape.ShapeType() != TopAbs_SHAPE && plane.ShapeType() != TopAbs_FACE) {
+        return;
+    }
 
     TopoDS_Face face = TopoDS::Face(plane);
     Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
@@ -920,20 +911,20 @@ void ViewerWidget::mirrorByPlane()
 void ViewerWidget::mirrorByAxis()
 {
     auto selectedObjects = m_occView->getSelectedObjects();
-    if ( selectedObjects.size() != 2 )
-    {
-        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
-        return ;
+    if (selectedObjects.size() != 2) {
+        QMessageBox::warning(
+            this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
+            QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
+        return;
     }
     const auto shape0 = selectedObjects.at(0)->GetSelectedShape();
     const auto shape1 = selectedObjects.at(1)->GetSelectedShape();
 
-    if ( shape0.IsNull() || shape1.IsNull() )
-    {
-        return ;
+    if (shape0.IsNull() || shape1.IsNull()) {
+        return;
     }
 
-    if ( shape0.ShapeType() != TopAbs_SHAPE && shape1.ShapeType() != TopAbs_EDGE ){
+    if (shape0.ShapeType() != TopAbs_SHAPE && shape1.ShapeType() != TopAbs_EDGE) {
         return;
     }
 
@@ -959,26 +950,29 @@ void ViewerWidget::mirrorByAxis()
 void ViewerWidget::shell()
 {
     const auto acitveView = ViewManager::getInstance().getActiveView();
-    if( !acitveView )
-        return ;
-    const auto& selectedList = acitveView->getSelectedObjects();
-    if ( selectedList.size() != 1 )
-    {
-        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Please select exactly one face."));
-        return ;
+    if (!acitveView)
+        return;
+    const auto &selectedList = acitveView->getSelectedObjects();
+    if (selectedList.size() != 1) {
+        QMessageBox::warning(
+            this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
+            QCoreApplication::translate("ViewerWidget", "Please select exactly one face."));
+        return;
     }
 
     const auto shape0 = selectedList.at(0)->GetSelectedShape();
-    if ( shape0.ShapeType() != TopAbs_FACE ){
-        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Type Error."));
+    if (shape0.ShapeType() != TopAbs_FACE) {
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
+                             QCoreApplication::translate("ViewerWidget", "Type Error."));
         return;
     }
     const auto boxObject = selectedList.at(0)->GetParentInteractiveObject();
     const auto aisBox = Handle(AIS_Shape)::DownCast(boxObject);
     const auto box = aisBox->Shape();
-    if(box.ShapeType() !=  TopAbs_SOLID){
-        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"), QCoreApplication::translate("ViewerWidget", "Type Error."));
-        return ;
+    if (box.ShapeType() != TopAbs_SOLID) {
+        QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
+                             QCoreApplication::translate("ViewerWidget", "Type Error."));
+        return;
     }
 
     Quantity_Color color;
@@ -987,19 +981,19 @@ void ViewerWidget::shell()
     TopoDS_Face face = TopoDS::Face(shape0);
     Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
     Handle(Geom_Plane) geomPlane = Handle(Geom_Plane)::DownCast(surface);
-    if(geomPlane.IsNull()){
-        return ;
+    if (geomPlane.IsNull()) {
+        return;
     }
     TopTools_ListOfShape facesToRemove;
     Standard_Real maxZ = -1e10;
     TopoDS_Face topFace;
     for (TopExp_Explorer exp(box, TopAbs_FACE); exp.More(); exp.Next()) {
         TopoDS_Face face = TopoDS::Face(exp.Current());
-        
+
         GProp_GProps props;
         BRepGProp::SurfaceProperties(face, props);
         gp_Pnt center = props.CentreOfMass();
-        
+
         if (center.Z() > maxZ) {
             maxZ = center.Z();
             topFace = face;
@@ -1008,11 +1002,12 @@ void ViewerWidget::shell()
     facesToRemove.Append(topFace);
     m_occView->clearSelectedObjects();
     auto newShape = m_occView->shell(box, facesToRemove);
-    removeShape(box); 
+    removeShape(box);
     displayShape(newShape, color.Red(), color.Green(), color.Blue());
 }
 
-void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const double g, const double b)
+void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const double g,
+                                const double b)
 {
     Handle(AIS_Shape) aisShape = new AIS_Shape(shape);
     aisShape->SetDisplayMode(AIS_Shaded);
@@ -1029,31 +1024,32 @@ void ViewerWidget::removeShape(const TopoDS_Shape &shape)
     m_occView->viewfit(); // Fit view to the new shape
 }
 
-const std::map<TopAbs_ShapeEnum, bool>& ViewerWidget::getSelectionFilters() const {
-    const auto acitveView = ViewManager::getInstance().getActiveView() ;
+const std::map<TopAbs_ShapeEnum, bool> &ViewerWidget::getSelectionFilters() const
+{
+    const auto acitveView = ViewManager::getInstance().getActiveView();
     assert(acitveView);
-    return acitveView->getSelectionFilters() ;
+    return acitveView->getSelectionFilters();
 }
 
 bool ViewerWidget::getBooleanTargets(TopoDS_Shape &target1, TopoDS_Shape &target2)
 {
     const auto acitveView = ViewManager::getInstance().getActiveView();
-    if( !acitveView )
-        return false ;
-    const auto& selectedList = acitveView->getSelectedAisShape(2);
+    if (!acitveView)
+        return false;
+    const auto &selectedList = acitveView->getSelectedAisShape(2);
     if (selectedList.size() != 2)
-        return false ;
+        return false;
 
     const auto aisShapeA = selectedList.at(0);
     const auto aisshapeB = selectedList.at(1);
-    if( aisShapeA.IsNull() || aisshapeB.IsNull() )
-        return false ;
+    if (aisShapeA.IsNull() || aisshapeB.IsNull())
+        return false;
 
     const auto shapeA = aisShapeA->Shape();
     const auto shapeB = aisshapeB->Shape();
-    if( shapeA.IsNull() || shapeB.IsNull() )
-        return false ;
-    target1 = shapeA ;
-    target2 = shapeB ;
-    return true ;
+    if (shapeA.IsNull() || shapeB.IsNull())
+        return false;
+    target1 = shapeA;
+    target2 = shapeB;
+    return true;
 }
