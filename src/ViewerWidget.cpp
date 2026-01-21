@@ -8,6 +8,8 @@
 
 #include "ui/DialogCreatePoint.h"
 #include "ui/DialogCreateBox.h"
+#include "ui/DialogCreateLine.h"
+#include "ui/DialogCreateRectangle.h"
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -475,30 +477,45 @@ void ViewerWidget::createPoint()
 
 void ViewerWidget::createLine()
 {
-    gp_Pnt p1(0, 0, 0);
-    gp_Pnt p2(50, 50, 50);
-    BRepBuilderAPI_MakeEdge edge(p1, p2);
-    if (edge.IsDone()) {
-        displayShape(edge.Shape(), 1.0, 0.0, 0.0);
+    DialogCreateLine dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        gp_Pnt p1(dlg.x1(), dlg.y1(), dlg.z1());
+        gp_Pnt p2(dlg.x2(), dlg.y2(), dlg.z2());
+        BRepBuilderAPI_MakeEdge edge(p1, p2);
+        if (edge.IsDone()) {
+            QColor c = dlg.color();
+            displayShape(edge.Shape(), c.redF(), c.greenF(), c.blueF());
+        }
     }
 }
 
 void ViewerWidget::createRectangle()
 {
-    gp_Pnt p1(0, 0, 0);
-    gp_Pnt p2(40, 0, 0);
-    gp_Pnt p3(40, 30, 0);
-    gp_Pnt p4(0, 30, 0);
-    BRepBuilderAPI_MakePolygon poly;
-    poly.Add(p1);
-    poly.Add(p2);
-    poly.Add(p3);
-    poly.Add(p4);
-    poly.Add(p1); // Close the polygon
-    if (poly.IsDone()) {
-        BRepBuilderAPI_MakeFace face(poly.Wire());
-        if (face.IsDone()) {
-            displayShape(face.Shape(), 0.0, 1.0, 0.0);
+    DialogCreateRectangle dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        double x = dlg.x();
+        double y = dlg.y();
+        double z = dlg.z();
+        double w = dlg.width();
+        double h = dlg.height();
+
+        gp_Pnt p1(x, y, z);
+        gp_Pnt p2(x + w, y, z);
+        gp_Pnt p3(x + w, y + h, z);
+        gp_Pnt p4(x, y + h, z);
+
+        BRepBuilderAPI_MakePolygon poly;
+        poly.Add(p1);
+        poly.Add(p2);
+        poly.Add(p3);
+        poly.Add(p4);
+        poly.Add(p1); // Close the polygon
+        if (poly.IsDone()) {
+            BRepBuilderAPI_MakeFace face(poly.Wire());
+            if (face.IsDone()) {
+                QColor c = dlg.color();
+                displayShape(face.Shape(), c.redF(), c.greenF(), c.blueF());
+            }
         }
     }
 }
