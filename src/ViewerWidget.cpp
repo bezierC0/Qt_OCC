@@ -10,6 +10,7 @@
 #include "ui/DialogCreateBox.h"
 #include "ui/DialogCreateLine.h"
 #include "ui/DialogCreateRectangle.h"
+#include "ui/DialogCreateCircle.h"
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -522,11 +523,15 @@ void ViewerWidget::createRectangle()
 
 void ViewerWidget::createCircle()
 {
-    gp_Ax2 axis(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)); // Z axis
-    gp_Circ circle(axis, 25.0);                    // Radius 25
-    BRepBuilderAPI_MakeEdge edge(circle);
-    if (edge.IsDone()) {
-        displayShape(edge.Shape(), 0.0, 0.0, 1.0);
+    DialogCreateCircle dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        gp_Ax2 axis(gp_Pnt(dlg.x(), dlg.y(), dlg.z()), gp_Dir(0, 0, 1)); // Z axis
+        gp_Circ circle(axis, dlg.radius());
+        BRepBuilderAPI_MakeEdge edge(circle);
+        if (edge.IsDone()) {
+            QColor c = dlg.color();
+            displayShape(edge.Shape(), c.redF(), c.greenF(), c.blueF());
+        }
     }
 }
 
