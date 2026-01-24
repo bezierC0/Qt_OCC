@@ -1,9 +1,10 @@
 #pragma once
 
+#include <string>
 #include <QWidget>
-#include <TopoDS_Shape.hxx> // Add this include
-
-#include "OCCView.h" // Add this for InteractionMode enum
+#include <TopoDS_Shape.hxx> 
+#include <TDocStd_Document.hxx>
+#include "OCCView.h" 
 class AIS_InteractiveObject;
 class gp_Dir;
 class gp_Pnt;
@@ -19,9 +20,14 @@ namespace opencascade
 class ViewerWidget : public QWidget
 {
     Q_OBJECT
+    /* mayo Document
     struct Document{
         std::vector<opencascade::handle<AIS_InteractiveObject>> m_list;
     };
+    */
+
+    struct Document;
+
 
 public:
     explicit ViewerWidget(QWidget* parent = nullptr);
@@ -82,14 +88,20 @@ public:
     void removeShape(const TopoDS_Shape& shape);
     const std::map<TopAbs_ShapeEnum, bool>& getSelectionFilters() const ;
     void repairAndSave(const TopoDS_Shape& shape);
+    void updateTree();
+public slots:
+    void highlightLabel(const TDF_Label& label);
 
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
 
 private:
-    OCCView* m_occView;
-    std::shared_ptr<Document> m_doc;
-    bool m_importWithHealing{false};
+    OCCView*                        m_occView{nullptr};
+    std::shared_ptr<Document>       m_doc{nullptr};
+    bool                            m_importWithHealing{false};
+    Handle(AIS_InteractiveObject)   m_highlightedShape{nullptr};
 
     //TopoDS_Shape m_loadedShape;
 };
+
+

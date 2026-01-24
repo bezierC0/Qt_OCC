@@ -13,6 +13,8 @@ public:
     explicit  ModelTreeWidget(QWidget* widget = nullptr) ;
     ~ModelTreeWidget() override;
     void setModelTree( const Tree<TDF_Label>& modelTree);
+signals:
+    void labelSelected(const TDF_Label& label);
 private:
     TreeWidget* m_treeWidget = nullptr; // TreeWidget
 

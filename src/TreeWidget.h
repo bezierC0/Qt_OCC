@@ -12,6 +12,7 @@ class Tree;
 
 class TreeWidget : public QTreeWidget
 {
+    Q_OBJECT
 public:
     explicit TreeWidget( QWidget* parent = nullptr ) ;
 
@@ -20,6 +21,12 @@ public:
     QTreeWidgetItem* itemFromIndex( const QModelIndex& index ) const;
 
     void setData( const Tree<TDF_Label>& modelTree );
+    
+signals:
+    void labelSelected(const TDF_Label& label);
+
+private slots:
+    void onItemClicked(QTreeWidgetItem* item, int column);
 
 private:
     void rebuildData( const Tree<TDF_Label>& modelTree );
