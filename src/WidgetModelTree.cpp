@@ -9,8 +9,12 @@ ModelTreeWidget::ModelTreeWidget(QWidget* widget)
     QVBoxLayout* layout = new QVBoxLayout( this );
     layout->addWidget( m_treeWidget );
     layout->setContentsMargins( 0, 0, 0, 0 );
+    layout->setContentsMargins( 0, 0, 0, 0 );
     setLayout( layout );
+
+    connect(m_treeWidget, &TreeWidget::labelSelected, this, &ModelTreeWidget::labelSelected);
 }
+
 
 ModelTreeWidget::~ModelTreeWidget()
 = default;

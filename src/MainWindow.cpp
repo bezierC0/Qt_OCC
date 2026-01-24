@@ -58,6 +58,10 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     splitter->setStretchFactor( 0, 1 ); // m_modelTreeWidget
     splitter->setStretchFactor( 1, 4 ); 
 
+    connect(m_modelTreeWidget, &ModelTreeWidget::labelSelected, m_viewerWidget, &ViewerWidget::highlightLabel);
+
+    setCentralWidget( splitter );
+
     setCentralWidget( splitter );
 
     setupUi();

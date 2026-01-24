@@ -57,8 +57,10 @@ TreeWidget::TreeWidget( QWidget* parent )
     setColumnCount( 1 );
     setHeaderLabel( "Assembly Tree" );
 
+    connect(this, &QTreeWidget::itemClicked, this, &TreeWidget::onItemClicked);
     //populateWithDummyData(); 
 }
+
 
 QModelIndex TreeWidget::indexFromItem( QTreeWidgetItem* item, const int column ) const
 {
@@ -85,6 +87,7 @@ void TreeWidget::rebuildData( const Tree<TDF_Label>& modelTree )
         QTreeWidgetItem* rootItem = new QTreeWidgetItem( this );
         const QString instanceName = Mayo::to_QString( labelAttrStdName( label ) );
         rootItem->setText( 0, QString::fromStdString( std::to_string( rootId ) + " : " + instanceName.toStdString() ) );
+        rootItem->setData(0, Qt::UserRole, QVariant::fromValue(rootId)); // Store TreeNodeId
 
         buildAssemblyTree( modelTree, rootId, rootItem );
     }
@@ -101,6 +104,7 @@ void TreeWidget::buildAssemblyTree( const Tree<TDF_Label>& tree, const TreeNodeI
         const auto instanceName = Mayo::to_QString( labelAttrStdName( childLabel ) );
         //childItem->setText( 0, referenceItemText( childLabel , productLabel ) );
         childItem->setText( 0, QString::fromStdString( std::to_string( childId ) + " : " + instanceName.toStdString() ) );
+        childItem->setData(0, Qt::UserRole, QVariant::fromValue(childId)); // Store TreeNodeId
         if ( XCAFDoc_ShapeTool::IsReference( childLabel ) ) 
         {
             if (XCAFDoc_ShapeTool::IsShape(childLabel))
@@ -140,13 +144,25 @@ void TreeWidget::buildShapeTree(const TopoDS_Shape& shape, const QTreeWidgetItem
                 std::cout << "      Edge" << std::endl;
 
                 //  Vertex
-                for (TopExp_Explorer vertexExp(edge, TopAbs_VERTEX); vertexExp.More(); vertexExp.Next())
+                    for (TopExp_Explorer vertexExp(edge, TopAbs_VERTEX); vertexExp.More(); vertexExp.Next())
                 {
                     TopoDS_Vertex vertex = TopoDS::Vertex(vertexExp.Current());
                     gp_Pnt point = BRep_Tool::Pnt(vertex);
                     std::cout << "        Vertex: (" << point.X() << ", " << point.Y() << ", " << point.Z() << ")" << std::endl;
                 }
             }
+        }
+    }
+}
+
+void TreeWidget::onItemClicked(QTreeWidgetItem* item, int column)
+{
+    if (item && m_modelTree) {
+        bool ok;
+        TreeNodeId nodeId = item->data(0, Qt::UserRole).toUInt(&ok);
+        if (ok) {
+            TDF_Label label = m_modelTree->nodeData(nodeId);
+            emit labelSelected(label);
         }
     }
 }
