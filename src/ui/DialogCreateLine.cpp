@@ -1,4 +1,5 @@
 #include "DialogCreateLine.h"
+#include <QIcon>
 
 #include <QVBoxLayout>
 #include <QFormLayout>
@@ -12,8 +13,11 @@
 DialogCreateLine::DialogCreateLine(QWidget *parent) : QDialog(parent), m_color(Qt::white)
 {
     setWindowTitle("Create Line");
+    setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint);
+    setWindowIcon(QIcon());
 
     auto* mainLayout = new QVBoxLayout(this);
+    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     
     // Point 1
     auto* group1 = new QGroupBox("Start Point", this);
