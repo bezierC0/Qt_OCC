@@ -1,4 +1,5 @@
 #include "DialogCreatePoint.h"
+#include <QIcon>
 
 #include <QVBoxLayout>
 #include <QFormLayout>
@@ -11,8 +12,11 @@
 DialogCreatePoint::DialogCreatePoint(QWidget *parent) : QDialog(parent), m_color(Qt::white)
 {
     setWindowTitle("Create Point");
+    setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint);
+    setWindowIcon(QIcon());
 
     auto* mainLayout = new QVBoxLayout(this);
+    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     auto* formLayout = new QFormLayout();
 
     m_spinBoxX = new QDoubleSpinBox(this);

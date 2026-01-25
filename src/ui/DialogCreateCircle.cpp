@@ -1,4 +1,5 @@
 #include "DialogCreateCircle.h"
+#include <QIcon>
 
 #include <QVBoxLayout>
 #include <QFormLayout>
@@ -12,8 +13,11 @@
 DialogCreateCircle::DialogCreateCircle(QWidget* parent) : QDialog(parent), m_color(Qt::white)
 {
     setWindowTitle("Create Circle");
+    setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint);
+    setWindowIcon(QIcon());
 
     auto* mainLayout = new QVBoxLayout(this);
+    mainLayout->setSizeConstraint(QLayout::SetFixedSize);
     
     // Origin Point
     auto* groupOrigin = new QGroupBox("Center Point", this);
