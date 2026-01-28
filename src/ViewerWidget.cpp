@@ -11,6 +11,8 @@
 #include "ui/DialogCreateLine.h"
 #include "ui/DialogCreateRectangle.h"
 #include "ui/DialogCreateCircle.h"
+#include "ui/DialogCreateArc.h"
+#include "ui/DialogCreateEllipse.h"
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -646,25 +648,43 @@ void ViewerWidget::createCircle()
 
 void ViewerWidget::createArc()
 {
-    gp_Pnt center(0, 0, 0);
-    gp_Pnt p1(30, 0, 0);
-    gp_Pnt p2(0, 30, 0);
-    GC_MakeArcOfCircle arc(center, p1, p2);
-    if (arc.IsDone()) {
-        BRepBuilderAPI_MakeEdge edge(arc.Value());
-        if (edge.IsDone()) {
-            displayShape(edge.Shape(), 1.0, 1.0, 0.0);
+    DialogCreateArc dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        gp_Pnt p1(dlg.x1(), dlg.y1(), dlg.z1());
+        gp_Pnt p2(dlg.x2(), dlg.y2(), dlg.z2());
+        gp_Pnt p3(dlg.x3(), dlg.y3(), dlg.z3());
+        GC_MakeArcOfCircle arc(p1, p2, p3);
+        if (arc.IsDone()) {
+            BRepBuilderAPI_MakeEdge edge(arc.Value());
+            if (edge.IsDone()) {
+                QColor c = dlg.color();
+                displayShape(edge.Shape(), c.redF(), c.greenF(), c.blueF());
+            }
         }
     }
 }
 
 void ViewerWidget::createEllipse()
 {
-    gp_Ax2 axis(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1)); // Z axis
-    gp_Elips ellipse(axis, 30.0, 15.0);            // Major radius 30, minor 15
-    BRepBuilderAPI_MakeEdge edge(ellipse);
-    if (edge.IsDone()) {
-        displayShape(edge.Shape(), 1.0, 0.0, 1.0);
+    DialogCreateEllipse dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        gp_Pnt center(dlg.centerX(), dlg.centerY(), dlg.centerZ());
+        gp_Dir normal(dlg.normalX(), dlg.normalY(), dlg.normalZ());
+        
+        double major = dlg.majorRadius();
+        double minor = dlg.minorRadius();
+        if (major < minor) {
+            std::swap(major, minor);
+        }
+
+        gp_Ax2 axis(center, normal);
+        gp_Elips ellipse(axis, major, minor);
+        
+        BRepBuilderAPI_MakeEdge edge(ellipse);
+        if (edge.IsDone()) {
+            QColor c = dlg.color();
+            displayShape(edge.Shape(), c.redF(), c.greenF(), c.blueF());
+        }
     }
 }
 
