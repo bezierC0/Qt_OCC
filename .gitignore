@@ -1,11 +1,25 @@
-# vscode
+# VSCode
+.vscode/
+.history/
 .promptx/
 
-# build
+# Build directories
 build/
+bin/
+lib/
+out/
 
-# bak
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+CMakeUserPresets.json
+
+# Backup/Temp files
 *.bak
+*.tmp
+*.swp
+*~
 
 # Prerequisites
 *.d
@@ -15,6 +29,7 @@ build/
 *.lo
 *.o
 *.obj
+*.res
 
 # Precompiled Headers
 *.gch
@@ -24,18 +39,34 @@ build/
 *.so
 *.dylib
 *.dll
-
-# Fortran module files
-*.mod
-*.smod
+*.tlb
 
 # Compiled Static libraries
 *.lai
 *.la
 *.a
 *.lib
+*.exp
+*.pdb
+*.idb
+*.ilk
 
 # Executables
 *.exe
 *.out
 *.app
+
+# Qt
+moc_*
+ui_*
+qrc_*
+debug/
+release/
+Makefile*
+
+# OpenCASCADE
+*.brep
+*.step
+*.stp
+*.iges
+*.igs
