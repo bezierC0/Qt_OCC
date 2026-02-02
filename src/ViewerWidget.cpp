@@ -13,6 +13,9 @@
 #include "ui/DialogCreateCircle.h"
 #include "ui/DialogCreateArc.h"
 #include "ui/DialogCreateEllipse.h"
+#include "ui/DialogCreateSphere.h"
+#include "ui/DialogCreateCylinder.h"
+#include "ui/DialogCreateCone.h"
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -759,20 +762,35 @@ void ViewerWidget::createPyramid()
 
 void ViewerWidget::createSphere()
 {
-    BRepPrimAPI_MakeSphere sphere(gp_Pnt(0, 0, 0), 5.0);
-    displayShape(sphere.Shape(), 1.0, 0.0, 0.0); // NOLINT
+    DialogCreateSphere dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        gp_Pnt center(dlg.x(), dlg.y(), dlg.z());
+        BRepPrimAPI_MakeSphere sphere(center, dlg.radius());
+        QColor c = dlg.color();
+        displayShape(sphere.Shape(), c.redF(), c.greenF(), c.blueF());
+    }
 }
 
 void ViewerWidget::createCylinder()
 {
-    BRepPrimAPI_MakeCylinder cylinder(5.0, 10.0);
-    displayShape(cylinder.Shape(), 0.0, 1.0, 0.0);
+    DialogCreateCylinder dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        gp_Ax2 axis(gp_Pnt(dlg.x(), dlg.y(), dlg.z()), gp_Dir(0,0,1));
+        BRepPrimAPI_MakeCylinder cylinder(axis, dlg.radius(), dlg.height());
+        QColor c = dlg.color();
+        displayShape(cylinder.Shape(), c.redF(), c.greenF(), c.blueF());
+    }
 }
 
 void ViewerWidget::createCone()
 {
-    BRepPrimAPI_MakeCone cone(5.0, 0.0, 10.0);
-    displayShape(cone.Shape(), 0.0, 1.0, 1.0);
+    DialogCreateCone dlg(this);
+    if (dlg.exec() == QDialog::Accepted) {
+        gp_Ax2 axis(gp_Pnt(dlg.x(), dlg.y(), dlg.z()), gp_Dir(0,0,1));
+        BRepPrimAPI_MakeCone cone(axis, dlg.radius1(), dlg.radius2(), dlg.height());
+        QColor c = dlg.color();
+        displayShape(cone.Shape(), c.redF(), c.greenF(), c.blueF());
+    }
 }
 
 void ViewerWidget::booleanUnion()
