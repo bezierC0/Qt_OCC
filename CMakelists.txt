@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19)
-project(Qt_OCC)
+project(Qt_OCC VERSION 0.0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -9,6 +9,25 @@ set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTORCC ON)
 
 set(RESOURCE_DIR "${CMAKE_SOURCE_DIR}/resource")
+
+#########
+# Version info
+#########
+if(WIN32)
+    configure_file(
+        ${RESOURCE_DIR}/version.rc.in
+        ${CMAKE_BINARY_DIR}/version.rc
+        @ONLY
+    )
+elseif(APPLE)
+    # macOS Info.plist configuration
+    set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.company.CADHealingTool")
+    set(MACOSX_BUNDLE_BUNDLE_NAME "CADHealingTool")
+    set(MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}")
+    set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}")
+    set(MACOSX_BUNDLE_ICON_FILE "icon.icns")
+    set(MACOSX_BUNDLE_COPYRIGHT "Copyright (C) 2025")
+endif()
 
 #########
 # Opencascade
@@ -159,8 +178,12 @@ set(SOURCES)
 file(
     GLOB SOURCES
     src/*.cpp
+    src/ui/*.cpp
+    src/display/*.cpp
+    src/util/*.cpp
+    src/common/*.cpp
     # ui
-    src/*.ui
+    src/ui/*.ui
     # external
     external/SARibbon/SARibbon.cpp
 )
@@ -172,6 +195,10 @@ set(HEADERS)
 file(
     GLOB HEADERS
     src/*.h
+    src/ui/*.h
+    src/display/*.h
+    src/util/*.h
+    src/common/*.h
 )
 
 #########
@@ -196,6 +223,13 @@ add_executable(${PROJECT_NAME}
     ${CMAKE_BINARY_DIR}/translations.qrc
     ${QM_FILES}
 )
+
+#########
+# version 
+#########
+if(WIN32)
+    target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/version.rc)
+endif()
 
 #########
 # copy dll
@@ -226,6 +260,11 @@ target_include_directories(${PROJECT_NAME}
     PRIVATE 
         ${MANUAL_OCCT_INCLUDE_DIR}
         external/SARibbon
+        src
+        src/ui
+        src/display
+        src/util
+        src/common
 )
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 

@@ -82,11 +82,12 @@
         "variant": "cpp",
         "xtree": "cpp"
     },
-    // "cmake.configureArgs": [
-    //     "-DOpenCASCADE_DIR=C:/Libs/OCCT/occt-7.8.0-vc14-64",
-    //     "-DOpenCASCADE_3RDPARTY_DIR=C:/Libs/OCCT/3rdparty-vc14-64"
-    // ]
     "cmake.configureArgs": [
-        "-DOpenCASCADE_DIR=C:/Dev_libs/OpenCASCADE/OCCT-7_8_0",
-        "-DOpenCASCADE_3RDPARTY_DIR=C:/Dev_libs/OpenCASCADE/3rdparty-vc14-64"
+        "-DOpenCASCADE_DIR=C:/Libs/OCCT/occt-7.8.0-vc14-64",
+        "-DOpenCASCADE_3RDPARTY_DIR=C:/Libs/OCCT/3rdparty-vc14-64"
     ]
+    // "cmake.configureArgs": [
+    //     "-DOpenCASCADE_DIR=C:/Dev_libs/OpenCASCADE/OCCT-7_8_0",
+    //     "-DOpenCASCADE_3RDPARTY_DIR=C:/Dev_libs/OpenCASCADE/3rdparty-vc14-64"
+    // ]
+}
