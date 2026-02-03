@@ -9,6 +9,17 @@ class AIS_InteractiveObject;
 class gp_Dir;
 class gp_Pnt;
 
+class DialogCreateArc;
+class DialogCreateBox;
+class DialogCreateCircle;
+class DialogCreateCone;
+class DialogCreateCylinder;
+class DialogCreateEllipse;
+class DialogCreateLine;
+class DialogCreatePoint;
+class DialogCreateRectangle;
+class DialogCreateSphere;
+
 template<typename T>
 class Tree;
 namespace opencascade
@@ -92,6 +103,18 @@ public:
 public slots:
     void highlightLabel(const TDF_Label& label);
 
+private slots:
+    void onCreateArc(double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, const QColor& color);
+    void onCreateBox(double x, double y, double z, double dx, double dy, double dz, const QColor& color);
+    void onCreateCircle(double x, double y, double z, double radius, const QColor& color);
+    void onCreateCone(double x, double y, double z, double r1, double r2, double h, const QColor& color);
+    void onCreateCylinder(double x, double y, double z, double r, double h, const QColor& color);
+    void onCreateEllipse(double cx, double cy, double cz, double nx, double ny, double nz, double major, double minor, const QColor& color);
+    void onCreateLine(double x1, double y1, double z1, double x2, double y2, double z2, const QColor& color);
+    void onCreatePoint(double x, double y, double z, const QColor& color);
+    void onCreateRectangle(double x, double y, double z, double width, double height, const QColor& color);
+    void onCreateSphere(double x, double y, double z, double radius, const QColor& color);
+
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
 
@@ -102,6 +125,17 @@ private:
     Handle(AIS_InteractiveObject)   m_highlightedShape{nullptr};
 
     //TopoDS_Shape m_loadedShape;
+
+    DialogCreateArc*      m_dlgArc{nullptr};
+    DialogCreateBox*      m_dlgBox{nullptr};
+    DialogCreateCircle*   m_dlgCircle{nullptr};
+    DialogCreateCone*     m_dlgCone{nullptr};
+    DialogCreateCylinder* m_dlgCylinder{nullptr};
+    DialogCreateEllipse*  m_dlgEllipse{nullptr};
+    DialogCreateLine*     m_dlgLine{nullptr};
+    DialogCreatePoint*    m_dlgPoint{nullptr};
+    DialogCreateRectangle* m_dlgRectangle{nullptr};
+    DialogCreateSphere*   m_dlgSphere{nullptr};
 };
 
 

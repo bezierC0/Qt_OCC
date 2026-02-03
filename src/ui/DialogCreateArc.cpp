@@ -104,7 +104,8 @@ DialogCreateArc::DialogCreateArc(QWidget *parent) : QDialog(parent), m_color(Qt:
 
     // Buttons
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-    connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    buttonBox->button(QDialogButtonBox::Ok)->setText("Create");
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &DialogCreateArc::onBtnOkClicked);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     mainLayout->addWidget(buttonBox);
@@ -172,4 +173,9 @@ void DialogCreateArc::onBtnColorClicked()
         QString style = QString("background-color: %1").arg(c.name());
         m_btnColor->setStyleSheet(style);
     }
+}
+
+void DialogCreateArc::onBtnOkClicked()
+{
+    emit signalCreateArc(x1(), y1(), z1(), x2(), y2(), z2(), x3(), y3(), z3(), color());
 }

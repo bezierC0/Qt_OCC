@@ -21,8 +21,12 @@ public:
     double height() const;
     QColor color() const;
 
+signals:
+    void signalCreateCylinder(double x, double y, double z, double r, double h, const QColor& color);
+
 private slots:
     void onBtnColorClicked();
+    void onBtnOkClicked();
 
 private:
     QDoubleSpinBox*     m_spinBoxX;

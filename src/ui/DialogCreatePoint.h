@@ -21,7 +21,11 @@ public:
     double z() const;
     QColor color() const;
 
+signals:
+    void signalCreatePoint(double x, double y, double z, const QColor& color);
+
 private slots:
+    void onBtnOkClicked();
     void onBtnColorClicked();
 
 private:
