@@ -27,8 +27,12 @@ public:
 
     QColor color() const;
 
+signals:
+    void signalCreateEllipse(double cx, double cy, double cz, double nx, double ny, double nz, double major, double minor, const QColor& color);
+
 private slots:
     void onBtnColorClicked();
+    void onBtnOkClicked();
 
 private:
     QDoubleSpinBox*     m_spinBoxCenterX;

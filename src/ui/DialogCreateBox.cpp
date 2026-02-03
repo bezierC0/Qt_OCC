@@ -65,7 +65,8 @@ DialogCreateBox::DialogCreateBox(QWidget *parent) : QDialog(parent), m_color(Qt:
     mainLayout->addLayout(formLayout);
 
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-    connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    buttonBox->button(QDialogButtonBox::Ok)->setText("Create");
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &DialogCreateBox::onBtnOkClicked);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     mainLayout->addWidget(buttonBox);
@@ -119,4 +120,9 @@ void DialogCreateBox::onBtnColorClicked()
         QString style = QString("background-color: %1").arg(c.name());
         m_btnColor->setStyleSheet(style);
     }
+}
+
+void DialogCreateBox::onBtnOkClicked()
+{
+    emit signalCreateBox(x(), y(), z(), dx(), dy(), dz(), color());
 }

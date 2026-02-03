@@ -20,7 +20,11 @@ public:
     double radius() const;
     QColor color() const;
 
+signals:
+    void signalCreateSphere(double x, double y, double z, double radius, const QColor& color);
+
 private slots:
+    void onBtnOkClicked();
     void onBtnColorClicked();
 
 private:
