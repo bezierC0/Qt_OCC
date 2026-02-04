@@ -338,6 +338,10 @@ void ViewerWidget::updateTree()
     }
 }
 
+void ViewerWidget::onFunctionTest()
+{
+    int test = 1;
+}
 
 void ViewerWidget::loadModel(const QString &filename)
 {

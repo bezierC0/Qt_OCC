@@ -83,6 +83,8 @@ private slots:
     void onSwitchLanguage();
     void onSwitchTheme();
     void onVersion();
+    // function test 
+    void onFunctionTest(); 
 
 private:
     void setupUi();
@@ -189,6 +191,7 @@ private:
     QAction* m_languageAction;
     QAction* m_lightThemeAction;
     QAction* m_darkThemeAction;
+    QAction* m_functionTestAction; //For test
 
     WidgetExplodeAssembly*          m_widgetExplodeAsm { nullptr } ;
     WidgetSetCoordinateSystem*      m_widgetSetCoordinateSystem { nullptr };

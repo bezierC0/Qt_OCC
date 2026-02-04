@@ -100,6 +100,8 @@ public:
     const std::map<TopAbs_ShapeEnum, bool>& getSelectionFilters() const ;
     void repairAndSave(const TopoDS_Shape& shape);
     void updateTree();
+
+    void onFunctionTest();
 public slots:
     void highlightLabel(const TDF_Label& label);
 
