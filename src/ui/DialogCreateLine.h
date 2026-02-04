@@ -24,8 +24,12 @@ public:
 
     QColor color() const;
 
+signals:
+    void signalCreateLine(double x1, double y1, double z1, double x2, double y2, double z2, const QColor& color);
+
 private slots:
     void onBtnColorClicked();
+    void onBtnOkClicked();
 
 private:
     QDoubleSpinBox*     m_spinBoxX1;

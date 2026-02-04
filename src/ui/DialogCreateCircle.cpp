@@ -67,7 +67,8 @@ DialogCreateCircle::DialogCreateCircle(QWidget* parent) : QDialog(parent), m_col
 
     // Buttons
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-    connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    buttonBox->button(QDialogButtonBox::Ok)->setText("Create");
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &DialogCreateCircle::onBtnOkClicked);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     mainLayout->addWidget(buttonBox);
@@ -110,4 +111,9 @@ void DialogCreateCircle::onBtnColorClicked()
         QString style = QString("background-color: %1").arg(c.name());
         m_btnColor->setStyleSheet(style);
     }
+}
+
+void DialogCreateCircle::onBtnOkClicked()
+{
+    emit signalCreateCircle(x(), y(), z(), radius(), color());
 }

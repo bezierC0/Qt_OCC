@@ -23,7 +23,11 @@ public:
 
     QColor color() const;
 
+signals:
+    void signalCreateRectangle(double x, double y, double z, double width, double height, const QColor& color);
+
 private slots:
+    void onBtnOkClicked();
     void onBtnColorClicked();
 
 private:

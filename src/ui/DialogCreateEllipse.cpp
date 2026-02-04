@@ -98,7 +98,8 @@ DialogCreateEllipse::DialogCreateEllipse(QWidget *parent) : QDialog(parent), m_c
 
     // Buttons
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-    connect(buttonBox, &QDialogButtonBox::accepted, this, &QDialog::accept);
+    buttonBox->button(QDialogButtonBox::Ok)->setText("Create");
+    connect(buttonBox, &QDialogButtonBox::accepted, this, &DialogCreateEllipse::onBtnOkClicked);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     mainLayout->addWidget(buttonBox);
@@ -161,4 +162,9 @@ void DialogCreateEllipse::onBtnColorClicked()
         QString style = QString("background-color: %1").arg(c.name());
         m_btnColor->setStyleSheet(style);
     }
+}
+
+void DialogCreateEllipse::onBtnOkClicked()
+{
+    emit signalCreateEllipse(centerX(), centerY(), centerZ(), normalX(), normalY(), normalZ(), majorRadius(), minorRadius(), color());
 }

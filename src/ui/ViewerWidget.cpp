@@ -258,6 +258,13 @@ struct ViewerWidget::Document {
 };
 
 ViewerWidget::ViewerWidget(QWidget *parent) : QWidget(parent)
+    , m_dlgLine(nullptr)
+    , m_dlgCircle(nullptr)
+    , m_dlgArc(nullptr)
+    , m_dlgBox(nullptr)
+    , m_dlgEllipse(nullptr)
+    , m_dlgCylinder(nullptr)
+    , m_dlgCone(nullptr)
 {
     m_occView = new OCCView(this);
     auto layout = new QVBoxLayout(this);
@@ -331,6 +338,10 @@ void ViewerWidget::updateTree()
     }
 }
 
+void ViewerWidget::onFunctionTest()
+{
+    int test = 1;
+}
 
 void ViewerWidget::loadModel(const QString &filename)
 {
@@ -580,116 +591,74 @@ void ViewerWidget::measureDistance()
 
 void ViewerWidget::createPoint()
 {
-    DialogCreatePoint dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        gp_Pnt p(dlg.x(), dlg.y(), dlg.z());
-        BRepBuilderAPI_MakeVertex vertexMaker(p);
-        if (vertexMaker.IsDone()) {
-            QColor c = dlg.color();
-            displayShape(vertexMaker.Shape(), c.redF(), c.greenF(), c.blueF());
-        }
+    if (!m_dlgPoint) {
+        m_dlgPoint = new DialogCreatePoint(this);
+        m_dlgPoint->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgPoint, &DialogCreatePoint::signalCreatePoint, this, &ViewerWidget::onCreatePoint);
+        connect(m_dlgPoint, &QDialog::destroyed, this, [this]() { m_dlgPoint = nullptr; });
     }
+    m_dlgPoint->show();
+    m_dlgPoint->raise();
 }
 
 void ViewerWidget::createLine()
 {
-    DialogCreateLine dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        gp_Pnt p1(dlg.x1(), dlg.y1(), dlg.z1());
-        gp_Pnt p2(dlg.x2(), dlg.y2(), dlg.z2());
-        BRepBuilderAPI_MakeEdge edge(p1, p2);
-        if (edge.IsDone()) {
-            QColor c = dlg.color();
-            displayShape(edge.Shape(), c.redF(), c.greenF(), c.blueF());
-        }
+    if (!m_dlgLine) {
+        m_dlgLine = new DialogCreateLine(this);
+        m_dlgLine->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgLine, &DialogCreateLine::signalCreateLine, this, &ViewerWidget::onCreateLine);
+        connect(m_dlgLine, &QDialog::destroyed, this, [this]() { m_dlgLine = nullptr; });
     }
+    m_dlgLine->show();
+    m_dlgLine->raise();
 }
 
 void ViewerWidget::createRectangle()
 {
-    DialogCreateRectangle dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        double x = dlg.x();
-        double y = dlg.y();
-        double z = dlg.z();
-        double w = dlg.width();
-        double h = dlg.height();
-
-        gp_Pnt p1(x, y, z);
-        gp_Pnt p2(x + w, y, z);
-        gp_Pnt p3(x + w, y + h, z);
-        gp_Pnt p4(x, y + h, z);
-
-        BRepBuilderAPI_MakePolygon poly;
-        poly.Add(p1);
-        poly.Add(p2);
-        poly.Add(p3);
-        poly.Add(p4);
-        poly.Add(p1); // Close the polygon
-        if (poly.IsDone()) {
-            BRepBuilderAPI_MakeFace face(poly.Wire());
-            if (face.IsDone()) {
-                QColor c = dlg.color();
-                displayShape(face.Shape(), c.redF(), c.greenF(), c.blueF());
-            }
-        }
+    if (!m_dlgRectangle) {
+        m_dlgRectangle = new DialogCreateRectangle(this);
+        m_dlgRectangle->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgRectangle, &DialogCreateRectangle::signalCreateRectangle, this, &ViewerWidget::onCreateRectangle);
+        connect(m_dlgRectangle, &QDialog::destroyed, this, [this]() { m_dlgRectangle = nullptr; });
     }
+    m_dlgRectangle->show();
+    m_dlgRectangle->raise();
 }
 
 void ViewerWidget::createCircle()
 {
-    DialogCreateCircle dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        gp_Ax2 axis(gp_Pnt(dlg.x(), dlg.y(), dlg.z()), gp_Dir(0, 0, 1)); // Z axis
-        gp_Circ circle(axis, dlg.radius());
-        BRepBuilderAPI_MakeEdge edge(circle);
-        if (edge.IsDone()) {
-            QColor c = dlg.color();
-            displayShape(edge.Shape(), c.redF(), c.greenF(), c.blueF());
-        }
+    if (!m_dlgCircle) {
+        m_dlgCircle = new DialogCreateCircle(this);
+        m_dlgCircle->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgCircle, &DialogCreateCircle::signalCreateCircle, this, &ViewerWidget::onCreateCircle);
+        connect(m_dlgCircle, &QDialog::destroyed, this, [this]() { m_dlgCircle = nullptr; });
     }
+    m_dlgCircle->show();
+    m_dlgCircle->raise();
 }
 
 void ViewerWidget::createArc()
 {
-    DialogCreateArc dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        gp_Pnt p1(dlg.x1(), dlg.y1(), dlg.z1());
-        gp_Pnt p2(dlg.x2(), dlg.y2(), dlg.z2());
-        gp_Pnt p3(dlg.x3(), dlg.y3(), dlg.z3());
-        GC_MakeArcOfCircle arc(p1, p2, p3);
-        if (arc.IsDone()) {
-            BRepBuilderAPI_MakeEdge edge(arc.Value());
-            if (edge.IsDone()) {
-                QColor c = dlg.color();
-                displayShape(edge.Shape(), c.redF(), c.greenF(), c.blueF());
-            }
-        }
+    if (!m_dlgArc) {
+        m_dlgArc = new DialogCreateArc(this);
+        m_dlgArc->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgArc, &DialogCreateArc::signalCreateArc, this, &ViewerWidget::onCreateArc);
+        connect(m_dlgArc, &QDialog::destroyed, this, [this]() { m_dlgArc = nullptr; });
     }
+    m_dlgArc->show();
+    m_dlgArc->raise();
 }
 
 void ViewerWidget::createEllipse()
 {
-    DialogCreateEllipse dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        gp_Pnt center(dlg.centerX(), dlg.centerY(), dlg.centerZ());
-        gp_Dir normal(dlg.normalX(), dlg.normalY(), dlg.normalZ());
-        
-        double major = dlg.majorRadius();
-        double minor = dlg.minorRadius();
-        if (major < minor) {
-            std::swap(major, minor);
-        }
-
-        gp_Ax2 axis(center, normal);
-        gp_Elips ellipse(axis, major, minor);
-        
-        BRepBuilderAPI_MakeEdge edge(ellipse);
-        if (edge.IsDone()) {
-            QColor c = dlg.color();
-            displayShape(edge.Shape(), c.redF(), c.greenF(), c.blueF());
-        }
+    if (!m_dlgEllipse) {
+        m_dlgEllipse = new DialogCreateEllipse(this);
+        m_dlgEllipse->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgEllipse, &DialogCreateEllipse::signalCreateEllipse, this, &ViewerWidget::onCreateEllipse);
+        connect(m_dlgEllipse, &QDialog::destroyed, this, [this]() { m_dlgEllipse = nullptr; });
     }
+    m_dlgEllipse->show();
+    m_dlgEllipse->raise();
 }
 
 void ViewerWidget::createPolygon()
@@ -747,14 +716,14 @@ void ViewerWidget::createNurbsCurve()
 
 void ViewerWidget::createBox()
 {
-    DialogCreateBox dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        const gp_Pnt P1{dlg.x(), dlg.y(), dlg.z()};
-        const gp_Pnt P2{dlg.x() + dlg.dx(), dlg.y() + dlg.dy(), dlg.z() + dlg.dz()};
-        BRepPrimAPI_MakeBox box(P1, P2);
-        QColor c = dlg.color();
-        displayShape(box.Shape(), c.redF(), c.greenF(), c.blueF());
+    if (!m_dlgBox) {
+        m_dlgBox = new DialogCreateBox(this);
+        m_dlgBox->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgBox, &DialogCreateBox::signalCreateBox, this, &ViewerWidget::onCreateBox);
+        connect(m_dlgBox, &QDialog::destroyed, this, [this]() { m_dlgBox = nullptr; });
     }
+    m_dlgBox->show();
+    m_dlgBox->raise();
 }
 
 void ViewerWidget::createPyramid()
@@ -763,35 +732,38 @@ void ViewerWidget::createPyramid()
 
 void ViewerWidget::createSphere()
 {
-    DialogCreateSphere dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        gp_Pnt center(dlg.x(), dlg.y(), dlg.z());
-        BRepPrimAPI_MakeSphere sphere(center, dlg.radius());
-        QColor c = dlg.color();
-        displayShape(sphere.Shape(), c.redF(), c.greenF(), c.blueF());
+    if (!m_dlgSphere) {
+        m_dlgSphere = new DialogCreateSphere(this);
+        m_dlgSphere->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgSphere, &DialogCreateSphere::signalCreateSphere, this, &ViewerWidget::onCreateSphere);
+        connect(m_dlgSphere, &QDialog::destroyed, this, [this]() { m_dlgSphere = nullptr; });
     }
+    m_dlgSphere->show();
+    m_dlgSphere->raise();
 }
 
 void ViewerWidget::createCylinder()
 {
-    DialogCreateCylinder dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        gp_Ax2 axis(gp_Pnt(dlg.x(), dlg.y(), dlg.z()), gp_Dir(0,0,1));
-        BRepPrimAPI_MakeCylinder cylinder(axis, dlg.radius(), dlg.height());
-        QColor c = dlg.color();
-        displayShape(cylinder.Shape(), c.redF(), c.greenF(), c.blueF());
+    if (!m_dlgCylinder) {
+        m_dlgCylinder = new DialogCreateCylinder(this);
+        m_dlgCylinder->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgCylinder, &DialogCreateCylinder::signalCreateCylinder, this, &ViewerWidget::onCreateCylinder);
+        connect(m_dlgCylinder, &QDialog::destroyed, this, [this]() { m_dlgCylinder = nullptr; });
     }
+    m_dlgCylinder->show();
+    m_dlgCylinder->raise();
 }
 
 void ViewerWidget::createCone()
 {
-    DialogCreateCone dlg(this);
-    if (dlg.exec() == QDialog::Accepted) {
-        gp_Ax2 axis(gp_Pnt(dlg.x(), dlg.y(), dlg.z()), gp_Dir(0,0,1));
-        BRepPrimAPI_MakeCone cone(axis, dlg.radius1(), dlg.radius2(), dlg.height());
-        QColor c = dlg.color();
-        displayShape(cone.Shape(), c.redF(), c.greenF(), c.blueF());
+    if (!m_dlgCone) {
+        m_dlgCone = new DialogCreateCone(this);
+        m_dlgCone->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgCone, &DialogCreateCone::signalCreateCone, this, &ViewerWidget::onCreateCone);
+        connect(m_dlgCone, &QDialog::destroyed, this, [this]() { m_dlgCone = nullptr; });
     }
+    m_dlgCone->show();
+    m_dlgCone->raise();
 }
 
 void ViewerWidget::booleanUnion()
@@ -1315,3 +1287,123 @@ void ViewerWidget::highlightLabel(const TDF_Label& label)
     }
 }
 
+void ViewerWidget::onCreateLine(double x1, double y1, double z1, double x2, double y2, double z2, const QColor& color)
+{
+    gp_Pnt p1(x1, y1, z1);
+    gp_Pnt p2(x2, y2, z2);
+    BRepBuilderAPI_MakeEdge edge(p1, p2);
+    if (edge.IsDone()) {
+        displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
+    }
+    if(m_dlgLine) m_dlgLine->raise();
+}
+
+void ViewerWidget::onCreateCircle(double x, double y, double z, double radius, const QColor& color)
+{
+    gp_Ax2 axis(gp_Pnt(x, y, z), gp_Dir(0, 0, 1));
+    gp_Circ circle(axis, radius);
+    BRepBuilderAPI_MakeEdge edge(circle);
+    if (edge.IsDone()) {
+        displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
+    }
+    if(m_dlgCircle) m_dlgCircle->raise();
+}
+
+void ViewerWidget::onCreateArc(double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, const QColor& color)
+{
+    gp_Pnt p1(x1, y1, z1);
+    gp_Pnt p2(x2, y2, z2);
+    gp_Pnt p3(x3, y3, z3);
+    GC_MakeArcOfCircle arc(p1, p2, p3);
+    if (arc.IsDone()) {
+        BRepBuilderAPI_MakeEdge edge(arc.Value());
+        if (edge.IsDone()) {
+            displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
+        }
+    }
+    if (m_dlgArc) m_dlgArc->raise();
+}
+
+void ViewerWidget::onCreateBox(double x, double y, double z, double dx, double dy, double dz, const QColor& color)
+{
+    const gp_Pnt P1{x, y, z};
+    const gp_Pnt P2{x + dx, y + dy, z + dz};
+    BRepPrimAPI_MakeBox box(P1, P2);
+    displayShape(box.Shape(), color.redF(), color.greenF(), color.blueF());
+    if(m_dlgBox) m_dlgBox->raise();
+}
+
+void ViewerWidget::onCreateEllipse(double centerX, double centerY, double centerZ, double normalX, double normalY, double normalZ, double majorRadius, double minorRadius, const QColor& color)
+{
+    gp_Pnt center(centerX, centerY, centerZ);
+    gp_Dir normal(normalX, normalY, normalZ);
+    
+    if (majorRadius < minorRadius) {
+        std::swap(majorRadius, minorRadius);
+    }
+
+    gp_Ax2 axis(center, normal);
+    gp_Elips ellipse(axis, majorRadius, minorRadius);
+    
+    BRepBuilderAPI_MakeEdge edge(ellipse);
+    if (edge.IsDone()) {
+        displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
+    }
+    if(m_dlgEllipse) m_dlgEllipse->raise();
+}
+
+void ViewerWidget::onCreateCylinder(double x, double y, double z, double radius, double height, const QColor& color)
+{
+    gp_Ax2 axis(gp_Pnt(x, y, z), gp_Dir(0,0,1));
+    BRepPrimAPI_MakeCylinder cylinder(axis, radius, height);
+    displayShape(cylinder.Shape(), color.redF(), color.greenF(), color.blueF());
+    if(m_dlgCylinder) m_dlgCylinder->raise();
+}
+
+void ViewerWidget::onCreateCone(double x, double y, double z, double radius1, double radius2, double height, const QColor& color)
+{
+    gp_Ax2 axis(gp_Pnt(x, y, z), gp_Dir(0,0,1));
+    BRepPrimAPI_MakeCone cone(axis, radius1, radius2, height);
+    displayShape(cone.Shape(), color.redF(), color.greenF(), color.blueF());
+    if(m_dlgCone) m_dlgCone->raise();
+}
+
+void ViewerWidget::onCreatePoint(double x, double y, double z, const QColor& color)
+{
+    gp_Pnt p(x, y, z);
+    BRepBuilderAPI_MakeVertex vertexMaker(p);
+    if (vertexMaker.IsDone()) {
+        displayShape(vertexMaker.Shape(), color.redF(), color.greenF(), color.blueF());
+    }
+    if (m_dlgPoint) m_dlgPoint->raise();
+}
+
+void ViewerWidget::onCreateRectangle(double x, double y, double z, double width, double height, const QColor& color)
+{
+    gp_Pnt p1(x, y, z);
+    gp_Pnt p2(x + width, y, z);
+    gp_Pnt p3(x + width, y + height, z);
+    gp_Pnt p4(x, y + height, z);
+
+    BRepBuilderAPI_MakePolygon poly;
+    poly.Add(p1);
+    poly.Add(p2);
+    poly.Add(p3);
+    poly.Add(p4);
+    poly.Add(p1); // Close the polygon
+    if (poly.IsDone()) {
+        BRepBuilderAPI_MakeFace face(poly.Wire());
+        if (face.IsDone()) {
+            displayShape(face.Shape(), color.redF(), color.greenF(), color.blueF());
+        }
+    }
+    if (m_dlgRectangle) m_dlgRectangle->raise();
+}
+
+void ViewerWidget::onCreateSphere(double x, double y, double z, double radius, const QColor& color)
+{
+    gp_Pnt center(x, y, z);
+    BRepPrimAPI_MakeSphere sphere(center, radius);
+    displayShape(sphere.Shape(), color.redF(), color.greenF(), color.blueF());
+    if (m_dlgSphere) m_dlgSphere->raise();
+}
