@@ -4,6 +4,7 @@
 #include <QtWidgets/QWidget>
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QHeaderView>
+#include <QMouseEvent>
 
 class TopoDS_Shape;
 class TDF_Label;
@@ -15,6 +16,8 @@ class TreeWidget : public QTreeWidget
     Q_OBJECT
 public:
     explicit TreeWidget( QWidget* parent = nullptr ) ;
+
+    void mousePressEvent(QMouseEvent *event) override;
 
     QModelIndex indexFromItem( QTreeWidgetItem* item, const int column = 0 ) const;
 

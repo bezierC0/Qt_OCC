@@ -1237,7 +1237,19 @@ bool ViewerWidget::getBooleanTargets(TopoDS_Shape &target1, TopoDS_Shape &target
 // TODO : BUG assembly highLight
 void ViewerWidget::highlightLabel(const TDF_Label& label)
 {
-    if (label.IsNull()) return;
+    if (label.IsNull()) {
+        m_occView->clearSelectedObjects();
+        if (m_isShowBoundingBox) {
+            m_occView->setBoundingBox(TopoDS_Shape());
+        }
+        if (!m_highlightedShape.IsNull()) {
+             m_occView->Context()->Remove(m_highlightedShape, false);
+             m_highlightedShape.Nullify();
+        }
+        m_occView->reDraw(); // Keep this for standard OCCT redraw
+        m_occView->update(); // Force Qt widget update immediately
+        return;
+    }
 
     // Retrieve the shape from the label
     TopoDS_Shape shape;
@@ -1282,6 +1294,12 @@ void ViewerWidget::highlightLabel(const TDF_Label& label)
             m_highlightedShape = tempObj;
         }
         
+        if (m_isShowBoundingBox) {
+            m_occView->setBoundingBox(shape);
+        } else {
+            m_occView->setBoundingBox(TopoDS_Shape());
+        }
+
         m_occView->reDraw(); // Keep this for standard OCCT redraw
         m_occView->update(); // Force Qt widget update immediately
     }

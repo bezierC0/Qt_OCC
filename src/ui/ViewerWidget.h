@@ -125,6 +125,7 @@ private:
     std::shared_ptr<Document>       m_doc{nullptr};
     bool                            m_importWithHealing{false};
     Handle(AIS_InteractiveObject)   m_highlightedShape{nullptr};
+    bool                            m_isShowBoundingBox{true};  
 
     //TopoDS_Shape m_loadedShape;
 
