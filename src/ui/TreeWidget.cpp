@@ -172,3 +172,15 @@ void TreeWidget::onItemClicked(QTreeWidgetItem* item, int column)
         }
     }
 }
+
+void TreeWidget::mousePressEvent(QMouseEvent *event)
+{
+    QTreeWidgetItem* item = itemAt(event->pos());
+    if (!item) {
+        clearSelection();
+        setCurrentItem(nullptr);
+        TDF_Label nullLabel;
+        emit labelSelected(nullLabel);
+    }
+    QTreeWidget::mousePressEvent(event);
+}

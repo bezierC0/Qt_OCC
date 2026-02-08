@@ -516,7 +516,7 @@ void MainWindow::createHelpGroup()
     connect(m_versionAction, &QAction::triggered, this, &MainWindow::onVersion);
     m_versionPannel->addLargeAction(m_versionAction);
 
-#if 1
+#if 0
     // test
     m_functionTestAction = new QAction(QIcon(":/icons/icon/version.svg"), tr("test"), this);  
     connect(m_functionTestAction, &QAction::triggered, this, &MainWindow::onFunctionTest);
