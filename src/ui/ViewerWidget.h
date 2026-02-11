@@ -19,6 +19,9 @@ class DialogCreateLine;
 class DialogCreatePoint;
 class DialogCreateRectangle;
 class DialogCreateSphere;
+class DialogCreatePolygon;
+class DialogCreateBezier;
+class DialogCreateNurbs;
 
 template<typename T>
 class Tree;
@@ -116,7 +119,10 @@ private slots:
     void onCreatePoint(double x, double y, double z, const QColor& color);
     void onCreateRectangle(double x, double y, double z, double width, double height, const QColor& color);
     void onCreateSphere(double x, double y, double z, double radius, const QColor& color);
-
+    void onCreatePolygon(const QList<gp_Pnt>& points, bool isClosed, const QColor& color);
+    void onCreateBezier(const QList<gp_Pnt>& points, const QColor& color);
+    void onCreateNurbs(const QList<gp_Pnt>& points, int degree, const QColor& color);
+    
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
 
@@ -139,6 +145,8 @@ private:
     DialogCreatePoint*    m_dlgPoint{nullptr};
     DialogCreateRectangle* m_dlgRectangle{nullptr};
     DialogCreateSphere*   m_dlgSphere{nullptr};
+    DialogCreatePolygon*  m_dlgPolygon{nullptr};
+    DialogCreateBezier*   m_dlgBezier{nullptr};
+    DialogCreateNurbs*    m_dlgNurbs{nullptr};
 };
-
 
