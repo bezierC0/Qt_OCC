@@ -7,6 +7,8 @@
 #include "ViewManager.h"
 
 #include "ui/DialogCreatePoint.h"
+#include "ui/DialogCreateBezier.h"
+#include "ui/DialogCreateNurbs.h"
 #include "ui/DialogCreateBox.h"
 #include "ui/DialogCreateLine.h"
 #include "ui/DialogCreateRectangle.h"
@@ -16,6 +18,7 @@
 #include "ui/DialogCreateSphere.h"
 #include "ui/DialogCreateCylinder.h"
 #include "ui/DialogCreateCone.h"
+#include "ui/DialogCreatePolygon.h"
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -265,6 +268,7 @@ ViewerWidget::ViewerWidget(QWidget *parent) : QWidget(parent)
     , m_dlgEllipse(nullptr)
     , m_dlgCylinder(nullptr)
     , m_dlgCone(nullptr)
+    , m_dlgPolygon(nullptr)
 {
     m_occView = new OCCView(this);
     auto layout = new QVBoxLayout(this);
@@ -663,54 +667,129 @@ void ViewerWidget::createEllipse()
 
 void ViewerWidget::createPolygon()
 {
+    if (!m_dlgPolygon) {
+        m_dlgPolygon = new DialogCreatePolygon(this);
+        m_dlgPolygon->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgPolygon, &DialogCreatePolygon::signalCreatePolygon, this, &ViewerWidget::onCreatePolygon);
+        connect(m_dlgPolygon, &QDialog::destroyed, this, [this]() { m_dlgPolygon = nullptr; });
+    }
+    m_dlgPolygon->show();
+    m_dlgPolygon->raise();
+}
+
+void ViewerWidget::onCreatePolygon(const QList<gp_Pnt>& points, bool isClosed, const QColor& color)
+{
+    if (points.size() < 2) return;
+
     BRepBuilderAPI_MakePolygon poly;
-    poly.Add(gp_Pnt(0, 0, 0));
-    poly.Add(gp_Pnt(20, 10, 0));
-    poly.Add(gp_Pnt(30, 30, 0));
-    poly.Add(gp_Pnt(10, 40, 0));
-    poly.Add(gp_Pnt(-10, 20, 0));
-    poly.Add(gp_Pnt(0, 0, 0)); // Close it
+    for (const auto& p : points) {
+        poly.Add(p);
+    }
+    if (isClosed) {
+        poly.Close();
+    }
+
     if (poly.IsDone()) {
-        displayShape(poly.Wire(), 0.0, 1.0, 1.0);
+        displayShape(poly.Wire(), color.redF(), color.greenF(), color.blueF());
     }
 }
 
 void ViewerWidget::createBezierCurve()
 {
-    TColgp_Array1OfPnt poles(1, 4);
-    poles.SetValue(1, gp_Pnt(0, 0, 0));
-    poles.SetValue(2, gp_Pnt(10, 40, 0));
-    poles.SetValue(3, gp_Pnt(40, 40, 0));
-    poles.SetValue(4, gp_Pnt(50, 0, 0));
-    Handle(Geom_BezierCurve) bezier = new Geom_BezierCurve(poles);
-    BRepBuilderAPI_MakeEdge edge(bezier);
-    if (edge.IsDone()) {
-        displayShape(edge.Shape(), 0.5, 0.5, 0.5);
+    if (!m_dlgBezier) {
+        m_dlgBezier = new DialogCreateBezier(this);
+        m_dlgBezier->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgBezier, &DialogCreateBezier::signalCreateBezier, this, &ViewerWidget::onCreateBezier);
+        connect(m_dlgBezier, &QDialog::destroyed, this, [this]() { m_dlgBezier = nullptr; });
+    }
+    m_dlgBezier->show();
+    m_dlgBezier->raise();
+}
+
+void ViewerWidget::onCreateBezier(const QList<gp_Pnt>& points, const QColor& color)
+{
+    if (points.size() < 2) return;
+
+    TColgp_Array1OfPnt poles(1, points.size());
+    for (int i = 0; i < points.size(); ++i) {
+        poles.SetValue(i + 1, points[i]);
+    }
+
+    // Geom_BezierCurve limits: check max degree if necessary, but OCC usually handles reasonable counts.
+    // Try to catch construction errors
+    try {
+        Handle(Geom_BezierCurve) bezier = new Geom_BezierCurve(poles);
+        BRepBuilderAPI_MakeEdge edge(bezier);
+        if (edge.IsDone()) {
+            displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
+        }
+    } catch (...) {
+        QMessageBox::warning(this, "Error", "Failed to create Bezier curve (possibly too many points).");
     }
 }
 
 void ViewerWidget::createNurbsCurve()
 {
-    TColgp_Array1OfPnt poles(1, 4);
-    poles.SetValue(1, gp_Pnt(0, 0, 0));
-    poles.SetValue(2, gp_Pnt(10, 40, 0));
-    poles.SetValue(3, gp_Pnt(40, -40, 0));
-    poles.SetValue(4, gp_Pnt(50, 0, 0));
+    if (!m_dlgNurbs) {
+        m_dlgNurbs = new DialogCreateNurbs(this);
+        m_dlgNurbs->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgNurbs, &DialogCreateNurbs::signalCreateNurbs, this, &ViewerWidget::onCreateNurbs);
+        connect(m_dlgNurbs, &QDialog::destroyed, this, [this]() { m_dlgNurbs = nullptr; });
+    }
+    m_dlgNurbs->show();
+    m_dlgNurbs->raise();
+}
 
-    TColStd_Array1OfReal knots(1, 2);
+void ViewerWidget::onCreateNurbs(const QList<gp_Pnt>& points, int degree, const QColor& color)
+{
+    Standard_Integer n = points.size();
+    if (n <= degree) {
+        return; // Should have been caught by dialog
+    }
+
+    TColgp_Array1OfPnt poles(1, n);
+    for (int i = 0; i < n; ++i) {
+        poles.SetValue(i + 1, points[i]);
+    }
+
+    // Construct Knots and Mults for a non-periodic BSpline
+    // Number of knots (distinct) = n - degree + 1
+    // Total knots including multiplicities = n + degree + 1 (classic definition)
+    
+    // Standard non-periodic configuration:
+    // Knots: 0, ..., 0 (degree+1 times), ..., 1, ..., 1 (degree+1 times)
+    // Internal knots are simple (mult=1).
+    // Number of internal intervals = n - degree
+    // Total distinct knots = 2 (endpoints) + (n - degree - 1) (internal) = n - degree + 1
+    
+    Standard_Integer nbKnots = n - degree + 1;
+    TColStd_Array1OfReal knots(1, nbKnots);
+    TColStd_Array1OfInteger mults(1, nbKnots);
+
+    // Endpoints multiplication
+    mults.SetValue(1, degree + 1);
+    mults.SetValue(nbKnots, degree + 1);
+
     knots.SetValue(1, 0.0);
-    knots.SetValue(2, 1.0);
+    knots.SetValue(nbKnots, 1.0);
 
-    TColStd_Array1OfInteger mults(1, 2);
-    mults.SetValue(1, 4);
-    mults.SetValue(2, 4);
+    // Internal knots
+    if (nbKnots > 2) {
+        Standard_Real step = 1.0 / (Standard_Real)(nbKnots - 1);
+        for (Standard_Integer i = 2; i < nbKnots; ++i) {
+            mults.SetValue(i, 1);
+            knots.SetValue(i, (i - 1) * step);
+        }
+    }
 
-    Standard_Integer degree = 3;
-
-    Handle(Geom_BSplineCurve) bspline = new Geom_BSplineCurve(poles, knots, mults, degree);
-    BRepBuilderAPI_MakeEdge edge(bspline);
-    if (edge.IsDone()) {
-        displayShape(edge.Shape(), 0.2, 0.8, 0.2);
+    try {
+        Handle(Geom_BSplineCurve) bspline = new Geom_BSplineCurve(poles, knots, mults, degree);
+        BRepBuilderAPI_MakeEdge edge(bspline);
+        if (edge.IsDone()) {
+            displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
+        }
+    } catch (...) {
+         QMessageBox::warning(this, "Error", "Failed to create NURBS curve.");
     }
 }
 

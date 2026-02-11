@@ -3,6 +3,9 @@
 .history/
 .promptx/
 
+# cache
+.cache/
+
 # Build directories
 build/
 bin/
