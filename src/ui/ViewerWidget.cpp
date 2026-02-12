@@ -19,6 +19,7 @@
 #include "ui/DialogCreateCylinder.h"
 #include "ui/DialogCreateCone.h"
 #include "ui/DialogCreatePolygon.h"
+#include "ui/DialogExportImage.h"
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -27,7 +28,10 @@
 /* read */
 #include <STEPControl_Reader.hxx>
 #include <IGESControl_Reader.hxx>
+#include <IGESControl_Writer.hxx>
+#include <IGESControl_Controller.hxx>
 #include <STEPCAFControl_Reader.hxx>
+#include <STEPCAFControl_Writer.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TDocStd_Document.hxx>
 #include <TopAbs_ShapeEnum.hxx>
@@ -447,6 +451,53 @@ void ViewerWidget::loadModel(const QString &filename)
     m_occView->viewfit();
 }
 
+
+void ViewerWidget::exportModel(const QString &filename)
+{
+    if (m_doc->m_ocafDoc.IsNull()) {
+        QMessageBox::warning(this, "Export", "No document to export.");
+        return;
+    }
+
+    if (filename.endsWith(".step", Qt::CaseInsensitive) || filename.endsWith(".stp", Qt::CaseInsensitive)) {
+        STEPCAFControl_Writer writer;
+        writer.SetNameMode(true);
+        // Transfer the document to the writer
+        if (!writer.Transfer(m_doc->m_ocafDoc, STEPControl_AsIs)) {
+            QMessageBox::critical(this, "Error", "Failed to transfer document to STEP writer.");
+            return;
+        }
+        // Write the file
+        if (writer.Write(filename.toUtf8().constData()) != IFSelect_RetDone) {
+            QMessageBox::critical(this, "Error", "Failed to write STEP file.");
+        }
+    } 
+    else if (filename.endsWith(".iges", Qt::CaseInsensitive) || filename.endsWith(".igs", Qt::CaseInsensitive)) {
+        IGESControl_Controller::Init();
+        IGESControl_Writer writer("MM", 1); // Millimeters
+
+        // Gather shapes from OCAF to export
+        Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(m_doc->m_ocafDoc->Main());
+        TDF_LabelSequence labels;
+        shapeTool->GetFreeShapes(labels);
+
+        for (Standard_Integer i = 1; i <= labels.Length(); ++i) {
+            TopoDS_Shape shape = shapeTool->GetShape(labels.Value(i));
+            if (!shape.IsNull()) {
+                writer.AddShape(shape);
+            }
+        }
+
+        writer.ComputeModel();
+        if (!writer.Write(filename.toUtf8().constData())) {
+            QMessageBox::critical(this, "Error", "Failed to write IGES file.");
+        }
+    }
+    else {
+        QMessageBox::warning(this, "Export", "Unsupported file format.");
+    }
+}
+
 void ViewerWidget::viewFit()
 {
     m_occView->viewfit();
@@ -555,6 +606,17 @@ void ViewerWidget::clipping(const gp_Dir &normal, const gp_Pnt &point, const boo
 void ViewerWidget::explosion()
 {
     m_occView->checkInterference();
+}
+
+void ViewerWidget::exportPicture()
+{
+    if (!m_dlgExportImage) {
+        m_dlgExportImage = new DialogExportImage(m_occView->View(), this);
+        m_dlgExportImage->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgExportImage, &QDialog::destroyed, this, [this]() { m_dlgExportImage = nullptr; });
+    }
+    m_dlgExportImage->show();
+    m_dlgExportImage->raise();
 }
 
 void ViewerWidget::measureDistance()

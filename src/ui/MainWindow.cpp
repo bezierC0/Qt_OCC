@@ -121,6 +121,29 @@ void MainWindow::createFileGroup()
     m_openAction = new QAction(QIcon(":/icons/icon/open.png"), tr("Open"), this); // Assuming an icon path
     connect(m_openAction, &QAction::triggered, this, &MainWindow::onOpenFile);
     m_filePannel->addLargeAction(m_openAction);
+
+    // export panel
+    auto createExportPannel = [&](){
+        m_exportPannel = m_fileCategory->addPannel(tr("Export"));
+
+        m_exportFileAction = new QAction(QIcon(":/icons/icon/file_export_file.svg"), tr("File"), this); 
+        connect(m_exportFileAction, &QAction::triggered, this, &MainWindow::onExportFile);
+        m_exportPannel->addLargeAction(m_exportFileAction);
+
+        m_exportPicAction = new QAction(QIcon(":/icons/icon/file_export_picture.svg"), tr("Picture"), this); 
+        connect(m_exportPicAction, &QAction::triggered, this, &MainWindow::onExportPicture);
+        m_exportPannel->addLargeAction(m_exportPicAction);
+    };
+
+    createExportPannel();
+
+    // ---- File Others Group ----
+    m_fileOthersPannel = m_fileCategory->addPannel(tr("Others"));
+
+    // exit
+    m_exitAction = new QAction(QIcon(":/icons/icon/file_exit.svg"), tr("Exit"), this); // Assuming an icon path
+    connect(m_exitAction, &QAction::triggered, this, &MainWindow::onExit);
+    m_fileOthersPannel->addLargeAction(m_exitAction);
 }
 
 void MainWindow::createViewGroup()
@@ -310,8 +333,8 @@ void MainWindow::createToolGroup()
         connect(m_clippingAction, &QAction::triggered, this, &MainWindow::onClipping);
         m_clippingPannel->addLargeAction(m_clippingAction);
     };
+    
     createClippingPannel();
-
     /* create Measure Pannel */
     auto createMeasurePannel = [&](){
         /* Measure Pannel */
@@ -549,12 +572,24 @@ void MainWindow::onSaveAsFile()
 
 void MainWindow::onExportFile()
 {
-    // TODO
+    QString fileName = QFileDialog::getSaveFileName(this, tr("Export File"),
+                                                    QString(),
+                                                    tr("STEP Files (*.step *.stp);;IGES Files (*.iges *.igs)"));
+    if (!fileName.isEmpty()) {
+        m_viewerWidget->exportModel(fileName);
+    }
+}
+
+void MainWindow::onExportPicture()
+{
+    if (m_viewerWidget) {
+        m_viewerWidget->exportPicture();
+    }
 }
 
 void MainWindow::onExit()
 {
-    // TODO
+    close();
 }
 
 void MainWindow::onViewFit() const
