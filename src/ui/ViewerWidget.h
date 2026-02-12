@@ -22,6 +22,7 @@ class DialogCreateSphere;
 class DialogCreatePolygon;
 class DialogCreateBezier;
 class DialogCreateNurbs;
+class DialogExportImage;
 
 template<typename T>
 class Tree;
@@ -49,6 +50,7 @@ public:
 
     void clearAll();
     void loadModel(const QString& filename);
+    void exportModel(const QString& filename);
 
     //view
     void viewFit();
@@ -104,6 +106,7 @@ public:
     void repairAndSave(const TopoDS_Shape& shape);
     void updateTree();
 
+    void exportPicture();
     void onFunctionTest();
 public slots:
     void highlightLabel(const TDF_Label& label);
@@ -148,5 +151,6 @@ private:
     DialogCreatePolygon*  m_dlgPolygon{nullptr};
     DialogCreateBezier*   m_dlgBezier{nullptr};
     DialogCreateNurbs*    m_dlgNurbs{nullptr};
+    DialogExportImage*    m_dlgExportImage{nullptr};
 };
 
