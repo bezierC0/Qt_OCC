@@ -82,6 +82,14 @@
         "variant": "cpp",
         "xtree": "cpp"
     },
+    "cmake.generator": "Ninja", // faster: Visual Studio
+    "cmake.outputLogEncoding": "shift-jis", // Ninja:shift-jis / VS:utf-8
+    "cmake.clearOutputBeforeBuild": false,
+    "cmake.buildBeforeRun": false,
+    "cmake.configureOnOpen": false,
+
+    "C_Cpp.intelliSenseCacheSize": 4096,
+    "files.encoding": "utf8",
     "cmake.configureArgs": [
         "-DOpenCASCADE_DIR=C:/Libs/OCCT/occt-7.8.0-vc14-64",
         "-DOpenCASCADE_3RDPARTY_DIR=C:/Libs/OCCT/3rdparty-vc14-64"

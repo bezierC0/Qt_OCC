@@ -19,6 +19,10 @@ class DialogCreateLine;
 class DialogCreatePoint;
 class DialogCreateRectangle;
 class DialogCreateSphere;
+class DialogCreatePolygon;
+class DialogCreateBezier;
+class DialogCreateNurbs;
+class DialogExportImage;
 
 template<typename T>
 class Tree;
@@ -46,6 +50,7 @@ public:
 
     void clearAll();
     void loadModel(const QString& filename);
+    void exportModel(const QString& filename);
 
     //view
     void viewFit();
@@ -101,6 +106,7 @@ public:
     void repairAndSave(const TopoDS_Shape& shape);
     void updateTree();
 
+    void exportPicture();
     void onFunctionTest();
 public slots:
     void highlightLabel(const TDF_Label& label);
@@ -116,7 +122,10 @@ private slots:
     void onCreatePoint(double x, double y, double z, const QColor& color);
     void onCreateRectangle(double x, double y, double z, double width, double height, const QColor& color);
     void onCreateSphere(double x, double y, double z, double radius, const QColor& color);
-
+    void onCreatePolygon(const QList<gp_Pnt>& points, bool isClosed, const QColor& color);
+    void onCreateBezier(const QList<gp_Pnt>& points, const QColor& color);
+    void onCreateNurbs(const QList<gp_Pnt>& points, int degree, const QColor& color);
+    
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
 
@@ -125,6 +134,7 @@ private:
     std::shared_ptr<Document>       m_doc{nullptr};
     bool                            m_importWithHealing{false};
     Handle(AIS_InteractiveObject)   m_highlightedShape{nullptr};
+    bool                            m_isShowBoundingBox{true};  
 
     //TopoDS_Shape m_loadedShape;
 
@@ -138,6 +148,9 @@ private:
     DialogCreatePoint*    m_dlgPoint{nullptr};
     DialogCreateRectangle* m_dlgRectangle{nullptr};
     DialogCreateSphere*   m_dlgSphere{nullptr};
+    DialogCreatePolygon*  m_dlgPolygon{nullptr};
+    DialogCreateBezier*   m_dlgBezier{nullptr};
+    DialogCreateNurbs*    m_dlgNurbs{nullptr};
+    DialogExportImage*    m_dlgExportImage{nullptr};
 };
-
 

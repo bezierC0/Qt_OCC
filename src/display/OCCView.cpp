@@ -5,6 +5,7 @@
 
 
 #include <cmath>
+#include <algorithm>
 
 #include <OpenGl_Context.hxx>
 
@@ -606,6 +607,10 @@ void OCCView::clearShape()
         }
     }
     m_interferenceObjects.clear();
+    if (!m_boundingBoxNode.IsNull()) {
+        m_context->Erase(m_boundingBoxNode, false);
+        m_boundingBoxNode.Nullify();
+    }
 }
 
 void OCCView::setShape(const Handle(AIS_InteractiveObject) & loadedShape)
@@ -641,6 +646,53 @@ void OCCView::removeShape(const TopoDS_Shape& removeShape)
     }
     auto size1 = m_loadedObjects.size();
 }
+
+void OCCView::setBoundingBox(const TopoDS_Shape& shape)
+{
+    if (!m_boundingBoxNode.IsNull()) {
+        m_context->Erase(m_boundingBoxNode, false);
+        m_boundingBoxNode.Nullify();
+    }
+
+    if (shape.IsNull()) {
+         m_context->UpdateCurrentViewer();
+         return;
+    }
+
+    Bnd_Box bbox;
+    BRepBndLib::Add(shape, bbox);
+    if (bbox.IsVoid()) {
+         m_context->UpdateCurrentViewer();
+         return;
+    }
+
+    Standard_Real xmin, ymin, zmin, xmax, ymax, zmax;
+    bbox.Get(xmin, ymin, zmin, xmax, ymax, zmax);
+
+    Standard_Real dx = xmax - xmin;
+    Standard_Real dy = ymax - ymin;
+    Standard_Real dz = zmax - zmin;
+
+    Standard_Real maxDim = std::max(dx, std::max(dy, dz));
+    // Standard_Real gap = maxDim * 0.1;
+    // if (gap < 1.0) gap = 1.0; 
+    Standard_Real gap = m_boundingBoxOffset;
+
+    xmin -= gap; ymin -= gap; zmin -= gap;
+    xmax += gap; ymax += gap; zmax += gap;
+
+    BRepPrimAPI_MakeBox boxMaker(gp_Pnt(xmin, ymin, zmin), gp_Pnt(xmax, ymax, zmax));
+    TopoDS_Shape boxShape = boxMaker.Shape();
+
+    m_boundingBoxNode = new AIS_Shape(boxShape);
+    m_boundingBoxNode->SetDisplayMode(AIS_WireFrame);
+    m_boundingBoxNode->SetColor(Quantity_NOC_RED);
+    m_boundingBoxNode->SetWidth(2.0);
+
+    m_context->Display(m_boundingBoxNode, false);
+    m_context->UpdateCurrentViewer();
+}
+
 const std::vector<Handle(AIS_InteractiveObject)> &OCCView::getShapeObjects() const
 {
     return m_loadedObjects;

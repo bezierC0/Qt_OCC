@@ -124,6 +124,7 @@ public:
     void setShape(const Handle(AIS_InteractiveObject) & loadedShape);
 
     void removeShape(const TopoDS_Shape& removeShape);
+    void setBoundingBox(const TopoDS_Shape& shape);
 
     const std::vector<Handle(AIS_InteractiveObject)> &getShapeObjects() const;
 
@@ -272,6 +273,7 @@ private:
 
     std::vector<Handle(AIS_InteractiveObject)> m_loadedObjects;
     std::vector<std::shared_ptr<View::SelectedEntity>> m_selectedObjects;
+    Handle(AIS_Shape) m_boundingBoxNode{nullptr};
     std::vector<std::shared_ptr<View::IInterferece>> m_interferenceObjects;
 
     QString myGlInfo;
@@ -294,5 +296,6 @@ private:
     Handle(AIS_TextLabel)                                               m_mouseCoordinateLabel{};               //! Coordinate text label for display
     const double                                                        m_textOffsetX{10.0};                    // text label offset to the right
     const double                                                        m_textOffsetY{-m_textOffsetX};          // text label offset to up
+    const double                                                        m_boundingBoxOffset{0.1};               // 
 
 };

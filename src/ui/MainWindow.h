@@ -27,6 +27,7 @@ private slots:
     void onSaveFile();
     void onSaveAsFile();
     void onExportFile();
+    void onExportPicture();
     void onExit();
 
     /* view */
@@ -110,8 +111,13 @@ private:
     // ---- File Group ----
     SARibbonCategory* m_fileCategory;
     SARibbonPannel* m_filePannel;
+    SARibbonPannel* m_exportPannel;
+    SARibbonPannel* m_fileOthersPannel;
     QAction* m_newAction;
     QAction* m_openAction;
+    QAction* m_exportPicAction;
+    QAction* m_exportFileAction;
+    QAction* m_exitAction;
 
     // ---- View Group ----
     SARibbonCategory* m_viewCategory;
