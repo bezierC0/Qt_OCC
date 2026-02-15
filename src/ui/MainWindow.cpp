@@ -41,6 +41,7 @@
 #include "widget_explode_assembly.h"
 #include "widget_clipping.h"
 #include "widget_set_coordinate_system.h"
+#include "widget_transform.h"
 
 
 MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
@@ -85,6 +86,7 @@ void MainWindow::setupUi()
 
     m_widgetSetCoordinateSystem = new WidgetSetCoordinateSystem(this);
     m_widgetClipping = new WidgetClipping(this);
+    m_widgetTransform = new WidgetTransform(this);
 }
 
 void MainWindow::createRibbon() {
@@ -216,9 +218,10 @@ void MainWindow::createViewGroup()
         QActionGroup* displayModeGroup = new QActionGroup(this);
         displayModeGroup->setExclusive(true);
 
-        auto createDisplayAction = [&](QIcon& icon,const QString& text, int mode) {
+        auto createDisplayAction = [&](const QIcon& icon,const QString& text, int mode) {
             //auto action = new QAction(icon,text, this);
             auto action = new QAction(text, this);
+            action->setIcon(icon);
             action->setCheckable(true);
             connect(action, &QAction::triggered, this, [this, mode]() {
                 m_viewerWidget->setDisplayMode(mode);
@@ -663,14 +666,14 @@ void MainWindow::onCheckInterference() const
 
 void MainWindow::onTransform() const
 {
-    m_viewerWidget->transform();
+    //m_viewerWidget->transform();
+    if (m_widgetTransform) {
+        m_widgetTransform->show();
+    }
 }
 
 void MainWindow::onClipping() const
 {
-    // const gp_Dir normal(0.0, 0.0, 1.0);
-    // const gp_Pnt point(0.0, 0.0, 10.0);
-    // m_viewerWidget->clipping( normal , point );
     m_widgetClipping->show();
 }
 

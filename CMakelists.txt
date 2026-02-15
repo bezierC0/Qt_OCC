@@ -162,6 +162,18 @@ else()
 endif()
 
 #########
+# Boost
+#########
+find_package(Boost REQUIRED)
+if(Boost_FOUND)
+    message(STATUS "Boost_DIR: ${Boost_DIR}")
+    message(STATUS "Boost_VERSION: ${Boost_VERSION}")
+else()
+    message(FATAL_ERROR "Boost_DIR not found or path does not exist. ")
+endif()
+include_directories(${Boost_INCLUDE_DIRS})
+
+#########
 # resource
 #########
 set(TS_FILES)
@@ -271,4 +283,5 @@ target_link_libraries(${PROJECT_NAME}
         ${OCCT_LIBRARIES_TO_LINK} 
         ${MANUAL_3RDPARTY_LIBRARIES} 
         Qt5::Widgets Qt5::Core
+        ${Boost_LIBRARIES}
 )
