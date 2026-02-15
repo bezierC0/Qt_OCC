@@ -3,9 +3,13 @@
 #include <windows.h>
 #endif
 
-
 #include <cmath>
 #include <algorithm>
+#if __cplusplus >= 202002L
+#include <ranges>
+#else
+#include <boost/range/adaptors.hpp>
+#endif
 
 #include <OpenGl_Context.hxx>
 
@@ -53,6 +57,7 @@
 #include <gp_Pnt.hxx>
 #include <gp_Dir.hxx>
 #include <gp_Vec.hxx>
+#include <gp_Quaternion.hxx>
 
 #include <Message.hxx>
 #include <Standard_WarningsRestore.hxx>
@@ -325,7 +330,17 @@ void OCCView::keyPressEvent(QKeyEvent *theEvent)
 
 void OCCView::mousePressEvent(QMouseEvent *theEvent)
 {
-    if (m_mouseMode == View::MouseMode::SELECTION) {
+    if (m_mouseMode == View::SELECTION) {
+        // Check manipulator intersection first when in SELECTION mode
+        if (!m_manipulator.IsNull() && m_manipulator->HasActiveMode()) {
+            m_manipulator->StartTransform(theEvent->pos().x(), theEvent->pos().y(), m_view);
+            if (m_manipulator->HasActiveMode()) {
+                m_previousMouseMode = m_mouseMode;
+                m_mouseMode = View::MANIPULATING;
+                return; // Stop processing selection
+            }
+        }
+
         // Perform selection first before checking selected objects
         const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier)
                                                 ? AIS_SelectionScheme_Add
@@ -338,26 +353,21 @@ void OCCView::mousePressEvent(QMouseEvent *theEvent)
             for (m_context->InitSelected(); m_context->MoreSelected(); m_context->NextSelected()) {
                 Handle(SelectMgr_EntityOwner) owner = m_context->SelectedOwner();
                 if (!owner.IsNull()) {
-                    Handle(StdSelect_BRepOwner) brepOwner =
-                        Handle(StdSelect_BRepOwner)::DownCast(owner);
+                    Handle(StdSelect_BRepOwner) brepOwner = Handle(StdSelect_BRepOwner)::DownCast(owner);
                     if (!brepOwner.IsNull()) {
                         TopoDS_Shape selectedShape = brepOwner->Shape();
-                        auto it =
-                            std::find_if(m_selectedObjects.begin(), m_selectedObjects.end(),
+                        auto it = std::find_if(m_selectedObjects.begin(), m_selectedObjects.end(),
                                          [&](const auto &it) {
                                              return selectedShape.IsSame(it->GetSelectedShape());
                                          });
                         if (it == m_selectedObjects.end()) {
-                            Handle(AIS_InteractiveObject) parentObject =
-                                Handle(AIS_InteractiveObject)::DownCast(owner->Selectable());
-                            auto entity =
-                                std::make_shared<View::SelectedEntity>(parentObject, selectedShape);
+                            Handle(AIS_InteractiveObject) parentObject = Handle(AIS_InteractiveObject)::DownCast(owner->Selectable());
+                            const auto entity = std::make_shared<View::SelectedEntity>(parentObject, selectedShape);
                             m_selectedObjects.emplace_back(entity);
-                            emit
-                            selectionChanged(); // Should create a "SelectionChanged" queue too if necessary, but this one usually refreshes UI only
+                            emit selectionChanged(); // Should create a "SelectionChanged" queue too if necessary, but this one usually refreshes UI only
 
                             // Defer signal emission to avoid breaking the iterator
-                            selectedShapesToSignal.push_back(selectedShape);
+                            selectedShapesToSignal.emplace_back(selectedShape);
                         }
                     }
                 }
@@ -387,6 +397,12 @@ void OCCView::mousePressEvent(QMouseEvent *theEvent)
 
 void OCCView::mouseReleaseEvent(QMouseEvent *theEvent)
 {
+    if (m_mouseMode == View::MANIPULATING && !m_manipulator.IsNull())
+    {
+        m_manipulator->StopTransform(true);
+        m_mouseMode = m_previousMouseMode;
+    }
+
     QOpenGLWidget::mouseReleaseEvent(theEvent);
     const Graphic3d_Vec2i aPnt(theEvent->pos().x(), theEvent->pos().y());
     const Aspect_VKeyFlags aFlags = OcctInputMapper::qtMouseModifiers2VKeys(theEvent->modifiers());
@@ -401,6 +417,31 @@ void OCCView::mouseReleaseEvent(QMouseEvent *theEvent)
 
 void OCCView::mouseMoveEvent(QMouseEvent *theEvent)
 {
+    if (m_mouseMode == View::MANIPULATING && !m_manipulator.IsNull())
+    {
+        m_manipulator->Transform(theEvent->pos().x(), theEvent->pos().y(), m_view);
+        updateView();
+        
+        // Notify observers
+        if (Handle(AIS_InteractiveObject) obj = m_manipulator->Object())
+        {
+             const auto trsf = obj->LocalTransformation();
+#if __cplusplus >= 202002L
+            for (const auto& observer : m_manipulatorObservers 
+                                | std::views::filter([](ManipulatorObserver *o) { return o != nullptr; })) {
+                observer->onManipulatorChange(trsf);
+            }
+#else
+            for (const auto& observer : m_manipulatorObservers 
+                | boost::adaptors::filtered([](const auto it){return it != nullptr;})){
+                observer->onManipulatorChange(trsf);
+            }
+#endif
+        }
+    }
+
+    m_context->MoveTo(theEvent->pos().x(), theEvent->pos().y(), m_view, true);
+
     QOpenGLWidget::mouseMoveEvent(theEvent);
     const Graphic3d_Vec2i aNewPos(theEvent->pos().x(), theEvent->pos().y());
     if (!m_view.IsNull() && UpdateMousePosition(aNewPos,
@@ -757,6 +798,55 @@ void OCCView::attachManipulator(const Handle(AIS_InteractiveObject) object)
     m_manipulator->SetPosition(theA2);
 }
 
+void OCCView::detachManipulator()
+{
+    if (m_manipulator)
+    {
+        m_manipulator->Detach();
+        reDraw();
+    }
+}
+
+void OCCView::updateManipulator()
+{
+    if (!m_manipulator.IsNull() && m_manipulator->HasActiveMode()) {
+        if (Handle(AIS_InteractiveObject) obj = m_manipulator->Object()) {
+            gp_Trsf trsf = obj->LocalTransformation();
+            gp_Quaternion rot = trsf.GetRotation();
+            
+            // Reconstruct Ax2 from Trsf
+            gp_Dir zDir(0, 0, 1);
+            gp_Dir xDir(1, 0, 0);
+            zDir.Transform(trsf);
+            xDir.Transform(trsf);
+
+            gp_Ax2 pos; 
+            pos.SetLocation(trsf.TranslationPart());
+            pos.SetDirection(zDir);
+            pos.SetXDirection(xDir);
+            
+            m_manipulator->SetPosition(pos);
+            // m_manipulator->UpdateCurrentTransform(trsf); 
+            reDraw();
+        }
+    }
+}
+
+void OCCView::addManipulatorObserver(ManipulatorObserver* observer)
+{
+    if (observer) {
+        m_manipulatorObservers.emplace_back(observer);
+    }
+}
+
+void OCCView::removeManipulatorObserver(ManipulatorObserver* observer)
+{
+    m_manipulatorObservers.erase(
+        std::remove(m_manipulatorObservers.begin(), m_manipulatorObservers.end(), observer),
+        m_manipulatorObservers.end());
+}
+
+
 const std::map<TopAbs_ShapeEnum, bool>& OCCView::getSelectionFilters() const
 {
     return m_selectionFilters;
@@ -873,7 +963,7 @@ void OCCView::checkInterference()
         std::shared_ptr<View::InterfereceImpl> resultImpl = std::make_shared<View::InterfereceImpl>();
         resultImpl->m_object = result;
 
-        resultImpl->m_boundingBox = new AIS_Shape(TopoShape::Util::CreateBoundingBox(Handle(AIS_Shape)::DownCast(result)->Shape()));
+        resultImpl->m_boundingBox = new AIS_Shape(Util::TopoShape::CreateBoundingBox(Handle(AIS_Shape)::DownCast(result)->Shape()));
 
         resultImpl->m_boundingBox->SetDisplayMode(AIS_WireFrame);
         resultImpl->m_boundingBox->SetColor(Quantity_Color(m_interfereceSetting.m_colorR, m_interfereceSetting.m_colorG, m_interfereceSetting.m_colorB, Quantity_TOC_RGB));

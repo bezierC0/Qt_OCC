@@ -13,6 +13,7 @@ class WidgetSetCoordinateSystem;
 class WidgetExplodeAssembly;
 
 class WidgetClipping;
+class WidgetTransform;
 
 class MainWindow : public SARibbonMainWindow {
     Q_OBJECT
@@ -202,4 +203,5 @@ private:
     WidgetExplodeAssembly*          m_widgetExplodeAsm { nullptr } ;
     WidgetSetCoordinateSystem*      m_widgetSetCoordinateSystem { nullptr };
     WidgetClipping*                 m_widgetClipping { nullptr };
+    WidgetTransform*                m_widgetTransform { nullptr };
 };
