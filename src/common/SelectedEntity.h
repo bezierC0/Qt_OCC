@@ -1,34 +1,30 @@
 #pragma once
+#include <Standard_Handle.hxx>
 #include <Standard_WarningsDisable.hxx>
 #include <Standard_WarningsRestore.hxx>
 
-#include <AIS_InteractiveContext.hxx>
-#include <AIS_Shape.hxx>
 #include <AIS_ViewController.hxx>
-#include <TopAbs_ShapeEnum.hxx>
+#include <TDF_Label.hxx> // Needed for TDF_Label member
+
+// Forward declarations
+class AIS_InteractiveObject;
+class AIS_Shape;
+class TopoDS_Shape;
+
 namespace View
 {
 class SelectedEntity {
 public:
-    SelectedEntity(Handle(AIS_InteractiveObject) parentObject,TopoDS_Shape selectedShape)
-        : m_parentObject(parentObject),m_selectedShape(selectedShape)
-    {
-    }
+    SelectedEntity(const Handle(AIS_InteractiveObject)& parentObject, const Handle(AIS_Shape)& selectedShape, const TDF_Label& label);
 
-    Handle(AIS_InteractiveObject) GetParentInteractiveObject(){
-        return m_parentObject;
-    }
-    TopoDS_Shape GetSelectedShape(){
-        return m_selectedShape;
-    }
-    Handle(AIS_InteractiveObject) m_parentObject{};
-    TopoDS_Shape m_selectedShape{};
+    Handle(AIS_InteractiveObject) GetParentInteractiveObject() const;
+    Handle(AIS_Shape) GetSelectedShape() const;
+    const TDF_Label& GetLabel() const;
+    
+    Handle(AIS_InteractiveObject) m_parentObject;
+    Handle(AIS_Shape) m_selectedShape;
+    TDF_Label m_label;
 
-    //gp_Pnt m_centerPoint;
-
-    bool operator==(const SelectedEntity &other) const
-    {
-        return m_selectedShape.IsSame(other.m_selectedShape);
-    }
+    bool operator==(const SelectedEntity &other) const;
 };
 } // namespace View

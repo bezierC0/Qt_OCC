@@ -5,6 +5,7 @@
 #include "OCCView.h"
 #include "Tree.h"
 #include "ViewManager.h"
+#include "util/TopoShapeUtil.h"
 
 #include "ui/DialogCreatePoint.h"
 #include "ui/DialogCreateBezier.h"
@@ -20,6 +21,7 @@
 #include "ui/DialogCreateCone.h"
 #include "ui/DialogCreatePolygon.h"
 #include "ui/DialogExportImage.h"
+#include "WidgetInterference.h"
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -104,10 +106,11 @@
 #include <IFSelect_ReturnStatus.hxx>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
-
+#include "common/ShapeLabelManager.h"
 
 namespace
 {
+// TODO move to Util
 bool isShapeAssembly(const TDF_Label &lbl)
 {
     return XCAFDoc_ShapeTool::IsAssembly(lbl);
@@ -190,26 +193,6 @@ bool highlightLabelRecursively(const TDF_Label& targetLabel, const TDF_Label& cu
 }
 
 
-// Helper to determine shape type string
-std::string getShapeTypeString(const TopoDS_Shape& shape)
-{
-    if (shape.IsNull()) return "Shape";
-    switch (shape.ShapeType())
-    {
-        case TopAbs_COMPOUND:       return "Compound";
-        case TopAbs_COMPSOLID:      return "CompSolid";
-        case TopAbs_SOLID:          return "Solid";
-        case TopAbs_SHELL:          return "Shell";
-        case TopAbs_FACE:           return "Face";
-        case TopAbs_WIRE:           return "Wire";
-        case TopAbs_EDGE:           return "Edge";
-        case TopAbs_VERTEX:         return "Vertex";
-        case TopAbs_SHAPE:          return "Shape";
-        default:                    return "Unknown";
-    }
-}
-
-
 // mayo xcaf.cpp deepBuildAssemblyTree
 uint32_t deepBuildAssemblyTree(uint32_t parentNode, const TDF_Label &label,
                                Tree<TDF_Label> &modelTree)
@@ -224,6 +207,16 @@ uint32_t deepBuildAssemblyTree(uint32_t parentNode, const TDF_Label &label,
         std::cout << node << "  : " << attrName->Get() << std::endl;
     }
     #endif
+    // In deepBuildAssemblyTree
+    
+    // Register Shape with ShapeLabelManager
+    if (XCAFDoc_ShapeTool::IsShape(label)) {
+        TopoDS_Shape shape;
+        if (XCAFDoc_ShapeTool::GetShape(label, shape)) {
+            ShapeLabelManager::GetInstance().Register(shape, label);
+        }
+    }
+
     if (isShapeAssembly(label)) {
         #ifdef mydebug
         if (isShape(label))
@@ -595,7 +588,13 @@ void ViewerWidget::transform()
 
 void ViewerWidget::checkInterference()
 {
-    m_occView->checkInterference();
+    if (!m_widgetInterference) {
+        m_widgetInterference = new WidgetInterference(this);
+        m_widgetInterference->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetInterference, &QWidget::destroyed, this, [this]() { m_widgetInterference = nullptr; });
+    }
+    m_widgetInterference->show();
+    m_widgetInterference->raise();
 }
 
 void ViewerWidget::clipping(const gp_Dir &normal, const gp_Pnt &point, const bool isOn)
@@ -632,11 +631,22 @@ void ViewerWidget::measureDistance()
         return;
     }
 
-    TopoDS_Shape shape0 = selectedList.at(0)->GetSelectedShape();
-    TopoDS_Shape shape1 = selectedList.at(1)->GetSelectedShape();
-    if (shape0.IsNull() || shape1.IsNull() || shape0.ShapeType() != TopAbs_VERTEX
-        || shape1.ShapeType() != TopAbs_VERTEX) {
-        QMessageBox::warning(
+    const auto aisShape0 = selectedList.at(0)->GetSelectedShape();
+    const auto aisShape1 = selectedList.at(1)->GetSelectedShape();
+    
+    if (aisShape0.IsNull() || aisShape1.IsNull() || 
+        aisShape0->Shape().IsNull() || aisShape1->Shape().IsNull()) {
+         QMessageBox::warning(
+            this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
+            QCoreApplication::translate("ViewerWidget", "Please select exactly two vertices."));
+        return;
+    }
+
+    const TopoDS_Shape& shape0 = aisShape0->Shape();
+    const TopoDS_Shape& shape1 = aisShape1->Shape();
+
+    if (shape0.ShapeType() != TopAbs_VERTEX || shape1.ShapeType() != TopAbs_VERTEX) {
+         QMessageBox::warning(
             this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
             QCoreApplication::translate("ViewerWidget", "Please select exactly two vertices."));
         return;
@@ -1100,14 +1110,16 @@ void ViewerWidget::patternLinear()
         return;
     }
 
-    const auto &shape0 = selectedObjects.at(0)->GetSelectedShape();
-    const auto &shape1 = selectedObjects.at(1)->GetSelectedShape();
+    const auto &aisShape0 = selectedObjects.at(0)->GetSelectedShape();
+    const auto &aisShape1 = selectedObjects.at(1)->GetSelectedShape();
 
-    if (shape0.IsNull() || shape1.IsNull()) {
+    if (aisShape0.IsNull() || aisShape1.IsNull()) {
         return;
     }
+    const TopoDS_Shape& shape0 = aisShape0->Shape();
+    const TopoDS_Shape& shape1 = aisShape1->Shape();
 
-    if (shape0.ShapeType() != TopAbs_SHAPE && shape1.ShapeType() != TopAbs_EDGE) {
+    if (shape0.IsNull() || shape1.IsNull() || shape0.ShapeType() != TopAbs_SHAPE || shape1.ShapeType() != TopAbs_EDGE) {
         return;
     }
 
@@ -1136,14 +1148,16 @@ void ViewerWidget::patternCircular()
         return;
     }
 
-    const auto &shape0 = selectedObjects.at(0)->GetSelectedShape();
-    const auto &shape1 = selectedObjects.at(1)->GetSelectedShape();
+    const auto &aisShape0 = selectedObjects.at(0)->GetSelectedShape();
+    const auto &aisShape1 = selectedObjects.at(1)->GetSelectedShape();
 
-    if (shape0.IsNull() || shape1.IsNull()) {
+    if (aisShape0.IsNull() || aisShape1.IsNull()) {
         return;
     }
+    const TopoDS_Shape& shape0 = aisShape0->Shape();
+    const TopoDS_Shape& shape1 = aisShape1->Shape();
 
-    if (shape0.ShapeType() != TopAbs_SHAPE && shape1.ShapeType() != TopAbs_EDGE) {
+    if (shape0.IsNull() || shape1.IsNull() || shape0.ShapeType() != TopAbs_SHAPE || shape1.ShapeType() != TopAbs_EDGE) {
         return;
     }
 
@@ -1171,14 +1185,16 @@ void ViewerWidget::mirrorByPlane()
         return;
     }
 
-    const auto shape = selectedObjects.at(0)->GetSelectedShape();
-    const auto plane = selectedObjects.at(1)->GetSelectedShape();
+    const auto aisShape = selectedObjects.at(0)->GetSelectedShape();
+    const auto aisPlane = selectedObjects.at(1)->GetSelectedShape();
 
-    if (shape.IsNull() || plane.IsNull()) {
+    if (aisShape.IsNull() || aisPlane.IsNull()) {
         return;
     }
+    const TopoDS_Shape& shape = aisShape->Shape();
+    const TopoDS_Shape& plane = aisPlane->Shape();
 
-    if (shape.ShapeType() != TopAbs_SHAPE && plane.ShapeType() != TopAbs_FACE) {
+    if (shape.IsNull() || plane.IsNull() || shape.ShapeType() != TopAbs_SHAPE || plane.ShapeType() != TopAbs_FACE) {
         return;
     }
 
@@ -1201,14 +1217,16 @@ void ViewerWidget::mirrorByAxis()
             QCoreApplication::translate("ViewerWidget", "Please select exactly two shapes."));
         return;
     }
-    const auto shape0 = selectedObjects.at(0)->GetSelectedShape();
-    const auto shape1 = selectedObjects.at(1)->GetSelectedShape();
+    const auto aisShape0 = selectedObjects.at(0)->GetSelectedShape();
+    const auto aisShape1 = selectedObjects.at(1)->GetSelectedShape();
 
-    if (shape0.IsNull() || shape1.IsNull()) {
+    if (aisShape0.IsNull() || aisShape1.IsNull()) {
         return;
     }
+    const TopoDS_Shape& shape0 = aisShape0->Shape();
+    const TopoDS_Shape& shape1 = aisShape1->Shape();
 
-    if (shape0.ShapeType() != TopAbs_SHAPE && shape1.ShapeType() != TopAbs_EDGE) {
+    if (shape0.IsNull() || shape1.IsNull() || shape0.ShapeType() != TopAbs_SHAPE || shape1.ShapeType() != TopAbs_EDGE) {
         return;
     }
 
@@ -1244,8 +1262,15 @@ void ViewerWidget::shell()
         return;
     }
 
-    const auto shape0 = selectedList.at(0)->GetSelectedShape();
-    if (shape0.ShapeType() != TopAbs_FACE) {
+    const auto aisShape0 = selectedList.at(0)->GetSelectedShape();
+    if (aisShape0.IsNull()) {
+         QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
+                             QCoreApplication::translate("ViewerWidget", "Type Error."));
+        return;
+    }
+    const TopoDS_Shape& shape0 = aisShape0->Shape();
+
+    if (shape0.IsNull() || shape0.ShapeType() != TopAbs_FACE) {
         QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
                              QCoreApplication::translate("ViewerWidget", "Type Error."));
         return;
@@ -1253,7 +1278,7 @@ void ViewerWidget::shell()
     const auto boxObject = selectedList.at(0)->GetParentInteractiveObject();
     const auto aisBox = Handle(AIS_Shape)::DownCast(boxObject);
     const auto box = aisBox->Shape();
-    if (box.ShapeType() != TopAbs_SOLID) {
+    if (box.IsNull() || box.ShapeType() != TopAbs_SOLID) {
         QMessageBox::warning(this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
                              QCoreApplication::translate("ViewerWidget", "Type Error."));
         return;
@@ -1302,7 +1327,7 @@ void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const
         label = shapeTool->AddShape(shape, false); // Add as simple shape
         
         // Set a name
-        std::string typeName = getShapeTypeString(shape);
+        std::string typeName = Util::TopoShape::GetShapeTypeString(shape);
         TDataStd_Name::Set(label, typeName.c_str());
 
         // Set Color

@@ -22,6 +22,7 @@ namespace Ais
 namespace TopoShape
 {
     TopoDS_Shape CreateBoundingBox(const TopoDS_Shape &shape);
+    std::string GetShapeTypeString(const TopoDS_Shape& shape);
 } // namespace TopoShape
 
 } // namespace Util

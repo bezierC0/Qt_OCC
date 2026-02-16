@@ -23,6 +23,7 @@ class DialogCreatePolygon;
 class DialogCreateBezier;
 class DialogCreateNurbs;
 class DialogExportImage;
+class WidgetInterference;
 
 template<typename T>
 class Tree;
@@ -152,5 +153,6 @@ private:
     DialogCreateBezier*   m_dlgBezier{nullptr};
     DialogCreateNurbs*    m_dlgNurbs{nullptr};
     DialogExportImage*    m_dlgExportImage{nullptr};
+    WidgetInterference*   m_widgetInterference{nullptr};
 };
 
