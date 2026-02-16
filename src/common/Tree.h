@@ -1,17 +1,9 @@
 #pragma once
 #include <TDF_Label.hxx>
-using TreeNodeId = uint32_t;
-static TreeNodeId lastNodeId = 0; // TreeNodeId
-struct TreeNode
-{
-    TreeNodeId siblingPrevious;
-    TreeNodeId siblingNext;
-    TreeNodeId childFirst;
-    TreeNodeId childLast;
-    TreeNodeId parent;
-    TDF_Label data;
-    bool isDeleted;
-};
+
+#include <vector>
+#include "TreeNode.h"
+
 template<typename T>
 class Tree
 {
@@ -166,8 +158,13 @@ inline TreeNodeId Tree<T>::appendChild(const TreeNodeId parentId, T&& data )
     node->data = std::forward<T>( data );
     return this->lastNodeId();
 }
-template<typename T>
-const TreeNode* Tree<T>::ptrNode(const TreeNodeId id) const
+template <typename T>
+inline void Tree<T>::removeRoot(TreeNodeId id)
+{
+    // TODO
+}
+template <typename T>
+const TreeNode *Tree<T>::ptrNode(const TreeNodeId id) const
 {
     return id != 0 && id <= m_vecNode.size() ? &m_vecNode.at(id - 1) : nullptr;
 }

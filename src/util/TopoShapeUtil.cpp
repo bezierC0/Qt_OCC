@@ -61,3 +61,21 @@ TopoDS_Shape Util::TopoShape::CreateBoundingBox(const TopoDS_Shape &shape)
     return boundingBoxShape;
 }
 
+// Helper to determine shape type string
+std::string Util::TopoShape::GetShapeTypeString(const TopoDS_Shape& shape)
+{
+    if (shape.IsNull()) return "Shape";
+    switch (shape.ShapeType())
+    {
+        case TopAbs_COMPOUND:       return "Compound";
+        case TopAbs_COMPSOLID:      return "CompSolid";
+        case TopAbs_SOLID:          return "Solid";
+        case TopAbs_SHELL:          return "Shell";
+        case TopAbs_FACE:           return "Face";
+        case TopAbs_WIRE:           return "Wire";
+        case TopAbs_EDGE:           return "Edge";
+        case TopAbs_VERTEX:         return "Vertex";
+        case TopAbs_SHAPE:          return "Shape";
+        default:                    return "Unknown";
+    }
+}

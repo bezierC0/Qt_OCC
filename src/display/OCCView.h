@@ -64,6 +64,12 @@ public:
     Handle(AIS_InteractiveObject)       m_boundingBox     {nullptr};
 };
 
+struct InterferenceResult {
+    Handle(AIS_InteractiveObject) objA;
+    Handle(AIS_InteractiveObject) objB;
+    TopoDS_Shape intersection;
+};
+
 class InterfereceSetting{
 public:
     InterfereceSetting( double r = 0.0, double g = 0.0, double b = 0.0, double a = 0.0, double width = 0.0, bool display = true )
@@ -149,6 +155,8 @@ public:
     void transform(); 
 
     void checkInterference();
+    std::vector<View::InterferenceResult> checkInterference(const std::vector<Handle(AIS_InteractiveObject)>& objects);
+    void clearInterference();
 
     void reDraw();
 

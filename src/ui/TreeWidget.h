@@ -34,7 +34,7 @@ private slots:
 private:
     void rebuildData( const Tree<TDF_Label>& modelTree );
     void buildAssemblyTree( const Tree<TDF_Label>& tree, uint32_t parentId, QTreeWidgetItem* parentItem );
-    void buildShapeTree(const TopoDS_Shape& shape, const QTreeWidgetItem* parentItem );
+    void buildShapeTree(const Tree<TDF_Label>& tree, const TopoDS_Shape& shape, QTreeWidgetItem* parentItem );
 
     std::shared_ptr<Tree<TDF_Label>> m_modelTree = nullptr;
 };

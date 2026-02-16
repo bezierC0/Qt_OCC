@@ -18,6 +18,9 @@
 #include <QMouseEvent>
 
 #include <AIS_Shape.hxx>
+#include <AIS_ViewController.hxx>
+#include <XCAFPrs_AISObject.hxx>
+#include <TDF_Label.hxx>
 #include <AIS_ViewCube.hxx>
 #include <AIS_Manipulator.hxx>
 #include <AIS_AnimationCamera.hxx>
@@ -73,6 +76,7 @@
 #include "OcctGlTools.h"
 #include "TopoShapeUtil.h"
 #include "SelectedEntity.h"
+
 #include "CoordinateSystemShape.h"
 #include "OcctInputMapper.h"
 #include "OcctQtFrameBuffer.h"
@@ -358,11 +362,21 @@ void OCCView::mousePressEvent(QMouseEvent *theEvent)
                         TopoDS_Shape selectedShape = brepOwner->Shape();
                         auto it = std::find_if(m_selectedObjects.begin(), m_selectedObjects.end(),
                                          [&](const auto &it) {
-                                             return selectedShape.IsSame(it->GetSelectedShape());
+                                             if (it->GetSelectedShape().IsNull()) return false;
+                                             return selectedShape.IsSame(it->GetSelectedShape()->Shape());
                                          });
                         if (it == m_selectedObjects.end()) {
                             Handle(AIS_InteractiveObject) parentObject = Handle(AIS_InteractiveObject)::DownCast(owner->Selectable());
-                            const auto entity = std::make_shared<View::SelectedEntity>(parentObject, selectedShape);
+                            
+                            TDF_Label label;
+                            if (!parentObject.IsNull() && parentObject->IsKind(STANDARD_TYPE(XCAFPrs_AISObject))) {
+                                label = Handle(XCAFPrs_AISObject)::DownCast(parentObject)->GetLabel();
+                            }
+                            
+                            // Wrap the TopoDS_Shape in an AIS_Shape
+                            Handle(AIS_Shape) aisShape = new AIS_Shape(selectedShape);
+                            
+                            const auto entity = std::make_shared<View::SelectedEntity>(parentObject, aisShape, label);
                             m_selectedObjects.emplace_back(entity);
                             emit selectionChanged(); // Should create a "SelectionChanged" queue too if necessary, but this one usually refreshes UI only
 
@@ -883,6 +897,21 @@ void OCCView::transform()
 
 void OCCView::checkInterference()
 {
+    const auto &selectObjects = getSelectedObjects();
+    std::vector<Handle(AIS_InteractiveObject)> objects;
+    objects.reserve(selectObjects.size());
+    for (const auto &entity : selectObjects) {
+        if (entity && !entity->m_parentObject.IsNull()) {
+            objects.push_back(entity->m_parentObject);
+        }
+    }
+    checkInterference(objects);
+}
+
+std::vector<View::InterferenceResult> OCCView::checkInterference(const std::vector<Handle(AIS_InteractiveObject)>& objects)
+{
+    std::vector<View::InterferenceResult> interferenceResults;
+
     auto getShape = [](const Handle(AIS_InteractiveObject) & object) -> TopoDS_Shape
     {
         if (object.IsNull())
@@ -895,25 +924,28 @@ void OCCView::checkInterference()
         }
         if (object->IsKind(STANDARD_TYPE(XCAFPrs_AISObject)))
         {
-            auto xcafObj = Handle(XCAFPrs_AISObject)::DownCast(object);
+            // auto xcafObj = Handle(XCAFPrs_AISObject)::DownCast(object);
             return {}; // Returning empty shape for now.
         }
         return {};
     };
 
     CollisionDetector collsion { m_context };
-    const auto &selectObjects = getSelectedObjects();
 
-    std::vector<Handle(AIS_InteractiveObject)> results;
-    for (size_t i = 0; i < selectObjects.size(); ++i)
+    // Clear previous interference visualization
+    clearInterference();
+
+    std::vector<Handle(AIS_InteractiveObject)> results; 
+
+    for (size_t i = 0; i < objects.size(); ++i)
     {
-        for (size_t j = i + 1; j < selectObjects.size(); ++j)
+        for (size_t j = i + 1; j < objects.size(); ++j)
         {
-            Handle(AIS_InteractiveObject) objA = selectObjects.at(i)->GetParentInteractiveObject();
-            Handle(AIS_InteractiveObject) objB = selectObjects.at(j)->GetParentInteractiveObject();
+            Handle(AIS_InteractiveObject) objA = objects.at(i);
+            Handle(AIS_InteractiveObject) objB = objects.at(j);
 
             const auto shapeA = getShape(objA);
-            const auto shapeB = getShape(objB); // Fixed bug: was using objA for both
+            const auto shapeB = getShape(objB);
 
             if (shapeA.IsNull() || shapeB.IsNull())
                 continue;
@@ -927,37 +959,19 @@ void OCCView::checkInterference()
                 continue;
             }
 
-            objA->SetTransparency(0.1);
-            objB->SetTransparency(0.1);
+            // objA->SetTransparency(0.5); 
+            // objB->SetTransparency(0.5);
             
             results.emplace_back(result);
+            
+            View::InterferenceResult res;
+            res.objA = objA;
+            res.objB = objB;
+            res.intersection = Handle(AIS_Shape)::DownCast(result)->Shape();
+            interferenceResults.push_back(res);
         }
     }
-    auto createThickWireframe =[](const TopoDS_Shape& shape, 
-                                                const Quantity_Color& color, 
-                                                Standard_Real width) -> Handle(AIS_Shape)
-    {
-        Handle(AIS_Shape) wireframe = new AIS_Shape(shape);
-        wireframe->SetDisplayMode(AIS_WireFrame);
-        wireframe->SetColor(color);
-
-        Handle(Prs3d_Drawer) drawer = wireframe->Attributes();
-
-        Handle(Prs3d_LineAspect) lineAspect = new Prs3d_LineAspect(color, Aspect_TOL_SOLID, width);
-
-        drawer->SetWireAspect(lineAspect);
-        drawer->SetLineAspect(lineAspect);
-        drawer->SetFreeBoundaryAspect(lineAspect);
-        drawer->SetUnFreeBoundaryAspect(lineAspect);
-
-        Handle(Prs3d_LineAspect) edgeAspect = new Prs3d_LineAspect(color, Aspect_TOL_SOLID, width);
-        drawer->SetFaceBoundaryAspect(edgeAspect);
-
-        drawer->SetFaceBoundaryDraw(Standard_True);
-
-        return wireframe;
-    };
-
+    
     for (const auto &result : results)
     {
         std::shared_ptr<View::InterfereceImpl> resultImpl = std::make_shared<View::InterfereceImpl>();
@@ -967,24 +981,26 @@ void OCCView::checkInterference()
 
         resultImpl->m_boundingBox->SetDisplayMode(AIS_WireFrame);
         resultImpl->m_boundingBox->SetColor(Quantity_Color(m_interfereceSetting.m_colorR, m_interfereceSetting.m_colorG, m_interfereceSetting.m_colorB, Quantity_TOC_RGB));
-        // TODO BUG: width is not working
         resultImpl->m_boundingBox->SetWidth(m_interfereceSetting.m_width);
-        //auto width = resultImpl->m_boundingBox->Width();
-        // Handle(Prs3d_Drawer) drawer = resultImpl->m_boundingBox->Attributes();
-        // Handle(Prs3d_LineAspect) lineAspect =
-        //     new Prs3d_LineAspect(Quantity_Color(m_interfereceSetting.m_colorR, m_interfereceSetting.m_colorG, m_interfereceSetting.m_colorB, Quantity_TOC_RGB),
-        //                          Aspect_TOL_SOLID,
-        //                          m_interfereceSetting.m_width);
-        // drawer->SetWireAspect(lineAspect);
-
-        // resultImpl->m_boundingBox = createThickWireframe(
-        //     TopoShape::Util::CreateBoundingBox(Handle(AIS_Shape)::DownCast(result)->Shape()),
-        //     Quantity_Color(m_interfereceSetting.m_colorR, m_interfereceSetting.m_colorG, m_interfereceSetting.m_colorB, Quantity_TOC_RGB),
-        //     m_interfereceSetting.m_width
-        // );
+        
         m_interferenceObjects.emplace_back(resultImpl);
     }
 
+    reDraw();
+    return interferenceResults;
+}
+
+void OCCView::clearInterference()
+{
+    for (const auto &object : m_interferenceObjects)
+    {
+        if (const auto objectImpl = std::reinterpret_pointer_cast<View::InterfereceImpl>(object))
+        {
+            m_context->Erase(objectImpl->m_object, false);
+            m_context->Erase(objectImpl->m_boundingBox, false);
+        }
+    }
+    m_interferenceObjects.clear();
     reDraw();
 }
 

@@ -1,6 +1,7 @@
 #include "TreeWidget.h"
 #include "QStringConv.h"
 #include "Tree.h"
+#include "util/TopoShapeUtil.h"
 #include <unordered_set>
 
 #include <TDataStd_Name.hxx>
@@ -81,7 +82,6 @@ void TreeWidget::setData( const Tree<TDF_Label>& modelTree )
 
 void TreeWidget::rebuildData( const Tree<TDF_Label>& modelTree )
 {
-
     for ( const auto& rootId : modelTree.m_vecRoot ) {
         const TDF_Label& label = modelTree.nodeData( rootId );
         QTreeWidgetItem* rootItem = new QTreeWidgetItem( this );
@@ -93,68 +93,77 @@ void TreeWidget::rebuildData( const Tree<TDF_Label>& modelTree )
     }
 }
 
-void TreeWidget::buildAssemblyTree( const Tree<TDF_Label>& tree, const TreeNodeId parentId, QTreeWidgetItem* parentItem )
+void TreeWidget::buildAssemblyTree( const Tree<TDF_Label>& modelTree, const TreeNodeId parentId, QTreeWidgetItem* parentItem )
 {
     // QString WidgetModelTreeBuilder_Xde::referenceItemText(
-    TreeNodeId childId = tree.nodeChildFirst( parentId );
+    TreeNodeId childId = modelTree.nodeChildFirst( parentId );
     while ( childId != 0 ) {
-        const TDF_Label& childLabel = tree.nodeData( childId );
+        const TDF_Label& childLabel = modelTree.nodeData( childId );
         //const TDF_Label productLabel = shapeReferred( childLabel );
         auto* childItem = new QTreeWidgetItem( parentItem );
         const auto instanceName = Mayo::to_QString( labelAttrStdName( childLabel ) );
         //childItem->setText( 0, referenceItemText( childLabel , productLabel ) );
         childItem->setText( 0, QString::fromStdString( std::to_string( childId ) + " : " + instanceName.toStdString() ) );
         childItem->setData(0, Qt::UserRole, QVariant::fromValue(childId)); // Store TreeNodeId
-        if ( XCAFDoc_ShapeTool::IsReference( childLabel ) ) 
-        {
-            if (XCAFDoc_ShapeTool::IsShape(childLabel))
-            {
-                TopoDS_Shape shape = XCAFDoc_ShapeTool::GetShape(childLabel);
-                buildShapeTree(shape, childItem);
-            }
+        
+        // Recurse to show children (Components/Sub-assemblies)
+        if (XCAFDoc_ShapeTool::IsAssembly(childLabel)) {
+            buildAssemblyTree( modelTree, childId, childItem );
         }
-        else
-        {
-            buildAssemblyTree( tree, childId, childItem );
+        // else if (XCAFDoc_ShapeTool::IsComponent(childLabel)) {
+        //     buildAssemblyTree( modelTree, childId, childItem );
+        // }
+        // if (XCAFDoc_ShapeTool::IsCompound(childLabel)) {
+        // }
+        else if (XCAFDoc_ShapeTool::IsSubShape(childLabel)) {
+            const TopoDS_Shape shape = XCAFDoc_ShapeTool::GetShape(childLabel);
+            buildShapeTree(modelTree, shape, childItem);
         }
-        childId = tree.nodeSiblingNext( childId );
+        else if (XCAFDoc_ShapeTool::IsShape(childLabel)) {
+            const TopoDS_Shape shape = XCAFDoc_ShapeTool::GetShape(childLabel);
+            buildShapeTree(modelTree, shape, childItem);
+        }
+        
+        childId = modelTree.nodeSiblingNext( childId );
     }
 }
 
-void TreeWidget::buildShapeTree(const TopoDS_Shape& shape, const QTreeWidgetItem* parentItem)
+void TreeWidget::buildShapeTree(const Tree<TDF_Label>& tree, const TopoDS_Shape& shape, QTreeWidgetItem* parentItem)
 {
-#ifdef mydebug
-    std::cout << " Shape Type: " << shape.ShapeType() << std::endl;
-#endif
     // Shell
     for (TopExp_Explorer shellExp(shape, TopAbs_SHELL); shellExp.More(); shellExp.Next())
     {
         TopoDS_Shell shell = TopoDS::Shell(shellExp.Current());
-#ifdef mydebug
-        std::cout << "  Shell" << std::endl;
-#endif
+        auto* shellItem = new QTreeWidgetItem(parentItem);
+        shellItem->setText(0, QString::fromStdString(Util::TopoShape::GetShapeTypeString(shell)));
+        
         // Face
         for (TopExp_Explorer faceExp(shell, TopAbs_FACE); faceExp.More(); faceExp.Next())
         {
             TopoDS_Face face = TopoDS::Face(faceExp.Current());
-#ifdef mydebug
-            std::cout << "    Face" << std::endl;
-#endif
+            auto* faceItem = new QTreeWidgetItem(shellItem);
+            faceItem->setText(0, QString::fromStdString(Util::TopoShape::GetShapeTypeString(face)));
+
             //  Edge
             for (TopExp_Explorer edgeExp(face, TopAbs_EDGE); edgeExp.More(); edgeExp.Next())
             {
                 TopoDS_Edge edge = TopoDS::Edge(edgeExp.Current());
-#ifdef mydebug
-                std::cout << "      Edge" << std::endl;
-#endif
+                auto* edgeItem = new QTreeWidgetItem(faceItem);
+                edgeItem->setText(0, QString::fromStdString(Util::TopoShape::GetShapeTypeString(edge)));
+
                 //  Vertex
-                    for (TopExp_Explorer vertexExp(edge, TopAbs_VERTEX); vertexExp.More(); vertexExp.Next())
+                 for (TopExp_Explorer vertexExp(edge, TopAbs_VERTEX); vertexExp.More(); vertexExp.Next())
                 {
                     TopoDS_Vertex vertex = TopoDS::Vertex(vertexExp.Current());
                     gp_Pnt point = BRep_Tool::Pnt(vertex);
-#ifdef mydebug
-                    std::cout << "        Vertex: (" << point.X() << ", " << point.Y() << ", " << point.Z() << ")" << std::endl;
-#endif
+                    
+                    auto* vertexItem = new QTreeWidgetItem(edgeItem);
+                    QString vertexText = QString::fromStdString(Util::TopoShape::GetShapeTypeString(vertex));
+                    vertexText += QString(" (%1, %2, %3)")
+                        .arg(point.X(), 0, 'f', 2)
+                        .arg(point.Y(), 0, 'f', 2)
+                        .arg(point.Z(), 0, 'f', 2);
+                    vertexItem->setText(0, vertexText);
                 }
             }
         }
