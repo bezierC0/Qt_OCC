@@ -22,6 +22,7 @@
 #include "ui/DialogCreatePolygon.h"
 #include "ui/DialogExportImage.h"
 #include "WidgetInterference.h"
+#include "widget_distance.h"
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -620,49 +621,14 @@ void ViewerWidget::exportPicture()
 
 void ViewerWidget::measureDistance()
 {
-    const auto acitveView = ViewManager::getInstance().getActiveView();
-    if (!acitveView)
-        return;
-    const auto &selectedList = acitveView->getSelectedObjects();
-    if (selectedList.size() != 2) {
-        QMessageBox::warning(
-            this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
-            QCoreApplication::translate("ViewerWidget", "Please select exactly two vertices."));
-        return;
+    if (!m_widgetDistance) {
+        m_widgetDistance = new WidgetDistance(this);
+        // Ensure it's deleted on close so we can create a fresh one or handle state cleanly
+        m_widgetDistance->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetDistance, &QWidget::destroyed, this, [this]() { m_widgetDistance = nullptr; });
     }
-
-    const auto aisShape0 = selectedList.at(0)->GetSelectedShape();
-    const auto aisShape1 = selectedList.at(1)->GetSelectedShape();
-    
-    if (aisShape0.IsNull() || aisShape1.IsNull() || 
-        aisShape0->Shape().IsNull() || aisShape1->Shape().IsNull()) {
-         QMessageBox::warning(
-            this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
-            QCoreApplication::translate("ViewerWidget", "Please select exactly two vertices."));
-        return;
-    }
-
-    const TopoDS_Shape& shape0 = aisShape0->Shape();
-    const TopoDS_Shape& shape1 = aisShape1->Shape();
-
-    if (shape0.ShapeType() != TopAbs_VERTEX || shape1.ShapeType() != TopAbs_VERTEX) {
-         QMessageBox::warning(
-            this, QCoreApplication::translate("ViewerWidget", "Selection Error"),
-            QCoreApplication::translate("ViewerWidget", "Please select exactly two vertices."));
-        return;
-    }
-
-    const TopoDS_Vertex &vertex0 = TopoDS::Vertex(shape0);
-    const TopoDS_Vertex &vertex1 = TopoDS::Vertex(shape1);
-
-    const auto point0 = BRep_Tool::Pnt(vertex0);
-    const auto point1 = BRep_Tool::Pnt(vertex1);
-
-    const Standard_Real distance = point0.Distance(point1);
-    QMessageBox::information(
-        this, QCoreApplication::translate("ViewerWidget", "Distance"),
-        QCoreApplication::translate("ViewerWidget", "Distance between the two vertices: %1")
-            .arg(distance));
+    m_widgetDistance->show();
+    m_widgetDistance->raise();
 }
 
 void ViewerWidget::createPoint()
