@@ -269,6 +269,17 @@ ViewerWidget::ViewerWidget(QWidget *parent) : QWidget(parent)
     , m_dlgPolygon(nullptr)
 {
     m_occView = new OCCView(this);
+    connect(m_occView, &OCCView::signalMouseMove, this, &ViewerWidget::signalMouseMove);
+    connect(m_occView, &OCCView::signalSpaceSelected, this, &ViewerWidget::signalSpaceSelected);
+    connect(m_occView, &OCCView::signalSelectedObjects, this, &ViewerWidget::signalSelectedObjects);
+    connect(m_occView, &OCCView::signalSelectedObjects, this, &ViewerWidget::onUpdateSelectionInfo);
+
+    connect(m_occView, &OCCView::selectionChanged, this, [this](){
+        if (m_occView->Context()->NbSelected() == 0) {
+             emit signalSpaceSelected(TopoDS_Shape());
+        }
+    });
+
     auto layout = new QVBoxLayout(this);
     layout->addWidget(m_occView);
     layout->setMargin(0);
@@ -280,6 +291,35 @@ ViewerWidget::ViewerWidget(QWidget *parent) : QWidget(parent)
     app->NewDocument("BinXCAF", m_doc->m_ocafDoc);
 
     ViewManager::getInstance().addView(m_occView);
+}
+
+void ViewerWidget::onUpdateSelectionInfo(const std::vector<std::shared_ptr<View::SelectedEntity>>& selectedObjects)
+{
+    QString infoText = tr("None");
+    
+    if (!selectedObjects.empty()) {
+        auto entity = selectedObjects.back();
+        if (entity && !entity->GetSelectedShape().IsNull()) {
+             TopoDS_Shape shape = entity->GetSelectedShape()->Shape();
+             
+             // Default to Type String
+             std::string typeStr = Util::TopoShape::GetShapeTypeString(shape);
+             QString displayName = QString::fromStdString(typeStr);
+
+             // Try to get Name from Metadata (Priority)
+             TDF_Label label = ShapeLabelManager::GetInstance().GetLabel(shape);
+             if (!label.IsNull()) {
+                 Handle(TDataStd_Name) name;
+                 if (label.FindAttribute(TDataStd_Name::GetID(), name)) {
+                      TCollection_ExtendedString extStr = name->Get();
+                      displayName = QString::fromUtf16(reinterpret_cast<const ushort*>(extStr.ToExtString()));
+                 }
+             }
+             infoText = QString("%1 (%2)").arg(displayName).arg(selectedObjects.size());
+        }
+    }
+    
+    emit signalSelectionInfo(infoText);
 }
 
 ViewerWidget::~ViewerWidget()

@@ -4,16 +4,28 @@
 
 #include <QMenu>
 #include <QAction>
+#include <QLabel>
+#include <QStatusBar>
+
+class QTranslator;
+
+class TopoDS_Shape;
 
 class ViewerWidget;
 class ModelTreeWidget;
-class QTranslator;
 class WidgetSetCoordinateSystem;
-
 class WidgetExplodeAssembly;
-
 class WidgetClipping;
 class WidgetTransform;
+
+namespace{
+    // Status Bar
+    enum StatusType {
+        StatusCoord = 0,
+        StatusShapeInfo
+    };
+
+}
 
 class MainWindow : public SARibbonMainWindow {
     Q_OBJECT
@@ -21,6 +33,8 @@ public:
     MainWindow(QWidget* parent = nullptr);
     ViewerWidget* GetViewerWidget() const;
     ModelTreeWidget* GetModelTreeWidget() const;
+public slots:
+    void updateStatusMessage(const QString& msg, int timeout = 0);
 private slots:
     /* file */
     void onNewFile();
@@ -88,6 +102,9 @@ private slots:
     // function test 
     void onFunctionTest(); 
 
+    void updateCoordInfo(double x, double y, double z);
+    void updateShapeInfo(const QString& info);
+
 private:
     void setupUi();
     void createThemeActions();
@@ -99,6 +116,8 @@ private:
     void createToolGroup(); // Create tool group
     void createShapeGroup(); // Create shape group
     void createHelpGroup(); // Create help group
+    
+    void setStatusText(StatusType type, const QString& text);
 
 private:
     ViewerWidget* m_viewerWidget;
@@ -204,4 +223,10 @@ private:
     WidgetSetCoordinateSystem*      m_widgetSetCoordinateSystem { nullptr };
     WidgetClipping*                 m_widgetClipping { nullptr };
     WidgetTransform*                m_widgetTransform { nullptr };
+
+    QMap<StatusType, QLabel*> m_statusLabels;
+
+
+
+
 };
