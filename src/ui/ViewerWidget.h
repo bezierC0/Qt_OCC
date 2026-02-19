@@ -1,6 +1,5 @@
 #pragma once
 
-#include <string>
 #include <QWidget>
 #include <TopoDS_Shape.hxx> 
 #include <TDocStd_Document.hxx>
@@ -23,6 +22,8 @@ class DialogCreatePolygon;
 class DialogCreateBezier;
 class DialogCreateNurbs;
 class DialogExportImage;
+class WidgetInterference;
+class WidgetDistance;
 
 template<typename T>
 class Tree;
@@ -108,6 +109,16 @@ public:
 
     void exportPicture();
     void onFunctionTest();
+signals:
+    void signalMouseMove(double x, double y, double z);
+    void signalSpaceSelected(const TopoDS_Shape& shape);
+ //   void signalSelectedObjects(const std::vector<opencascade::handle<AIS_InteractiveObject>>& objects);
+    void signalSelectedObjects(const std::vector<std::shared_ptr<View::SelectedEntity>>& objects);
+    void signalSelectionInfo(const QString& info);
+
+private slots:
+    void onUpdateSelectionInfo(const std::vector<std::shared_ptr<View::SelectedEntity>>& selectedObjects);
+
 public slots:
     void highlightLabel(const TDF_Label& label);
 
@@ -152,5 +163,7 @@ private:
     DialogCreateBezier*   m_dlgBezier{nullptr};
     DialogCreateNurbs*    m_dlgNurbs{nullptr};
     DialogExportImage*    m_dlgExportImage{nullptr};
+    WidgetInterference*   m_widgetInterference{nullptr};
+    WidgetDistance*       m_widgetDistance{nullptr};
 };
 

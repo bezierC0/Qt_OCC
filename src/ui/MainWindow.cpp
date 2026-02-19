@@ -13,6 +13,9 @@
 #include <QTextStream>
 #include <QApplication>
 #include <QToolButton>
+#include <QStatusBar>
+#include <QLabel>
+
 #include <TopoDS_Shape.hxx> // This should be resolved by CMakeLists.txt fix
 #include <TopAbs_ShapeEnum.hxx>
 #include <BRepPrimAPI_MakeBox.hxx>
@@ -30,18 +33,20 @@
 #include <TColStd_Array1OfInteger.hxx>
 #include <TColStd_Array1OfReal.hxx>
 #include <TColgp_Array1OfPnt.hxx>
+#include <TDataStd_Name.hxx>
 #include <gp_Ax2.hxx>
 #include <gp_Circ.hxx>
 #include <gp_Elips.hxx>
 #include <gp_Pnt.hxx>
 #include <gp_Dir.hxx>
+
 #include "ViewerWidget.h"
 #include "WidgetModelTree.h"
 #include "DialogAbout.h"
 #include "widget_explode_assembly.h"
 #include "widget_clipping.h"
 #include "widget_set_coordinate_system.h"
-
+#include "widget_transform.h"
 
 MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
 {
@@ -85,6 +90,24 @@ void MainWindow::setupUi()
 
     m_widgetSetCoordinateSystem = new WidgetSetCoordinateSystem(this);
     m_widgetClipping = new WidgetClipping(this);
+    m_widgetTransform = new WidgetTransform(this);
+
+    // Status Bar Setup
+    QStatusBar* statusBar = this->statusBar();
+    
+    auto createStatusLabel = [&](StatusType type, const QString& defaultText, int minWidth) {
+        QLabel* label = new QLabel(defaultText, this);
+        label->setMinimumWidth(minWidth);
+        statusBar->addPermanentWidget(label);
+        m_statusLabels[type] = label;
+    };
+
+    createStatusLabel(StatusCoord, tr("X: 0.00 Y: 0.00 Z: 0.00"), 150);
+    createStatusLabel(StatusShapeInfo, tr("Selected: None"), 150);
+
+    // Connect signals
+    connect(m_viewerWidget, &ViewerWidget::signalMouseMove, this, &MainWindow::updateCoordInfo);
+    connect(m_viewerWidget, &ViewerWidget::signalSelectionInfo, this, &MainWindow::updateShapeInfo);
 }
 
 void MainWindow::createRibbon() {
@@ -216,9 +239,10 @@ void MainWindow::createViewGroup()
         QActionGroup* displayModeGroup = new QActionGroup(this);
         displayModeGroup->setExclusive(true);
 
-        auto createDisplayAction = [&](QIcon& icon,const QString& text, int mode) {
+        auto createDisplayAction = [&](const QIcon& icon,const QString& text, int mode) {
             //auto action = new QAction(icon,text, this);
             auto action = new QAction(text, this);
+            action->setIcon(icon);
             action->setCheckable(true);
             connect(action, &QAction::triggered, this, [this, mode]() {
                 m_viewerWidget->setDisplayMode(mode);
@@ -663,14 +687,14 @@ void MainWindow::onCheckInterference() const
 
 void MainWindow::onTransform() const
 {
-    m_viewerWidget->transform();
+    //m_viewerWidget->transform();
+    if (m_widgetTransform) {
+        m_widgetTransform->show();
+    }
 }
 
 void MainWindow::onClipping() const
 {
-    // const gp_Dir normal(0.0, 0.0, 1.0);
-    // const gp_Pnt point(0.0, 0.0, 10.0);
-    // m_viewerWidget->clipping( normal , point );
     m_widgetClipping->show();
 }
 
@@ -797,6 +821,28 @@ void MainWindow::onMirrorByAxis()
     m_viewerWidget->mirrorByAxis();
 }
 
+void MainWindow::setStatusText(StatusType type, const QString& text)
+{
+    if (m_statusLabels.contains(type)) {
+        m_statusLabels[type]->setText(text);
+    }
+}
+
+void MainWindow::updateCoordInfo(double x, double y, double z)
+{
+    static const int precision = 2;
+    QString text = QString("X: %1 Y: %2 Z: %3")
+                   .arg(x, 0, 'f', precision)
+                   .arg(y, 0, 'f', precision)
+                   .arg(z, 0, 'f', precision);
+    setStatusText(StatusCoord, text);
+}
+
+void MainWindow::updateShapeInfo(const QString& info)
+{
+    setStatusText(StatusShapeInfo, info);
+}
+
 void MainWindow::onPatternLinear()
 {
     m_viewerWidget->patternLinear();
@@ -820,6 +866,11 @@ ViewerWidget* MainWindow::GetViewerWidget() const
 ModelTreeWidget* MainWindow::GetModelTreeWidget() const
 {
     return m_modelTreeWidget;
+}
+
+void MainWindow::updateStatusMessage(const QString& msg, int timeout)
+{
+    statusBar()->showMessage(msg, timeout);
 }
 
 void MainWindow::onSwitchLanguage()

@@ -21,6 +21,8 @@
 
 
 
+#include "ManipulatorObserver.h"
+
 class AIS_ViewCube;
 class AIS_Manipulator;
 class TopoDS_Face;
@@ -31,7 +33,7 @@ class CoordinateSystemShape;
 namespace View
 {
 class SelectedEntity;
-enum MouseMode { NONE, SELECTION, END };
+enum MouseMode { NONE, SELECTION, MANIPULATING, END };
 enum DisplayMode {
     MODE_SHADED = 0,
     MODE_WIREFRAME,
@@ -60,6 +62,12 @@ class InterfereceImpl
 public:
     Handle(AIS_InteractiveObject)       m_object          {nullptr};
     Handle(AIS_InteractiveObject)       m_boundingBox     {nullptr};
+};
+
+struct InterferenceResult {
+    Handle(AIS_InteractiveObject) objA;
+    Handle(AIS_InteractiveObject) objB;
+    TopoDS_Shape intersection;
 };
 
 class InterfereceSetting{
@@ -91,6 +99,9 @@ class OCCView : public QOpenGLWidget, public AIS_ViewController
 signals:
     void selectionChanged();
     void signalSpaceSelected(const TopoDS_Shape& shape);
+    void signalSelectedObjects(const std::vector<std::shared_ptr<View::SelectedEntity>>& selectedObjects);
+    void signalManipulatorChange(const gp_Trsf& trsf);
+    void signalMouseMove(double x, double y, double z);
 public:
     //! Main constructor.
     OCCView(QWidget *theParent = nullptr);
@@ -135,12 +146,19 @@ public:
     void clearSelectedObjects();
 
     void attachManipulator(const Handle(AIS_InteractiveObject) object);
+    void detachManipulator();
+    void updateManipulator();
+
+    void addManipulatorObserver(ManipulatorObserver* observer);
+    void removeManipulatorObserver(ManipulatorObserver* observer);
 
     const std::map<TopAbs_ShapeEnum, bool> &getSelectionFilters() const;
 
     void transform(); 
 
     void checkInterference();
+    std::vector<View::InterferenceResult> checkInterference(const std::vector<Handle(AIS_InteractiveObject)>& objects);
+    void clearInterference();
 
     void reDraw();
 
@@ -228,6 +246,8 @@ protected:
     void mousePressEvent(QMouseEvent *theEvent) override;
     //! Handle wheel event.
     void mouseReleaseEvent(QMouseEvent *theEvent) override;
+    // double click 
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
     //! Handle mouse move event.
     void mouseMoveEvent(QMouseEvent *theEvent) override;
     //! Handle mouse wheel event.
@@ -266,6 +286,7 @@ private:
     Handle(AIS_ViewCube)            m_navigationView; // XYZ Navigation GuiDocument::setViewTrihedronMode
     Handle(AIS_Manipulator)         m_manipulator;
     std::shared_ptr<CoordinateSystemShape>   m_globalCoordSystem; // Global coordinate system
+    std::vector<ManipulatorObserver*> m_manipulatorObservers;
 
     //! OpenGL info.
     Handle(V3d_View) myFocusView;
@@ -285,6 +306,7 @@ private:
 
     Standard_Real                                                       m_animationDuration{1}; // animation duration in seconds
     int                                                                 m_mouseMode{0};                   // 0 normal 1 select + normal
+    int                                                                 m_previousMouseMode{0};          // Store previous mode during transient ops
     View::DisplayMode                                                   m_displayMode{View::DisplayMode::MODE_SHADED};
     View::WorkPlane                                                     m_workPlane{};
     std::vector<std::shared_ptr<View::ClippingPlane>>                   m_clippingPlanes{};
