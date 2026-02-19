@@ -99,7 +99,9 @@ class OCCView : public QOpenGLWidget, public AIS_ViewController
 signals:
     void selectionChanged();
     void signalSpaceSelected(const TopoDS_Shape& shape);
+    void signalSelectedObjects(const std::vector<std::shared_ptr<View::SelectedEntity>>& selectedObjects);
     void signalManipulatorChange(const gp_Trsf& trsf);
+    void signalMouseMove(double x, double y, double z);
 public:
     //! Main constructor.
     OCCView(QWidget *theParent = nullptr);
@@ -244,6 +246,8 @@ protected:
     void mousePressEvent(QMouseEvent *theEvent) override;
     //! Handle wheel event.
     void mouseReleaseEvent(QMouseEvent *theEvent) override;
+    // double click 
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
     //! Handle mouse move event.
     void mouseMoveEvent(QMouseEvent *theEvent) override;
     //! Handle mouse wheel event.

@@ -386,6 +386,8 @@ void OCCView::mousePressEvent(QMouseEvent *theEvent)
                     }
                 }
             }
+            
+            emit signalSelectedObjects(m_selectedObjects);
 
             // Emit signals after iteration
             for (const auto &shape : selectedShapesToSignal) {
@@ -429,6 +431,11 @@ void OCCView::mouseReleaseEvent(QMouseEvent *theEvent)
     }
 }
 
+void OCCView::mouseDoubleClickEvent(QMouseEvent *event)
+{
+    QOpenGLWidget::mouseDoubleClickEvent(event);
+}
+
 void OCCView::mouseMoveEvent(QMouseEvent *theEvent)
 {
     if (m_mouseMode == View::MANIPULATING && !m_manipulator.IsNull())
@@ -465,6 +472,10 @@ void OCCView::mouseMoveEvent(QMouseEvent *theEvent)
     {
         updateView();
     }
+
+    // Emit mouse move signal with world coordinates
+    gp_Pnt worldPos = screenToWorld(theEvent->pos().x(), theEvent->pos().y());
+    emit signalMouseMove(worldPos.X(), worldPos.Y(), worldPos.Z());
 
     // Update coordinate display at mouse position
     if( m_showMouseCoordinates )
