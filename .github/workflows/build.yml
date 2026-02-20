@@ -20,7 +20,6 @@ jobs:
       QT_ROOT: 'C:\Qt'
       OCC_ROOT: 'C:\opencascade'
       VCPKG_ROOT: 'C:\vcpkg'
-      BOOST_ROOT: 'C:\boost_1_81_0'
     
     steps:
     - name: Checkout code
@@ -41,11 +40,20 @@ jobs:
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
         modules: 'qtcharts qtdatavis3d qtnetworkauth'
 
-    - name: Install Boost
-      shell: cmd
+    - name: Cache vcpkg
+      id: cache-vcpkg
+      uses: actions/cache@v4
+      with:
+        path: |
+           ${{ env.VCPKG_ROOT }}/installed
+           ${{ env.VCPKG_ROOT }}/packages
+           ${{ env.VCPKG_ROOT }}/downloads
+        key: ${{ runner.os }}-vcpkg-boost-x64-windows
+
+    - name: Install Boost via vcpkg
+      if: steps.cache-vcpkg.outputs.cache-hit != 'true'
       run: |
-        curl -L -o boost_1_81_0.exe https://sourceforge.net/projects/boost/files/boost-binaries/1.81.0/boost_1_81_0-msvc-14.3-64.exe/download
-        boost_1_81_0.exe -y -o"C:\"
+        vcpkg install boost:x64-windows
 
     - name: Cache OpenCASCADE archive
       id: cache-opencascade
@@ -90,7 +98,8 @@ jobs:
           cmake .. ^
                 -DOpenCASCADE_DIR=${{github.workspace}}\occt-vc143-64 ^
                 -DOpenCASCADE_3RDPARTY_DIR=${{github.workspace}}\3rdparty-vc14-64 ^
-                -DBOOST_ROOT="${{ env.BOOST_ROOT }}"
+                -DCMAKE_TOOLCHAIN_FILE=${{ env.VCPKG_ROOT }}/scripts/buildsystems/vcpkg.cmake ^
+                -DVCPKG_TARGET_TRIPLET=x64-windows
           cmake --build . ^
                 --config Release ^
                 --parallel ${{steps.cpu-cores.outputs.count}}
