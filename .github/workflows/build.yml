@@ -48,7 +48,7 @@ jobs:
         boost_version: ${{ env.BOOST_VERSION }}
         platform_version: 2022
         toolset: msvc
-        arch: aarch64
+        arch: x86
 
     - name: Cache OpenCASCADE archive
       id: cache-opencascade
