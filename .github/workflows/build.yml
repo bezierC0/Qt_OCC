@@ -10,8 +10,8 @@ jobs:
   build-windows:
     runs-on: windows-latest
     env:
-      QT_VERSION: '5.15.17'
-      QT_ARCH: 'win64_msvc2019_64'
+      QT_VERSION: '5.14.0'
+      QT_ARCH: 'win64_msvc2017_64'
       OCC_VERSION: '7.8.0'
       OCC_VERSION_TAG: 'V7_8_0' 
       OCC_ZIP_sha256: '82afb7bd5fd7097189ee4e98bf3bc02b4030cae7a82967db68d5f2b556801779'
