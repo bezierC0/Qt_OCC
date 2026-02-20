@@ -33,7 +33,7 @@ jobs:
         path: ${{ env.QT_ROOT }}
         key: ${{ runner.os }}-Qt-${{ env.QT_VERSION }}-${{ env.QT_ARCH }}
         
-    - name: Install Qt 5.15.17
+    - name: Install Qt 
       uses: jurplel/install-qt-action@v3
       with:
         version: ${{ env.QT_VERSION }}
@@ -48,7 +48,7 @@ jobs:
         boost_version: ${{ env.BOOST_VERSION }}
         platform_version: 2022
         toolset: msvc
-        arch: x86_64
+        arch: aarch64
 
     - name: Cache OpenCASCADE archive
       id: cache-opencascade
