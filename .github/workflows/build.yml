@@ -20,7 +20,7 @@ jobs:
       QT_ROOT: 'C:\Qt'
       OCC_ROOT: 'C:\opencascade'
       VCPKG_ROOT: 'C:\vcpkg'
-      BOOST_ROOT: 'C:\boost'
+      BOOST_ROOT: 'C:\boost_1_81_0'
     
     steps:
     - name: Checkout code
@@ -45,7 +45,7 @@ jobs:
       shell: cmd
       run: |
         curl -L -o boost_1_81_0.exe https://sourceforge.net/projects/boost/files/boost-binaries/1.81.0/boost_1_81_0-msvc-14.3-64.exe/download
-        boost_1_81_0.exe /SILENT /SP- /SUPPRESSMSGBOXES /DIR="${{ env.BOOST_ROOT }}"
+        boost_1_81_0.exe -y -o"C:\"
 
     - name: Cache OpenCASCADE archive
       id: cache-opencascade
