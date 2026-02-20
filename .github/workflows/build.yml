@@ -1,4 +1,4 @@
-name: Build Windows Qt OpenCASCADE Project
+﻿name: Build Windows Qt OpenCASCADE Project
 
 on:
   push:
@@ -10,15 +10,17 @@ jobs:
   build-windows:
     runs-on: windows-latest
     env:
-      QT_VERSION: '5.14.0'
-      QT_ARCH: 'win64_msvc2017_64'
+      QT_VERSION: '5.15.17'
+      QT_ARCH: 'win64_msvc2019_64'
       OCC_VERSION: '7.8.0'
-      OCC_VERSION_TAG: 'V7_8_0' # 用于源码下载
+      OCC_VERSION_TAG: 'V7_8_0' 
       OCC_ZIP_sha256: '82afb7bd5fd7097189ee4e98bf3bc02b4030cae7a82967db68d5f2b556801779'
-      VS_VERSION: 'Visual Studio 16 2019'
+      BOOST_VERSION: '1.81.0'
+      VS_VERSION: 'Visual Studio 17 2022'
       QT_ROOT: 'C:\Qt'
       OCC_ROOT: 'C:\opencascade'
       VCPKG_ROOT: 'C:\vcpkg'
+      BOOST_ROOT: 'C:\boost'
     
     steps:
     - name: Checkout code
@@ -31,30 +33,39 @@ jobs:
         path: ${{ env.QT_ROOT }}
         key: ${{ runner.os }}-Qt-${{ env.QT_VERSION }}-${{ env.QT_ARCH }}
         
-    - name: Install Qt 5.14.0
+    - name: Install Qt 5.15.17
       uses: jurplel/install-qt-action@v3
       with:
         version: ${{ env.QT_VERSION }}
         arch: ${{ env.QT_ARCH }}
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
         modules: 'qtcharts qtdatavis3d qtnetworkauth'
-        
+
+    - name: Install Boost
+      uses: MarkusJx/install-boost@v2.4.5
+      id: install-boost
+      with:
+        boost_version: ${{ env.BOOST_VERSION }}
+        platform_version: 2022
+        toolset: msvc
+        arch: x86_64
+
     - name: Cache OpenCASCADE archive
       id: cache-opencascade
       uses: actions/cache@v4
       with:
-        path: OpenCASCADE-${{env.OCC_VERSION}}-vc14-64.zip
-        key: ${{ runner.os }}-OpenCASCADE-${{ env.OCC_VERSION }}-precompiled-msvc
+        path: occt-vc143-64.zip
+        key: ${{ runner.os }}-OpenCASCADE-${{ env.OCC_VERSION }}-precompiled-vc143
 
     - name: Download OpenCascade
-      if: steps.cache-occ.outputs.cache-hit != 'true'
+      if: steps.cache-opencascade.outputs.cache-hit != 'true'
       uses: carlosperate/download-file-action@v2
       with:
           file-url: 'https://github.com/Open-Cascade-SAS/OCCT/releases/download/${{env.OCC_VERSION_TAG}}/occt-vc143-64.zip'
           file-path: occt-vc143-64.zip
 
     - name: Download OpenCascade 3rdparty
-      if: steps.cache-occ.outputs.cache-hit != 'true'
+      if: steps.cache-opencascade.outputs.cache-hit != 'true'
       uses: carlosperate/download-file-action@v2
       with:
           file-url: 'https://github.com/Open-Cascade-SAS/OCCT/releases/download/${{env.OCC_VERSION_TAG}}/3rdparty-vc14-64.zip'
@@ -81,7 +92,8 @@ jobs:
           cmake --version
           cmake .. ^
                 -DOpenCASCADE_DIR=${{github.workspace}}\occt-vc143-64 ^
-                -DOpenCASCADE_3RDPARTY_DIR=${{github.workspace}}\3rdparty-vc14-64
+                -DOpenCASCADE_3RDPARTY_DIR=${{github.workspace}}\3rdparty-vc14-64 ^
+                -DBOOST_ROOT="${{ steps.install-boost.outputs.BOOST_ROOT }}"
           cmake --build . ^
                 --config Release ^
                 --parallel ${{steps.cpu-cores.outputs.count}}

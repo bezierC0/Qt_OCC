@@ -4,18 +4,18 @@
         {
             "name": "Debug Qt App (CMake)",
             "type": "cppvsdbg", // C++ debug type
-            "request": "launch", // 启动应用程序
-            "program": "${command:cmake.launchTargetPath}", // 使用 CMake Tools 自动解析可执行文件路径
-            "args": [], // 传递给应用程序的命令行参数
+            "request": "launch", // startup
+            "program": "${command:cmake.launchTargetPath}", 
+            "args": [], // argument
             "stopAtEntry": false,
-            "cwd": "${command:cmake.launchTargetDirectory}", // 工作目录设置为项目根目录
+            "cwd": "${command:cmake.launchTargetDirectory}", // start up dir
             "environment": [
                 {
                     "name": "PATH",
                     "value": "${env:PATH};C:/Qt/5.14.0/msvc2017_64/bin"
                 }
             ],
-            //"externalConsole": false, // 使用外部控制台
+            //"externalConsole": false, 
             "console": "internalConsole",
             "visualizerFile": "${workspaceFolder}/.vscode/main.natvis",
             "preLaunchTask": "CMake: build"
