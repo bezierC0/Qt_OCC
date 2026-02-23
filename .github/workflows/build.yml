@@ -14,12 +14,12 @@ jobs:
       QT_ARCH: 'win64_msvc2017_64'
       OCC_VERSION: '7.8.0'
       OCC_VERSION_TAG: 'V7_8_0' 
-      OCC_ZIP_sha256: '82afb7bd5fd7097189ee4e98bf3bc02b4030cae7a82967db68d5f2b556801779'
-      BOOST_VERSION: '1.81.0'
+      VCPKG_ROOT: 'C:\vcpkg'
       VS_VERSION: 'Visual Studio 17 2022'
       QT_ROOT: 'C:\Qt'
       OCC_ROOT: 'C:\opencascade'
-      VCPKG_ROOT: 'C:\vcpkg'
+      BOOST_ZIP: 'boost-1.81.0.7z'
+      BOOST_URL: 'https://github.com/boostorg/boost/releases/download/boost-1.81.0/boost-1.81.0.7z'
     
     steps:
     - name: Checkout code
@@ -40,11 +40,22 @@ jobs:
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
         modules: 'qtcharts qtdatavis3d qtnetworkauth'
 
-    - name: Install Boost
-      shell: cmd
-      run: |
-        curl -L -o boost_1_81_0.7z https://sourceforge.net/projects/boost/files/boost-binaries/1.81.0/boost_1_81_0-msvc-14.3-64.7z/download
-        7z x boost_1_81_0.7z -o"C:\" -y
+    - name: Cache Boost archive
+      id: cache-boost
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.BOOST_ZIP }}
+        key: ${{ runner.os }}-Boost-${{ env.BOOST_ZIP }}
+
+    - name: Download Boost
+      if: steps.cache-boost.outputs.cache-hit != 'true'
+      uses: carlosperate/download-file-action@v2
+      with:
+          file-url: ${{ env.BOOST_URL }}
+          file-path: ${{ env.BOOST_ZIP }}
+
+    - name: Extract Boost
+      run: 7z x ${{ env.BOOST_ZIP }} -y
 
     - name: Cache OpenCASCADE archive
       id: cache-opencascade
@@ -89,7 +100,7 @@ jobs:
           cmake .. ^
                 -DOpenCASCADE_DIR="${{github.workspace}}\occt-vc143-64" ^
                 -DOpenCASCADE_3RDPARTY_DIR="${{github.workspace}}\3rdparty-vc14-64" ^
-                -DBOOST_ROOT="C:/boost_1_81_0"
+                -DBOOST_ROOT="${{github.workspace}}\boost-1.81.0"
           cmake --build . ^
                 --config Release ^
                 --parallel ${{steps.cpu-cores.outputs.count}}
