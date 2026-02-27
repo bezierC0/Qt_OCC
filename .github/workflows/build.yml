@@ -5,6 +5,7 @@ on:
     branches: [ main, develop ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   build-windows:
@@ -40,22 +41,14 @@ jobs:
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
         modules: 'qtcharts qtdatavis3d qtnetworkauth'
 
-    - name: Cache Boost archive
+    - name: Install Boost
       id: cache-boost
-      uses: actions/cache@v4
+      uses: MarkusJx/install-boost@v2.4.0
       with:
-        path: ${{ env.BOOST_ZIP }}
-        key: ${{ runner.os }}-Boost-${{ env.BOOST_ZIP }}
-
-    - name: Download Boost
-      if: steps.cache-boost.outputs.cache-hit != 'true'
-      uses: carlosperate/download-file-action@v2
-      with:
-          file-url: ${{ env.BOOST_URL }}
-          file-path: ${{ env.BOOST_ZIP }}
-
-    - name: Extract Boost
-      run: 7z x ${{ env.BOOST_ZIP }} -y
+        boost_version: 1.83.0 
+        platform_version: 2022 
+        toolset: msvc 
+        link: static
 
     - name: Cache OpenCASCADE archive
       id: cache-opencascade
@@ -99,8 +92,7 @@ jobs:
           cmake --version
           cmake .. ^
                 -DOpenCASCADE_DIR="${{github.workspace}}\occt-vc143-64" ^
-                -DOpenCASCADE_3RDPARTY_DIR="${{github.workspace}}\3rdparty-vc14-64" ^
-                -DBOOST_ROOT="${{github.workspace}}\boost-1.81.0"
+                -DOpenCASCADE_3RDPARTY_DIR="${{github.workspace}}\3rdparty-vc14-64" 
           cmake --build . ^
                 --config Release ^
                 --parallel ${{steps.cpu-cores.outputs.count}}
