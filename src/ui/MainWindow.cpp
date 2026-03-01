@@ -364,22 +364,22 @@ void MainWindow::createToolGroup()
         /* Measure Pannel */
         m_measurePannel = m_toolCategory->addPannel(tr("Measure"));
         // measure distance
-        m_measureDistanceAction = new QAction(QIcon(":/icons/icon/measure_distance.svg"), tr("MeasureDistance"), this);
+        m_measureDistanceAction = new QAction(QIcon(":/icons/icon/measure_distance.svg"), tr("Distance"), this);
         connect(m_measureDistanceAction, &QAction::triggered, this, &MainWindow::onMeasureDistance);
         m_measurePannel->addSmallAction(m_measureDistanceAction);
 
         // measure length
-        m_measureLengthAction = new QAction(QIcon(":/icons/icon/measure_length.svg"), tr("MeasureLength"), this);
+        m_measureLengthAction = new QAction(QIcon(":/icons/icon/measure_length.svg"), tr("Length"), this);
         connect(m_measureLengthAction, &QAction::triggered, this, &MainWindow::onMeasureLength);
         m_measurePannel->addSmallAction(m_measureLengthAction);
 
         // measure arc length
-        m_measureArcLengthAction = new QAction(QIcon(":/icons/icon/measure_arc_length.svg"), tr("MeasureArcLength"), this);
+        m_measureArcLengthAction = new QAction(QIcon(":/icons/icon/measure_arc_length.svg"), tr("Arc"), this);
         connect(m_measureArcLengthAction, &QAction::triggered, this, &MainWindow::onMeasureArcLength);
         m_measurePannel->addSmallAction(m_measureArcLengthAction);
 
         // measure angle
-        m_measureAngleAction = new QAction(QIcon(":/icons/icon/measure_angle.svg"), tr("MeasureAngle"), this); 
+        m_measureAngleAction = new QAction(QIcon(":/icons/icon/measure_angle.svg"), tr("Angle"), this); 
         connect(m_measureAngleAction, &QAction::triggered, this, &MainWindow::onMeasureAngle);
         m_measurePannel->addSmallAction(m_measureAngleAction);
     };
@@ -713,17 +713,17 @@ void MainWindow::onMeasureDistance() const
 
 void MainWindow::onMeasureLength() const
 {
-    // TODO
+    m_viewerWidget->measureLength();
 }
 
 void MainWindow::onMeasureArcLength() const
 {
-    // TODO
+    m_viewerWidget->measureArcLength();
 }
 
 void MainWindow::onMeasureAngle() const
 {
-    // TODO
+    m_viewerWidget->measureAngle();
 }
 
 void MainWindow::onCreatePoint()

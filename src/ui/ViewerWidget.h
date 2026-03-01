@@ -24,6 +24,7 @@ class DialogCreateNurbs;
 class DialogExportImage;
 class WidgetInterference;
 class WidgetDistance;
+class WidgetMeasureLength;
 
 template<typename T>
 class Tree;
@@ -76,6 +77,9 @@ public:
     
     /* measure */
     void measureDistance();
+    void measureLength();
+    void measureArcLength();
+    void measureAngle();
 
     /* shape */
     void createPoint();
@@ -165,5 +169,6 @@ private:
     DialogExportImage*    m_dlgExportImage{nullptr};
     WidgetInterference*   m_widgetInterference{nullptr};
     WidgetDistance*       m_widgetDistance{nullptr};
+    WidgetMeasureLength*         m_widgetLength{nullptr};
 };
 
