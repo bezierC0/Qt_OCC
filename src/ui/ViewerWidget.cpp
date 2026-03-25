@@ -23,6 +23,7 @@
 #include "ui/DialogExportImage.h"
 #include "WidgetInterference.h"
 #include "widget_distance.h"
+#include "widget_measure_length.h"
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -59,6 +60,7 @@
 #include <TopoDS_Compound.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Vertex.hxx>
+#include <TopoDS_Edge.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
 #include <XCAFDoc_ShapeTool.hxx>
 #include <XCAFApp_Application.hxx>
@@ -75,6 +77,7 @@
 #include <Graphic3d_ClipPlane.hxx> // Added missing include for clipping
 #include <gp_Pln.hxx>              // Added missing include for clipping
 #include <Quantity_Color.hxx>      // Added missing include for colors
+#include <gp_Vec.hxx>
 #include <GProp_GProps.hxx>
 #include <TDF_ChildIterator.hxx>
 
@@ -669,6 +672,156 @@ void ViewerWidget::measureDistance()
     }
     m_widgetDistance->show();
     m_widgetDistance->raise();
+}
+
+void ViewerWidget::measureLength()
+{
+    if (!m_widgetLength) {
+        m_widgetLength = new WidgetMeasureLength(this);
+        // Ensure it's deleted on close so we can create a fresh one or handle state cleanly
+        m_widgetLength->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetLength, &QWidget::destroyed, this, [this]() { m_widgetLength = nullptr; });
+    }
+    m_widgetLength->show();
+    m_widgetLength->raise();
+}
+
+void ViewerWidget::measureArcLength()
+{
+    if (!m_occView) {
+        return;
+    }
+
+    const auto &selectedObjects = m_occView->getSelectedObjects();
+    if (selectedObjects.size() != 1) {
+        QMessageBox::warning(this, tr("Selection Error"),
+                             tr("Please select exactly one arc edge."));
+        return;
+    }
+
+    const auto aisShape = selectedObjects.at(0)->GetSelectedShape();
+    if (aisShape.IsNull() || aisShape->Shape().IsNull()
+        || aisShape->Shape().ShapeType() != TopAbs_EDGE) {
+        QMessageBox::warning(this, tr("Type Error"), tr("Please select one edge."));
+        return;
+    }
+
+    const TopoDS_Edge edge = TopoDS::Edge(aisShape->Shape());
+    Standard_Real first = 0.0;
+    Standard_Real last = 0.0;
+    const Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, first, last);
+    if (curve.IsNull()) {
+        QMessageBox::warning(this, tr("Type Error"), tr("Cannot read edge geometry."));
+        return;
+    }
+
+    const GeomAdaptor_Curve adaptor(curve, first, last);
+    const GeomAbs_CurveType curveType = adaptor.GetType();
+    if (curveType != GeomAbs_Circle && curveType != GeomAbs_Ellipse) {
+        QMessageBox::warning(this, tr("Type Error"),
+                             tr("Selected edge is not an arc (circle/ellipse)."));
+        return;
+    }
+
+    GProp_GProps props;
+    BRepGProp::LinearProperties(edge, props);
+    const Standard_Real arcLength = props.Mass();
+
+    QMessageBox::information(this, tr("Measure Arc Length"),
+                             tr("Arc length: %1").arg(arcLength, 0, 'f', 4));
+}
+
+void ViewerWidget::measureAngle()
+{
+    if (!m_occView) {
+        return;
+    }
+
+    const auto &selectedObjects = m_occView->getSelectedObjects();
+    constexpr double kRadToDeg = 57.29577951308232;
+
+    if (selectedObjects.size() == 2) {
+        const auto aisShape1 = selectedObjects.at(0)->GetSelectedShape();
+        const auto aisShape2 = selectedObjects.at(1)->GetSelectedShape();
+        if (aisShape1.IsNull() || aisShape2.IsNull()) {
+            return;
+        }
+
+        const TopoDS_Shape &shape1 = aisShape1->Shape();
+        const TopoDS_Shape &shape2 = aisShape2->Shape();
+        if (shape1.ShapeType() != TopAbs_EDGE || shape2.ShapeType() != TopAbs_EDGE) {
+            QMessageBox::warning(this, tr("Type Error"),
+                                 tr("For 2-item angle measurement, please select two line edges."));
+            return;
+        }
+
+        Standard_Real first1 = 0.0;
+        Standard_Real last1 = 0.0;
+        Standard_Real first2 = 0.0;
+        Standard_Real last2 = 0.0;
+        const auto curve1 = BRep_Tool::Curve(TopoDS::Edge(shape1), first1, last1);
+        const auto curve2 = BRep_Tool::Curve(TopoDS::Edge(shape2), first2, last2);
+        const auto line1 = Handle(Geom_Line)::DownCast(curve1);
+        const auto line2 = Handle(Geom_Line)::DownCast(curve2);
+        if (line1.IsNull() || line2.IsNull()) {
+            QMessageBox::warning(this, tr("Type Error"),
+                                 tr("Both selected edges must be straight lines."));
+            return;
+        }
+
+        const Standard_Real angleRad =
+            line1->Position().Direction().Angle(line2->Position().Direction());
+        const Standard_Real angleDeg = angleRad * kRadToDeg;
+
+        QMessageBox::information(
+            this, tr("Measure Angle"),
+            tr("Angle: %1 deg (%2 rad)").arg(angleDeg, 0, 'f', 4).arg(angleRad, 0, 'f', 6));
+        return;
+    }
+
+    if (selectedObjects.size() == 3) {
+        const auto aisShape1 = selectedObjects.at(0)->GetSelectedShape();
+        const auto aisShape2 = selectedObjects.at(1)->GetSelectedShape();
+        const auto aisShape3 = selectedObjects.at(2)->GetSelectedShape();
+        if (aisShape1.IsNull() || aisShape2.IsNull() || aisShape3.IsNull()) {
+            return;
+        }
+
+        const TopoDS_Shape &shape1 = aisShape1->Shape();
+        const TopoDS_Shape &shape2 = aisShape2->Shape();
+        const TopoDS_Shape &shape3 = aisShape3->Shape();
+        if (shape1.ShapeType() != TopAbs_VERTEX || shape2.ShapeType() != TopAbs_VERTEX
+            || shape3.ShapeType() != TopAbs_VERTEX) {
+            QMessageBox::warning(this, tr("Type Error"),
+                                 tr("For 3-item angle measurement, please select three vertices."));
+            return;
+        }
+
+        const gp_Pnt p1 = BRep_Tool::Pnt(TopoDS::Vertex(shape1));
+        const gp_Pnt p2 = BRep_Tool::Pnt(TopoDS::Vertex(shape2));
+        const gp_Pnt p3 = BRep_Tool::Pnt(TopoDS::Vertex(shape3));
+
+        const gp_Vec v1(p2, p1);
+        const gp_Vec v2(p2, p3);
+        if (v1.Magnitude() <= 1.0e-12 || v2.Magnitude() <= 1.0e-12) {
+            QMessageBox::warning(this, tr("Type Error"),
+                                 tr("Invalid vertex input for angle measurement."));
+            return;
+        }
+
+        const Standard_Real angleRad = v1.Angle(v2);
+        const Standard_Real angleDeg = angleRad * kRadToDeg;
+
+        QMessageBox::information(
+            this, tr("Measure Angle"),
+            tr("Angle: %1 deg (%2 rad)").arg(angleDeg, 0, 'f', 4).arg(angleRad, 0, 'f', 6));
+        return;
+    }
+
+    QMessageBox::warning(this, tr("Selection Error"),
+                         tr("Please select either:\n"
+                            "1) two line edges, or\n"
+                            "2) three vertices (middle one is the angle vertex)."));
 }
 
 void ViewerWidget::createPoint()
@@ -1550,7 +1703,8 @@ void ViewerWidget::onCreateCylinder(double x, double y, double z, double radius,
     if(m_dlgCylinder) m_dlgCylinder->raise();
 }
 
-void ViewerWidget::onCreateCone(double x, double y, double z, double radius1, double radius2, double height, const QColor& color)
+void ViewerWidget::onCreateCone(double x, double y, double z, double radius1, double radius2,
+                                double height, const QColor &color)
 {
     gp_Ax2 axis(gp_Pnt(x, y, z), gp_Dir(0,0,1));
     BRepPrimAPI_MakeCone cone(axis, radius1, radius2, height);
