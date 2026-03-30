@@ -25,6 +25,8 @@ class DialogExportImage;
 class WidgetInterference;
 class WidgetDistance;
 class WidgetMeasureLength;
+class WidgetMeasureArcLength;
+class WidgetMeasureAngle;
 
 template<typename T>
 class Tree;
@@ -169,6 +171,8 @@ private:
     DialogExportImage*    m_dlgExportImage{nullptr};
     WidgetInterference*   m_widgetInterference{nullptr};
     WidgetDistance*       m_widgetDistance{nullptr};
-    WidgetMeasureLength*         m_widgetLength{nullptr};
+    WidgetMeasureLength*  m_widgetLength{nullptr};
+    WidgetMeasureArcLength* m_widgetArcLength{nullptr};
+    WidgetMeasureAngle*   m_widgetAngle{nullptr};
 };
 
