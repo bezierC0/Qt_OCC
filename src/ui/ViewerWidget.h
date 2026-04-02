@@ -23,6 +23,7 @@ class DialogCreateBezier;
 class DialogCreateNurbs;
 class DialogExportImage;
 class WidgetInterference;
+class WidgetBoolean;
 class WidgetDistance;
 class WidgetMeasureLength;
 class WidgetMeasureArcLength;
@@ -174,5 +175,6 @@ private:
     WidgetMeasureLength*  m_widgetLength{nullptr};
     WidgetMeasureArcLength* m_widgetArcLength{nullptr};
     WidgetMeasureAngle*   m_widgetAngle{nullptr};
+    WidgetBoolean*   m_WidgetBoolean{nullptr};
 };
 

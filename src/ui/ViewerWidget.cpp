@@ -21,6 +21,7 @@
 #include "ui/DialogCreateCone.h"
 #include "ui/DialogCreatePolygon.h"
 #include "ui/DialogExportImage.h"
+#include "WidgetBoolean.h"
 #include "WidgetInterference.h"
 #include "widget_distance.h"
 #include "widget_measure_angle.h"
@@ -966,37 +967,38 @@ void ViewerWidget::createCone()
 
 void ViewerWidget::booleanUnion()
 {
-    TopoDS_Shape shapeA;
-    TopoDS_Shape shapeB;
-    if (!getBooleanTargets(shapeA, shapeB))
-        return;
-
-    BRepAlgoAPI_Fuse booleanFun(shapeA, shapeB);
-    if (booleanFun.IsDone()) {
-        TopoDS_Shape result = booleanFun.Shape();
-        displayShape(result, 1.0, 0.0, 1.0);
-        m_occView->clearSelectedObjects();
-    } else {
-        QMessageBox::warning(this, tr("Boolean Operation Failed"),
-                             tr("Boolean Union operation failed!"));
+    if (!m_WidgetBoolean) {
+        m_WidgetBoolean = new WidgetBoolean(this);
+        m_WidgetBoolean->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_WidgetBoolean, &QWidget::destroyed, this, [this]() { m_WidgetBoolean = nullptr; });
     }
+    m_WidgetBoolean->setOperationType(0);
+    m_WidgetBoolean->show();
+    m_WidgetBoolean->raise();
 }
 
 void ViewerWidget::booleanIntersection()
 {
-    TopoDS_Shape shape1;
-    TopoDS_Shape shape2;
-    if (!getBooleanTargets(shape1, shape2))
-        return;
-    BRepAlgoAPI_Common booleanFun(shape1, shape2);
-    if (booleanFun.IsDone()) {
-        TopoDS_Shape result = booleanFun.Shape();
-        displayShape(result, 0.0, 1.0, 0.0);
-        m_occView->clearSelectedObjects();
-    } else {
-        QMessageBox::warning(this, tr("Boolean Operation Failed"),
-                             tr("Boolean Intersection operation failed!"));
+    if (!m_WidgetBoolean) {
+        m_WidgetBoolean = new WidgetBoolean(this);
+        m_WidgetBoolean->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_WidgetBoolean, &QWidget::destroyed, this, [this]() { m_WidgetBoolean = nullptr; });
     }
+    m_WidgetBoolean->setOperationType(1);
+    m_WidgetBoolean->show();
+    m_WidgetBoolean->raise();
+}
+
+void ViewerWidget::booleanDifference()
+{
+    if (!m_WidgetBoolean) {
+        m_WidgetBoolean = new WidgetBoolean(this);
+        m_WidgetBoolean->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_WidgetBoolean, &QWidget::destroyed, this, [this]() { m_WidgetBoolean = nullptr; });
+    }
+    m_WidgetBoolean->setOperationType(2);
+    m_WidgetBoolean->show();
+    m_WidgetBoolean->raise();
 }
 
 /*  https://github.com/bezierC0/CADHealingTool */
@@ -1127,23 +1129,6 @@ void ViewerWidget::repairAndSave(const TopoDS_Shape &shape)
                                  "Shape repaired and saved to fix.stp successfully!");
     } else {
         QMessageBox::warning(this, "Error", "Failed to write fix.stp");
-    }
-}
-
-void ViewerWidget::booleanDifference()
-{
-    TopoDS_Shape shape1;
-    TopoDS_Shape shape2;
-    if (!getBooleanTargets(shape1, shape2))
-        return;
-    BRepAlgoAPI_Cut booleanFun(shape1, shape2);
-    if (booleanFun.IsDone()) {
-        TopoDS_Shape result = booleanFun.Shape();
-        displayShape(result, 0.0, 0.0, 1.0);
-        m_occView->clearSelectedObjects();
-    } else {
-        QMessageBox::warning(this, tr("Boolean Operation Failed"),
-                             tr("Boolean Difference operation failed!"));
     }
 }
 
@@ -1412,7 +1397,26 @@ void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const
 
 void ViewerWidget::removeShape(const TopoDS_Shape &shape)
 {
+    TDF_Label label;
+    if (!m_doc->m_ocafDoc.IsNull()) {
+        Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(m_doc->m_ocafDoc->Main());
+        if (shapeTool->Search(shape, label) || shapeTool->FindShape(shape, label)) {
+            shapeTool->RemoveShape(label);
+        }
+    }
+
+    auto it = std::remove_if(m_doc->m_list.begin(), m_doc->m_list.end(),
+        [&shape, label](const opencascade::handle<AIS_InteractiveObject>& obj) {
+            Handle(AIS_Shape) aisShape = Handle(AIS_Shape)::DownCast(obj);
+            if (!aisShape.IsNull() && aisShape->Shape().IsSame(shape)) return true;
+            Handle(XCAFPrs_AISObject) xcafShape = Handle(XCAFPrs_AISObject)::DownCast(obj);
+            if (!xcafShape.IsNull() && !label.IsNull() && xcafShape->GetLabel() == label) return true;
+            return false;
+        });
+    m_doc->m_list.erase(it, m_doc->m_list.end());
+
     m_occView->removeShape(shape);
+    updateTree();
     m_occView->reDraw();
     m_occView->viewfit(); // Fit view to the new shape
 }
