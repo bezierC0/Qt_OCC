@@ -965,38 +965,13 @@ void ViewerWidget::createCone()
     m_dlgCone->raise();
 }
 
-void ViewerWidget::booleanUnion()
+void ViewerWidget::booleanOperation()
 {
     if (!m_WidgetBoolean) {
         m_WidgetBoolean = new WidgetBoolean(this);
         m_WidgetBoolean->setAttribute(Qt::WA_DeleteOnClose);
         connect(m_WidgetBoolean, &QWidget::destroyed, this, [this]() { m_WidgetBoolean = nullptr; });
     }
-    m_WidgetBoolean->setOperationType(0);
-    m_WidgetBoolean->show();
-    m_WidgetBoolean->raise();
-}
-
-void ViewerWidget::booleanIntersection()
-{
-    if (!m_WidgetBoolean) {
-        m_WidgetBoolean = new WidgetBoolean(this);
-        m_WidgetBoolean->setAttribute(Qt::WA_DeleteOnClose);
-        connect(m_WidgetBoolean, &QWidget::destroyed, this, [this]() { m_WidgetBoolean = nullptr; });
-    }
-    m_WidgetBoolean->setOperationType(1);
-    m_WidgetBoolean->show();
-    m_WidgetBoolean->raise();
-}
-
-void ViewerWidget::booleanDifference()
-{
-    if (!m_WidgetBoolean) {
-        m_WidgetBoolean = new WidgetBoolean(this);
-        m_WidgetBoolean->setAttribute(Qt::WA_DeleteOnClose);
-        connect(m_WidgetBoolean, &QWidget::destroyed, this, [this]() { m_WidgetBoolean = nullptr; });
-    }
-    m_WidgetBoolean->setOperationType(2);
     m_WidgetBoolean->show();
     m_WidgetBoolean->raise();
 }

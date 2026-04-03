@@ -86,9 +86,7 @@ private slots:
     void onCreateSphere();
     void onCreateCylinder();
     void onCreateCone();
-    void onBooleanUnionAction();
-    void onBooleanIntersection();
-    void onBooleanDifference();
+    void onBooleanOperationAction();
     void onMirrorByPlane();
     void onMirrorByAxis();
     void onPatternLinear();
@@ -197,9 +195,7 @@ private:
     QAction* m_polygonAction;
     QAction* m_bezierCurveAction;
     QAction* m_nurbsCurveAction;
-    QAction* m_booleanUnionAction;
-    QAction* m_booleanIntersectionAction;
-    QAction* m_booleanDifferenceAction;
+    QAction* m_booleanOperationAction;
     QAction* m_mirrorByPlaneAction;
     QAction* m_mirrorByAxisAction;
     QAction* m_patternLinearAction;
