@@ -99,9 +99,7 @@ public:
     void createSphere();
     void createCylinder();
     void createCone();
-    void booleanUnion();
-    void booleanIntersection();
-    void booleanDifference();
+    void booleanOperation();
     void patternLinear();// Pattern(linear) 
     void patternCircular();// Pattern(Circular) 
     void mirrorByPlane();

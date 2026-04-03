@@ -489,20 +489,10 @@ void MainWindow::createShapeGroup()
     auto createShapeBooleanPannel = [&](){
         m_shapeBooleanPannel = m_shapeCategory->addPannel(tr("Boolean"));
 
-        // boolean union
-        m_booleanUnionAction = new QAction(QIcon(":/icons/icon/boolean_union.svg"), tr("Union"), this);
-        connect(m_booleanUnionAction, &QAction::triggered, this, &MainWindow::onBooleanUnionAction);
-        m_shapeBooleanPannel->addLargeAction(m_booleanUnionAction);
-
-        // boolean Intersection
-        m_booleanIntersectionAction = new QAction(QIcon(":/icons/icon/boolean_intersection.svg"), tr("Intersection"), this);
-        connect(m_booleanIntersectionAction, &QAction::triggered, this, &MainWindow::onBooleanIntersection);
-        m_shapeBooleanPannel->addLargeAction(m_booleanIntersectionAction);
-
-        // boolean difference
-        m_booleanDifferenceAction = new QAction(QIcon(":/icons/icon/boolean_difference.svg"), tr("Difference"), this);
-        connect(m_booleanDifferenceAction, &QAction::triggered, this, &MainWindow::onBooleanDifference);
-        m_shapeBooleanPannel->addLargeAction(m_booleanDifferenceAction);
+        // boolean operation
+        m_booleanOperationAction = new QAction(QIcon(":/icons/icon/boolean_intersection.svg"), tr("Boolean"), this);
+        connect(m_booleanOperationAction, &QAction::triggered, this, &MainWindow::onBooleanOperationAction);
+        m_shapeBooleanPannel->addLargeAction(m_booleanOperationAction);
     };
     createShapeBooleanPannel();
 
@@ -796,19 +786,9 @@ void MainWindow::onCreateCone()
     m_viewerWidget->createCone();
 }
 
-void MainWindow::onBooleanUnionAction()
+void MainWindow::onBooleanOperationAction()
 {
-    m_viewerWidget->booleanUnion();
-}
-
-void MainWindow::onBooleanIntersection()
-{
-    m_viewerWidget->booleanIntersection();
-}
-
-void MainWindow::onBooleanDifference()
-{
-    m_viewerWidget->booleanDifference();
+    m_viewerWidget->booleanOperation();
 }
 
 void MainWindow::onMirrorByPlane()
