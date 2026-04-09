@@ -92,6 +92,7 @@ private slots:
     void onPatternLinear();
     void onPatternCircular();
     void onShapeToolShell();
+    void onShapeToolFillet();
 
     /* help */
     void onSwitchLanguage();
@@ -201,6 +202,7 @@ private:
     QAction* m_patternLinearAction;
     QAction* m_patternCircularAction;
     QAction* m_shapeToolShellAction{};
+    QAction* m_shapeToolFilletAction{};
 
 
     // ---- help Group ----
