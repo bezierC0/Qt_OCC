@@ -29,6 +29,7 @@ class WidgetMeasureLength;
 class WidgetMeasureArcLength;
 class WidgetMeasureAngle;
 class WidgetFillet;
+class WidgetChamfer;
 
 template<typename T>
 class Tree;
@@ -106,6 +107,7 @@ public:
     void mirrorByPlane();
     void mirrorByAxis();
     void shell();
+    void chamfer();
     void fillet();
 
     void displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0); // Add this function
@@ -144,6 +146,7 @@ private slots:
     void onCreateBezier(const QList<gp_Pnt>& points, const QColor& color);
     void onCreateNurbs(const QList<gp_Pnt>& points, int degree, const QColor& color);
     void onApplyFillet(const TopoDS_Shape& edgeShape, double radius);
+    void onApplyChamfer(const TopoDS_Shape& edgeShape, double distance);
     
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
@@ -178,5 +181,6 @@ private:
     WidgetMeasureAngle*   m_widgetAngle{nullptr};
     WidgetBoolean*   m_WidgetBoolean{nullptr};
     WidgetFillet* m_widgetFillet{nullptr};
+    WidgetChamfer* m_widgetChamfer{nullptr};
 };
 

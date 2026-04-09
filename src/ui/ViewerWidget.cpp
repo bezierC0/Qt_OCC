@@ -28,6 +28,9 @@
 #include "widget_measure_arc_length.h"
 #include "widget_measure_length.h"
 #include "widget_fillet.h"
+#include "widget_chamfer.h"
+#include <BRepFilletAPI_MakeChamfer.hxx>
+#include <TopTools_IndexedDataMapOfShapeListOfShape.hxx>
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -1322,6 +1325,92 @@ void ViewerWidget::shell()
     auto newShape = m_occView->shell(box, facesToRemove);
     removeShape(box);
     displayShape(newShape, color.Red(), color.Green(), color.Blue());
+}
+
+void ViewerWidget::chamfer()
+{
+    if (!m_widgetChamfer) {
+        m_widgetChamfer = new WidgetChamfer(this);
+        m_widgetChamfer->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetChamfer, &QWidget::destroyed, this, [this]() { m_widgetChamfer = nullptr; });
+        connect(m_widgetChamfer, &WidgetChamfer::signalChamfer, this, &ViewerWidget::onApplyChamfer);
+    }
+    m_widgetChamfer->show();
+    m_widgetChamfer->raise();
+}
+
+void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance)
+{
+    if (edgeShape.IsNull() || edgeShape.ShapeType() != TopAbs_EDGE || distance <= 0.0) {
+        QMessageBox::warning(this, "Chamfer Error", "Invalid edge or distance.");
+        return;
+    }
+    
+    // Find the parent solid of this edge
+    auto selectedList = m_occView->getSelectedObjects();
+    if (selectedList.empty()) return;
+    
+    const auto parentObj = selectedList.back()->GetParentInteractiveObject();
+    if (parentObj.IsNull()) return;
+    
+    TopoDS_Shape parentShape;
+    const auto aisShape = Handle(AIS_Shape)::DownCast(parentObj);
+    if (!aisShape.IsNull()) {
+        parentShape = aisShape->Shape();
+    } else {
+        const auto xcafShape = Handle(XCAFPrs_AISObject)::DownCast(parentObj);
+        if (!xcafShape.IsNull()) {
+            XCAFDoc_ShapeTool::GetShape(xcafShape->GetLabel(), parentShape);
+        }
+    }
+
+    if (parentShape.IsNull()) return;
+    
+    Quantity_Color color;
+    parentObj->Color(color);
+
+    TopoDS_Edge targetEdge;
+    const TopoDS_Edge pickedEdge = TopoDS::Edge(edgeShape);
+    for (TopExp_Explorer ex(parentShape, TopAbs_EDGE); ex.More(); ex.Next()) {
+        const TopoDS_Edge current = TopoDS::Edge(ex.Current());
+        if (current.IsSame(pickedEdge) || current.IsEqual(pickedEdge) || current.IsPartner(pickedEdge)) {
+            targetEdge = current;
+            break;
+        }
+    }
+    if (targetEdge.IsNull()) {
+        QMessageBox::warning(this, "Chamfer Error", "Selected edge does not belong to the target shape.");
+        return;
+    }
+
+    TopTools_IndexedDataMapOfShapeListOfShape edgeFaceMap;
+    TopExp::MapShapesAndAncestors(parentShape, TopAbs_EDGE, TopAbs_FACE, edgeFaceMap);
+    
+    if (!edgeFaceMap.Contains(targetEdge)) {
+        QMessageBox::warning(this, "Chamfer Error", "Cannot find adjacent faces for the edge.");
+        return;
+    }
+
+    const TopTools_ListOfShape& faceList = edgeFaceMap.FindFromKey(targetEdge);
+    if (faceList.IsEmpty()) {
+        QMessageBox::warning(this, "Chamfer Error", "Cannot find adjacent faces for the edge.");
+        return;
+    }
+
+    TopoDS_Face face = TopoDS::Face(faceList.First());
+
+    BRepFilletAPI_MakeChamfer mkChamfer(parentShape);
+    mkChamfer.Add(distance, targetEdge);
+    mkChamfer.Build();
+
+    if (mkChamfer.IsDone()) {
+        TopoDS_Shape newShape = mkChamfer.Shape();
+        removeShape(parentShape);
+        m_occView->clearSelectedObjects();
+        displayShape(newShape, color.Red(), color.Green(), color.Blue());
+    } else {
+        QMessageBox::warning(this, "Chamfer Error", "Failed to create chamfer. Distance might be too large.");
+    }
 }
 
 void ViewerWidget::fillet()

@@ -532,7 +532,11 @@ void MainWindow::createShapeGroup()
         connect(m_shapeToolShellAction, &QAction::triggered, this, &MainWindow::onShapeToolShell);
         m_shapeToolPannel->addLargeAction(m_shapeToolShellAction);
 
-        m_shapeToolFilletAction = new QAction(QIcon(":/icons/icon/shape_tool_shell.svg"), tr("Fillet"), this);
+        m_shapeToolChamferAction = new QAction(QIcon(":/icons/icon/shape_tool_chamfer.png"), tr("Chamfer"), this);
+        connect(m_shapeToolChamferAction, &QAction::triggered, this, &MainWindow::onShapeToolChamfer);
+        m_shapeToolPannel->addLargeAction(m_shapeToolChamferAction);
+
+        m_shapeToolFilletAction = new QAction(QIcon(":/icons/icon/shape_tool_fillet.svg"), tr("Fillet"), this);
         connect(m_shapeToolFilletAction, &QAction::triggered, this, &MainWindow::onShapeToolFillet);
         m_shapeToolPannel->addLargeAction(m_shapeToolFilletAction);
         return;
@@ -839,6 +843,11 @@ void MainWindow::onPatternCircular()
 void MainWindow::onShapeToolShell()
 {
     m_viewerWidget->shell();
+}
+
+void MainWindow::onShapeToolChamfer()
+{
+    m_viewerWidget->chamfer();
 }
 
 void MainWindow::onShapeToolFillet()
