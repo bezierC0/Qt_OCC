@@ -364,22 +364,22 @@ void MainWindow::createToolGroup()
         /* Measure Pannel */
         m_measurePannel = m_toolCategory->addPannel(tr("Measure"));
         // measure distance
-        m_measureDistanceAction = new QAction(QIcon(":/icons/icon/measure_distance.svg"), tr("MeasureDistance"), this);
+        m_measureDistanceAction = new QAction(QIcon(":/icons/icon/measure_distance.svg"), tr("Distance"), this);
         connect(m_measureDistanceAction, &QAction::triggered, this, &MainWindow::onMeasureDistance);
         m_measurePannel->addSmallAction(m_measureDistanceAction);
 
         // measure length
-        m_measureLengthAction = new QAction(QIcon(":/icons/icon/measure_length.svg"), tr("MeasureLength"), this);
+        m_measureLengthAction = new QAction(QIcon(":/icons/icon/measure_length.svg"), tr("Length"), this);
         connect(m_measureLengthAction, &QAction::triggered, this, &MainWindow::onMeasureLength);
         m_measurePannel->addSmallAction(m_measureLengthAction);
 
         // measure arc length
-        m_measureArcLengthAction = new QAction(QIcon(":/icons/icon/measure_arc_length.svg"), tr("MeasureArcLength"), this);
+        m_measureArcLengthAction = new QAction(QIcon(":/icons/icon/measure_arc_length.svg"), tr("Arc"), this);
         connect(m_measureArcLengthAction, &QAction::triggered, this, &MainWindow::onMeasureArcLength);
         m_measurePannel->addSmallAction(m_measureArcLengthAction);
 
         // measure angle
-        m_measureAngleAction = new QAction(QIcon(":/icons/icon/measure_angle.svg"), tr("MeasureAngle"), this); 
+        m_measureAngleAction = new QAction(QIcon(":/icons/icon/measure_angle.svg"), tr("Angle"), this); 
         connect(m_measureAngleAction, &QAction::triggered, this, &MainWindow::onMeasureAngle);
         m_measurePannel->addSmallAction(m_measureAngleAction);
     };
@@ -489,20 +489,10 @@ void MainWindow::createShapeGroup()
     auto createShapeBooleanPannel = [&](){
         m_shapeBooleanPannel = m_shapeCategory->addPannel(tr("Boolean"));
 
-        // boolean union
-        m_booleanUnionAction = new QAction(QIcon(":/icons/icon/boolean_union.svg"), tr("Union"), this);
-        connect(m_booleanUnionAction, &QAction::triggered, this, &MainWindow::onBooleanUnionAction);
-        m_shapeBooleanPannel->addLargeAction(m_booleanUnionAction);
-
-        // boolean Intersection
-        m_booleanIntersectionAction = new QAction(QIcon(":/icons/icon/boolean_intersection.svg"), tr("Intersection"), this);
-        connect(m_booleanIntersectionAction, &QAction::triggered, this, &MainWindow::onBooleanIntersection);
-        m_shapeBooleanPannel->addLargeAction(m_booleanIntersectionAction);
-
-        // boolean difference
-        m_booleanDifferenceAction = new QAction(QIcon(":/icons/icon/boolean_difference.svg"), tr("Difference"), this);
-        connect(m_booleanDifferenceAction, &QAction::triggered, this, &MainWindow::onBooleanDifference);
-        m_shapeBooleanPannel->addLargeAction(m_booleanDifferenceAction);
+        // boolean operation
+        m_booleanOperationAction = new QAction(QIcon(":/icons/icon/boolean_intersection.svg"), tr("Boolean"), this);
+        connect(m_booleanOperationAction, &QAction::triggered, this, &MainWindow::onBooleanOperationAction);
+        m_shapeBooleanPannel->addLargeAction(m_booleanOperationAction);
     };
     createShapeBooleanPannel();
 
@@ -542,6 +532,13 @@ void MainWindow::createShapeGroup()
         connect(m_shapeToolShellAction, &QAction::triggered, this, &MainWindow::onShapeToolShell);
         m_shapeToolPannel->addLargeAction(m_shapeToolShellAction);
 
+        m_shapeToolChamferAction = new QAction(QIcon(":/icons/icon/shape_tool_chamfer.png"), tr("Chamfer"), this);
+        connect(m_shapeToolChamferAction, &QAction::triggered, this, &MainWindow::onShapeToolChamfer);
+        m_shapeToolPannel->addLargeAction(m_shapeToolChamferAction);
+
+        m_shapeToolFilletAction = new QAction(QIcon(":/icons/icon/shape_tool_fillet.svg"), tr("Fillet"), this);
+        connect(m_shapeToolFilletAction, &QAction::triggered, this, &MainWindow::onShapeToolFillet);
+        m_shapeToolPannel->addLargeAction(m_shapeToolFilletAction);
         return;
     };
     createShapeToolPannel();
@@ -713,17 +710,17 @@ void MainWindow::onMeasureDistance() const
 
 void MainWindow::onMeasureLength() const
 {
-    // TODO
+    m_viewerWidget->measureLength();
 }
 
 void MainWindow::onMeasureArcLength() const
 {
-    // TODO
+    m_viewerWidget->measureArcLength();
 }
 
 void MainWindow::onMeasureAngle() const
 {
-    // TODO
+    m_viewerWidget->measureAngle();
 }
 
 void MainWindow::onCreatePoint()
@@ -796,19 +793,9 @@ void MainWindow::onCreateCone()
     m_viewerWidget->createCone();
 }
 
-void MainWindow::onBooleanUnionAction()
+void MainWindow::onBooleanOperationAction()
 {
-    m_viewerWidget->booleanUnion();
-}
-
-void MainWindow::onBooleanIntersection()
-{
-    m_viewerWidget->booleanIntersection();
-}
-
-void MainWindow::onBooleanDifference()
-{
-    m_viewerWidget->booleanDifference();
+    m_viewerWidget->booleanOperation();
 }
 
 void MainWindow::onMirrorByPlane()
@@ -856,6 +843,16 @@ void MainWindow::onPatternCircular()
 void MainWindow::onShapeToolShell()
 {
     m_viewerWidget->shell();
+}
+
+void MainWindow::onShapeToolChamfer()
+{
+    m_viewerWidget->chamfer();
+}
+
+void MainWindow::onShapeToolFillet()
+{
+    m_viewerWidget->fillet();
 }
 
 ViewerWidget* MainWindow::GetViewerWidget() const

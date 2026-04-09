@@ -24,6 +24,8 @@
         <file>icon/patter_linear.svg</file>
         <file>icon/pattern_circular.svg</file>
         <file>icon/shape_tool_shell.svg</file>
+        <file>icon/shape_tool_chamfer.png</file>
+        <file>icon/shape_tool_fillet.svg</file>
         <file>icon/select.svg</file>
         <file>icon/select_filter.svg</file>
         <file>icon/tool_explosion.svg</file>

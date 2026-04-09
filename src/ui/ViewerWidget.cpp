@@ -21,8 +21,16 @@
 #include "ui/DialogCreateCone.h"
 #include "ui/DialogCreatePolygon.h"
 #include "ui/DialogExportImage.h"
+#include "WidgetBoolean.h"
 #include "WidgetInterference.h"
 #include "widget_distance.h"
+#include "widget_measure_angle.h"
+#include "widget_measure_arc_length.h"
+#include "widget_measure_length.h"
+#include "widget_fillet.h"
+#include "widget_chamfer.h"
+#include <BRepFilletAPI_MakeChamfer.hxx>
+#include <TopTools_IndexedDataMapOfShapeListOfShape.hxx>
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -54,11 +62,13 @@
 #include <BRepBuilderAPI_MakePolygon.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <GC_MakeArcOfCircle.hxx>
+#include <BRepFilletAPI_MakeFillet.hxx>
 
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Compound.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Vertex.hxx>
+#include <TopoDS_Edge.hxx>
 #include <XCAFDoc_DocumentTool.hxx>
 #include <XCAFDoc_ShapeTool.hxx>
 #include <XCAFApp_Application.hxx>
@@ -75,6 +85,7 @@
 #include <Graphic3d_ClipPlane.hxx> // Added missing include for clipping
 #include <gp_Pln.hxx>              // Added missing include for clipping
 #include <Quantity_Color.hxx>      // Added missing include for colors
+#include <gp_Vec.hxx>
 #include <GProp_GProps.hxx>
 #include <TDF_ChildIterator.hxx>
 
@@ -671,6 +682,42 @@ void ViewerWidget::measureDistance()
     m_widgetDistance->raise();
 }
 
+void ViewerWidget::measureLength()
+{
+    if (!m_widgetLength) {
+        m_widgetLength = new WidgetMeasureLength(this);
+        // Ensure it's deleted on close so we can create a fresh one or handle state cleanly
+        m_widgetLength->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetLength, &QWidget::destroyed, this, [this]() { m_widgetLength = nullptr; });
+    }
+    m_widgetLength->show();
+    m_widgetLength->raise();
+}
+
+void ViewerWidget::measureArcLength()
+{
+    if (!m_widgetArcLength) {
+        m_widgetArcLength = new WidgetMeasureArcLength(this);
+        m_widgetArcLength->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetArcLength, &QWidget::destroyed, this,
+                [this]() { m_widgetArcLength = nullptr; });
+    }
+    m_widgetArcLength->show();
+    m_widgetArcLength->raise();
+}
+
+void ViewerWidget::measureAngle()
+{
+    if (!m_widgetAngle) {
+        m_widgetAngle = new WidgetMeasureAngle(this);
+        m_widgetAngle->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetAngle, &QWidget::destroyed, this,
+                [this]() { m_widgetAngle = nullptr; });
+    }
+    m_widgetAngle->show();
+    m_widgetAngle->raise();
+}
+
 void ViewerWidget::createPoint()
 {
     if (!m_dlgPoint) {
@@ -923,39 +970,15 @@ void ViewerWidget::createCone()
     m_dlgCone->raise();
 }
 
-void ViewerWidget::booleanUnion()
+void ViewerWidget::booleanOperation()
 {
-    TopoDS_Shape shapeA;
-    TopoDS_Shape shapeB;
-    if (!getBooleanTargets(shapeA, shapeB))
-        return;
-
-    BRepAlgoAPI_Fuse booleanFun(shapeA, shapeB);
-    if (booleanFun.IsDone()) {
-        TopoDS_Shape result = booleanFun.Shape();
-        displayShape(result, 1.0, 0.0, 1.0);
-        m_occView->clearSelectedObjects();
-    } else {
-        QMessageBox::warning(this, tr("Boolean Operation Failed"),
-                             tr("Boolean Union operation failed!"));
+    if (!m_WidgetBoolean) {
+        m_WidgetBoolean = new WidgetBoolean(this);
+        m_WidgetBoolean->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_WidgetBoolean, &QWidget::destroyed, this, [this]() { m_WidgetBoolean = nullptr; });
     }
-}
-
-void ViewerWidget::booleanIntersection()
-{
-    TopoDS_Shape shape1;
-    TopoDS_Shape shape2;
-    if (!getBooleanTargets(shape1, shape2))
-        return;
-    BRepAlgoAPI_Common booleanFun(shape1, shape2);
-    if (booleanFun.IsDone()) {
-        TopoDS_Shape result = booleanFun.Shape();
-        displayShape(result, 0.0, 1.0, 0.0);
-        m_occView->clearSelectedObjects();
-    } else {
-        QMessageBox::warning(this, tr("Boolean Operation Failed"),
-                             tr("Boolean Intersection operation failed!"));
-    }
+    m_WidgetBoolean->show();
+    m_WidgetBoolean->raise();
 }
 
 /*  https://github.com/bezierC0/CADHealingTool */
@@ -1086,23 +1109,6 @@ void ViewerWidget::repairAndSave(const TopoDS_Shape &shape)
                                  "Shape repaired and saved to fix.stp successfully!");
     } else {
         QMessageBox::warning(this, "Error", "Failed to write fix.stp");
-    }
-}
-
-void ViewerWidget::booleanDifference()
-{
-    TopoDS_Shape shape1;
-    TopoDS_Shape shape2;
-    if (!getBooleanTargets(shape1, shape2))
-        return;
-    BRepAlgoAPI_Cut booleanFun(shape1, shape2);
-    if (booleanFun.IsDone()) {
-        TopoDS_Shape result = booleanFun.Shape();
-        displayShape(result, 0.0, 0.0, 1.0);
-        m_occView->clearSelectedObjects();
-    } else {
-        QMessageBox::warning(this, tr("Boolean Operation Failed"),
-                             tr("Boolean Difference operation failed!"));
     }
 }
 
@@ -1321,6 +1327,162 @@ void ViewerWidget::shell()
     displayShape(newShape, color.Red(), color.Green(), color.Blue());
 }
 
+void ViewerWidget::chamfer()
+{
+    if (!m_widgetChamfer) {
+        m_widgetChamfer = new WidgetChamfer(this);
+        m_widgetChamfer->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetChamfer, &QWidget::destroyed, this, [this]() { m_widgetChamfer = nullptr; });
+        connect(m_widgetChamfer, &WidgetChamfer::signalChamfer, this, &ViewerWidget::onApplyChamfer);
+    }
+    m_widgetChamfer->show();
+    m_widgetChamfer->raise();
+}
+
+void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance)
+{
+    if (edgeShape.IsNull() || edgeShape.ShapeType() != TopAbs_EDGE || distance <= 0.0) {
+        QMessageBox::warning(this, "Chamfer Error", "Invalid edge or distance.");
+        return;
+    }
+    
+    // Find the parent solid of this edge
+    auto selectedList = m_occView->getSelectedObjects();
+    if (selectedList.empty()) return;
+    
+    const auto parentObj = selectedList.back()->GetParentInteractiveObject();
+    if (parentObj.IsNull()) return;
+    
+    TopoDS_Shape parentShape;
+    const auto aisShape = Handle(AIS_Shape)::DownCast(parentObj);
+    if (!aisShape.IsNull()) {
+        parentShape = aisShape->Shape();
+    } else {
+        const auto xcafShape = Handle(XCAFPrs_AISObject)::DownCast(parentObj);
+        if (!xcafShape.IsNull()) {
+            XCAFDoc_ShapeTool::GetShape(xcafShape->GetLabel(), parentShape);
+        }
+    }
+
+    if (parentShape.IsNull()) return;
+    
+    Quantity_Color color;
+    parentObj->Color(color);
+
+    TopoDS_Edge targetEdge;
+    const TopoDS_Edge pickedEdge = TopoDS::Edge(edgeShape);
+    for (TopExp_Explorer ex(parentShape, TopAbs_EDGE); ex.More(); ex.Next()) {
+        const TopoDS_Edge current = TopoDS::Edge(ex.Current());
+        if (current.IsSame(pickedEdge) || current.IsEqual(pickedEdge) || current.IsPartner(pickedEdge)) {
+            targetEdge = current;
+            break;
+        }
+    }
+    if (targetEdge.IsNull()) {
+        QMessageBox::warning(this, "Chamfer Error", "Selected edge does not belong to the target shape.");
+        return;
+    }
+
+    TopTools_IndexedDataMapOfShapeListOfShape edgeFaceMap;
+    TopExp::MapShapesAndAncestors(parentShape, TopAbs_EDGE, TopAbs_FACE, edgeFaceMap);
+    
+    if (!edgeFaceMap.Contains(targetEdge)) {
+        QMessageBox::warning(this, "Chamfer Error", "Cannot find adjacent faces for the edge.");
+        return;
+    }
+
+    const TopTools_ListOfShape& faceList = edgeFaceMap.FindFromKey(targetEdge);
+    if (faceList.IsEmpty()) {
+        QMessageBox::warning(this, "Chamfer Error", "Cannot find adjacent faces for the edge.");
+        return;
+    }
+
+    TopoDS_Face face = TopoDS::Face(faceList.First());
+
+    BRepFilletAPI_MakeChamfer mkChamfer(parentShape);
+    mkChamfer.Add(distance, targetEdge);
+    mkChamfer.Build();
+
+    if (mkChamfer.IsDone()) {
+        TopoDS_Shape newShape = mkChamfer.Shape();
+        removeShape(parentShape);
+        m_occView->clearSelectedObjects();
+        displayShape(newShape, color.Red(), color.Green(), color.Blue());
+    } else {
+        QMessageBox::warning(this, "Chamfer Error", "Failed to create chamfer. Distance might be too large.");
+    }
+}
+
+void ViewerWidget::fillet()
+{
+    if (!m_widgetFillet) {
+        m_widgetFillet = new WidgetFillet(this);
+        m_widgetFillet->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetFillet, &QWidget::destroyed, this, [this]() { m_widgetFillet = nullptr; });
+        connect(m_widgetFillet, &WidgetFillet::signalFillet, this, &ViewerWidget::onApplyFillet);
+    }
+    m_widgetFillet->show();
+    m_widgetFillet->raise();
+}
+
+void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)
+{
+    if (edgeShape.IsNull() || edgeShape.ShapeType() != TopAbs_EDGE || radius <= 0.0) {
+        QMessageBox::warning(this, "Fillet Error", "Invalid edge or radius.");
+        return;
+    }
+    
+    // Find the parent solid of this edge
+    auto selectedList = m_occView->getSelectedObjects();
+    if (selectedList.empty()) return;
+    
+    const auto parentObj = selectedList.back()->GetParentInteractiveObject();
+    if (parentObj.IsNull()) return;
+    
+    TopoDS_Shape parentShape;
+    const auto aisShape = Handle(AIS_Shape)::DownCast(parentObj);
+    if (!aisShape.IsNull()) {
+        parentShape = aisShape->Shape();
+    } else {
+        const auto xcafShape = Handle(XCAFPrs_AISObject)::DownCast(parentObj);
+        if (!xcafShape.IsNull()) {
+            XCAFDoc_ShapeTool::GetShape(xcafShape->GetLabel(), parentShape);
+        }
+    }
+
+    if (parentShape.IsNull()) return;
+    
+    Quantity_Color color;
+    parentObj->Color(color);
+
+    TopoDS_Edge targetEdge;
+    const TopoDS_Edge pickedEdge = TopoDS::Edge(edgeShape);
+    for (TopExp_Explorer ex(parentShape, TopAbs_EDGE); ex.More(); ex.Next()) {
+        const TopoDS_Edge current = TopoDS::Edge(ex.Current());
+        if (current.IsSame(pickedEdge) || current.IsEqual(pickedEdge) || current.IsPartner(pickedEdge)) {
+            targetEdge = current;
+            break;
+        }
+    }
+    if (targetEdge.IsNull()) {
+        QMessageBox::warning(this, "Fillet Error", "Selected edge does not belong to the target shape.");
+        return;
+    }
+
+    BRepFilletAPI_MakeFillet mkFillet(parentShape);
+    mkFillet.Add(radius, targetEdge);
+    mkFillet.Build();
+
+    if (mkFillet.IsDone()) {
+        TopoDS_Shape newShape = mkFillet.Shape();
+        removeShape(parentShape);
+        m_occView->clearSelectedObjects();
+        displayShape(newShape, color.Red(), color.Green(), color.Blue());
+    } else {
+        QMessageBox::warning(this, "Fillet Error", "Failed to create fillet. Radius might be too large.");
+    }
+}
+
 void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const double g,
                                 const double b)
 {
@@ -1371,7 +1533,26 @@ void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const
 
 void ViewerWidget::removeShape(const TopoDS_Shape &shape)
 {
+    TDF_Label label;
+    if (!m_doc->m_ocafDoc.IsNull()) {
+        Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(m_doc->m_ocafDoc->Main());
+        if (shapeTool->Search(shape, label) || shapeTool->FindShape(shape, label)) {
+            shapeTool->RemoveShape(label);
+        }
+    }
+
+    auto it = std::remove_if(m_doc->m_list.begin(), m_doc->m_list.end(),
+        [&shape, label](const opencascade::handle<AIS_InteractiveObject>& obj) {
+            Handle(AIS_Shape) aisShape = Handle(AIS_Shape)::DownCast(obj);
+            if (!aisShape.IsNull() && aisShape->Shape().IsSame(shape)) return true;
+            Handle(XCAFPrs_AISObject) xcafShape = Handle(XCAFPrs_AISObject)::DownCast(obj);
+            if (!xcafShape.IsNull() && !label.IsNull() && xcafShape->GetLabel() == label) return true;
+            return false;
+        });
+    m_doc->m_list.erase(it, m_doc->m_list.end());
+
     m_occView->removeShape(shape);
+    updateTree();
     m_occView->reDraw();
     m_occView->viewfit(); // Fit view to the new shape
 }
@@ -1550,7 +1731,8 @@ void ViewerWidget::onCreateCylinder(double x, double y, double z, double radius,
     if(m_dlgCylinder) m_dlgCylinder->raise();
 }
 
-void ViewerWidget::onCreateCone(double x, double y, double z, double radius1, double radius2, double height, const QColor& color)
+void ViewerWidget::onCreateCone(double x, double y, double z, double radius1, double radius2,
+                                double height, const QColor &color)
 {
     gp_Ax2 axis(gp_Pnt(x, y, z), gp_Dir(0,0,1));
     BRepPrimAPI_MakeCone cone(axis, radius1, radius2, height);
