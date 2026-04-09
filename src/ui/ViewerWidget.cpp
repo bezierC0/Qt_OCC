@@ -27,6 +27,7 @@
 #include "widget_measure_angle.h"
 #include "widget_measure_arc_length.h"
 #include "widget_measure_length.h"
+#include "widget_fillet.h"
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
@@ -58,6 +59,7 @@
 #include <BRepBuilderAPI_MakePolygon.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <GC_MakeArcOfCircle.hxx>
+#include <BRepFilletAPI_MakeFillet.hxx>
 
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Compound.hxx>
@@ -1320,6 +1322,76 @@ void ViewerWidget::shell()
     auto newShape = m_occView->shell(box, facesToRemove);
     removeShape(box);
     displayShape(newShape, color.Red(), color.Green(), color.Blue());
+}
+
+void ViewerWidget::fillet()
+{
+    if (!m_widgetFillet) {
+        m_widgetFillet = new WidgetFillet(this);
+        m_widgetFillet->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetFillet, &QWidget::destroyed, this, [this]() { m_widgetFillet = nullptr; });
+        connect(m_widgetFillet, &WidgetFillet::signalFillet, this, &ViewerWidget::onApplyFillet);
+    }
+    m_widgetFillet->show();
+    m_widgetFillet->raise();
+}
+
+void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)
+{
+    if (edgeShape.IsNull() || edgeShape.ShapeType() != TopAbs_EDGE || radius <= 0.0) {
+        QMessageBox::warning(this, "Fillet Error", "Invalid edge or radius.");
+        return;
+    }
+    
+    // Find the parent solid of this edge
+    auto selectedList = m_occView->getSelectedObjects();
+    if (selectedList.empty()) return;
+    
+    const auto parentObj = selectedList.back()->GetParentInteractiveObject();
+    if (parentObj.IsNull()) return;
+    
+    TopoDS_Shape parentShape;
+    const auto aisShape = Handle(AIS_Shape)::DownCast(parentObj);
+    if (!aisShape.IsNull()) {
+        parentShape = aisShape->Shape();
+    } else {
+        const auto xcafShape = Handle(XCAFPrs_AISObject)::DownCast(parentObj);
+        if (!xcafShape.IsNull()) {
+            XCAFDoc_ShapeTool::GetShape(xcafShape->GetLabel(), parentShape);
+        }
+    }
+
+    if (parentShape.IsNull()) return;
+    
+    Quantity_Color color;
+    parentObj->Color(color);
+
+    TopoDS_Edge targetEdge;
+    const TopoDS_Edge pickedEdge = TopoDS::Edge(edgeShape);
+    for (TopExp_Explorer ex(parentShape, TopAbs_EDGE); ex.More(); ex.Next()) {
+        const TopoDS_Edge current = TopoDS::Edge(ex.Current());
+        if (current.IsSame(pickedEdge) || current.IsEqual(pickedEdge) || current.IsPartner(pickedEdge)) {
+            targetEdge = current;
+            break;
+        }
+    }
+    if (targetEdge.IsNull()) {
+        QMessageBox::warning(this, "Fillet Error", "Selected edge does not belong to the target shape.");
+        return;
+    }
+
+    BRepFilletAPI_MakeFillet mkFillet(parentShape);
+    mkFillet.Add(radius, targetEdge);
+    mkFillet.Build();
+
+    if (mkFillet.IsDone()) {
+        TopoDS_Shape newShape = mkFillet.Shape();
+        removeShape(parentShape);
+        m_occView->clearSelectedObjects();
+        displayShape(newShape, color.Red(), color.Green(), color.Blue());
+    } else {
+        QMessageBox::warning(this, "Fillet Error", "Failed to create fillet. Radius might be too large.");
+    }
 }
 
 void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const double g,

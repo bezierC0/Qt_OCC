@@ -28,6 +28,7 @@ class WidgetDistance;
 class WidgetMeasureLength;
 class WidgetMeasureArcLength;
 class WidgetMeasureAngle;
+class WidgetFillet;
 
 template<typename T>
 class Tree;
@@ -105,6 +106,7 @@ public:
     void mirrorByPlane();
     void mirrorByAxis();
     void shell();
+    void fillet();
 
     void displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0); // Add this function
     void removeShape(const TopoDS_Shape& shape);
@@ -141,6 +143,7 @@ private slots:
     void onCreatePolygon(const QList<gp_Pnt>& points, bool isClosed, const QColor& color);
     void onCreateBezier(const QList<gp_Pnt>& points, const QColor& color);
     void onCreateNurbs(const QList<gp_Pnt>& points, int degree, const QColor& color);
+    void onApplyFillet(const TopoDS_Shape& edgeShape, double radius);
     
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
@@ -174,5 +177,6 @@ private:
     WidgetMeasureArcLength* m_widgetArcLength{nullptr};
     WidgetMeasureAngle*   m_widgetAngle{nullptr};
     WidgetBoolean*   m_WidgetBoolean{nullptr};
+    WidgetFillet* m_widgetFillet{nullptr};
 };
 
