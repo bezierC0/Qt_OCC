@@ -70,6 +70,7 @@ private slots:
     void onMeasureLength() const;
     void onMeasureArcLength() const;
     void onMeasureAngle() const;
+    void onMeasureMininumDistance() const;
     
     /* shape */
     void onCreatePoint();
@@ -174,6 +175,7 @@ private:
     QAction* m_measureLengthAction;
     QAction* m_measureArcLengthAction;
     QAction* m_measureAngleAction;
+    QAction* m_measureMinimumDistanceAction;
 
     // ---- Shape Group ----
     SARibbonCategory* m_shapeCategory;

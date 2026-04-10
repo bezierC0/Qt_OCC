@@ -382,6 +382,11 @@ void MainWindow::createToolGroup()
         m_measureAngleAction = new QAction(QIcon(":/icons/icon/measure_angle.svg"), tr("Angle"), this); 
         connect(m_measureAngleAction, &QAction::triggered, this, &MainWindow::onMeasureAngle);
         m_measurePannel->addSmallAction(m_measureAngleAction);
+
+        // measure minimum distance
+        m_measureMinimumDistanceAction = new QAction(QIcon(":/icons/icon/measure_length.svg"), tr("Minimum Distance"), this); 
+        connect(m_measureMinimumDistanceAction, &QAction::triggered, this, &MainWindow::onMeasureMininumDistance);
+        m_measurePannel->addSmallAction(m_measureMinimumDistanceAction);
     };
     createMeasurePannel();
 
@@ -721,6 +726,11 @@ void MainWindow::onMeasureArcLength() const
 void MainWindow::onMeasureAngle() const
 {
     m_viewerWidget->measureAngle();
+}
+
+void MainWindow::onMeasureMininumDistance() const
+{
+    m_viewerWidget->measureMinimumDistance();
 }
 
 void MainWindow::onCreatePoint()
