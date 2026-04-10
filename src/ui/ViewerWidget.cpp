@@ -24,6 +24,7 @@
 #include "WidgetBoolean.h"
 #include "WidgetInterference.h"
 #include "widget_distance.h"
+#include "widget_minimum_distance.h"
 #include "widget_measure_angle.h"
 #include "widget_measure_arc_length.h"
 #include "widget_measure_length.h"
@@ -716,6 +717,17 @@ void ViewerWidget::measureAngle()
     }
     m_widgetAngle->show();
     m_widgetAngle->raise();
+}
+
+void ViewerWidget::measureMinimumDistance()
+{
+    if (!m_widgetMinimumDistance) {
+        m_widgetMinimumDistance = new WidgetMinimumDistance(this);
+        m_widgetMinimumDistance->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetMinimumDistance, &QWidget::destroyed, this, [this]() { m_widgetMinimumDistance = nullptr; });
+    }
+    m_widgetMinimumDistance->show();
+    m_widgetMinimumDistance->raise();
 }
 
 void ViewerWidget::createPoint()
@@ -1779,3 +1791,4 @@ void ViewerWidget::onCreateSphere(double x, double y, double z, double radius, c
     displayShape(sphere.Shape(), color.redF(), color.greenF(), color.blueF());
     if (m_dlgSphere) m_dlgSphere->raise();
 }
+

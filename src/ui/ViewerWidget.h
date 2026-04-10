@@ -30,6 +30,7 @@ class WidgetMeasureArcLength;
 class WidgetMeasureAngle;
 class WidgetFillet;
 class WidgetChamfer;
+class WidgetMinimumDistance;
 
 template<typename T>
 class Tree;
@@ -85,6 +86,7 @@ public:
     void measureLength();
     void measureArcLength();
     void measureAngle();
+    void measureMinimumDistance();
 
     /* shape */
     void createPoint();
@@ -182,5 +184,6 @@ private:
     WidgetBoolean*   m_WidgetBoolean{nullptr};
     WidgetFillet* m_widgetFillet{nullptr};
     WidgetChamfer* m_widgetChamfer{nullptr};
+    WidgetMinimumDistance* m_widgetMinimumDistance{nullptr};
 };
 
