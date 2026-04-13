@@ -9,6 +9,7 @@
 #include <TopoDS.hxx>
 #include <TopoDS_Vertex.hxx>
 #include <BRepExtrema_DistShapeShape.hxx>
+#include <BRepExtrema_ProximityDistTool.hxx>
 #include <BRepBuilderAPI_MakeVertex.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include "util/TopoShapeUtil.h"
@@ -142,6 +143,12 @@ void WidgetMinimumDistance::calculateMinimumDistance()
 
     clearResultDisplay();
 
+    // BRepExtrema_ProximityDistTool transform mesh (Poly_Triangulation) calculate distance
+    /*
+    BRepExtrema_ShapeProximity proximity(shape1, shape2);
+    proximity.Perform();
+    Standard_Real proxDist = proximity.Proximity();  
+    */
     BRepExtrema_DistShapeShape extrema(m_shape1, m_shape2);
     if (extrema.IsDone() && extrema.NbSolution() > 0) {
         const double precision = 4;
@@ -180,6 +187,12 @@ void WidgetMinimumDistance::calculateMinimumDistance()
                         aisEdge->SetWidth(2.0);
                         m_resultObjects.push_back(aisEdge);
                         context->Display(aisEdge, Standard_False);
+
+                        Handle(AIS_TextLabel) aTextLabel = new AIS_TextLabel();
+                        aTextLabel->SetText(std::to_string(p1.Distance(p2)).c_str());
+                        aTextLabel->SetPosition({(p1.X() + p2.X())/2,(p1.Y() + p2.Y())/2,(p1.Z() + p2.Z())/2});
+                        m_resultObjects.push_back(aTextLabel);
+                        context->Display(aTextLabel, Standard_False);
                     }
                 }
                 view->reDraw();
