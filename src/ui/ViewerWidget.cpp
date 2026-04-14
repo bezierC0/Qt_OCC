@@ -30,6 +30,15 @@
 #include "widget_measure_length.h"
 #include "widget_fillet.h"
 #include "widget_chamfer.h"
+#include "widget_hole.h"
+
+#include <BRepPrimAPI_MakeCylinder.hxx>
+#include <BRepAlgoAPI_Cut.hxx>
+#include <BRepGProp.hxx>
+#include <GProp_GProps.hxx>
+#include <GeomAPI_ProjectPointOnSurf.hxx>
+#include <GeomLProp_SLProps.hxx>
+
 #include <BRepFilletAPI_MakeChamfer.hxx>
 #include <TopTools_IndexedDataMapOfShapeListOfShape.hxx>
 #include <QtWidgets/QVBoxLayout> // Corrected path
@@ -1435,6 +1444,78 @@ void ViewerWidget::fillet()
     }
     m_widgetFillet->show();
     m_widgetFillet->raise();
+}
+
+void ViewerWidget::hole()
+{
+    if (!m_widgetHole) {
+        m_widgetHole = new WidgetHole(this);
+        m_widgetHole->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetHole, &QWidget::destroyed, this, [this]() { m_widgetHole = nullptr; });
+        connect(m_widgetHole, &WidgetHole::signalHole, this, &ViewerWidget::onApplyHole);
+    }
+    m_widgetHole->show();
+    m_widgetHole->raise();
+}
+
+void ViewerWidget::onApplyHole(const TopoDS_Shape& parentShape, const TopoDS_Shape& faceShape, const TopoDS_Shape& pointShape, double radius)
+{
+    if (parentShape.IsNull() || faceShape.IsNull() || faceShape.ShapeType() != TopAbs_FACE || pointShape.IsNull() || pointShape.ShapeType() != TopAbs_VERTEX) {
+        QMessageBox::warning(this, "Hole Error", "Invalid shape or inputs.");
+        return;
+    }
+
+    // 1. Get Point
+    TopoDS_Vertex vertex = TopoDS::Vertex(pointShape);
+    gp_Pnt pnt = BRep_Tool::Pnt(vertex);
+
+    // 2. Get normal on face
+    TopoDS_Face face = TopoDS::Face(faceShape);
+    Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
+    
+    GeomAPI_ProjectPointOnSurf projector(pnt, surface);
+    if (!projector.NbPoints()) {
+        QMessageBox::warning(this, "Hole Error", "The point cannot be projected safely onto the face.");
+        return;
+    }
+    
+    Standard_Real u, v;
+    projector.LowerDistanceParameters(u, v);
+    
+    GeomLProp_SLProps props(surface, u, v, 1, 1e-6);
+    if (!props.IsNormalDefined()) {
+        QMessageBox::warning(this, "Hole Error", "Normal is not defined at this point.");
+        return;
+    }
+    
+    gp_Dir normal = props.Normal();
+    if (face.Orientation() == TopAbs_REVERSED) {
+        normal.Reverse();
+    }
+    
+    // We drill *into* the solid, so reversed normal
+    gp_Dir drillDir = normal.Reversed();
+    
+    // Easy way is to just use a large depth.
+    double depth = 1000.0;
+    
+    // To ensure it doesn't fail due to coincident boundaries, start slightly outside
+    gp_Pnt startPnt = pnt.Translated(gp_Vec(drillDir.Reversed()) * 1.0); 
+    gp_Ax2 axisCyl(startPnt, drillDir);
+    BRepPrimAPI_MakeCylinder cyl(axisCyl, radius, depth + 1.0);
+    
+    BRepAlgoAPI_Cut cut(parentShape, cyl.Shape());
+    cut.SetFuzzyValue(1e-5);
+    cut.Build();
+    
+    if (cut.IsDone() && !cut.Shape().IsNull()) {
+        TopoDS_Shape newShape = cut.Shape();
+        removeShape(parentShape);
+        m_occView->clearSelectedObjects();
+        displayShape(newShape);
+    } else {
+        QMessageBox::warning(this, "Hole Error", "Failed to create hole.");
+    }
 }
 
 void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)

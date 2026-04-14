@@ -31,6 +31,7 @@ class WidgetMeasureAngle;
 class WidgetFillet;
 class WidgetChamfer;
 class WidgetMinimumDistance;
+class WidgetHole;
 
 template<typename T>
 class Tree;
@@ -111,6 +112,7 @@ public:
     void shell();
     void chamfer();
     void fillet();
+    void hole();
 
     void displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0); // Add this function
     void removeShape(const TopoDS_Shape& shape);
@@ -149,6 +151,7 @@ private slots:
     void onCreateNurbs(const QList<gp_Pnt>& points, int degree, const QColor& color);
     void onApplyFillet(const TopoDS_Shape& edgeShape, double radius);
     void onApplyChamfer(const TopoDS_Shape& edgeShape, double distance);
+    void onApplyHole(const TopoDS_Shape& parentShape, const TopoDS_Shape& faceShape, const TopoDS_Shape& pointShape, double radius);
     
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
@@ -185,5 +188,6 @@ private:
     WidgetFillet* m_widgetFillet{nullptr};
     WidgetChamfer* m_widgetChamfer{nullptr};
     WidgetMinimumDistance* m_widgetMinimumDistance{nullptr};
+    WidgetHole* m_widgetHole{nullptr};
 };
 

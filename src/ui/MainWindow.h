@@ -95,6 +95,7 @@ private slots:
     void onShapeToolShell();
     void onShapeToolChamfer();
     void onShapeToolFillet();
+    void onShapeToolHole();
 
     /* help */
     void onSwitchLanguage();
@@ -207,6 +208,7 @@ private:
     QAction* m_shapeToolShellAction{};
     QAction* m_shapeToolChamferAction{};
     QAction* m_shapeToolFilletAction{};
+    QAction* m_shapeToolHoleAction{};
 
 
     // ---- help Group ----
