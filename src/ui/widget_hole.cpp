@@ -1,50 +1,32 @@
 #include "widget_hole.h"
-#include <QVBoxLayout>
-#include <QFormLayout>
-#include <QDoubleSpinBox>
-#include <QLabel>
-#include <QPushButton>
-#include <QMessageBox>
-#include "ViewManager.h"
+#include "ui_widget_hole.h"
+
 #include "OCCView.h"
 #include "SelectedEntity.h"
+#include "ViewManager.h"
+
 #include <BRep_Tool.hxx>
 
+#include <QCloseEvent>
+#include <QMessageBox>
+
 WidgetHole::WidgetHole(QWidget* parent)
-    : QWidget(parent), m_pickingState(Idle)
+    : QWidget(parent),
+      ui(new Ui::WidgetHole),
+      m_pickingState(Idle)
 {
-    setWindowTitle("Hole Feature");
+    ui->setupUi(this);
     setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint);
 
-    auto* mainLayout = new QVBoxLayout(this);
-    
-    lblStatus = new QLabel("Ready.", this);
-    mainLayout->addWidget(lblStatus);
-
-    btnPickFace = new QPushButton("Pick Target Face", this);
-    mainLayout->addWidget(btnPickFace);
-
-    btnPickPoint = new QPushButton("Pick Center Vertex", this);
-    mainLayout->addWidget(btnPickPoint);
-
-    auto* formLayout = new QFormLayout();
-    spinRadius = new QDoubleSpinBox(this);
-    spinRadius->setRange(0.01, 1000.0);
-    spinRadius->setValue(5.0);
-    
-    formLayout->addRow("Radius:", spinRadius);
-    mainLayout->addLayout(formLayout);
-
-    btnApply = new QPushButton("Apply Hole", this);
-    mainLayout->addWidget(btnApply);
-
-    connect(btnPickFace, &QPushButton::clicked, this, &WidgetHole::onPickFaceClicked);
-    connect(btnPickPoint, &QPushButton::clicked, this, &WidgetHole::onPickPointClicked);
-    connect(btnApply, &QPushButton::clicked, this, &WidgetHole::onApplyClicked);
+    connect(ui->pushButtonPickFace, &QPushButton::clicked, this, &WidgetHole::onPickFaceClicked);
+    connect(ui->pushButtonPickPoint, &QPushButton::clicked, this, &WidgetHole::onPickPointClicked);
+    connect(ui->pushButtonApply, &QPushButton::clicked, this, &WidgetHole::onApplyClicked);
+    connect(ui->pushButtonClose, &QPushButton::clicked, this, &WidgetHole::onCloseClicked);
 }
 
 WidgetHole::~WidgetHole()
 {
+    delete ui;
 }
 
 void WidgetHole::show()
@@ -72,7 +54,7 @@ void WidgetHole::onPickFaceClicked()
 {
     auto view = ViewManager::getInstance().getActiveView();
     if (!view) return;
-    
+
     if (m_pickingState != Idle) {
         restoreMouseState();
     }
@@ -85,7 +67,7 @@ void WidgetHole::onPickFaceClicked()
     view->setMouseMode(View::MouseMode::SELECTION);
 
     connect(view, &OCCView::signalSpaceSelected, this, &WidgetHole::onObjectSelected, Qt::UniqueConnection);
-    lblStatus->setText("Please select a Face.");
+    ui->labelStatus->setText("Please select a Face.");
 }
 
 void WidgetHole::onPickPointClicked()
@@ -97,7 +79,7 @@ void WidgetHole::onPickPointClicked()
         QMessageBox::warning(this, "Warning", "Please pick a target face first.");
         return;
     }
-    
+
     if (m_pickingState != Idle) {
         restoreMouseState();
     }
@@ -110,7 +92,7 @@ void WidgetHole::onPickPointClicked()
     view->setMouseMode(View::MouseMode::SELECTION);
 
     connect(view, &OCCView::signalSpaceSelected, this, &WidgetHole::onObjectSelected, Qt::UniqueConnection);
-    lblStatus->setText("Please select a Vertex for Hole center.");
+    ui->labelStatus->setText("Please select a Vertex for Hole center.");
 }
 
 void WidgetHole::onObjectSelected(const TopoDS_Shape& shape)
@@ -121,7 +103,7 @@ void WidgetHole::onObjectSelected(const TopoDS_Shape& shape)
     if (!view) return;
 
     if (m_pickingState == PickFace && shape.ShapeType() == TopAbs_FACE) {
-        // Capture parent shape
+        // 获取父形状
         auto selectedList = view->getSelectedObjects();
         if (!selectedList.empty()) {
             auto parentObj = selectedList.back()->GetParentInteractiveObject();
@@ -130,15 +112,15 @@ void WidgetHole::onObjectSelected(const TopoDS_Shape& shape)
                 m_parentShape = aisShape->Shape();
             }
         }
-        
+
         m_selectedFace = shape;
-        lblStatus->setText("Face picked. Now pick a center vertex.");
-        restoreMouseState(); 
+        ui->labelStatus->setText("Face picked. Now pick a center vertex.");
+        restoreMouseState();
     }
     else if (m_pickingState == PickPoint && shape.ShapeType() == TopAbs_VERTEX) {
         m_selectedPoint = shape;
-        lblStatus->setText("Point picked. Ready to apply.");
-        restoreMouseState(); 
+        ui->labelStatus->setText("Point picked. Ready to apply.");
+        restoreMouseState();
     }
 }
 
@@ -148,7 +130,41 @@ void WidgetHole::onApplyClicked()
         QMessageBox::warning(this, "Warning", "Please pick both a Face and a Vertex.");
         return;
     }
-    emit signalHole(m_parentShape, m_selectedFace, m_selectedPoint, spinRadius->value());
+
+    // 根据当前 Tab 确定 hole 类型和参数
+    const int tabIndex = ui->tabWidget->currentIndex();
+    double radius = 5.0;
+    double depth = 0.0;
+    HoleType type = HoleType::ThruAll;
+
+    switch (tabIndex) {
+    case 0: // Through All
+        type = HoleType::ThruAll;
+        radius = ui->spinRadiusThruAll->value();
+        break;
+    case 1: // Thru Next
+        type = HoleType::ThruNext;
+        radius = ui->spinRadiusThruNext->value();
+        break;
+    case 2: // Until End
+        type = HoleType::UntilEnd;
+        radius = ui->spinRadiusUntilEnd->value();
+        break;
+    case 3: // Blind
+        type = HoleType::Blind;
+        radius = ui->spinRadiusBlind->value();
+        depth = ui->spinDepthBlind->value();
+        break;
+    default:
+        break;
+    }
+
+    emit signalHole(m_parentShape, m_selectedFace, m_selectedPoint, radius, static_cast<int>(type), depth);
+}
+
+void WidgetHole::onCloseClicked()
+{
+    close();
 }
 
 void WidgetHole::saveMouseState()
