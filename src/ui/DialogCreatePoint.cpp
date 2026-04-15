@@ -1,5 +1,7 @@
-#include "DialogCreatePoint.h"
+﻿#include "DialogCreatePoint.h"
+#include "ViewerPickHelper.h"
 #include <QIcon>
+#include <QCloseEvent>
 
 #include <QVBoxLayout>
 #include <QFormLayout>
@@ -9,10 +11,12 @@
 #include <QPushButton>
 #include <QColorDialog>
 
+#include <BRepBuilderAPI_MakeVertex.hxx>
+
 DialogCreatePoint::DialogCreatePoint(QWidget *parent) : QDialog(parent), m_color(Qt::white)
 {
     setWindowTitle("Create Point");
-    setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint | Qt::WindowCloseButtonHint);
+    setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint);
     setWindowIcon(QIcon());
 
     auto* mainLayout = new QVBoxLayout(this);
@@ -50,10 +54,49 @@ DialogCreatePoint::DialogCreatePoint(QWidget *parent) : QDialog(parent), m_color
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
     mainLayout->addWidget(buttonBox);
+
+    m_pickHelper = new ViewerPickHelper(this);
+    connect(m_pickHelper, &ViewerPickHelper::pointPicked,
+            this, &DialogCreatePoint::onPointPicked);
 }
 
 DialogCreatePoint::~DialogCreatePoint()
 {
+    if (m_pickHelper && m_pickHelper->isActive()) {
+        m_pickHelper->stop();
+    }
+}
+
+void DialogCreatePoint::show()
+{
+    QDialog::show();
+
+    if (m_pickHelper) {
+        m_pickHelper->start();
+    }
+}
+
+void DialogCreatePoint::closeEvent(QCloseEvent* event)
+{
+    if (m_pickHelper && m_pickHelper->isActive()) {
+        m_pickHelper->stop();
+    }
+    QDialog::closeEvent(event);
+}
+
+void DialogCreatePoint::onPointPicked(double x, double y, double z)
+{
+    m_spinBoxX->setValue(x);
+    m_spinBoxY->setValue(y);
+    m_spinBoxZ->setValue(z);
+
+    gp_Pnt point(x, y, z);
+    BRepBuilderAPI_MakeVertex vertexMaker(point);
+    if (vertexMaker.IsDone() && m_pickHelper) {
+        m_pickHelper->setPreviewShape(
+            vertexMaker.Shape(),
+            m_color.redF(), m_color.greenF(), m_color.blueF());
+    }
 }
 
 double DialogCreatePoint::x() const

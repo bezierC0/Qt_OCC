@@ -103,7 +103,7 @@ void WidgetHole::onObjectSelected(const TopoDS_Shape& shape)
     if (!view) return;
 
     if (m_pickingState == PickFace && shape.ShapeType() == TopAbs_FACE) {
-        // 获取父形状
+        // parent shape
         auto selectedList = view->getSelectedObjects();
         if (!selectedList.empty()) {
             auto parentObj = selectedList.back()->GetParentInteractiveObject();
@@ -131,7 +131,7 @@ void WidgetHole::onApplyClicked()
         return;
     }
 
-    // 根据当前 Tab 确定 hole 类型和参数
+    // hole type and param
     const int tabIndex = ui->tabWidget->currentIndex();
     double radius = 5.0;
     double depth = 0.0;

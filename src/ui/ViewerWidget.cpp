@@ -1466,11 +1466,11 @@ void ViewerWidget::onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shap
             return;
     }
     
-    // 1. 获取 Hole 中心点
+    // 1. Hole centre
     TopoDS_Vertex vertex = TopoDS::Vertex(pointShape);
     gp_Pnt pnt = BRep_Tool::Pnt(vertex);
 
-    // 2. 获取面法线
+    // 2. face normal
     TopoDS_Face face = TopoDS::Face(faceShape);
     Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
 
@@ -1486,29 +1486,23 @@ void ViewerWidget::onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shap
     if (face.Orientation() == TopAbs_REVERSED)
         normal.Reverse();
 
-    // 3. 构建钻孔轴向（沿面法线反方向，即钻入实体内部）
     gp_Dir drillDir = normal.Reversed();
     gp_Ax1 axis(pnt, drillDir); 
 
-    // 4. BRepFeat_MakeCylindricalHole — 根据 holeType 选择不同的 Perform 方法
     BRepFeat_MakeCylindricalHole holeMaker;
     holeMaker.Init(parentShape, axis);
 
     switch (static_cast<WidgetHole::HoleType>(holeType)) {
     case WidgetHole::HoleType::ThruAll:
-        // 贯穿所有（沿轴线方向穿透整个实体）
         holeMaker.Perform(radius);
         break;
     case WidgetHole::HoleType::ThruNext:
-        // 钻到遇到的第一个面（从轴线原点向前）
         holeMaker.PerformThruNext(radius);
         break;
     case WidgetHole::HoleType::UntilEnd:
-        // 从轴线原点到实体末端
         holeMaker.PerformUntilEnd(radius);
         break;
     case WidgetHole::HoleType::Blind:
-        // 盲孔，指定深度
         holeMaker.PerformBlind(radius, depth);
         break;
     }
