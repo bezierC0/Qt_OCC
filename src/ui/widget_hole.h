@@ -1,16 +1,32 @@
 #pragma once
-#include <QWidget>
-#include <TopoDS_Shape.hxx>
+
 #include <map>
+
 #include <TopAbs_ShapeEnum.hxx>
+#include <TopoDS_Shape.hxx>
 
-class QDoubleSpinBox;
-class QPushButton;
-class QLabel;
+#include <QWidget>
 
-class WidgetHole : public QWidget {
+class QCloseEvent;
+
+namespace Ui
+{
+class WidgetHole;
+}
+
+class WidgetHole : public QWidget
+{
     Q_OBJECT
+
 public:
+    enum class HoleType
+    {
+        ThruAll,   // Perform(radius) 
+        ThruNext,  // PerformThruNext(radius) 
+        UntilEnd,  // PerformUntilEnd(radius) 
+        Blind      // PerformBlind(radius, depth) 
+    };
+
     explicit WidgetHole(QWidget* parent = nullptr);
     ~WidgetHole() override;
 
@@ -25,31 +41,34 @@ private slots:
     void onPickPointClicked();
     void onObjectSelected(const TopoDS_Shape& shape);
     void onApplyClicked();
+    void onCloseClicked();
 
 signals:
-    void signalHole(const TopoDS_Shape& parentShape, const TopoDS_Shape& face, const TopoDS_Shape& point, double radius);
+    void signalHole(const TopoDS_Shape& parentShape,
+                    const TopoDS_Shape& face,
+                    const TopoDS_Shape& point,
+                    double radius,
+                    int holeType,
+                    double depth);
 
 private:
     void saveMouseState();
     void restoreMouseState();
 
+    Ui::WidgetHole* ui;
+
     int m_savedMouseMode;
     std::map<TopAbs_ShapeEnum, bool> m_savedFilters;
-    
-    enum PickingState {
+
+    enum PickingState
+    {
         Idle,
         PickFace,
         PickPoint
     };
     PickingState m_pickingState;
-    
+
     TopoDS_Shape m_parentShape;
     TopoDS_Shape m_selectedFace;
     TopoDS_Shape m_selectedPoint;
-
-    QPushButton* btnPickFace;
-    QPushButton* btnPickPoint;
-    QPushButton* btnApply;
-    QLabel* lblStatus;
-    QDoubleSpinBox* spinRadius;
 };

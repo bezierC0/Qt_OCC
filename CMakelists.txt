@@ -58,6 +58,8 @@ set(
     # ModelingAlgorithms
     TKBO TKBool TKGeomAlgo TKHLR TKMesh TKPrim TKShHealing TKTopAlgo
     TKOffset TKFillet
+    # BRepFeat
+    TKFeat
     # Visualization
     TKMeshVS TKOpenGl TKService TKV3d
     # ApplicationFramework

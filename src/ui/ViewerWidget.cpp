@@ -73,6 +73,7 @@
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <GC_MakeArcOfCircle.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
+#include <BRepFeat_MakeCylindricalHole.hxx>
 
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Compound.hxx>
@@ -1452,14 +1453,78 @@ void ViewerWidget::hole()
         m_widgetHole = new WidgetHole(this);
         m_widgetHole->setAttribute(Qt::WA_DeleteOnClose);
         connect(m_widgetHole, &QWidget::destroyed, this, [this]() { m_widgetHole = nullptr; });
-        connect(m_widgetHole, &WidgetHole::signalHole, this, &ViewerWidget::onApplyHole);
+        connect(m_widgetHole, &WidgetHole::signalHole, this, &ViewerWidget::onMakeHole);
     }
     m_widgetHole->show();
     m_widgetHole->raise();
 }
 
-void ViewerWidget::onApplyHole(const TopoDS_Shape& parentShape, const TopoDS_Shape& faceShape, const TopoDS_Shape& pointShape, double radius)
+void ViewerWidget::onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shape& faceShape, const TopoDS_Shape& pointShape, double radius, int holeType, double depth)
 {
+    if (parentShape.IsNull() || faceShape.IsNull() || faceShape.ShapeType() != TopAbs_FACE || pointShape.IsNull() || pointShape.ShapeType() != TopAbs_VERTEX) {
+            QMessageBox::warning(this, "Hole Error", "Invalid shape or inputs.");
+            return;
+    }
+    
+    // 1. 获取 Hole 中心点
+    TopoDS_Vertex vertex = TopoDS::Vertex(pointShape);
+    gp_Pnt pnt = BRep_Tool::Pnt(vertex);
+
+    // 2. 获取面法线
+    TopoDS_Face face = TopoDS::Face(faceShape);
+    Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
+
+    GeomAPI_ProjectPointOnSurf projector(pnt, surface);
+    if (!projector.NbPoints()) return;
+
+    Standard_Real u, v;
+    projector.LowerDistanceParameters(u, v);
+    GeomLProp_SLProps props(surface, u, v, 1, 1e-6);
+    if (!props.IsNormalDefined()) return;
+
+    gp_Dir normal = props.Normal();
+    if (face.Orientation() == TopAbs_REVERSED)
+        normal.Reverse();
+
+    // 3. 构建钻孔轴向（沿面法线反方向，即钻入实体内部）
+    gp_Dir drillDir = normal.Reversed();
+    gp_Ax1 axis(pnt, drillDir); 
+
+    // 4. BRepFeat_MakeCylindricalHole — 根据 holeType 选择不同的 Perform 方法
+    BRepFeat_MakeCylindricalHole holeMaker;
+    holeMaker.Init(parentShape, axis);
+
+    switch (static_cast<WidgetHole::HoleType>(holeType)) {
+    case WidgetHole::HoleType::ThruAll:
+        // 贯穿所有（沿轴线方向穿透整个实体）
+        holeMaker.Perform(radius);
+        break;
+    case WidgetHole::HoleType::ThruNext:
+        // 钻到遇到的第一个面（从轴线原点向前）
+        holeMaker.PerformThruNext(radius);
+        break;
+    case WidgetHole::HoleType::UntilEnd:
+        // 从轴线原点到实体末端
+        holeMaker.PerformUntilEnd(radius);
+        break;
+    case WidgetHole::HoleType::Blind:
+        // 盲孔，指定深度
+        holeMaker.PerformBlind(radius, depth);
+        break;
+    }
+
+    holeMaker.Build();
+
+    BRepFeat_Status status = holeMaker.Status();
+    if (status == BRepFeat_NoError && !holeMaker.Shape().IsNull()) {
+        TopoDS_Shape newShape = holeMaker.Shape();
+        removeShape(parentShape);
+        m_occView->clearSelectedObjects();
+        displayShape(newShape);
+    } else {
+        QMessageBox::warning(this, "Hole Error", QString("BRepFeat status: %1").arg(status));
+    }
+#if 0 // BRepAlgoAPI_Cut
     if (parentShape.IsNull() || faceShape.IsNull() || faceShape.ShapeType() != TopAbs_FACE || pointShape.IsNull() || pointShape.ShapeType() != TopAbs_VERTEX) {
         QMessageBox::warning(this, "Hole Error", "Invalid shape or inputs.");
         return;
@@ -1516,6 +1581,7 @@ void ViewerWidget::onApplyHole(const TopoDS_Shape& parentShape, const TopoDS_Sha
     } else {
         QMessageBox::warning(this, "Hole Error", "Failed to create hole.");
     }
+#endif
 }
 
 void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)

@@ -151,7 +151,7 @@ private slots:
     void onCreateNurbs(const QList<gp_Pnt>& points, int degree, const QColor& color);
     void onApplyFillet(const TopoDS_Shape& edgeShape, double radius);
     void onApplyChamfer(const TopoDS_Shape& edgeShape, double distance);
-    void onApplyHole(const TopoDS_Shape& parentShape, const TopoDS_Shape& faceShape, const TopoDS_Shape& pointShape, double radius);
+    void onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shape& faceShape, const TopoDS_Shape& pointShape, double radius, int holeType, double depth);
     
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
