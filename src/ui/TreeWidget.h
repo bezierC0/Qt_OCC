@@ -24,6 +24,7 @@ public:
     QTreeWidgetItem* itemFromIndex( const QModelIndex& index ) const;
 
     void setData( const Tree<TDF_Label>& modelTree );
+    std::shared_ptr<Tree<TDF_Label>> getModelTree() const { return m_modelTree; }
     
 signals:
     void labelSelected(const TDF_Label& label);

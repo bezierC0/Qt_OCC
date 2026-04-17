@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>ModelTreeContextMenu</class>
+ <widget class="QWidget" name="ModelTreeContextMenu">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>160</width>
+    <height>64</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string/>
+  </property>
+  <property name="styleSheet">
+   <string notr="true">
+/* ── 整体容器 ── */
+QWidget#ModelTreeContextMenu {
+    background-color: #1e1e2e;
+    border: 1px solid #3c3f58;
+    border-radius: 6px;
+}
+
+/* ── 菜单按钮通用样式 ── */
+QPushButton {
+    background-color: transparent;
+    color: #cdd6f4;
+    font-family: "Segoe UI", "Microsoft YaHei", sans-serif;
+    font-size: 13px;
+    text-align: left;
+    padding: 6px 16px;
+    border: none;
+    border-radius: 0px;
+    min-height: 28px;
+}
+QPushButton:hover {
+    background-color: #313244;
+    color: #cba6f7;
+}
+QPushButton:pressed {
+    background-color: #45475a;
+}
+QPushButton:disabled {
+    color: #585b70;
+}
+
+/* ── 顶部按钮圆角 ── */
+QPushButton#btnPick {
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+}
+
+/* ── 底部按钮圆角 ── */
+QPushButton#btnRemove {
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+}
+   </string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>0</number>
+   </property>
+   <property name="leftMargin">
+    <number>0</number>
+   </property>
+   <property name="topMargin">
+    <number>0</number>
+   </property>
+   <property name="rightMargin">
+    <number>0</number>
+   </property>
+   <property name="bottomMargin">
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QPushButton" name="btnPick">
+     <property name="text">
+      <string>Pick (Select)</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QPushButton" name="btnRemove">
+     <property name="text">
+      <string>Remove</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

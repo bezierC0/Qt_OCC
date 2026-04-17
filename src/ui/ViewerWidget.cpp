@@ -1710,6 +1710,17 @@ void ViewerWidget::removeShape(const TopoDS_Shape &shape)
     m_occView->viewfit(); // Fit view to the new shape
 }
 
+void ViewerWidget::removeLabelShape(const TDF_Label& label)
+{
+    if (label.IsNull())
+        return;
+
+    TopoDS_Shape shape;
+    if (XCAFDoc_ShapeTool::GetShape(label, shape) && !shape.IsNull()) {
+        removeShape(shape);
+    }
+}
+
 const std::map<TopAbs_ShapeEnum, bool> &ViewerWidget::getSelectionFilters() const
 {
     const auto acitveView = ViewManager::getInstance().getActiveView();

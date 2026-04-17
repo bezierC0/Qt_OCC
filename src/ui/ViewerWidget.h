@@ -134,6 +134,7 @@ private slots:
 
 public slots:
     void highlightLabel(const TDF_Label& label);
+    void removeLabelShape(const TDF_Label& label);
 
 private slots:
     void onCreateArc(double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, const QColor& color);
