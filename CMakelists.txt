@@ -196,7 +196,9 @@ file(
     src/ui/*.cpp
     src/display/*.cpp
     src/util/*.cpp
+    src/command/*.cpp
     src/common/*.cpp
+    src/core/*.cpp
     # ui
     src/ui/*.ui
     # external
@@ -213,7 +215,9 @@ file(
     src/ui/*.h
     src/display/*.h
     src/util/*.h
+    src/command/*.h
     src/common/*.h
+    src/core/*.h
 )
 
 #########
@@ -280,6 +284,7 @@ target_include_directories(${PROJECT_NAME}
         src/display
         src/util
         src/common
+        src/core
 )
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 

@@ -1,5 +1,6 @@
 #include "DialogCreateCircle.h"
 #include "ShapePickSession.h"
+#include "core/ShapeCommandRegistry.h"
 
 #include <QIcon>
 #include <QCloseEvent>
@@ -12,13 +13,6 @@
 #include <QPushButton>
 #include <QColorDialog>
 #include <QGroupBox>
-
-#include <BRepBuilderAPI_MakeEdge.hxx>
-#include <GC_MakeCircle.hxx>
-#include <Precision.hxx>
-#include <gp_Pnt.hxx>
-#include <gp_Ax2.hxx>
-#include <gp_Dir.hxx>
 
 DialogCreateCircle::DialogCreateCircle(QWidget* parent)
     : QDialog(parent), m_color(Qt::white)
@@ -72,12 +66,10 @@ DialogCreateCircle::DialogCreateCircle(QWidget* parent)
     // ShapePickSession: 2-point Circle. P1 = centre, mouse defines radius.
     m_session = new ShapePickSession(2,
         [](const std::vector<gp_Pnt>& pts, const gp_Pnt& mouse) -> TopoDS_Shape {
-            const double r = pts[0].Distance(mouse);
-            if (r < Precision::Confusion()) return {};
-            GC_MakeCircle cm(gp_Ax2(pts[0], gp_Dir(0,0,1)), r);
-            if (!cm.IsDone()) return {};
-            BRepBuilderAPI_MakeEdge em(cm.Value());
-            return em.IsDone() ? em.Shape() : TopoDS_Shape{};
+            CoreApi::ShapeParams p;
+            p["x"] = pts[0].X(); p["y"] = pts[0].Y(); p["z"] = pts[0].Z();
+            p["radius"] = pts[0].Distance(mouse);
+            return CoreApi::ShapeCommandRegistry::instance().execute("CreateCircle", p);
         }, this);
 
     connect(m_session, &ShapePickSession::sessionCompleted, this, &DialogCreateCircle::onSessionCompleted);
@@ -123,6 +115,6 @@ void DialogCreateCircle::onSessionCompleted(QVector<gp_Pnt> points)
     m_spinBoxX->setValue(points[0].X());
     m_spinBoxY->setValue(points[0].Y());
     m_spinBoxZ->setValue(points[0].Z());
-    if (r > Precision::Confusion()) m_spinBoxRadius->setValue(r);
+    if (r > 0.001) m_spinBoxRadius->setValue(r);
     m_statusLabel->setText("Circle defined. Press [Create] to confirm.");
 }

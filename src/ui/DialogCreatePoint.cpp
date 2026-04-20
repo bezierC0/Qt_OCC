@@ -1,5 +1,6 @@
 ﻿#include "DialogCreatePoint.h"
 #include "ViewerPickHelper.h"
+#include "core/ShapeCommandRegistry.h"
 #include <QIcon>
 #include <QCloseEvent>
 
@@ -10,8 +11,6 @@
 #include <QLabel>
 #include <QPushButton>
 #include <QColorDialog>
-
-#include <BRepBuilderAPI_MakeVertex.hxx>
 
 DialogCreatePoint::DialogCreatePoint(QWidget *parent) : QDialog(parent), m_color(Qt::white)
 {
@@ -90,12 +89,11 @@ void DialogCreatePoint::onPointPicked(double x, double y, double z)
     m_spinBoxY->setValue(y);
     m_spinBoxZ->setValue(z);
 
-    gp_Pnt point(x, y, z);
-    BRepBuilderAPI_MakeVertex vertexMaker(point);
-    if (vertexMaker.IsDone() && m_pickHelper) {
-        m_pickHelper->setPreviewShape(
-            vertexMaker.Shape(),
-            m_color.redF(), m_color.greenF(), m_color.blueF());
+    CoreApi::ShapeParams p;
+    p["x"] = x; p["y"] = y; p["z"] = z;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreatePoint", p);
+    if (!shape.IsNull() && m_pickHelper) {
+        m_pickHelper->setPreviewShape(shape, m_color.redF(), m_color.greenF(), m_color.blueF());
     }
 }
 

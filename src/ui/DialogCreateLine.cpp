@@ -1,5 +1,6 @@
 #include "DialogCreateLine.h"
 #include "ShapePickSession.h"
+#include "core/ShapeCommandRegistry.h"
 
 #include <QIcon>
 #include <QCloseEvent>
@@ -12,9 +13,6 @@
 #include <QPushButton>
 #include <QColorDialog>
 #include <QGroupBox>
-
-#include <BRepBuilderAPI_MakeEdge.hxx>
-#include <Precision.hxx>
 
 DialogCreateLine::DialogCreateLine(QWidget* parent)
     : QDialog(parent)
@@ -101,20 +99,14 @@ DialogCreateLine::DialogCreateLine(QWidget* parent)
     mainLayout->addWidget(buttonBox);
 
     // ShapePickSession: 2-point Line builder
-    // previewBuilder receives confirmedPts[0] as the start point and mousePt as the tentative end.
     m_session = new ShapePickSession(
         2,
         [](const std::vector<gp_Pnt>& confirmedPts, const gp_Pnt& mousePt) -> TopoDS_Shape
         {
-            const gp_Pnt& p1 = confirmedPts[0];
-
-            // Skip degenerate (zero-length) edges.
-            if (p1.IsEqual(mousePt, Precision::Confusion())) {
-                return TopoDS_Shape{};
-            }
-
-            BRepBuilderAPI_MakeEdge edgeMaker(p1, mousePt);
-            return edgeMaker.IsDone() ? edgeMaker.Shape() : TopoDS_Shape{};
+            CoreApi::ShapeParams p;
+            p["x1"] = confirmedPts[0].X(); p["y1"] = confirmedPts[0].Y(); p["z1"] = confirmedPts[0].Z();
+            p["x2"] = mousePt.X();         p["y2"] = mousePt.Y();         p["z2"] = mousePt.Z();
+            return CoreApi::ShapeCommandRegistry::instance().execute("CreateLine", p);
         },
         this);
 
