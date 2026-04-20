@@ -130,6 +130,8 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include "common/ShapeLabelManager.h"
+#include "core/ShapeCommandRegistry.h"
+#include "core/ShapeFactory.h"
 
 namespace
 {
@@ -1824,23 +1826,20 @@ void ViewerWidget::highlightLabel(const TDF_Label& label)
 
 void ViewerWidget::onCreateLine(double x1, double y1, double z1, double x2, double y2, double z2, const QColor& color)
 {
-    gp_Pnt p1(x1, y1, z1);
-    gp_Pnt p2(x2, y2, z2);
-    BRepBuilderAPI_MakeEdge edge(p1, p2);
-    if (edge.IsDone()) {
-        displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-    }
+    CoreApi::ShapeParams p;
+    p["x1"] = x1; p["y1"] = y1; p["z1"] = z1;
+    p["x2"] = x2; p["y2"] = y2; p["z2"] = z2;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateLine", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgLine) m_dlgLine->raise();
 }
 
 void ViewerWidget::onCreateCircle(double x, double y, double z, double radius, const QColor& color)
 {
-    gp_Ax2 axis(gp_Pnt(x, y, z), gp_Dir(0, 0, 1));
-    gp_Circ circle(axis, radius);
-    BRepBuilderAPI_MakeEdge edge(circle);
-    if (edge.IsDone()) {
-        displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-    }
+    CoreApi::ShapeParams p;
+    p["x"] = x; p["y"] = y; p["z"] = z; p["radius"] = radius;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateCircle", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgCircle) m_dlgCircle->raise();
 }
 
@@ -1870,20 +1869,12 @@ void ViewerWidget::onCreateBox(double x, double y, double z, double dx, double d
 
 void ViewerWidget::onCreateEllipse(double centerX, double centerY, double centerZ, double normalX, double normalY, double normalZ, double majorRadius, double minorRadius, const QColor& color)
 {
-    gp_Pnt center(centerX, centerY, centerZ);
-    gp_Dir normal(normalX, normalY, normalZ);
-    
-    if (majorRadius < minorRadius) {
-        std::swap(majorRadius, minorRadius);
-    }
-
-    gp_Ax2 axis(center, normal);
-    gp_Elips ellipse(axis, majorRadius, minorRadius);
-    
-    BRepBuilderAPI_MakeEdge edge(ellipse);
-    if (edge.IsDone()) {
-        displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-    }
+    CoreApi::ShapeParams p;
+    p["x"] = centerX; p["y"] = centerY; p["z"] = centerZ;
+    p["nx"] = normalX; p["ny"] = normalY; p["nz"] = normalZ;
+    p["majorRadius"] = majorRadius; p["minorRadius"] = minorRadius;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateEllipse", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgEllipse) m_dlgEllipse->raise();
 }
 
@@ -1906,33 +1897,20 @@ void ViewerWidget::onCreateCone(double x, double y, double z, double radius1, do
 
 void ViewerWidget::onCreatePoint(double x, double y, double z, const QColor& color)
 {
-    gp_Pnt p(x, y, z);
-    BRepBuilderAPI_MakeVertex vertexMaker(p);
-    if (vertexMaker.IsDone()) {
-        displayShape(vertexMaker.Shape(), color.redF(), color.greenF(), color.blueF());
-    }
+    CoreApi::ShapeParams p;
+    p["x"] = x; p["y"] = y; p["z"] = z;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreatePoint", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgPoint) m_dlgPoint->raise();
 }
 
 void ViewerWidget::onCreateRectangle(double x, double y, double z, double width, double height, const QColor& color)
 {
-    gp_Pnt p1(x, y, z);
-    gp_Pnt p2(x + width, y, z);
-    gp_Pnt p3(x + width, y + height, z);
-    gp_Pnt p4(x, y + height, z);
-
-    BRepBuilderAPI_MakePolygon poly;
-    poly.Add(p1);
-    poly.Add(p2);
-    poly.Add(p3);
-    poly.Add(p4);
-    poly.Add(p1); // Close the polygon
-    if (poly.IsDone()) {
-        BRepBuilderAPI_MakeFace face(poly.Wire());
-        if (face.IsDone()) {
-            displayShape(face.Shape(), color.redF(), color.greenF(), color.blueF());
-        }
-    }
+    CoreApi::ShapeParams p;
+    p["x"] = x; p["y"] = y; p["z"] = z;
+    p["width"] = width; p["height"] = height;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateRectangle", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgRectangle) m_dlgRectangle->raise();
 }
 

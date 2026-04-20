@@ -1,5 +1,6 @@
 #include "DialogCreateEllipse.h"
 #include "ShapePickSession.h"
+#include "core/ShapeCommandRegistry.h"
 
 #include <QIcon>
 #include <QCloseEvent>
@@ -12,13 +13,6 @@
 #include <QPushButton>
 #include <QColorDialog>
 #include <QGroupBox>
-
-#include <BRepBuilderAPI_MakeEdge.hxx>
-#include <GC_MakeEllipse.hxx>
-#include <Precision.hxx>
-#include <gp_Pnt.hxx>
-#include <gp_Ax2.hxx>
-#include <gp_Dir.hxx>
 
 DialogCreateEllipse::DialogCreateEllipse(QWidget* parent)
     : QDialog(parent), m_color(Qt::white)
@@ -90,26 +84,17 @@ DialogCreateEllipse::DialogCreateEllipse(QWidget* parent)
 
     // ShapePickSession: 2-point Ellipse builder.
     // P1 = centre; mouse sets MajorRadius = dist(P1, mouse); MinorRadius = MajorRadius / 2.
-    // The preview uses the Normal Direction SpinBoxes for the plane normal.
     m_session = new ShapePickSession(2,
         [this](const std::vector<gp_Pnt>& pts, const gp_Pnt& mouse) -> TopoDS_Shape {
             const double major = pts[0].Distance(mouse);
-            if (major < Precision::Confusion()) return {};
-            const double minor = major / 2.0;
-
-            // Read the current normal direction from the SpinBoxes.
-            const double nx = m_spinBoxNormalX->value();
-            const double ny = m_spinBoxNormalY->value();
-            const double nz = m_spinBoxNormalZ->value();
-            gp_Dir normal;
-            try { normal = gp_Dir(nx, ny, nz); }
-            catch (...) { normal = gp_Dir(0, 0, 1); }
-
-            gp_Ax2 ax(pts[0], normal);
-            GC_MakeEllipse em(ax, major, minor);
-            if (!em.IsDone()) return {};
-            BRepBuilderAPI_MakeEdge edge(em.Value());
-            return edge.IsDone() ? edge.Shape() : TopoDS_Shape{};
+            CoreApi::ShapeParams p;
+            p["x"] = pts[0].X(); p["y"] = pts[0].Y(); p["z"] = pts[0].Z();
+            p["nx"] = m_spinBoxNormalX->value();
+            p["ny"] = m_spinBoxNormalY->value();
+            p["nz"] = m_spinBoxNormalZ->value();
+            p["majorRadius"] = major;
+            p["minorRadius"] = major / 2.0;
+            return CoreApi::ShapeCommandRegistry::instance().execute("CreateEllipse", p);
         }, this);
 
     connect(m_session, &ShapePickSession::sessionCompleted, this, &DialogCreateEllipse::onSessionCompleted);
@@ -161,7 +146,7 @@ void DialogCreateEllipse::onSessionCompleted(QVector<gp_Pnt> points)
     m_spinBoxCenterX->setValue(points[0].X());
     m_spinBoxCenterY->setValue(points[0].Y());
     m_spinBoxCenterZ->setValue(points[0].Z());
-    if (major > Precision::Confusion()) {
+    if (major > 0.001) {
         m_spinBoxMajorRadius->setValue(major);
         m_spinBoxMinorRadius->setValue(major / 2.0);
     }

@@ -1,5 +1,6 @@
 #include "DialogCreateRectangle.h"
 #include "ShapePickSession.h"
+#include "core/ShapeCommandRegistry.h"
 
 #include <QIcon>
 #include <QCloseEvent>
@@ -12,11 +13,6 @@
 #include <QPushButton>
 #include <QColorDialog>
 #include <QGroupBox>
-
-#include <BRepBuilderAPI_MakeEdge.hxx>
-#include <BRepBuilderAPI_MakeWire.hxx>
-#include <Precision.hxx>
-#include <gp_Pnt.hxx>
 
 // -----------------------------------------------------------------------------
 // Constructor / Destructor
@@ -102,38 +98,17 @@ DialogCreateRectangle::DialogCreateRectangle(QWidget* parent)
 
     // ShapePickSession: 2-point Rectangle builder.
     // P1 = origin corner; mousePt = opposite corner.
-    // The rectangle is built in the XY plane at Z = P1.Z().
     m_session = new ShapePickSession(
         2,
         [](const std::vector<gp_Pnt>& confirmedPts, const gp_Pnt& mousePt) -> TopoDS_Shape
         {
             const gp_Pnt& p1 = confirmedPts[0];
-            const double  z  = p1.Z();
-
-            const double x1 = p1.X(),   y1 = p1.Y();
-            const double x2 = mousePt.X(), y2 = mousePt.Y();
-
-            // Degenerate rectangle guard.
-            if (std::abs(x2 - x1) < Precision::Confusion() ||
-                std::abs(y2 - y1) < Precision::Confusion()) {
-                return TopoDS_Shape{};
-            }
-
-            // Four corners.
-            gp_Pnt a(x1, y1, z), b(x2, y1, z), c(x2, y2, z), d(x1, y2, z);
-
-            BRepBuilderAPI_MakeEdge e1(a, b), e2(b, c), e3(c, d), e4(d, a);
-            if (!e1.IsDone() || !e2.IsDone() || !e3.IsDone() || !e4.IsDone()) {
-                return TopoDS_Shape{};
-            }
-
-            BRepBuilderAPI_MakeWire wireMaker;
-            wireMaker.Add(e1.Edge());
-            wireMaker.Add(e2.Edge());
-            wireMaker.Add(e3.Edge());
-            wireMaker.Add(e4.Edge());
-
-            return wireMaker.IsDone() ? wireMaker.Shape() : TopoDS_Shape{};
+            // Build via registry using origin + derived width/height
+            CoreApi::ShapeParams p;
+            p["x"] = p1.X(); p["y"] = p1.Y(); p["z"] = p1.Z();
+            p["width"]  = mousePt.X() - p1.X();
+            p["height"] = mousePt.Y() - p1.Y();
+            return CoreApi::ShapeCommandRegistry::instance().execute("CreateRectangle", p);
         },
         this);
 
