@@ -1,6 +1,6 @@
 ﻿#include "DialogCreatePoint.h"
 #include "ViewerPickHelper.h"
-#include "core/ShapeCommandRegistry.h"
+#include "command/ShapeCommandRegistry.h"
 #include <QIcon>
 #include <QCloseEvent>
 

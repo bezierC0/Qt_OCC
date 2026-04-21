@@ -1,5 +1,7 @@
 #include "CreatePointCommand.h"
-
+#include "CommandCommon.h"
+#include "ShapeCommandRegistry.h"
+#include "ShapeFactory.h"
 namespace CoreApi
 {
 void CreatePointCommand::initialize(const ShapeParams &p)
@@ -22,6 +24,6 @@ QString CreatePointCommand::name() const
 
 TopoDS_Shape CreatePointCommand::execute() const
 {
-    return ShapeFactory::makePoint(m_x, m_y, m_z);
+    return ShapeFactory::Instance().makePoint(m_x, m_y, m_z);
 }
 } // namespace CoreApi

@@ -1,5 +1,7 @@
 #include "CreateRectangleCommand.h"
-
+#include "CommandCommon.h"
+#include "ShapeCommandRegistry.h"
+#include "ShapeFactory.h"
 namespace CoreApi
 {
 void CreateRectangleCommand::initialize(const ShapeParams &p)
@@ -23,6 +25,6 @@ QString CreateRectangleCommand::name() const
 
 TopoDS_Shape CreateRectangleCommand::execute() const
 {
-    return ShapeFactory::makeRectangleWire(m_origin, m_width, m_height);
+    return ShapeFactory::Instance().makeRectangleWire(m_origin, m_width, m_height);
 }
 } // namespace CoreApi

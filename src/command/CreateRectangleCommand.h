@@ -1,9 +1,8 @@
 #pragma once
-#include "CommandCommon.h"
-#include "ShapeCommandRegistry.h"
-#include "ShapeFactory.h"
 
+#include "IShapeCommand.h"
 #include <gp_Pnt.hxx>
+#include <QString>
 namespace CoreApi
 {
 

@@ -1,9 +1,7 @@
 #pragma once
-#include "CommandCommon.h"
-#include "ShapeCommandRegistry.h"
-#include "ShapeFactory.h"
-
+#include "IShapeCommand.h"
 #include <gp_Pnt.hxx>
+#include <QString>
 namespace CoreApi{
 // ---------------------------------------------------------------------------
 // CreateLineCommand
@@ -18,6 +16,7 @@ public:
 
 private:
     bool    m_valid{false};
-    gp_Pnt  m_p1, m_p2;
+    gp_Pnt  m_p1{};
+    gp_Pnt  m_p2{};
 };
 }

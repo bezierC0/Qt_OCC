@@ -1,5 +1,7 @@
 #include "CreateEllipseCommand.h"
-
+#include "CommandCommon.h"
+#include "ShapeCommandRegistry.h"
+#include "ShapeFactory.h"
 namespace CoreApi
 {
 void CreateEllipseCommand::initialize(const ShapeParams &p)
@@ -26,6 +28,6 @@ QString CreateEllipseCommand::name() const
 
 TopoDS_Shape CreateEllipseCommand::execute() const
 {
-    return ShapeFactory::makeEllipse(m_center, m_nx, m_ny, m_nz, m_major, m_minor);
+    return ShapeFactory::Instance().makeEllipse(m_center, m_nx, m_ny, m_nz, m_major, m_minor);
 }
 } // namespace CoreApi

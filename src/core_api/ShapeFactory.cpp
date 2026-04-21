@@ -1,5 +1,5 @@
 #include "ShapeFactory.h"
-
+#include <TopoDS_Shape.hxx>
 #include <BRepBuilderAPI_MakeVertex.hxx>
 #include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakePolygon.hxx>
@@ -11,27 +11,30 @@
 #include <gp_Dir.hxx>
 #include <gp_Circ.hxx>
 #include <gp_Elips.hxx>
-
+#include <gp_Pnt.hxx>
 #include <cmath>
 
 namespace CoreApi {
-namespace ShapeFactory
+ShapeFactory &ShapeFactory::Instance()
 {
+    static ShapeFactory instance;
+    return instance;
+}
 
-TopoDS_Shape makePoint(double x, double y, double z)
+TopoDS_Shape ShapeFactory::makePoint(double x, double y, double z)
 {
     BRepBuilderAPI_MakeVertex v(gp_Pnt(x, y, z));
     return v.IsDone() ? v.Shape() : TopoDS_Shape{};
 }
 
-TopoDS_Shape makeLine(const gp_Pnt& p1, const gp_Pnt& p2)
+TopoDS_Shape ShapeFactory::makeLine(const gp_Pnt& p1, const gp_Pnt& p2)
 {
     if (p1.IsEqual(p2, Precision::Confusion())) return {};
     BRepBuilderAPI_MakeEdge e(p1, p2);
     return e.IsDone() ? e.Shape() : TopoDS_Shape{};
 }
 
-TopoDS_Shape makeRectangleWire(const gp_Pnt& origin, double width, double height)
+TopoDS_Shape ShapeFactory::makeRectangleWire(const gp_Pnt& origin, double width, double height)
 {
     if (std::abs(width) < Precision::Confusion() ||
         std::abs(height) < Precision::Confusion()) return {};
@@ -50,7 +53,7 @@ TopoDS_Shape makeRectangleWire(const gp_Pnt& origin, double width, double height
     return w.IsDone() ? w.Shape() : TopoDS_Shape{};
 }
 
-TopoDS_Shape makeRectangleWireFromCorners(const gp_Pnt& p1, const gp_Pnt& p2)
+TopoDS_Shape ShapeFactory::makeRectangleWireFromCorners(const gp_Pnt& p1, const gp_Pnt& p2)
 {
     const double dx = p2.X() - p1.X();
     const double dy = p2.Y() - p1.Y();
@@ -70,7 +73,7 @@ TopoDS_Shape makeRectangleWireFromCorners(const gp_Pnt& p1, const gp_Pnt& p2)
     return w.IsDone() ? w.Shape() : TopoDS_Shape{};
 }
 
-TopoDS_Shape makeCircle(const gp_Pnt& center, double radius)
+TopoDS_Shape ShapeFactory::makeCircle(const gp_Pnt& center, double radius)
 {
     if (radius < Precision::Confusion()) return {};
     gp_Circ circ(gp_Ax2(center, gp_Dir(0, 0, 1)), radius);
@@ -78,7 +81,7 @@ TopoDS_Shape makeCircle(const gp_Pnt& center, double radius)
     return e.IsDone() ? e.Shape() : TopoDS_Shape{};
 }
 
-TopoDS_Shape makeEllipse(const gp_Pnt& center,
+TopoDS_Shape ShapeFactory::makeEllipse(const gp_Pnt& center,
                          double nx, double ny, double nz,
                          double majorRadius, double minorRadius)
 {
@@ -94,5 +97,4 @@ TopoDS_Shape makeEllipse(const gp_Pnt& center,
     return e.IsDone() ? e.Shape() : TopoDS_Shape{};
 }
 
-} // namespace ShapeFactory
 } // namespace CoreApi

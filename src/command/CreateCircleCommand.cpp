@@ -1,4 +1,7 @@
 #include "CreateCircleCommand.h"
+#include "CommandCommon.h"
+#include "ShapeCommandRegistry.h"
+#include "ShapeFactory.h"
 
 namespace CoreApi
 {
@@ -22,6 +25,6 @@ QString CreateCircleCommand::name() const
 
 TopoDS_Shape CreateCircleCommand::execute() const
 {
-    return ShapeFactory::makeCircle(m_center, m_radius);
+    return ShapeFactory::Instance().makeCircle(m_center, m_radius);
 }
 } // namespace CoreApi

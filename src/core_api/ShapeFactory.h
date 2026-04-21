@@ -1,8 +1,9 @@
 #pragma once
 
-#include <TopoDS_Shape.hxx>
-#include <gp_Pnt.hxx>
+#include <CoreApiGlobal.h>
 
+class gp_Pnt;
+class TopoDS_Shape;
 /**
  * @brief Pure shape-creation functions - no Qt, no UI, no display.
  *
@@ -13,8 +14,10 @@
  */
 namespace CoreApi
 {
-namespace ShapeFactory
-{
+class CORE_API_EXPORT ShapeFactory {
+public:
+    static ShapeFactory& Instance();
+
     TopoDS_Shape makePoint(double x, double y, double z);
 
     TopoDS_Shape makeLine(const gp_Pnt &p1, const gp_Pnt &p2);
@@ -28,5 +31,11 @@ namespace ShapeFactory
 
     TopoDS_Shape makeEllipse(const gp_Pnt &center, double nx, double ny, double nz,
                              double majorRadius, double minorRadius);
-} // namespace ShapeFactory
+
+private:
+    ShapeFactory() = default;
+    ~ShapeFactory() = default;
+    ShapeFactory(const ShapeFactory&) = delete;
+    ShapeFactory& operator=(const ShapeFactory&) = delete;
+};
 } // namespace CoreApi
