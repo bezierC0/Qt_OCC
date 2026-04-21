@@ -1,4 +1,7 @@
 #include "CreateLineCommand.h"
+#include "CommandCommon.h"
+#include "ShapeCommandRegistry.h"
+#include "ShapeFactory.h"
 
 namespace CoreApi
 {
@@ -25,6 +28,6 @@ QString CreateLineCommand::name() const
 
 TopoDS_Shape CreateLineCommand::execute() const
 {
-    return ShapeFactory::makeLine(m_p1, m_p2);
+    return ShapeFactory::Instance().makeLine(m_p1, m_p2);
 }
 } // namespace CoreApi

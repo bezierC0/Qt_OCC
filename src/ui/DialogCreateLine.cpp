@@ -1,6 +1,6 @@
 #include "DialogCreateLine.h"
 #include "ShapePickSession.h"
-#include "core/ShapeCommandRegistry.h"
+#include "command/ShapeCommandRegistry.h"
 
 #include <QIcon>
 #include <QCloseEvent>

@@ -164,6 +164,32 @@ else()
 endif()
 
 #########
+# Core Library
+#########
+# set(COREAPI_SOURCES)
+# file(
+    
+#     src/core_api/*.cpp
+# )
+# set(COREAPI_HEADERS)
+# file(
+#     src/core/*.h
+# )
+add_library(CoreApi SHARED
+    src/core_api/ShapeFactory.cpp
+    src/core_api/ShapeFactory.h
+    src/core_api/CoreApiGlobal.h
+)
+
+target_include_directories(CoreApi PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core_api
+)
+
+target_link_libraries(CoreApi PUBLIC ${OCCT_LIBRARIES_TO_LINK} ${MANUAL_3RDPARTY_LIBRARIES})
+# Export define
+target_compile_definitions(CoreApi PRIVATE CADCORE_LIBRARY)
+
+#########
 # Boost
 #########
 cmake_policy(SET CMP0167 NEW)
@@ -198,7 +224,7 @@ file(
     src/util/*.cpp
     src/command/*.cpp
     src/common/*.cpp
-    src/core/*.cpp
+    #src/core/*.cpp
     # ui
     src/ui/*.ui
     # external
@@ -217,7 +243,7 @@ file(
     src/util/*.h
     src/command/*.h
     src/common/*.h
-    src/core/*.h
+    #src/core/*.h
 )
 
 #########
@@ -284,12 +310,13 @@ target_include_directories(${PROJECT_NAME}
         src/display
         src/util
         src/common
-        src/core
+        #src/core
 )
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 
         ${OCCT_LIBRARIES_TO_LINK} 
         ${MANUAL_3RDPARTY_LIBRARIES} 
         Qt5::Widgets Qt5::Core
+        CoreApi
         ${Boost_LIBRARIES}
 )

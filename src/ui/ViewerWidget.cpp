@@ -130,8 +130,8 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include "common/ShapeLabelManager.h"
-#include "core/ShapeCommandRegistry.h"
-#include "core/ShapeFactory.h"
+#include "command/ShapeCommandRegistry.h"
+#include "core_api/ShapeFactory.h"
 
 namespace
 {
