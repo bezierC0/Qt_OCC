@@ -31,6 +31,7 @@
 #include "widget_fillet.h"
 #include "widget_chamfer.h"
 #include "widget_hole.h"
+#include "widget_animation.h"
 
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
@@ -670,6 +671,18 @@ void ViewerWidget::clipping(const gp_Dir &normal, const gp_Pnt &point, const boo
 void ViewerWidget::explosion()
 {
     m_occView->checkInterference();
+}
+
+void ViewerWidget::animation()
+{
+    if (!m_widgetAnimation) {
+        m_widgetAnimation = new WidgetAnimation(this);
+        m_widgetAnimation->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetAnimation, &QWidget::destroyed, this,
+                [this]() { m_widgetAnimation = nullptr; });
+    }
+    m_widgetAnimation->show();
+    m_widgetAnimation->raise();
 }
 
 void ViewerWidget::exportPicture()

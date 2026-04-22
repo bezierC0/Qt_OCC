@@ -59,11 +59,12 @@ private slots:
     /* tool */
     void onSwitchSelect(bool checked);
     void onFilterStateChanged(int filterType, bool isChecked);
-    void onCreateWorkPlane();
     void onCheckInterference() const;
     void onTransform() const;
     void onClipping() const;
     void onExplosion();
+    void onCreateWorkPlane();
+    void onAnimation();
 
     /* measure */
     void onMeasureDistance() const;
@@ -167,7 +168,6 @@ private:
     SARibbonPannel* m_otherPannel;
     QAction* m_selectAction;
     QAction* m_selectFilterAction;
-    QAction* m_createWorkPlaneAction;
     QAction* m_transformAction;
     QAction* m_interferenceAction;
     QAction* m_clippingAction;
@@ -177,6 +177,8 @@ private:
     QAction* m_measureArcLengthAction;
     QAction* m_measureAngleAction;
     QAction* m_measureMinimumDistanceAction;
+    QAction* m_createWorkPlaneAction;
+    QAction* m_animationPlaneAction{};
 
     // ---- Shape Group ----
     SARibbonCategory* m_shapeCategory;

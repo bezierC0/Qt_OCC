@@ -405,6 +405,11 @@ void MainWindow::createToolGroup()
         m_createWorkPlaneAction = new QAction(QIcon(":/icons/icon/work_plane.svg"), tr("Work Plane"), this);
         connect(m_createWorkPlaneAction, &QAction::triggered, this, &MainWindow::onCreateWorkPlane);
         m_otherPannel->addLargeAction(m_createWorkPlaneAction);
+
+        // createWorkPlaneAction
+        m_animationPlaneAction = new QAction(QIcon(":/icons/icon/animation.svg"), tr("Animation"), this);
+        connect(m_animationPlaneAction, &QAction::triggered, this, &MainWindow::onAnimation);
+        m_otherPannel->addLargeAction(m_animationPlaneAction);
     };
     createOtherPannel();
 
@@ -679,15 +684,6 @@ void MainWindow::onFilterStateChanged(const int filterType, const bool isChecked
     m_viewerWidget->updateSelectionFilter(static_cast<TopAbs_ShapeEnum>(filterType), isChecked);
 }
 
-void MainWindow::onCreateWorkPlane()
-{
-    m_viewerWidget->createWorkPlane();
-    if (m_widgetSetCoordinateSystem)
-    {
-        m_widgetSetCoordinateSystem->show();
-    }
-}
-
 void MainWindow::onCheckInterference() const
 {
     m_viewerWidget->checkInterference();
@@ -712,6 +708,20 @@ void MainWindow::onExplosion()
         return;
     m_widgetExplodeAsm->show();
     m_widgetExplodeAsm->adjustSize();
+}
+
+void MainWindow::onCreateWorkPlane()
+{
+    m_viewerWidget->createWorkPlane();
+    if (m_widgetSetCoordinateSystem)
+    {
+        m_widgetSetCoordinateSystem->show();
+    }
+}
+
+void MainWindow::onAnimation()
+{
+    m_viewerWidget->animation();
 }
 
 void MainWindow::onMeasureDistance() const
