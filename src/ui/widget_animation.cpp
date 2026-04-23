@@ -7,9 +7,10 @@
 
 // OCC
 #include <AIS_Shape.hxx>
-#include <BRep_Tool.hxx>
-#include <TCollection_ExtendedString.hxx>
-#include <TDataStd_Name.hxx>
+#include <AIS_AnimationObject.hxx>
+#include <AIS_Animation.hxx>
+#include <AIS_InteractiveObject.hxx>
+#include <TCollection_AsciiString.hxx>
 #include <gp_Vec.hxx>
 #include <gp_Trsf.hxx>
 
@@ -21,7 +22,7 @@
 
 namespace
 {
-/// Returns a human-readable display name for an AIS interactive object.
+/// Returns a short display name for an AIS interactive object.
 QString getObjectDisplayName(const Handle(AIS_InteractiveObject) & obj)
 {
     if (obj.IsNull()) {
@@ -37,11 +38,10 @@ QString getObjectDisplayName(const Handle(AIS_InteractiveObject) & obj)
         default:              break;
         }
     }
-
     return QStringLiteral("Shape");
 }
 
-/// Builds the direction label string from a gp_Vec.
+/// Converts a direction vector to a readable label string.
 QString directionLabel(const gp_Vec &d)
 {
     if (d.X() > 0.5)       return QStringLiteral("+X");
@@ -52,26 +52,28 @@ QString directionLabel(const gp_Vec &d)
     return                         QStringLiteral("-Z");
 }
 
-/// Builds the display text for a single step entry in the list widget.
+/// Builds the list-widget display string for a step entry.
 QString makeStepLabel(int index, const AnimationStep &step)
 {
-    return QString("[%1] %2  %3  %4 mm")
+    return QString("[%1] %2  %3  %4 mm  %5 s")
         .arg(index + 1)
         .arg(step.objectName)
         .arg(directionLabel(step.direction))
-        .arg(step.distance, 0, 'f', 2);
+        .arg(step.distance, 0, 'f', 2)
+        .arg(step.duration, 0, 'f', 1);
 }
 } // namespace
 
 WidgetAnimation::WidgetAnimation(QWidget *parent)
     : QWidget(parent),
       ui(new Ui::WidgetAnimation),
-      m_timer(new QTimer(this))
+      m_pollTimer(new QTimer(this)),
+      m_rootAnimation(new AIS_Animation("AnimationRoot"))
 {
     ui->setupUi(this);
     setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint);
 
-    m_timer->setInterval(kTimerIntervalMs);
+    m_pollTimer->setInterval(kPollIntervalMs);
 
     connect(ui->pushButtonPick,   &QPushButton::clicked,  this, &WidgetAnimation::onPickClicked);
     connect(ui->pushButtonAdd,    &QPushButton::clicked,  this, &WidgetAnimation::onAddStepClicked);
@@ -80,7 +82,7 @@ WidgetAnimation::WidgetAnimation(QWidget *parent)
     connect(ui->pushButtonPause,  &QPushButton::clicked,  this, &WidgetAnimation::onPauseClicked);
     connect(ui->pushButtonRewind, &QPushButton::clicked,  this, &WidgetAnimation::onRewindClicked);
     connect(ui->pushButtonClose,  &QPushButton::clicked,  this, &WidgetAnimation::onCloseClicked);
-    connect(m_timer,              &QTimer::timeout,       this, &WidgetAnimation::onTimerTick);
+    connect(m_pollTimer,          &QTimer::timeout,       this, &WidgetAnimation::onPollAnimation);
     connect(ui->sliderSpeed,      &QSlider::valueChanged, this, &WidgetAnimation::onSpeedChanged);
 
     updateUI();
@@ -99,7 +101,7 @@ void WidgetAnimation::show()
 
 void WidgetAnimation::hide()
 {
-    stopAnimation();
+    stopPlayback();
     if (m_isPicking) {
         restoreMouseState();
     }
@@ -108,7 +110,7 @@ void WidgetAnimation::hide()
 
 void WidgetAnimation::closeEvent(QCloseEvent *event)
 {
-    stopAnimation();
+    stopPlayback();
     if (m_isPicking) {
         restoreMouseState();
     }
@@ -130,7 +132,6 @@ void WidgetAnimation::onPickClicked()
     saveMouseState();
     m_isPicking = true;
 
-    // Enable selection for solid-level shapes
     view->clearSelectedObjects();
     for (const auto &filter : m_savedFilters) {
         view->updateSelectionFilter(filter.first, false);
@@ -144,7 +145,7 @@ void WidgetAnimation::onPickClicked()
     ui->labelStatus->setText(tr("Click a part to select it..."));
 }
 
-void WidgetAnimation::onObjectSelected(const TopoDS_Shape &shape)
+void WidgetAnimation::onObjectSelected(const TopoDS_Shape & /*shape*/)
 {
     if (!m_isPicking) {
         return;
@@ -165,7 +166,7 @@ void WidgetAnimation::onObjectSelected(const TopoDS_Shape &shape)
         return;
     }
 
-    // Prefer the parent interactive object (e.g., the whole solid/assembly node)
+    // Prefer the parent interactive object (whole solid / assembly node)
     m_pickedObject = entity->GetParentInteractiveObject();
     if (m_pickedObject.IsNull()) {
         auto aisShape = entity->GetSelectedShape();
@@ -193,6 +194,9 @@ void WidgetAnimation::onAddStepClicked()
     step.objectName   = m_pickedName;
     step.direction    = getSelectedDirection();
     step.distance     = ui->spinBoxDistance->value();
+    // duration = distance / speed  (speed slider 1-10 maps to 10-100 mm/s)
+    const double speedMmPerSec = ui->sliderSpeed->value() * 10.0;
+    step.duration     = (speedMmPerSec > 0.0) ? (step.distance / speedMmPerSec) : kDefaultDuration;
     step.originalTrsf = m_pickedObject->LocalTransformation();
 
     m_steps.push_back(step);
@@ -229,19 +233,23 @@ void WidgetAnimation::onPlayClicked()
         return;
     }
 
-    if (m_isPlaying) {
+    // Build (or rebuild) the OCC animation tree from the current step list
+    buildAnimation();
+
+    auto view = ViewManager::getInstance().getActiveView();
+    if (!view) {
         return;
     }
 
-    // speed 1 => 0.5 mm/tick, speed 10 => 5.0 mm/tick
-    m_frameDistance = ui->sliderSpeed->value() * 0.5;
+    // StartTimer(startPts, playSpeed, toUpdateTimer, toLoop)
+    m_rootAnimation->StartTimer(0.0, 1.0, true, false);
 
     m_isPlaying = true;
+    m_pollTimer->start();
+
     ui->pushButtonPlay->setEnabled(false);
     ui->pushButtonPause->setEnabled(true);
     ui->labelStatus->setText(tr("Playing..."));
-
-    m_timer->start();
 }
 
 void WidgetAnimation::onPauseClicked()
@@ -249,8 +257,11 @@ void WidgetAnimation::onPauseClicked()
     if (!m_isPlaying) {
         return;
     }
+
+    m_rootAnimation->Pause();
+    m_pollTimer->stop();
     m_isPlaying = false;
-    m_timer->stop();
+
     ui->pushButtonPlay->setEnabled(true);
     ui->pushButtonPause->setEnabled(false);
     ui->labelStatus->setText(tr("Paused."));
@@ -258,22 +269,8 @@ void WidgetAnimation::onPauseClicked()
 
 void WidgetAnimation::onRewindClicked()
 {
-    stopAnimation();
-
-    // Restore every object to its original transform
-    auto view = ViewManager::getInstance().getActiveView();
-    for (auto &step : m_steps) {
-        if (!step.object.IsNull()) {
-            step.object->SetLocalTransformation(step.originalTrsf);
-        }
-    }
-
-    if (view) {
-        view->reDraw();
-    }
-
-    m_currentStep = 0;
-    m_elapsed     = 0.0;
+    stopPlayback();
+    rewindToOriginal();
 
     ui->labelStatus->setText(tr("Rewound. Ready to play."));
     updateUI();
@@ -287,65 +284,115 @@ void WidgetAnimation::onCloseClicked()
 void WidgetAnimation::onSpeedChanged(int value)
 {
     ui->labelSpeedValue->setText(QString::number(value));
-    if (m_isPlaying) {
-        m_frameDistance = value * 0.5;
-    }
+    // Speed change takes effect on the next Play (durations are baked into AnimationObjects)
 }
 
 
-// Timer tick (frame update)
-void WidgetAnimation::onTimerTick()
+void WidgetAnimation::onPollAnimation()
 {
-    if (m_currentStep >= static_cast<int>(m_steps.size())) {
-        stopAnimation();
-        ui->labelStatus->setText(tr("Animation complete."));
+    if (!m_isPlaying) {
         return;
     }
-
-    applyCurrentFrame();
-}
-
-void WidgetAnimation::applyCurrentFrame()
-{
-    if (m_currentStep >= static_cast<int>(m_steps.size())) {
-        return;
-    }
-
-    AnimationStep &step = m_steps[m_currentStep];
-    if (step.object.IsNull()) {
-        // Skip invalid objects
-        ++m_currentStep;
-        m_elapsed = 0.0;
-        return;
-    }
-
-    const double remaining = step.distance - m_elapsed;
-    const double delta     = qMin(m_frameDistance, remaining);
-
-    // Apply incremental translation on top of the current local transform
-    gp_Trsf move;
-    move.SetTranslation(step.direction.Normalized() * delta);
-    step.object->SetLocalTransformation(move * step.object->LocalTransformation());
-
-    m_elapsed += delta;
 
     auto view = ViewManager::getInstance().getActiveView();
-    if (view) {
-        view->reDraw();
+    if (!view) {
+        return;
     }
 
-    // Advance to the next step when the current one is complete
-    if (m_elapsed >= step.distance - 1.0e-9) {
-        ++m_currentStep;
-        m_elapsed = 0.0;
+    // Advance the OCC animation — AIS_AnimationObject::update() calls
+    // myContext->SetLocation() internally to move the objects.
+    m_rootAnimation->UpdateTimer();
 
-        if (m_currentStep < static_cast<int>(m_steps.size())) {
-            ui->labelStatus->setText(
-                tr("Step %1 / %2 ...").arg(m_currentStep + 1).arg(m_steps.size()));
-        }
+    // IMPORTANT: OCCView is a QOpenGLWidget. V3d_View::Redraw() only works
+    // when called from inside paintGL() (OpenGL context must be current).
+    // Calling view->update() schedules paintGL() through Qt's event loop,
+    // which then calls m_view->Redraw() with the correct context active.
+    view->update();
+
+    // Check completion: elapsed time has reached the total animation duration.
+    // IsStopped() is unreliable here because the OCC timer keeps running
+    // after the animation ends (it does not auto-stop for non-looping animations).
+    const double elapsed = m_rootAnimation->ElapsedTime();
+    const double total   = m_rootAnimation->Duration();
+    if (total > 0.0 && elapsed >= total) {
+        stopPlayback();
+        ui->labelStatus->setText(tr("Animation complete."));
     }
 }
 
+// -----------------------------------------------------------------------------
+// Helpers
+// -----------------------------------------------------------------------------
+
+void WidgetAnimation::buildAnimation()
+{
+    auto view = ViewManager::getInstance().getActiveView();
+    if (!view) {
+        return;
+    }
+
+    // Clear all previous child animations and rebuild
+    m_rootAnimation->Clear();
+
+    double startPts = 0.0; // accumulated start time for sequential chaining
+
+    for (int i = 0; i < static_cast<int>(m_steps.size()); ++i) {
+        AnimationStep &step = m_steps[i];
+        if (step.object.IsNull()) {
+            continue;
+        }
+
+        // Start transform: current object pose (may have been modified by previous plays)
+        const gp_Trsf &trsfStart = step.originalTrsf;
+
+        // End transform: original pose + translation along direction
+        gp_Trsf trsfEnd;
+        trsfEnd.SetTranslation(step.direction.Normalized() * step.distance);
+        // Compose: end = translation * original
+        trsfEnd.Multiply(trsfStart);
+
+        TCollection_AsciiString animName =
+            TCollection_AsciiString("Step_") + TCollection_AsciiString(i + 1);
+
+        Handle(AIS_AnimationObject) stepAnim =
+            new AIS_AnimationObject(animName, view->Context(), step.object, trsfStart, trsfEnd);
+
+        stepAnim->SetStartPts(startPts);
+        stepAnim->SetOwnDuration(step.duration);
+
+        m_rootAnimation->Add(stepAnim);
+
+        startPts += step.duration;
+    }
+}
+
+void WidgetAnimation::rewindToOriginal()
+{
+    auto view = ViewManager::getInstance().getActiveView();
+
+    for (auto &step : m_steps) {
+        if (!step.object.IsNull()) {
+            step.object->SetLocalTransformation(step.originalTrsf);
+        }
+    }
+
+    // Use view->update() for the same reason as onPollAnimation:
+    // paintGL() must be the one to call m_view->Redraw().
+    if (view) {
+        view->update();
+    }
+}
+
+void WidgetAnimation::stopPlayback()
+{
+    if (m_isPlaying) {
+        m_rootAnimation->Stop();
+        m_pollTimer->stop();
+        m_isPlaying = false;
+    }
+    ui->pushButtonPlay->setEnabled(!m_steps.empty());
+    ui->pushButtonPause->setEnabled(false);
+}
 
 void WidgetAnimation::saveMouseState()
 {
@@ -376,7 +423,6 @@ void WidgetAnimation::updateUI()
     ui->labelPickName->setText(m_pickedObject.IsNull() ? tr("(None)") : m_pickedName);
 
     ui->pushButtonAdd->setEnabled(!m_pickedObject.IsNull());
-
     ui->pushButtonPlay->setEnabled(!m_isPlaying && !m_steps.empty());
     ui->pushButtonPause->setEnabled(m_isPlaying);
     ui->pushButtonRewind->setEnabled(!m_steps.empty());
@@ -392,14 +438,4 @@ gp_Vec WidgetAnimation::getSelectedDirection() const
     if (ui->radioButtonZPos->isChecked()) return gp_Vec( 0.0,  0.0,  1.0);
     if (ui->radioButtonZNeg->isChecked()) return gp_Vec( 0.0,  0.0, -1.0);
     return gp_Vec(1.0, 0.0, 0.0); // default fallback
-}
-
-void WidgetAnimation::stopAnimation()
-{
-    if (m_isPlaying) {
-        m_timer->stop();
-        m_isPlaying = false;
-    }
-    ui->pushButtonPlay->setEnabled(!m_steps.empty());
-    ui->pushButtonPause->setEnabled(false);
 }
