@@ -61,6 +61,9 @@ public:
     void clearAll();
     void loadModel(const QString& filename);
     void exportModel(const QString& filename);
+    void exportDxf();
+    void exportDwg();
+    void exportPicture();
 
     //view
     void viewFit();
@@ -122,7 +125,6 @@ public:
     void repairAndSave(const TopoDS_Shape& shape);
     void updateTree();
 
-    void exportPicture();
     void onFunctionTest();
 signals:
     void signalMouseMove(double x, double y, double z);

@@ -55,6 +55,22 @@
 #include <STEPCAFControl_Reader.hxx>
 #include <STEPCAFControl_Writer.hxx>
 #include <TopExp_Explorer.hxx>
+
+/* HLR hidden line removal */
+#include <HLRBRep_Algo.hxx>
+#include <HLRBRep_HLRToShape.hxx>
+#include <HLRAlgo_Projector.hxx>
+#include <BRepAdaptor_Curve.hxx>
+#include <GCPnts_TangentialDeflection.hxx>
+
+/* Qt */
+#include <QFileDialog>
+#include <QFile>
+#include <QTextStream>
+#include <QProcess>
+#include <QTemporaryDir>
+#include <QDir>
+#include <QFileInfo>
 #include <TDocStd_Document.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 /* boolean */
@@ -557,6 +573,288 @@ void ViewerWidget::exportModel(const QString &filename)
     }
 }
 
+void ViewerWidget::exportDxf()
+{
+    // 1. Collect all top-level shapes from the OCAF document and merge into a Compound
+    if (m_doc->m_ocafDoc.IsNull()) {
+        QMessageBox::warning(this, tr("Export DWG/DXF"), tr("No document available to export."));
+        return;
+    }
+
+    Handle(XCAFDoc_ShapeTool) shapeTool =
+        XCAFDoc_DocumentTool::ShapeTool(m_doc->m_ocafDoc->Main());
+    TDF_LabelSequence labels;
+    shapeTool->GetFreeShapes(labels);
+    if (labels.IsEmpty()) {
+        QMessageBox::warning(this, tr("Export DWG/DXF"), tr("The document contains no shapes."));
+        return;
+    }
+
+    // Build a single Compound from all free shapes
+    TopoDS_Compound compound;
+    BRep_Builder builder;
+    builder.MakeCompound(compound);
+    for (Standard_Integer i = 1; i <= labels.Length(); ++i) {
+        TopoDS_Shape s = shapeTool->GetShape(labels.Value(i));
+        if (!s.IsNull())
+            builder.Add(compound, s);
+    }
+
+    // 2. HLR projection 
+    gp_Ax2 frontView(gp_Pnt(0, 0, 0), gp_Dir(0, 1, 0), gp_Dir(1, 0, 0)); // front view (looking along +Y toward the origin)
+    HLRAlgo_Projector projector(frontView);
+
+    Handle(HLRBRep_Algo) hlrAlgo = new HLRBRep_Algo();
+    hlrAlgo->Add(compound);        // add geometry to the algorithm
+    hlrAlgo->Projector(projector); // set projection direction
+    hlrAlgo->Update();             // build internal data structures
+    hlrAlgo->Hide();               // compute visible / hidden classification
+
+    // 3. Extract visible edges from the HLR result
+    HLRBRep_HLRToShape extractor(hlrAlgo);
+    TopoDS_Shape visibleEdges    = extractor.VCompound();        // visible body edges
+    TopoDS_Shape visibleOutlines = extractor.OutLineVCompound(); // visible silhouette edges
+
+    // 4. Ask the user where to save the DXF file
+    QString savePath = QFileDialog::getSaveFileName(
+        this, tr("Save as DXF File"), QString(), tr("DXF Files (*.dxf)"));
+    if (savePath.isEmpty())
+        return;
+
+    // 5. Write DXF R12 ASCII format
+    QFile file(savePath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, tr("Export DXF"),
+            tr("Cannot open file for writing: ") + savePath);
+        return;
+    }
+    QTextStream out(&file);
+
+    // --- DXF HEADER section ---
+    out << "  0\nSECTION\n  2\nHEADER\n";
+    out << "  9\n$ACADVER\n  1\nAC1009\n"; // AutoCAD R12
+    out << "  0\nENDSEC\n";
+
+    // --- DXF ENTITIES section ---
+    out << "  0\nSECTION\n  2\nENTITIES\n";
+
+    // Helper lambda: tessellate each edge in the shape and write as DXF LINE segments
+    auto writeEdges = [&](const TopoDS_Shape& shape) {
+        if (shape.IsNull()) return;
+        for (TopExp_Explorer ex(shape, TopAbs_EDGE); ex.More(); ex.Next()) {
+            TopoDS_Edge edge = TopoDS::Edge(ex.Current());
+            BRepAdaptor_Curve adaptor(edge);
+            Standard_Real first = adaptor.FirstParameter();
+            Standard_Real last  = adaptor.LastParameter();
+
+            // Discretize the curve with angular and chord tolerances
+            GCPnts_TangentialDeflection disc(adaptor, 0.1, 0.01);
+            if (disc.NbPoints() < 2) {
+                // Fallback: use the two endpoint samples only
+                gp_Pnt p1 = adaptor.Value(first);
+                gp_Pnt p2 = adaptor.Value(last);
+                out << "  0\nLINE\n  8\n0\n"
+                    << " 10\n" << p1.X() << "\n 20\n" << p1.Y() << "\n 30\n" << p1.Z() << "\n"
+                    << " 11\n" << p2.X() << "\n 21\n" << p2.Y() << "\n 31\n" << p2.Z() << "\n";
+            } else {
+                for (Standard_Integer k = 1; k < disc.NbPoints(); ++k) {
+                    gp_Pnt p1 = disc.Value(k);
+                    gp_Pnt p2 = disc.Value(k + 1);
+                    out << "  0\nLINE\n  8\n0\n"
+                        << " 10\n" << p1.X() << "\n 20\n" << p1.Y() << "\n 30\n" << p1.Z() << "\n"
+                        << " 11\n" << p2.X() << "\n 21\n" << p2.Y() << "\n 31\n" << p2.Z() << "\n";
+                }
+            }
+        }
+    };
+
+    writeEdges(visibleEdges);
+    writeEdges(visibleOutlines);
+
+    out << "  0\nENDSEC\n";
+    out << "  0\nEOF\n";
+    file.close();
+
+    QMessageBox::information(this, tr("Export Successful"),
+        tr("DXF file saved to:\n") + savePath);
+}
+
+void ViewerWidget::exportDwg()
+{
+    // 1. Collect all top-level shapes from the OCAF document and merge into a Compound
+    if (m_doc->m_ocafDoc.IsNull()) {
+        QMessageBox::warning(this, tr("Export DWG"), tr("No document available to export."));
+        return;
+    }
+
+    Handle(XCAFDoc_ShapeTool) shapeTool =
+        XCAFDoc_DocumentTool::ShapeTool(m_doc->m_ocafDoc->Main());
+    TDF_LabelSequence labels;
+    shapeTool->GetFreeShapes(labels);
+    if (labels.IsEmpty()) {
+        QMessageBox::warning(this, tr("Export DWG"), tr("The document contains no shapes."));
+        return;
+    }
+
+    TopoDS_Compound compound;
+    BRep_Builder builder;
+    builder.MakeCompound(compound);
+    for (Standard_Integer i = 1; i <= labels.Length(); ++i) {
+        TopoDS_Shape s = shapeTool->GetShape(labels.Value(i));
+        if (!s.IsNull())
+            builder.Add(compound, s);
+    }
+
+    // 2. HLR projection – front view (looking along +Y toward the origin)
+    gp_Ax2 frontView(gp_Pnt(0, 0, 0), gp_Dir(0, 1, 0), gp_Dir(1, 0, 0));
+    HLRAlgo_Projector projector(frontView);
+
+    Handle(HLRBRep_Algo) hlrAlgo = new HLRBRep_Algo();
+    hlrAlgo->Add(compound);
+    hlrAlgo->Projector(projector);
+    hlrAlgo->Update();
+    hlrAlgo->Hide();
+
+    // 3. Extract visible edges
+    HLRBRep_HLRToShape extractor(hlrAlgo);
+    TopoDS_Shape visibleEdges    = extractor.VCompound();        // visible body edges
+    TopoDS_Shape visibleOutlines = extractor.OutLineVCompound(); // visible silhouette edges
+
+    // 4. Ask the user where to save the DWG file
+    QString dwgPath = QFileDialog::getSaveFileName(
+        this, tr("Save as DWG File"), QString(), tr("DWG Files (*.dwg)"));
+    if (dwgPath.isEmpty())
+        return;
+
+    // 5. Write intermediate DXF to a temporary directory
+    QTemporaryDir tempDir;
+    if (!tempDir.isValid()) {
+        QMessageBox::critical(this, tr("Export DWG"), tr("Cannot create temporary directory."));
+        return;
+    }
+    const QString tempDxfName = QStringLiteral("export_temp.dxf");
+    const QString tempDxfPath = tempDir.filePath(tempDxfName);
+
+    QFile file(tempDxfPath);
+    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        QMessageBox::critical(this, tr("Export DWG"),
+            tr("Cannot create temporary DXF file: ") + tempDxfPath);
+        return;
+    }
+    QTextStream out(&file);
+
+    // Write DXF R12 ASCII
+    out << "  0\nSECTION\n  2\nHEADER\n";
+    out << "  9\n$ACADVER\n  1\nAC1009\n"; // AutoCAD R12
+    out << "  0\nENDSEC\n";
+    out << "  0\nSECTION\n  2\nENTITIES\n";
+
+    auto writeEdges = [&](const TopoDS_Shape& shape) {
+        if (shape.IsNull()) return;
+        for (TopExp_Explorer ex(shape, TopAbs_EDGE); ex.More(); ex.Next()) {
+            TopoDS_Edge edge = TopoDS::Edge(ex.Current());
+            BRepAdaptor_Curve adaptor(edge);
+            Standard_Real first = adaptor.FirstParameter();
+            Standard_Real last  = adaptor.LastParameter();
+            GCPnts_TangentialDeflection disc(adaptor, 0.1, 0.01);
+            if (disc.NbPoints() < 2) {
+                gp_Pnt p1 = adaptor.Value(first);
+                gp_Pnt p2 = adaptor.Value(last);
+                out << "  0\nLINE\n  8\n0\n"
+                    << " 10\n" << p1.X() << "\n 20\n" << p1.Y() << "\n 30\n" << p1.Z() << "\n"
+                    << " 11\n" << p2.X() << "\n 21\n" << p2.Y() << "\n 31\n" << p2.Z() << "\n";
+            } else {
+                for (Standard_Integer k = 1; k < disc.NbPoints(); ++k) {
+                    gp_Pnt p1 = disc.Value(k);
+                    gp_Pnt p2 = disc.Value(k + 1);
+                    out << "  0\nLINE\n  8\n0\n"
+                        << " 10\n" << p1.X() << "\n 20\n" << p1.Y() << "\n 30\n" << p1.Z() << "\n"
+                        << " 11\n" << p2.X() << "\n 21\n" << p2.Y() << "\n 31\n" << p2.Z() << "\n";
+                }
+            }
+        }
+    };
+    writeEdges(visibleEdges);
+    writeEdges(visibleOutlines);
+    out << "  0\nENDSEC\n";
+    out << "  0\nEOF\n";
+    file.close();
+
+    // 6. Convert DXF -> DWG using ODA FileConverter
+    //    Command: ODAFileConverter.exe <inputDir> <outputDir> ACAD ACAD ACAD2018 0 *.dxf
+    const QString odaExe =
+        QStringLiteral("C:/Program Files/ODA/ODAFileConverter 27.1.0/ODAFileConverter.exe");
+    if (!QFileInfo::exists(odaExe)) {
+        QMessageBox::critical(this, tr("Export DWG"),
+            tr("ODA FileConverter not found:\n") + odaExe);
+        return;
+    }
+
+    // Output the DWG into a separate sub-folder inside tempDir to avoid collisions
+    const QString tempOutDir = tempDir.filePath(QStringLiteral("out"));
+    QDir().mkpath(tempOutDir);
+
+    // ODAFileConverter 
+    // C:\Program Files\ODA\ODAFileConverter 27.1.0>ODAFileConverter.exe "C:\Users\XXXX\Desktop\temp" "C:\Users\XXXX\Desktop\temp" ACAD2018 DWG 1 1 2.dxf
+    auto native = [](const QString& p) {
+        return QDir::toNativeSeparators(p);
+    };
+    QProcess process;
+    process.start(odaExe, QStringList()
+                              << native(tempDir.path()) 
+                              << native(tempOutDir) 
+                              << "ACAD2018" // out
+                              << "DWG"
+                              << "1"
+                              << "1"
+                              << "2"
+                              << "*.dxf");  // filter
+    if (!process.waitForFinished(30000)) { // 30-second timeout
+        process.kill();
+        QMessageBox::critical(this, tr("Export DWG"),
+            tr("ODA FileConverter timed out or could not be started."));
+        return;
+    }
+    if (process.exitCode() != 0) {
+        QMessageBox::critical(this, tr("Export DWG"),
+            tr("ODA FileConverter returned error code %1.\nStderr: %2")
+            .arg(process.exitCode())
+            .arg(QString::fromLocal8Bit(process.readAllStandardError())));
+        return;
+    }
+
+    // 7. Move the converted DWG to the user-specified path
+    const QString convertedDwg = tempOutDir + QStringLiteral("/export_temp.dwg");
+    if (!QFileInfo::exists(convertedDwg)) {
+        QMessageBox::critical(this, tr("Export DWG"),
+            tr("Conversion finished but output DWG was not found.\n"
+               "Check that ODA FileConverter supports the installed version."));
+        return;
+    }
+
+    if (QFileInfo::exists(dwgPath))
+        QFile::remove(dwgPath);
+    if (!QFile::rename(convertedDwg, dwgPath)) {
+        // rename may fail across devices; fall back to copy + delete
+        QFile::copy(convertedDwg, dwgPath);
+        QFile::remove(convertedDwg);
+    }
+
+    QMessageBox::information(this, tr("Export Successful"),
+        tr("DWG file saved to:\n") + dwgPath);
+}
+
+void ViewerWidget::exportPicture()
+{
+    if (!m_dlgExportImage) {
+        m_dlgExportImage = new DialogExportImage(m_occView->View(), this);
+        m_dlgExportImage->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgExportImage, &QDialog::destroyed, this, [this]() { m_dlgExportImage = nullptr; });
+    }
+    m_dlgExportImage->show();
+    m_dlgExportImage->raise();
+}
+
 void ViewerWidget::viewFit()
 {
     m_occView->viewfit();
@@ -683,17 +981,6 @@ void ViewerWidget::animation()
     }
     m_widgetAnimation->show();
     m_widgetAnimation->raise();
-}
-
-void ViewerWidget::exportPicture()
-{
-    if (!m_dlgExportImage) {
-        m_dlgExportImage = new DialogExportImage(m_occView->View(), this);
-        m_dlgExportImage->setAttribute(Qt::WA_DeleteOnClose);
-        connect(m_dlgExportImage, &QDialog::destroyed, this, [this]() { m_dlgExportImage = nullptr; });
-    }
-    m_dlgExportImage->show();
-    m_dlgExportImage->raise();
 }
 
 void ViewerWidget::measureDistance()
