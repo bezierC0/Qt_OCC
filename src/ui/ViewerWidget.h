@@ -32,6 +32,7 @@ class WidgetFillet;
 class WidgetChamfer;
 class WidgetMinimumDistance;
 class WidgetHole;
+class WidgetAnimation;
 
 template<typename T>
 class Tree;
@@ -81,6 +82,7 @@ public:
     void transform();
     void clipping(const gp_Dir& normal, const gp_Pnt& point, bool isOn = true);
     void explosion();
+    void animation();
     
     /* measure */
     void measureDistance();
@@ -189,6 +191,7 @@ private:
     WidgetFillet* m_widgetFillet{nullptr};
     WidgetChamfer* m_widgetChamfer{nullptr};
     WidgetMinimumDistance* m_widgetMinimumDistance{nullptr};
-    WidgetHole* m_widgetHole{nullptr};
+    WidgetHole*      m_widgetHole{nullptr};
+    WidgetAnimation* m_widgetAnimation{nullptr};
 };
 
