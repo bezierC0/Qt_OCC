@@ -47,6 +47,7 @@ message(STATUS "OpenCascade version ${OpenCASCADE_VERSION}")
 message(STATUS "OpenCascade binary ${OpenCASCADE_BINARY_DIR}")
 message(STATUS "OpenCascade library ${OpenCASCADE_LIBRARY_DIR}")
 message(STATUS "OpenCascade include ${OpenCASCADE_INCLUDE_DIR}")
+message(STATUS "OpenCascade 3rdparty ${OpenCASCADE_3RDPARTY_DIR}")
 
 # Define the list of OpenCASCADE toolkits to link against based on your project's needs
 set(
@@ -58,6 +59,8 @@ set(
     # ModelingAlgorithms
     TKBO TKBool TKGeomAlgo TKHLR TKMesh TKPrim TKShHealing TKTopAlgo
     TKOffset TKFillet
+    # BRepFeat
+    TKFeat
     # Visualization
     TKMeshVS TKOpenGl TKService TKV3d
     # ApplicationFramework
@@ -106,14 +109,16 @@ set(3RDPARTY_MODULE_DIRS
     ${JEMALLOC_DIRS}
     ${FFMPEG_DIRS}
 )
-set(OpenCASCADE_3RDPARTY_DLLS "")
+
 foreach(3RDPARTY_MODULE_DIR ${3RDPARTY_MODULE_DIRS})
-    set(3RDPARTY_MODULE_BIN_DIR "${3RDPARTY_MODULE_DIR}/bin")
-    if(EXISTS "${3RDPARTY_MODULE_BIN_DIR}")
+    set(CURRENT_3RDPARTY_MODULE_BIN_DIR "${3RDPARTY_MODULE_DIR}/bin")
+    if(EXISTS "${CURRENT_3RDPARTY_MODULE_BIN_DIR}")
         # Find all DLLs in the bin directory
-        file(GLOB DLLS_IN_BIN "${3RDPARTY_MODULE_BIN_DIR}/*.dll")
+        file(GLOB DLLS_IN_BIN "${CURRENT_3RDPARTY_MODULE_BIN_DIR}/*.dll")
         # Add found DLLs to the list
         list(APPEND OpenCASCADE_3RDPARTY_DLLS ${DLLS_IN_BIN})
+    else()
+        message(STATUS "3rdparty module bin directory not found: ${CURRENT_3RDPARTY_MODULE_BIN_DIR}")
     endif()
 endforeach()
 
@@ -162,6 +167,32 @@ else()
 endif()
 
 #########
+# Core Library
+#########
+set(COREAPI_CPP_SOURCES)
+file(
+    GLOB COREAPI_CPP_SOURCES 
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/core_api/*.cpp"
+)
+set(COREAPI_H_HEADERS)
+file(
+    GLOB COREAPI_H_HEADERS 
+    "${CMAKE_CURRENT_SOURCE_DIR}/src/core_api/*.h"
+)
+add_library(CoreApi SHARED
+    ${COREAPI_CPP_SOURCES} 
+    ${COREAPI_H_HEADERS}
+)
+
+target_include_directories(CoreApi PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/core_api
+)
+
+target_link_libraries(CoreApi PUBLIC ${OCCT_LIBRARIES_TO_LINK} ${MANUAL_3RDPARTY_LIBRARIES})
+# Export define
+target_compile_definitions(CoreApi PRIVATE CADCORE_LIBRARY)
+
+#########
 # Boost
 #########
 cmake_policy(SET CMP0167 NEW)
@@ -194,7 +225,9 @@ file(
     src/ui/*.cpp
     src/display/*.cpp
     src/util/*.cpp
+    src/command/*.cpp
     src/common/*.cpp
+    #src/core/*.cpp
     # ui
     src/ui/*.ui
     # external
@@ -211,7 +244,9 @@ file(
     src/ui/*.h
     src/display/*.h
     src/util/*.h
+    src/command/*.h
     src/common/*.h
+    #src/core/*.h
 )
 
 #########
@@ -278,11 +313,13 @@ target_include_directories(${PROJECT_NAME}
         src/display
         src/util
         src/common
+        #src/core
 )
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 
         ${OCCT_LIBRARIES_TO_LINK} 
         ${MANUAL_3RDPARTY_LIBRARIES} 
         Qt5::Widgets Qt5::Core
+        CoreApi
         ${Boost_LIBRARIES}
 )

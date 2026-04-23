@@ -1,4 +1,4 @@
-﻿#include "MainWindow.h"
+#include "MainWindow.h"
 #include <QtCore>
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QToolButton>
@@ -65,7 +65,9 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     splitter->setStretchFactor( 0, 1 ); // m_modelTreeWidget
     splitter->setStretchFactor( 1, 4 ); 
 
-    connect(m_modelTreeWidget, &ModelTreeWidget::labelSelected, m_viewerWidget, &ViewerWidget::highlightLabel);
+    connect(m_modelTreeWidget, &ModelTreeWidget::labelSelected,      m_viewerWidget, &ViewerWidget::highlightLabel);
+    connect(m_modelTreeWidget, &ModelTreeWidget::labelPickRequested, m_viewerWidget, &ViewerWidget::highlightLabel);
+    connect(m_modelTreeWidget, &ModelTreeWidget::labelRemoveRequested, m_viewerWidget, &ViewerWidget::removeLabelShape);
 
     setCentralWidget( splitter );
 
@@ -382,6 +384,11 @@ void MainWindow::createToolGroup()
         m_measureAngleAction = new QAction(QIcon(":/icons/icon/measure_angle.svg"), tr("Angle"), this); 
         connect(m_measureAngleAction, &QAction::triggered, this, &MainWindow::onMeasureAngle);
         m_measurePannel->addSmallAction(m_measureAngleAction);
+
+        // measure minimum distance
+        m_measureMinimumDistanceAction = new QAction(QIcon(":/icons/icon/measure_length.svg"), tr("Minimum Distance"), this); 
+        connect(m_measureMinimumDistanceAction, &QAction::triggered, this, &MainWindow::onMeasureMininumDistance);
+        m_measurePannel->addSmallAction(m_measureMinimumDistanceAction);
     };
     createMeasurePannel();
 
@@ -398,6 +405,11 @@ void MainWindow::createToolGroup()
         m_createWorkPlaneAction = new QAction(QIcon(":/icons/icon/work_plane.svg"), tr("Work Plane"), this);
         connect(m_createWorkPlaneAction, &QAction::triggered, this, &MainWindow::onCreateWorkPlane);
         m_otherPannel->addLargeAction(m_createWorkPlaneAction);
+
+        // createWorkPlaneAction
+        m_animationPlaneAction = new QAction(QIcon(":/icons/icon/animation.svg"), tr("Animation"), this);
+        connect(m_animationPlaneAction, &QAction::triggered, this, &MainWindow::onAnimation);
+        m_otherPannel->addLargeAction(m_animationPlaneAction);
     };
     createOtherPannel();
 
@@ -539,6 +551,10 @@ void MainWindow::createShapeGroup()
         m_shapeToolFilletAction = new QAction(QIcon(":/icons/icon/shape_tool_fillet.svg"), tr("Fillet"), this);
         connect(m_shapeToolFilletAction, &QAction::triggered, this, &MainWindow::onShapeToolFillet);
         m_shapeToolPannel->addLargeAction(m_shapeToolFilletAction);
+
+        m_shapeToolHoleAction = new QAction(QIcon(":/icons/icon/shape_tool_hole.svg"), tr("Hole"), this);
+        connect(m_shapeToolHoleAction, &QAction::triggered, this, &MainWindow::onShapeToolHole);
+        m_shapeToolPannel->addLargeAction(m_shapeToolHoleAction);
         return;
     };
     createShapeToolPannel();
@@ -668,15 +684,6 @@ void MainWindow::onFilterStateChanged(const int filterType, const bool isChecked
     m_viewerWidget->updateSelectionFilter(static_cast<TopAbs_ShapeEnum>(filterType), isChecked);
 }
 
-void MainWindow::onCreateWorkPlane()
-{
-    m_viewerWidget->createWorkPlane();
-    if (m_widgetSetCoordinateSystem)
-    {
-        m_widgetSetCoordinateSystem->show();
-    }
-}
-
 void MainWindow::onCheckInterference() const
 {
     m_viewerWidget->checkInterference();
@@ -703,6 +710,20 @@ void MainWindow::onExplosion()
     m_widgetExplodeAsm->adjustSize();
 }
 
+void MainWindow::onCreateWorkPlane()
+{
+    m_viewerWidget->createWorkPlane();
+    if (m_widgetSetCoordinateSystem)
+    {
+        m_widgetSetCoordinateSystem->show();
+    }
+}
+
+void MainWindow::onAnimation()
+{
+    m_viewerWidget->animation();
+}
+
 void MainWindow::onMeasureDistance() const
 {
     m_viewerWidget->measureDistance();
@@ -721,6 +742,11 @@ void MainWindow::onMeasureArcLength() const
 void MainWindow::onMeasureAngle() const
 {
     m_viewerWidget->measureAngle();
+}
+
+void MainWindow::onMeasureMininumDistance() const
+{
+    m_viewerWidget->measureMinimumDistance();
 }
 
 void MainWindow::onCreatePoint()
@@ -853,6 +879,11 @@ void MainWindow::onShapeToolChamfer()
 void MainWindow::onShapeToolFillet()
 {
     m_viewerWidget->fillet();
+}
+
+void MainWindow::onShapeToolHole()
+{
+    m_viewerWidget->hole();
 }
 
 ViewerWidget* MainWindow::GetViewerWidget() const

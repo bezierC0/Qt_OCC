@@ -59,17 +59,19 @@ private slots:
     /* tool */
     void onSwitchSelect(bool checked);
     void onFilterStateChanged(int filterType, bool isChecked);
-    void onCreateWorkPlane();
     void onCheckInterference() const;
     void onTransform() const;
     void onClipping() const;
     void onExplosion();
+    void onCreateWorkPlane();
+    void onAnimation();
 
     /* measure */
     void onMeasureDistance() const;
     void onMeasureLength() const;
     void onMeasureArcLength() const;
     void onMeasureAngle() const;
+    void onMeasureMininumDistance() const;
     
     /* shape */
     void onCreatePoint();
@@ -94,6 +96,7 @@ private slots:
     void onShapeToolShell();
     void onShapeToolChamfer();
     void onShapeToolFillet();
+    void onShapeToolHole();
 
     /* help */
     void onSwitchLanguage();
@@ -165,7 +168,6 @@ private:
     SARibbonPannel* m_otherPannel;
     QAction* m_selectAction;
     QAction* m_selectFilterAction;
-    QAction* m_createWorkPlaneAction;
     QAction* m_transformAction;
     QAction* m_interferenceAction;
     QAction* m_clippingAction;
@@ -174,6 +176,9 @@ private:
     QAction* m_measureLengthAction;
     QAction* m_measureArcLengthAction;
     QAction* m_measureAngleAction;
+    QAction* m_measureMinimumDistanceAction;
+    QAction* m_createWorkPlaneAction;
+    QAction* m_animationPlaneAction{};
 
     // ---- Shape Group ----
     SARibbonCategory* m_shapeCategory;
@@ -205,6 +210,7 @@ private:
     QAction* m_shapeToolShellAction{};
     QAction* m_shapeToolChamferAction{};
     QAction* m_shapeToolFilletAction{};
+    QAction* m_shapeToolHoleAction{};
 
 
     // ---- help Group ----

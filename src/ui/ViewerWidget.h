@@ -30,6 +30,9 @@ class WidgetMeasureArcLength;
 class WidgetMeasureAngle;
 class WidgetFillet;
 class WidgetChamfer;
+class WidgetMinimumDistance;
+class WidgetHole;
+class WidgetAnimation;
 
 template<typename T>
 class Tree;
@@ -79,12 +82,14 @@ public:
     void transform();
     void clipping(const gp_Dir& normal, const gp_Pnt& point, bool isOn = true);
     void explosion();
+    void animation();
     
     /* measure */
     void measureDistance();
     void measureLength();
     void measureArcLength();
     void measureAngle();
+    void measureMinimumDistance();
 
     /* shape */
     void createPoint();
@@ -109,6 +114,7 @@ public:
     void shell();
     void chamfer();
     void fillet();
+    void hole();
 
     void displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0); // Add this function
     void removeShape(const TopoDS_Shape& shape);
@@ -130,6 +136,7 @@ private slots:
 
 public slots:
     void highlightLabel(const TDF_Label& label);
+    void removeLabelShape(const TDF_Label& label);
 
 private slots:
     void onCreateArc(double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, const QColor& color);
@@ -147,6 +154,7 @@ private slots:
     void onCreateNurbs(const QList<gp_Pnt>& points, int degree, const QColor& color);
     void onApplyFillet(const TopoDS_Shape& edgeShape, double radius);
     void onApplyChamfer(const TopoDS_Shape& edgeShape, double distance);
+    void onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shape& faceShape, const TopoDS_Shape& pointShape, double radius, int holeType, double depth);
     
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
@@ -182,5 +190,8 @@ private:
     WidgetBoolean*   m_WidgetBoolean{nullptr};
     WidgetFillet* m_widgetFillet{nullptr};
     WidgetChamfer* m_widgetChamfer{nullptr};
+    WidgetMinimumDistance* m_widgetMinimumDistance{nullptr};
+    WidgetHole*      m_widgetHole{nullptr};
+    WidgetAnimation* m_widgetAnimation{nullptr};
 };
 

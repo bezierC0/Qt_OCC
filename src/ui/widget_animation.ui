@@ -1,0 +1,345 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>WidgetAnimation</class>
+ <widget class="QWidget" name="WidgetAnimation">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>420</width>
+    <height>560</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Animation</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+
+   <!-- Pick section -->
+   <item>
+    <layout class="QHBoxLayout" name="layoutPick">
+     <item>
+      <widget class="QLabel" name="labelPickTitle">
+       <property name="text">
+        <string>Pick:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labelPickName">
+       <property name="text">
+        <string>(None)</string>
+       </property>
+       <property name="minimumWidth">
+        <number>140</number>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="spacerPick">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>20</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonPick">
+       <property name="text">
+        <string>Pick</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+   <!-- Separator -->
+   <item>
+    <widget class="QFrame" name="lineSep1">
+     <property name="frameShape">
+      <enum>QFrame::HLine</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
+     </property>
+    </widget>
+   </item>
+
+   <!-- Move distance -->
+   <item>
+    <layout class="QHBoxLayout" name="layoutDist">
+     <item>
+      <widget class="QLabel" name="labelMove">
+       <property name="text">
+        <string>Move (mm):</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QDoubleSpinBox" name="spinBoxDistance">
+       <property name="minimum">
+        <double>-99999.0</double>
+       </property>
+       <property name="maximum">
+        <double>99999.0</double>
+       </property>
+       <property name="singleStep">
+        <double>1.0</double>
+       </property>
+       <property name="value">
+        <double>10.0</double>
+       </property>
+       <property name="decimals">
+        <number>3</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+   <!-- Direction radio buttons -->
+   <item>
+    <widget class="QGroupBox" name="groupBoxDir">
+     <property name="title">
+      <string>Direction</string>
+     </property>
+     <layout class="QGridLayout" name="gridDir">
+      <item row="0" column="0">
+       <widget class="QRadioButton" name="radioButtonXPos">
+        <property name="text">
+         <string>+X</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QRadioButton" name="radioButtonXNeg">
+        <property name="text">
+         <string>-X</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QRadioButton" name="radioButtonYPos">
+        <property name="text">
+         <string>+Y</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QRadioButton" name="radioButtonYNeg">
+        <property name="text">
+         <string>-Y</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QRadioButton" name="radioButtonZPos">
+        <property name="text">
+         <string>+Z</string>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QRadioButton" name="radioButtonZNeg">
+        <property name="text">
+         <string>-Z</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <!-- Add button -->
+   <item>
+    <layout class="QHBoxLayout" name="layoutAdd">
+     <item>
+      <spacer name="spacerAdd">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonAdd">
+       <property name="text">
+        <string>Add Step</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonRemove">
+       <property name="text">
+        <string>Remove</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+   <!-- Separator -->
+   <item>
+    <widget class="QFrame" name="lineSep2">
+     <property name="frameShape">
+      <enum>QFrame::HLine</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
+     </property>
+    </widget>
+   </item>
+
+   <!-- Step list -->
+   <item>
+    <widget class="QLabel" name="labelStepList">
+     <property name="text">
+      <string>Animation Steps:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QListWidget" name="listWidgetSteps">
+     <property name="minimumHeight">
+      <number>120</number>
+     </property>
+    </widget>
+   </item>
+
+   <!-- Speed control -->
+   <item>
+    <layout class="QHBoxLayout" name="layoutSpeed">
+     <item>
+      <widget class="QLabel" name="labelSpeed">
+       <property name="text">
+        <string>Speed:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="sliderSpeed">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>10</number>
+       </property>
+       <property name="value">
+        <number>5</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labelSpeedValue">
+       <property name="text">
+        <string>5</string>
+       </property>
+       <property name="minimumWidth">
+        <number>20</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+   <!-- Playback buttons -->
+   <item>
+    <layout class="QHBoxLayout" name="layoutPlayback">
+     <item>
+      <widget class="QPushButton" name="pushButtonRewind">
+       <property name="text">
+        <string>&#9664;&#9664; Rewind</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonPlay">
+       <property name="text">
+        <string>&#9654; Play</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonPause">
+       <property name="text">
+        <string>&#9646;&#9646; Pause</string>
+       </property>
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+   <!-- Progress / status -->
+   <item>
+    <widget class="QLabel" name="labelStatus">
+     <property name="text">
+      <string>Ready.</string>
+     </property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+
+   <!-- Separator -->
+   <item>
+    <widget class="QFrame" name="lineSep3">
+     <property name="frameShape">
+      <enum>QFrame::HLine</enum>
+     </property>
+     <property name="frameShadow">
+      <enum>QFrame::Sunken</enum>
+     </property>
+    </widget>
+   </item>
+
+   <!-- Bottom buttons -->
+   <item>
+    <layout class="QHBoxLayout" name="layoutBottom">
+     <item>
+      <spacer name="spacerBottom">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonClose">
+       <property name="text">
+        <string>Close</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

@@ -24,11 +24,22 @@
 #include "WidgetBoolean.h"
 #include "WidgetInterference.h"
 #include "widget_distance.h"
+#include "widget_minimum_distance.h"
 #include "widget_measure_angle.h"
 #include "widget_measure_arc_length.h"
 #include "widget_measure_length.h"
 #include "widget_fillet.h"
 #include "widget_chamfer.h"
+#include "widget_hole.h"
+#include "widget_animation.h"
+
+#include <BRepPrimAPI_MakeCylinder.hxx>
+#include <BRepAlgoAPI_Cut.hxx>
+#include <BRepGProp.hxx>
+#include <GProp_GProps.hxx>
+#include <GeomAPI_ProjectPointOnSurf.hxx>
+#include <GeomLProp_SLProps.hxx>
+
 #include <BRepFilletAPI_MakeChamfer.hxx>
 #include <TopTools_IndexedDataMapOfShapeListOfShape.hxx>
 #include <QtWidgets/QVBoxLayout> // Corrected path
@@ -63,6 +74,7 @@
 #include <BRepBuilderAPI_MakeWire.hxx>
 #include <GC_MakeArcOfCircle.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
+#include <BRepFeat_MakeCylindricalHole.hxx>
 
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Compound.hxx>
@@ -119,6 +131,8 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include "common/ShapeLabelManager.h"
+#include "command/ShapeCommandRegistry.h"
+#include "core_api/ShapeFactory.h"
 
 namespace
 {
@@ -659,6 +673,18 @@ void ViewerWidget::explosion()
     m_occView->checkInterference();
 }
 
+void ViewerWidget::animation()
+{
+    if (!m_widgetAnimation) {
+        m_widgetAnimation = new WidgetAnimation(this);
+        m_widgetAnimation->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetAnimation, &QWidget::destroyed, this,
+                [this]() { m_widgetAnimation = nullptr; });
+    }
+    m_widgetAnimation->show();
+    m_widgetAnimation->raise();
+}
+
 void ViewerWidget::exportPicture()
 {
     if (!m_dlgExportImage) {
@@ -716,6 +742,17 @@ void ViewerWidget::measureAngle()
     }
     m_widgetAngle->show();
     m_widgetAngle->raise();
+}
+
+void ViewerWidget::measureMinimumDistance()
+{
+    if (!m_widgetMinimumDistance) {
+        m_widgetMinimumDistance = new WidgetMinimumDistance(this);
+        m_widgetMinimumDistance->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetMinimumDistance, &QWidget::destroyed, this, [this]() { m_widgetMinimumDistance = nullptr; });
+    }
+    m_widgetMinimumDistance->show();
+    m_widgetMinimumDistance->raise();
 }
 
 void ViewerWidget::createPoint()
@@ -1425,6 +1462,137 @@ void ViewerWidget::fillet()
     m_widgetFillet->raise();
 }
 
+void ViewerWidget::hole()
+{
+    if (!m_widgetHole) {
+        m_widgetHole = new WidgetHole(this);
+        m_widgetHole->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetHole, &QWidget::destroyed, this, [this]() { m_widgetHole = nullptr; });
+        connect(m_widgetHole, &WidgetHole::signalHole, this, &ViewerWidget::onMakeHole);
+    }
+    m_widgetHole->show();
+    m_widgetHole->raise();
+}
+
+void ViewerWidget::onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shape& faceShape, const TopoDS_Shape& pointShape, double radius, int holeType, double depth)
+{
+    if (parentShape.IsNull() || faceShape.IsNull() || faceShape.ShapeType() != TopAbs_FACE || pointShape.IsNull() || pointShape.ShapeType() != TopAbs_VERTEX) {
+            QMessageBox::warning(this, "Hole Error", "Invalid shape or inputs.");
+            return;
+    }
+    
+    // 1. Hole centre
+    TopoDS_Vertex vertex = TopoDS::Vertex(pointShape);
+    gp_Pnt pnt = BRep_Tool::Pnt(vertex);
+
+    // 2. face normal
+    TopoDS_Face face = TopoDS::Face(faceShape);
+    Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
+
+    GeomAPI_ProjectPointOnSurf projector(pnt, surface);
+    if (!projector.NbPoints()) return;
+
+    Standard_Real u, v;
+    projector.LowerDistanceParameters(u, v);
+    GeomLProp_SLProps props(surface, u, v, 1, 1e-6);
+    if (!props.IsNormalDefined()) return;
+
+    gp_Dir normal = props.Normal();
+    if (face.Orientation() == TopAbs_REVERSED)
+        normal.Reverse();
+
+    gp_Dir drillDir = normal.Reversed();
+    gp_Ax1 axis(pnt, drillDir); 
+
+    BRepFeat_MakeCylindricalHole holeMaker;
+    holeMaker.Init(parentShape, axis);
+
+    switch (static_cast<WidgetHole::HoleType>(holeType)) {
+    case WidgetHole::HoleType::ThruAll:
+        holeMaker.Perform(radius);
+        break;
+    case WidgetHole::HoleType::ThruNext:
+        holeMaker.PerformThruNext(radius);
+        break;
+    case WidgetHole::HoleType::UntilEnd:
+        holeMaker.PerformUntilEnd(radius);
+        break;
+    case WidgetHole::HoleType::Blind:
+        holeMaker.PerformBlind(radius, depth);
+        break;
+    }
+
+    holeMaker.Build();
+
+    BRepFeat_Status status = holeMaker.Status();
+    if (status == BRepFeat_NoError && !holeMaker.Shape().IsNull()) {
+        TopoDS_Shape newShape = holeMaker.Shape();
+        removeShape(parentShape);
+        m_occView->clearSelectedObjects();
+        displayShape(newShape);
+    } else {
+        QMessageBox::warning(this, "Hole Error", QString("BRepFeat status: %1").arg(status));
+    }
+#if 0 // BRepAlgoAPI_Cut
+    if (parentShape.IsNull() || faceShape.IsNull() || faceShape.ShapeType() != TopAbs_FACE || pointShape.IsNull() || pointShape.ShapeType() != TopAbs_VERTEX) {
+        QMessageBox::warning(this, "Hole Error", "Invalid shape or inputs.");
+        return;
+    }
+
+    // 1. Get Point
+    TopoDS_Vertex vertex = TopoDS::Vertex(pointShape);
+    gp_Pnt pnt = BRep_Tool::Pnt(vertex);
+
+    // 2. Get normal on face
+    TopoDS_Face face = TopoDS::Face(faceShape);
+    Handle(Geom_Surface) surface = BRep_Tool::Surface(face);
+    
+    GeomAPI_ProjectPointOnSurf projector(pnt, surface);
+    if (!projector.NbPoints()) {
+        QMessageBox::warning(this, "Hole Error", "The point cannot be projected safely onto the face.");
+        return;
+    }
+    
+    Standard_Real u, v;
+    projector.LowerDistanceParameters(u, v);
+    
+    GeomLProp_SLProps props(surface, u, v, 1, 1e-6);
+    if (!props.IsNormalDefined()) {
+        QMessageBox::warning(this, "Hole Error", "Normal is not defined at this point.");
+        return;
+    }
+    
+    gp_Dir normal = props.Normal();
+    if (face.Orientation() == TopAbs_REVERSED) {
+        normal.Reverse();
+    }
+    
+    // We drill *into* the solid, so reversed normal
+    gp_Dir drillDir = normal.Reversed();
+    
+    // Easy way is to just use a large depth.
+    double depth = 1000.0;
+    
+    // To ensure it doesn't fail due to coincident boundaries, start slightly outside
+    gp_Pnt startPnt = pnt.Translated(gp_Vec(drillDir.Reversed()) * 1.0); 
+    gp_Ax2 axisCyl(startPnt, drillDir);
+    BRepPrimAPI_MakeCylinder cyl(axisCyl, radius, depth + 1.0);
+    
+    BRepAlgoAPI_Cut cut(parentShape, cyl.Shape());
+    cut.SetFuzzyValue(1e-5);
+    cut.Build();
+    
+    if (cut.IsDone() && !cut.Shape().IsNull()) {
+        TopoDS_Shape newShape = cut.Shape();
+        removeShape(parentShape);
+        m_occView->clearSelectedObjects();
+        displayShape(newShape);
+    } else {
+        QMessageBox::warning(this, "Hole Error", "Failed to create hole.");
+    }
+#endif
+}
+
 void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)
 {
     if (edgeShape.IsNull() || edgeShape.ShapeType() != TopAbs_EDGE || radius <= 0.0) {
@@ -1557,6 +1725,17 @@ void ViewerWidget::removeShape(const TopoDS_Shape &shape)
     m_occView->viewfit(); // Fit view to the new shape
 }
 
+void ViewerWidget::removeLabelShape(const TDF_Label& label)
+{
+    if (label.IsNull())
+        return;
+
+    TopoDS_Shape shape;
+    if (XCAFDoc_ShapeTool::GetShape(label, shape) && !shape.IsNull()) {
+        removeShape(shape);
+    }
+}
+
 const std::map<TopAbs_ShapeEnum, bool> &ViewerWidget::getSelectionFilters() const
 {
     const auto acitveView = ViewManager::getInstance().getActiveView();
@@ -1660,23 +1839,20 @@ void ViewerWidget::highlightLabel(const TDF_Label& label)
 
 void ViewerWidget::onCreateLine(double x1, double y1, double z1, double x2, double y2, double z2, const QColor& color)
 {
-    gp_Pnt p1(x1, y1, z1);
-    gp_Pnt p2(x2, y2, z2);
-    BRepBuilderAPI_MakeEdge edge(p1, p2);
-    if (edge.IsDone()) {
-        displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-    }
+    CoreApi::ShapeParams p;
+    p["x1"] = x1; p["y1"] = y1; p["z1"] = z1;
+    p["x2"] = x2; p["y2"] = y2; p["z2"] = z2;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateLine", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgLine) m_dlgLine->raise();
 }
 
 void ViewerWidget::onCreateCircle(double x, double y, double z, double radius, const QColor& color)
 {
-    gp_Ax2 axis(gp_Pnt(x, y, z), gp_Dir(0, 0, 1));
-    gp_Circ circle(axis, radius);
-    BRepBuilderAPI_MakeEdge edge(circle);
-    if (edge.IsDone()) {
-        displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-    }
+    CoreApi::ShapeParams p;
+    p["x"] = x; p["y"] = y; p["z"] = z; p["radius"] = radius;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateCircle", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgCircle) m_dlgCircle->raise();
 }
 
@@ -1706,20 +1882,12 @@ void ViewerWidget::onCreateBox(double x, double y, double z, double dx, double d
 
 void ViewerWidget::onCreateEllipse(double centerX, double centerY, double centerZ, double normalX, double normalY, double normalZ, double majorRadius, double minorRadius, const QColor& color)
 {
-    gp_Pnt center(centerX, centerY, centerZ);
-    gp_Dir normal(normalX, normalY, normalZ);
-    
-    if (majorRadius < minorRadius) {
-        std::swap(majorRadius, minorRadius);
-    }
-
-    gp_Ax2 axis(center, normal);
-    gp_Elips ellipse(axis, majorRadius, minorRadius);
-    
-    BRepBuilderAPI_MakeEdge edge(ellipse);
-    if (edge.IsDone()) {
-        displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-    }
+    CoreApi::ShapeParams p;
+    p["x"] = centerX; p["y"] = centerY; p["z"] = centerZ;
+    p["nx"] = normalX; p["ny"] = normalY; p["nz"] = normalZ;
+    p["majorRadius"] = majorRadius; p["minorRadius"] = minorRadius;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateEllipse", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgEllipse) m_dlgEllipse->raise();
 }
 
@@ -1742,33 +1910,20 @@ void ViewerWidget::onCreateCone(double x, double y, double z, double radius1, do
 
 void ViewerWidget::onCreatePoint(double x, double y, double z, const QColor& color)
 {
-    gp_Pnt p(x, y, z);
-    BRepBuilderAPI_MakeVertex vertexMaker(p);
-    if (vertexMaker.IsDone()) {
-        displayShape(vertexMaker.Shape(), color.redF(), color.greenF(), color.blueF());
-    }
+    CoreApi::ShapeParams p;
+    p["x"] = x; p["y"] = y; p["z"] = z;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreatePoint", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgPoint) m_dlgPoint->raise();
 }
 
 void ViewerWidget::onCreateRectangle(double x, double y, double z, double width, double height, const QColor& color)
 {
-    gp_Pnt p1(x, y, z);
-    gp_Pnt p2(x + width, y, z);
-    gp_Pnt p3(x + width, y + height, z);
-    gp_Pnt p4(x, y + height, z);
-
-    BRepBuilderAPI_MakePolygon poly;
-    poly.Add(p1);
-    poly.Add(p2);
-    poly.Add(p3);
-    poly.Add(p4);
-    poly.Add(p1); // Close the polygon
-    if (poly.IsDone()) {
-        BRepBuilderAPI_MakeFace face(poly.Wire());
-        if (face.IsDone()) {
-            displayShape(face.Shape(), color.redF(), color.greenF(), color.blueF());
-        }
-    }
+    CoreApi::ShapeParams p;
+    p["x"] = x; p["y"] = y; p["z"] = z;
+    p["width"] = width; p["height"] = height;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateRectangle", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgRectangle) m_dlgRectangle->raise();
 }
 
@@ -1779,3 +1934,4 @@ void ViewerWidget::onCreateSphere(double x, double y, double z, double radius, c
     displayShape(sphere.Shape(), color.redF(), color.greenF(), color.blueF());
     if (m_dlgSphere) m_dlgSphere->raise();
 }
+
