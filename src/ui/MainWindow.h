@@ -67,6 +67,7 @@ private slots:
     void onExplosion();
     void onCreateWorkPlane();
     void onAnimation();
+    void onBusbar();
 
     /* measure */
     void onMeasureDistance() const;
@@ -182,7 +183,8 @@ private:
     QAction* m_measureAngleAction;
     QAction* m_measureMinimumDistanceAction;
     QAction* m_createWorkPlaneAction;
-    QAction* m_animationPlaneAction{};
+    QAction* m_animationAction{};
+    QAction* m_busbarAction{};
 
     // ---- Shape Group ----
     SARibbonCategory* m_shapeCategory;

@@ -32,6 +32,7 @@
 #include "widget_chamfer.h"
 #include "widget_hole.h"
 #include "widget_animation.h"
+#include "widget_busbar.h"
 
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
@@ -981,6 +982,18 @@ void ViewerWidget::animation()
     }
     m_widgetAnimation->show();
     m_widgetAnimation->raise();
+}
+
+void ViewerWidget::busbar()
+{
+    if (!m_widgetBusbar) {
+        m_widgetBusbar = new WidgetBusbar(this);
+        m_widgetBusbar->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetBusbar, &QWidget::destroyed, this,
+                [this]() { m_widgetBusbar = nullptr; });
+    }
+    m_widgetBusbar->show();
+    m_widgetBusbar->raise();
 }
 
 void ViewerWidget::measureDistance()
