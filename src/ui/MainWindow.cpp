@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+﻿#include "MainWindow.h"
 #include <QtCore>
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QToolButton>
@@ -154,6 +154,14 @@ void MainWindow::createFileGroup()
         m_exportFileAction = new QAction(QIcon(":/icons/icon/file_export_file.svg"), tr("File"), this); 
         connect(m_exportFileAction, &QAction::triggered, this, &MainWindow::onExportFile);
         m_exportPannel->addLargeAction(m_exportFileAction);
+
+        m_exportDxfAction = new QAction(QIcon(":/icons/icon/file_export_dxf.svg"), tr("DXF"), this); 
+        connect(m_exportDxfAction, &QAction::triggered, this, &MainWindow::onExportDxf);
+        m_exportPannel->addLargeAction(m_exportDxfAction);
+
+        m_exportDwgAction = new QAction(QIcon(":/icons/icon/file_export_dwg.svg"), tr("DWG"), this); 
+        connect(m_exportDwgAction, &QAction::triggered, this, &MainWindow::onExportDwg);
+        m_exportPannel->addLargeAction(m_exportDwgAction);
 
         m_exportPicAction = new QAction(QIcon(":/icons/icon/file_export_picture.svg"), tr("Picture"), this); 
         connect(m_exportPicAction, &QAction::triggered, this, &MainWindow::onExportPicture);
@@ -614,6 +622,20 @@ void MainWindow::onExportFile()
                                                     tr("STEP Files (*.step *.stp);;IGES Files (*.iges *.igs)"));
     if (!fileName.isEmpty()) {
         m_viewerWidget->exportModel(fileName);
+    }
+}
+
+void MainWindow::onExportDxf()
+{
+    if (m_viewerWidget) {
+        m_viewerWidget->exportDxf();
+    }
+}
+
+void MainWindow::onExportDwg()
+{
+    if (m_viewerWidget) {
+        m_viewerWidget->exportDwg();
     }
 }
 
