@@ -414,10 +414,15 @@ void MainWindow::createToolGroup()
         connect(m_createWorkPlaneAction, &QAction::triggered, this, &MainWindow::onCreateWorkPlane);
         m_otherPannel->addLargeAction(m_createWorkPlaneAction);
 
-        // createWorkPlaneAction
-        m_animationPlaneAction = new QAction(QIcon(":/icons/icon/animation.svg"), tr("Animation"), this);
-        connect(m_animationPlaneAction, &QAction::triggered, this, &MainWindow::onAnimation);
-        m_otherPannel->addLargeAction(m_animationPlaneAction);
+        // animation
+        m_animationAction = new QAction(QIcon(":/icons/icon/animation.svg"), tr("Animation"), this);
+        connect(m_animationAction, &QAction::triggered, this, &MainWindow::onAnimation);
+        m_otherPannel->addLargeAction(m_animationAction);
+
+        // busbar
+        m_busbarAction = new QAction(QIcon(":/icons/icon/busbar.svg"), tr("Busbar"), this);
+        connect(m_busbarAction, &QAction::triggered, this, &MainWindow::onBusbar);
+        m_otherPannel->addLargeAction(m_busbarAction);
     };
     createOtherPannel();
 
@@ -744,6 +749,11 @@ void MainWindow::onCreateWorkPlane()
 void MainWindow::onAnimation()
 {
     m_viewerWidget->animation();
+}
+
+void MainWindow::onBusbar()
+{
+    m_viewerWidget->busbar();
 }
 
 void MainWindow::onMeasureDistance() const

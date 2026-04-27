@@ -1,0 +1,320 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>WidgetBusbar</class>
+ <widget class="QWidget" name="WidgetBusbar">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>340</width>
+    <height>700</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Busbar Routing</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayoutMain">
+   <property name="margin">
+    <number>8</number>
+   </property>
+   <property name="spacing">
+    <number>6</number>
+   </property>
+
+   <!-- ============ Start Point ============ -->
+   <item>
+    <widget class="QGroupBox" name="groupBoxStart">
+     <property name="title">
+      <string>Start Point</string>
+     </property>
+     <layout class="QFormLayout" name="formLayoutStart">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelStartPos">
+        <property name="text"><string>Position:</string></property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="labelStartPosValue">
+        <property name="text"><string>—</string></property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelStartNormal">
+        <property name="text"><string>Normal:</string></property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="comboBoxStartNormal">
+        <item><property name="text"><string>+X</string></property></item>
+        <item><property name="text"><string>-X</string></property></item>
+        <item><property name="text"><string>+Y</string></property></item>
+        <item><property name="text"><string>-Y</string></property></item>
+        <item><property name="text"><string>+Z</string></property></item>
+        <item><property name="text"><string>-Z</string></property></item>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="2">
+       <widget class="QPushButton" name="pushButtonPickStart">
+        <property name="text"><string>Pick Start</string></property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <!-- ============ End Point ============ -->
+   <item>
+    <widget class="QGroupBox" name="groupBoxEnd">
+     <property name="title">
+      <string>End Point</string>
+     </property>
+     <layout class="QFormLayout" name="formLayoutEnd">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelEndPos">
+        <property name="text"><string>Position:</string></property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QLabel" name="labelEndPosValue">
+        <property name="text"><string>—</string></property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelEndNormal">
+        <property name="text"><string>Normal:</string></property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QComboBox" name="comboBoxEndNormal">
+        <item><property name="text"><string>+X</string></property></item>
+        <item><property name="text"><string>-X</string></property></item>
+        <item><property name="text"><string>+Y</string></property></item>
+        <item><property name="text"><string>-Y</string></property></item>
+        <item><property name="text"><string>+Z</string></property></item>
+        <item><property name="text"><string>-Z</string></property></item>
+       </widget>
+      </item>
+      <item row="2" column="0" colspan="2">
+       <widget class="QPushButton" name="pushButtonPickEnd">
+        <property name="text"><string>Pick End</string></property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <!-- ============ Default Connection Type ============ -->
+   <item>
+    <widget class="QGroupBox" name="groupBoxConnection">
+     <property name="title">
+      <string>Default Connection</string>
+     </property>
+     <layout class="QHBoxLayout" name="hLayoutConn">
+      <item>
+       <widget class="QRadioButton" name="radioButtonBend">
+        <property name="text"><string>Bend</string></property>
+        <property name="checked"><bool>true</bool></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="radioButtonBolt">
+        <property name="text"><string>Bolt</string></property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QRadioButton" name="radioButtonWeld">
+        <property name="text"><string>Weld</string></property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <!-- ============ Auto Calculate ============ -->
+   <item>
+    <widget class="QPushButton" name="pushButtonAutoCalc">
+     <property name="text"><string>Auto Calculate Route</string></property>
+    </widget>
+   </item>
+
+   <!-- ============ Waypoint List ============ -->
+   <item>
+    <widget class="QGroupBox" name="groupBoxWaypoints">
+     <property name="title">
+      <string>Waypoints</string>
+     </property>
+     <layout class="QVBoxLayout" name="vLayoutWP">
+      <item>
+       <widget class="QListWidget" name="listWidgetWaypoints">
+        <property name="minimumHeight">
+         <number>100</number>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="hLayoutWPButtons">
+        <item>
+         <widget class="QPushButton" name="pushButtonAddWaypoint">
+          <property name="text"><string>Add Waypoint</string></property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButtonDeleteWaypoint">
+          <property name="text"><string>Delete Waypoint</string></property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <!-- ============ Node Properties ============ -->
+   <item>
+    <widget class="QGroupBox" name="groupBoxNodeProp">
+     <property name="title">
+      <string>Selected Node Properties</string>
+     </property>
+     <layout class="QFormLayout" name="formLayoutNodeProp">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelNodeType">
+        <property name="text"><string>Connection:</string></property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QComboBox" name="comboBoxNodeType">
+        <item><property name="text"><string>Bend</string></property></item>
+        <item><property name="text"><string>Bolt</string></property></item>
+        <item><property name="text"><string>Weld</string></property></item>
+       </widget>
+      </item>
+      <!-- Bend parameters -->
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelBendRadius">
+        <property name="text"><string>Bend Radius:</string></property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QDoubleSpinBox" name="spinBoxBendRadius">
+        <property name="minimum"><double>0.1</double></property>
+        <property name="maximum"><double>500.0</double></property>
+        <property name="value"><double>5.0</double></property>
+        <property name="suffix"><string> mm</string></property>
+       </widget>
+      </item>
+      <!-- Bolt parameters -->
+      <item row="2" column="0">
+       <widget class="QLabel" name="labelBoltSpec">
+        <property name="text"><string>Bolt Spec:</string></property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="comboBoxBoltSpec">
+        <item><property name="text"><string>M6</string></property></item>
+        <item><property name="text"><string>M8</string></property></item>
+        <item><property name="text"><string>M10</string></property></item>
+        <item><property name="text"><string>M12</string></property></item>
+       </widget>
+      </item>
+      <!-- Weld parameters -->
+      <item row="3" column="0">
+       <widget class="QLabel" name="labelWeldType">
+        <property name="text"><string>Weld Type:</string></property>
+       </widget>
+      </item>
+      <item row="3" column="1">
+       <widget class="QComboBox" name="comboBoxWeldType">
+        <item><property name="text"><string>Butt</string></property></item>
+        <item><property name="text"><string>Lap</string></property></item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <!-- ============ Busbar Parameters ============ -->
+   <item>
+    <widget class="QGroupBox" name="groupBoxBusbarParams">
+     <property name="title">
+      <string>Busbar Parameters</string>
+     </property>
+     <layout class="QFormLayout" name="formLayoutParams">
+      <item row="0" column="0">
+       <widget class="QLabel" name="labelWidth">
+        <property name="text"><string>Width:</string></property>
+       </widget>
+      </item>
+      <item row="0" column="1">
+       <widget class="QDoubleSpinBox" name="spinBoxWidth">
+        <property name="minimum"><double>1.0</double></property>
+        <property name="maximum"><double>500.0</double></property>
+        <property name="value"><double>40.0</double></property>
+        <property name="suffix"><string> mm</string></property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="labelThickness">
+        <property name="text"><string>Thickness:</string></property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QDoubleSpinBox" name="spinBoxThickness">
+        <property name="minimum"><double>0.5</double></property>
+        <property name="maximum"><double>50.0</double></property>
+        <property name="value"><double>5.0</double></property>
+        <property name="suffix"><string> mm</string></property>
+       </widget>
+      </item>
+      <item row="2" column="0">
+       <widget class="QLabel" name="labelSectionDir">
+        <property name="text"><string>Section Dir:</string></property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="comboBoxSectionDir">
+        <item><property name="text"><string>Auto (along path)</string></property></item>
+        <item><property name="text"><string>Fixed +X</string></property></item>
+        <item><property name="text"><string>Fixed +Y</string></property></item>
+        <item><property name="text"><string>Fixed +Z</string></property></item>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+
+   <!-- ============ Status ============ -->
+   <item>
+    <widget class="QLabel" name="labelStatus">
+     <property name="text"><string>Ready</string></property>
+     <property name="alignment">
+      <set>Qt::AlignCenter</set>
+     </property>
+    </widget>
+   </item>
+
+   <!-- ============ Action Buttons ============ -->
+   <item>
+    <layout class="QHBoxLayout" name="hLayoutActions">
+     <item>
+      <widget class="QPushButton" name="pushButtonApply">
+       <property name="text"><string>Apply</string></property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonClear">
+       <property name="text"><string>Clear</string></property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonClose">
+       <property name="text"><string>Close</string></property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
