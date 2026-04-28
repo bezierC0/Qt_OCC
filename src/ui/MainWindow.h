@@ -44,6 +44,7 @@ private slots:
     void onExportFile();
     void onExportDxf();
     void onExportDwg();
+    void onExport3dpdf();
     void onExportPicture();
     void onExit();
 
@@ -144,6 +145,7 @@ private:
     QAction* m_exportFileAction;
     QAction* m_exportDxfAction{};
     QAction* m_exportDwgAction{};
+    QAction* m_export3dpdfAction{};
     QAction* m_exportPicAction;
     QAction* m_exitAction;
 
