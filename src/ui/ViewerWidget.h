@@ -22,6 +22,7 @@ class DialogCreatePolygon;
 class DialogCreateBezier;
 class DialogCreateNurbs;
 class DialogExportImage;
+class DialogExport3DPdf;
 class WidgetInterference;
 class WidgetBoolean;
 class WidgetDistance;
@@ -64,6 +65,7 @@ public:
     void exportModel(const QString& filename);
     void exportDxf();
     void exportDwg();
+    void export3dpdf();
     void exportPicture();
 
     //view
@@ -186,6 +188,7 @@ private:
     DialogCreateBezier*   m_dlgBezier{nullptr};
     DialogCreateNurbs*    m_dlgNurbs{nullptr};
     DialogExportImage*    m_dlgExportImage{nullptr};
+    DialogExport3DPdf*    m_dlgExport3dpdf{nullptr};
     WidgetInterference*   m_widgetInterference{nullptr};
     WidgetDistance*       m_widgetDistance{nullptr};
     WidgetMeasureLength*  m_widgetLength{nullptr};

@@ -6,8 +6,10 @@
 #include "Tree.h"
 #include "ViewManager.h"
 #include "util/TopoShapeUtil.h"
+#include "../core_api/ExportApi.h"
 
 #include "ui/DialogCreatePoint.h"
+#include "ui/DialogExport3DPdf.h"
 #include "ui/DialogCreateBezier.h"
 #include "ui/DialogCreateNurbs.h"
 #include "ui/DialogCreateBox.h"
@@ -706,7 +708,7 @@ void ViewerWidget::exportDwg()
             builder.Add(compound, s);
     }
 
-    // 2. HLR projection – front view (looking along +Y toward the origin)
+    // 2. HLR projection - front view (looking along +Y toward the origin)
     gp_Ax2 frontView(gp_Pnt(0, 0, 0), gp_Dir(0, 1, 0), gp_Dir(1, 0, 0));
     HLRAlgo_Projector projector(frontView);
 
@@ -843,6 +845,42 @@ void ViewerWidget::exportDwg()
 
     QMessageBox::information(this, tr("Export Successful"),
         tr("DWG file saved to:\n") + dwgPath);
+}
+
+void ViewerWidget::export3dpdf()
+{
+    // 1. Collect all top-level shapes from the OCAF document and merge into a Compound
+    if (m_doc->m_ocafDoc.IsNull()) {
+        QMessageBox::warning(this, tr("Export 3D PDF"), tr("No document available to export."));
+        return;
+    }
+
+    Handle(XCAFDoc_ShapeTool) shapeTool =
+        XCAFDoc_DocumentTool::ShapeTool(m_doc->m_ocafDoc->Main());
+    TDF_LabelSequence labels;
+    shapeTool->GetFreeShapes(labels);
+    if (labels.IsEmpty()) {
+        QMessageBox::warning(this, tr("Export 3D PDF"), tr("The document contains no shapes."));
+        return;
+    }
+
+    TopoDS_Compound compound;
+    BRep_Builder builder;
+    builder.MakeCompound(compound);
+    for (Standard_Integer i = 1; i <= labels.Length(); ++i) {
+        TopoDS_Shape s = shapeTool->GetShape(labels.Value(i));
+        if (!s.IsNull())
+            builder.Add(compound, s);
+    }
+
+    Quantity_Color bgColor = m_occView->View()->BackgroundColor();
+    if (!m_dlgExport3dpdf) {
+        m_dlgExport3dpdf = new DialogExport3DPdf(compound, bgColor, this);
+        m_dlgExport3dpdf->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgExport3dpdf, &QDialog::destroyed, this, [this]() { m_dlgExport3dpdf = nullptr; });
+    }
+    m_dlgExport3dpdf->show();
+    m_dlgExport3dpdf->raise();
 }
 
 void ViewerWidget::exportPicture()

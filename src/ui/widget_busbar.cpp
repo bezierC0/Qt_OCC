@@ -492,7 +492,7 @@ void WidgetBusbar::onApplyClicked()
     int sectionIdx = ui->comboBoxSectionDir->currentIndex();
     if (sectionIdx == 1) upDir = gp_Dir(1, 0, 0);
     else if (sectionIdx == 2) upDir = gp_Dir(0, 1, 0);
-    // sectionIdx == 0 → auto, keep (0,0,1); sectionIdx == 3 → Fixed +Z, same
+    // sectionIdx == 0 -> auto, keep (0,0,1); sectionIdx == 3 -> Fixed +Z, same
 
     double w = ui->spinBoxWidth->value();
     double t = ui->spinBoxThickness->value();

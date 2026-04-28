@@ -163,6 +163,10 @@ void MainWindow::createFileGroup()
         connect(m_exportDwgAction, &QAction::triggered, this, &MainWindow::onExportDwg);
         m_exportPannel->addLargeAction(m_exportDwgAction);
 
+        m_export3dpdfAction = new QAction(QIcon(":/icons/icon/file_export_3dpdf.svg"), tr("3D PDF"), this); 
+        connect(m_export3dpdfAction, &QAction::triggered, this, &MainWindow::onExport3dpdf);
+        m_exportPannel->addLargeAction(m_export3dpdfAction);
+
         m_exportPicAction = new QAction(QIcon(":/icons/icon/file_export_picture.svg"), tr("Picture"), this); 
         connect(m_exportPicAction, &QAction::triggered, this, &MainWindow::onExportPicture);
         m_exportPannel->addLargeAction(m_exportPicAction);
@@ -641,6 +645,13 @@ void MainWindow::onExportDwg()
 {
     if (m_viewerWidget) {
         m_viewerWidget->exportDwg();
+    }
+}
+
+void MainWindow::onExport3dpdf()
+{
+    if (m_viewerWidget) {
+        m_viewerWidget->export3dpdf();
     }
 }
 
