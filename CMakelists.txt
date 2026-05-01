@@ -167,6 +167,97 @@ else()
 endif()
 
 #########
+# 3D PDF Method 2: OSG + libPRC + libHaru (optional)
+#########
+option(EXPORT_3DPDF_USE_LIBPRC "Enable 3D PDF export via OSG + libPRC + libHaru (Method 2)" OFF)
+
+if(EXPORT_3DPDF_USE_LIBPRC)
+    # --- Library root directories (user configures these) ---
+    set(OSG_DIR        CACHE PATH "Path to OpenSceneGraph root (for osgdb_prc plugin only)")
+    set(LIBPRC_DIR     CACHE PATH "Path to libPRC root")
+    set(LIBPNG_DIR     CACHE PATH "Path to libpng root")
+    set(LIBHARU_DIR    CACHE PATH "Path to libharu root")
+
+    # --- Includes ---
+    set(LIBPRC_INCLUDE_DIRS
+        "${LIBPRC_DIR}/include"
+        "${LIBPRC_DIR}/include/asymptote"
+        "${LIBPRC_DIR}/include/libPRC"
+        "${LIBPNG_DIR}/include"
+        "${LIBHARU_DIR}/include"
+    )
+
+    # --- Libraries ---
+    find_library(PRC_LIB_RELEASE      NAMES libPRC      PATHS "${LIBPRC_DIR}/lib" NO_DEFAULT_PATH)
+    find_library(PRC_LIB_DEBUG        NAMES libPRCd     PATHS "${LIBPRC_DIR}/lib" NO_DEFAULT_PATH)
+    find_library(ASYMPTOTE_LIB_RELEASE NAMES asymptote  PATHS "${LIBPRC_DIR}/lib" NO_DEFAULT_PATH)
+    find_library(ASYMPTOTE_LIB_DEBUG   NAMES asymptoted PATHS "${LIBPRC_DIR}/lib" NO_DEFAULT_PATH)
+    find_library(PNG_LIB_RELEASE      NAMES libpng16    PATHS "${LIBPNG_DIR}/lib" NO_DEFAULT_PATH)
+    find_library(PNG_LIB_DEBUG        NAMES libpng16d   PATHS "${LIBPNG_DIR}/lib" NO_DEFAULT_PATH)
+
+    # libharu: used to embed the PRC file into a PDF 
+    find_library(HPDF_LIB  NAMES libhpdf  PATHS "${LIBHARU_DIR}/lib" NO_DEFAULT_PATH)
+    if(NOT HPDF_LIB)
+        message(WARNING "libharu (libhpdf.lib) not found at ${LIBHARU_DIR}/lib. PDF embedding will fail.")
+    endif()
+    message(STATUS "  libharu: ${HPDF_LIB}")
+
+    # asymptote depends on zlib (deflate* symbols). Use the one from OCCT 3rdparty.
+    find_library(ZLIB_LIB
+        NAMES zlib
+        PATHS "${OpenCASCADE_3RDPARTY_DIR}/zlib-1.2.8-vc14-64/lib"
+        NO_DEFAULT_PATH
+    )
+    if(NOT ZLIB_LIB)
+        # fallback: search common locations
+        find_library(ZLIB_LIB NAMES zlib zdll)
+    endif()
+    if(NOT ZLIB_LIB)
+        message(WARNING "zlib not found; asymptote.lib may have unresolved deflate* symbols.")
+    endif()
+
+    # Require at least the Release variants
+    if(NOT PRC_LIB_RELEASE OR NOT ASYMPTOTE_LIB_RELEASE)
+        message(FATAL_ERROR
+            "EXPORT_3DPDF_USE_LIBPRC is ON but one or more required libraries were not found.\n"
+            "  PRC_LIB_RELEASE:       ${PRC_LIB_RELEASE}\n"
+            "  ASYMPTOTE_LIB_RELEASE: ${ASYMPTOTE_LIB_RELEASE}\n"
+            "Please set LIBPRC_DIR correctly, or turn off EXPORT_3DPDF_USE_LIBPRC."
+        )
+    endif()
+
+    # All libraries verified — mark the feature as enabled.
+    set(LIBPRC_ENABLED TRUE)
+    message(STATUS "[Method2-PRC] Libraries found. USE_LIBPRC will be defined.")
+    message(STATUS "  PRC Release:       ${PRC_LIB_RELEASE}")
+    message(STATUS "  PRC Debug:         ${PRC_LIB_DEBUG}")
+    message(STATUS "  asymptote Release: ${ASYMPTOTE_LIB_RELEASE}")
+    message(STATUS "  asymptote Debug:   ${ASYMPTOTE_LIB_DEBUG}")
+    message(STATUS "  zlib:              ${ZLIB_LIB}")
+
+    # Use optimized/debug keywords so the linker picks the correct CRT variant.
+    # If a debug variant is missing, fall back to the release variant.
+    if(NOT PRC_LIB_DEBUG)
+        set(PRC_LIB_DEBUG ${PRC_LIB_RELEASE})
+    endif()
+    if(NOT ASYMPTOTE_LIB_DEBUG)
+        set(ASYMPTOTE_LIB_DEBUG ${ASYMPTOTE_LIB_RELEASE})
+    endif()
+    if(NOT PNG_LIB_DEBUG)
+        set(PNG_LIB_DEBUG ${PNG_LIB_RELEASE})
+    endif()
+
+    set(LIBPRC_LIBRARIES
+        optimized ${PRC_LIB_RELEASE}       debug ${PRC_LIB_DEBUG}
+        optimized ${ASYMPTOTE_LIB_RELEASE} debug ${ASYMPTOTE_LIB_DEBUG}
+        optimized ${PNG_LIB_RELEASE}       debug ${PNG_LIB_DEBUG}
+        ${HPDF_LIB}
+        ${ZLIB_LIB}
+    )
+endif()
+
+
+#########
 # Core Library
 #########
 set(COREAPI_CPP_SOURCES)
@@ -188,7 +279,17 @@ target_include_directories(CoreApi PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/src/core_api
 )
 
-target_link_libraries(CoreApi PUBLIC ${OCCT_LIBRARIES_TO_LINK} ${MANUAL_3RDPARTY_LIBRARIES})
+if(LIBPRC_ENABLED)
+    target_sources(CoreApi PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core_api/ExportApi_PRC.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core_api/ExportApi_PRC.h
+    )
+    target_include_directories(CoreApi PUBLIC ${LIBPRC_INCLUDE_DIRS})
+    target_compile_definitions(CoreApi PUBLIC USE_LIBPRC)
+    target_link_libraries(CoreApi PUBLIC ${OCCT_LIBRARIES_TO_LINK} ${MANUAL_3RDPARTY_LIBRARIES} ${LIBPRC_LIBRARIES})
+else()
+    target_link_libraries(CoreApi PUBLIC ${OCCT_LIBRARIES_TO_LINK} ${MANUAL_3RDPARTY_LIBRARIES})
+endif()
 # Export define
 target_compile_definitions(CoreApi PRIVATE CADCORE_LIBRARY)
 
@@ -299,6 +400,27 @@ if(IS_COPY_DLLS)
         endif()
     endif()
 endif()
+if(EXPORT_3DPDF_USE_LIBPRC)
+    file(GLOB 3DPDF_USE_LIBPRC_DLLS "${LIBPRC_DIR}/bin/*.dll")
+    #file(GLOB 3DPDF_USE_LIBPNG_DLLS "${LIBPNG_DIR}/bin/*.dll")
+    file(GLOB 3DPDF_USE_LIBHARU_DLLS "${LIBHARU_DIR}/bin/*.dll")
+    if(WIN32)
+        set(ALL_DLLS_TO_COPY ${3DPDF_USE_LIBPRC_DLLS} ${3DPDF_USE_LIBHARU_DLLS})
+        if(ALL_DLLS_TO_COPY)
+            foreach(dll ${ALL_DLLS_TO_COPY})
+                message(STATUS "COPY DLL : ${dll}")
+            endforeach()
+            add_custom_command(
+                TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        ${ALL_DLLS_TO_COPY}
+                        $<TARGET_FILE_DIR:${PROJECT_NAME}>
+                COMMAND_EXPAND_LISTS
+                COMMENT "Copying LIBPRC runtime DLLs"
+            )
+        endif()
+    endif()
+endif()
 
 if(WIN32)
     target_compile_definitions(${PROJECT_NAME} PRIVATE QT_OPENGL_DESKTOP)
@@ -315,6 +437,10 @@ target_include_directories(${PROJECT_NAME}
         src/common
         #src/core
 )
+if(LIBPRC_ENABLED)
+    target_include_directories(${PROJECT_NAME} PRIVATE ${LIBPRC_INCLUDE_DIRS})
+    target_compile_definitions(${PROJECT_NAME} PRIVATE USE_LIBPRC)
+endif()
 target_link_libraries(${PROJECT_NAME} 
     PRIVATE 
         ${OCCT_LIBRARIES_TO_LINK} 

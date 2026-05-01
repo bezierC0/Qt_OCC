@@ -1,4 +1,4 @@
-#include "MainWindow.h"
+﻿#include "MainWindow.h"
 #include <QtCore>
 #include <QtWidgets/QToolBar>
 #include <QtWidgets/QToolButton>
@@ -154,6 +154,18 @@ void MainWindow::createFileGroup()
         m_exportFileAction = new QAction(QIcon(":/icons/icon/file_export_file.svg"), tr("File"), this); 
         connect(m_exportFileAction, &QAction::triggered, this, &MainWindow::onExportFile);
         m_exportPannel->addLargeAction(m_exportFileAction);
+
+        m_exportDxfAction = new QAction(QIcon(":/icons/icon/file_export_dxf.svg"), tr("DXF"), this); 
+        connect(m_exportDxfAction, &QAction::triggered, this, &MainWindow::onExportDxf);
+        m_exportPannel->addLargeAction(m_exportDxfAction);
+
+        m_exportDwgAction = new QAction(QIcon(":/icons/icon/file_export_dwg.svg"), tr("DWG"), this); 
+        connect(m_exportDwgAction, &QAction::triggered, this, &MainWindow::onExportDwg);
+        m_exportPannel->addLargeAction(m_exportDwgAction);
+
+        m_export3dpdfAction = new QAction(QIcon(":/icons/icon/file_export_3dpdf.svg"), tr("3D PDF"), this); 
+        connect(m_export3dpdfAction, &QAction::triggered, this, &MainWindow::onExport3dpdf);
+        m_exportPannel->addLargeAction(m_export3dpdfAction);
 
         m_exportPicAction = new QAction(QIcon(":/icons/icon/file_export_picture.svg"), tr("Picture"), this); 
         connect(m_exportPicAction, &QAction::triggered, this, &MainWindow::onExportPicture);
@@ -406,10 +418,15 @@ void MainWindow::createToolGroup()
         connect(m_createWorkPlaneAction, &QAction::triggered, this, &MainWindow::onCreateWorkPlane);
         m_otherPannel->addLargeAction(m_createWorkPlaneAction);
 
-        // createWorkPlaneAction
-        m_animationPlaneAction = new QAction(QIcon(":/icons/icon/animation.svg"), tr("Animation"), this);
-        connect(m_animationPlaneAction, &QAction::triggered, this, &MainWindow::onAnimation);
-        m_otherPannel->addLargeAction(m_animationPlaneAction);
+        // animation
+        m_animationAction = new QAction(QIcon(":/icons/icon/animation.svg"), tr("Animation"), this);
+        connect(m_animationAction, &QAction::triggered, this, &MainWindow::onAnimation);
+        m_otherPannel->addLargeAction(m_animationAction);
+
+        // busbar
+        m_busbarAction = new QAction(QIcon(":/icons/icon/busbar.svg"), tr("Busbar"), this);
+        connect(m_busbarAction, &QAction::triggered, this, &MainWindow::onBusbar);
+        m_otherPannel->addLargeAction(m_busbarAction);
     };
     createOtherPannel();
 
@@ -617,6 +634,27 @@ void MainWindow::onExportFile()
     }
 }
 
+void MainWindow::onExportDxf()
+{
+    if (m_viewerWidget) {
+        m_viewerWidget->exportDxf();
+    }
+}
+
+void MainWindow::onExportDwg()
+{
+    if (m_viewerWidget) {
+        m_viewerWidget->exportDwg();
+    }
+}
+
+void MainWindow::onExport3dpdf()
+{
+    if (m_viewerWidget) {
+        m_viewerWidget->export3dpdf();
+    }
+}
+
 void MainWindow::onExportPicture()
 {
     if (m_viewerWidget) {
@@ -722,6 +760,11 @@ void MainWindow::onCreateWorkPlane()
 void MainWindow::onAnimation()
 {
     m_viewerWidget->animation();
+}
+
+void MainWindow::onBusbar()
+{
+    m_viewerWidget->busbar();
 }
 
 void MainWindow::onMeasureDistance() const

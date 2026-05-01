@@ -15,7 +15,10 @@
         <file>icon/display_mode.svg</file>
         <file>icon/file_exit.svg</file>
         <file>icon/file_export_picture.svg</file>
+        <file>icon/file_export_dxf.svg</file>
+        <file>icon/file_export_dwg.svg</file>
         <file>icon/file_export_file.svg</file>
+        <file>icon/file_export_3dpdf.svg</file>
         <file>icon/file_new.svg</file>
         <file>icon/file_save_as.svg</file>
         <file>icon/fit.png</file>
@@ -59,6 +62,7 @@
         <file>icon/view_top.svg</file>
         <file>icon/work_plane.svg</file>
         <file>icon/animation.svg</file>
+        <file>icon/busbar.svg</file>
     </qresource>
     <qresource prefix="/images">
         <file>images/logo.png</file>

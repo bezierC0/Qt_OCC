@@ -299,7 +299,7 @@ void WidgetAnimation::onPollAnimation()
         return;
     }
 
-    // Advance the OCC animation — AIS_AnimationObject::update() calls
+    // Advance the OCC animation - AIS_AnimationObject::update() calls
     // myContext->SetLocation() internally to move the objects.
     m_rootAnimation->UpdateTimer();
 

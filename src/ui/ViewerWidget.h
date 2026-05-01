@@ -22,6 +22,7 @@ class DialogCreatePolygon;
 class DialogCreateBezier;
 class DialogCreateNurbs;
 class DialogExportImage;
+class DialogExport3DPdf;
 class WidgetInterference;
 class WidgetBoolean;
 class WidgetDistance;
@@ -33,6 +34,7 @@ class WidgetChamfer;
 class WidgetMinimumDistance;
 class WidgetHole;
 class WidgetAnimation;
+class WidgetBusbar;
 
 template<typename T>
 class Tree;
@@ -61,6 +63,10 @@ public:
     void clearAll();
     void loadModel(const QString& filename);
     void exportModel(const QString& filename);
+    void exportDxf();
+    void exportDwg();
+    void export3dpdf();
+    void exportPicture();
 
     //view
     void viewFit();
@@ -83,6 +89,7 @@ public:
     void clipping(const gp_Dir& normal, const gp_Pnt& point, bool isOn = true);
     void explosion();
     void animation();
+    void busbar();
     
     /* measure */
     void measureDistance();
@@ -122,7 +129,6 @@ public:
     void repairAndSave(const TopoDS_Shape& shape);
     void updateTree();
 
-    void exportPicture();
     void onFunctionTest();
 signals:
     void signalMouseMove(double x, double y, double z);
@@ -182,6 +188,7 @@ private:
     DialogCreateBezier*   m_dlgBezier{nullptr};
     DialogCreateNurbs*    m_dlgNurbs{nullptr};
     DialogExportImage*    m_dlgExportImage{nullptr};
+    DialogExport3DPdf*    m_dlgExport3dpdf{nullptr};
     WidgetInterference*   m_widgetInterference{nullptr};
     WidgetDistance*       m_widgetDistance{nullptr};
     WidgetMeasureLength*  m_widgetLength{nullptr};
@@ -193,5 +200,6 @@ private:
     WidgetMinimumDistance* m_widgetMinimumDistance{nullptr};
     WidgetHole*      m_widgetHole{nullptr};
     WidgetAnimation* m_widgetAnimation{nullptr};
+    WidgetBusbar*    m_widgetBusbar{nullptr};
 };
 

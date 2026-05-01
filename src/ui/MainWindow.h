@@ -42,6 +42,9 @@ private slots:
     void onSaveFile();
     void onSaveAsFile();
     void onExportFile();
+    void onExportDxf();
+    void onExportDwg();
+    void onExport3dpdf();
     void onExportPicture();
     void onExit();
 
@@ -65,6 +68,7 @@ private slots:
     void onExplosion();
     void onCreateWorkPlane();
     void onAnimation();
+    void onBusbar();
 
     /* measure */
     void onMeasureDistance() const;
@@ -138,8 +142,11 @@ private:
     SARibbonPannel* m_fileOthersPannel;
     QAction* m_newAction;
     QAction* m_openAction;
-    QAction* m_exportPicAction;
     QAction* m_exportFileAction;
+    QAction* m_exportDxfAction{};
+    QAction* m_exportDwgAction{};
+    QAction* m_export3dpdfAction{};
+    QAction* m_exportPicAction;
     QAction* m_exitAction;
 
     // ---- View Group ----
@@ -178,7 +185,8 @@ private:
     QAction* m_measureAngleAction;
     QAction* m_measureMinimumDistanceAction;
     QAction* m_createWorkPlaneAction;
-    QAction* m_animationPlaneAction{};
+    QAction* m_animationAction{};
+    QAction* m_busbarAction{};
 
     // ---- Shape Group ----
     SARibbonCategory* m_shapeCategory;
