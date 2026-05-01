@@ -1,6 +1,9 @@
 #include "DialogExport3DPdf.h"
 #include "ui_DialogExport3DPdf.h"
 #include "../core_api/ExportApi.h"
+#ifdef USE_LIBPRC
+#  include "../core_api/ExportApi_PRC.h"
+#endif
 
 #include <QFileDialog>
 #include <QTemporaryDir>
@@ -15,6 +18,15 @@ DialogExport3DPdf::DialogExport3DPdf(const TopoDS_Compound& compound, const Quan
 {
     ui->setupUi(this);
 
+    // Method 2 is only available when compiled with USE_LIBPRC
+#ifdef USE_LIBPRC
+    ui->m_radioPRC->setEnabled(true);
+    ui->m_radioPRC->setText(tr("Method 2: OCCT -> OSG -> libPRC -> 3D PDF"));
+#else
+    ui->m_radioPRC->setEnabled(false);
+    ui->m_radioPRC->setToolTip(tr("Rebuild with EXPORT_3DPDF_USE_LIBPRC=ON to enable this method."));
+#endif
+
     connect(ui->m_btnExport, &QPushButton::clicked, this, &DialogExport3DPdf::onExportClicked);
     connect(ui->m_btnCancel, &QPushButton::clicked, this, &QDialog::reject);
 }
@@ -26,11 +38,24 @@ DialogExport3DPdf::~DialogExport3DPdf()
 
 void DialogExport3DPdf::onExportClicked()
 {
+#ifdef USE_LIBPRC
     if (ui->m_radioPRC->isChecked()) {
-        QMessageBox::information(this, tr("Info"), tr("Method 2 is not implemented yet."));
+        exportViaPRC();
         return;
     }
+#else
+    if (ui->m_radioPRC->isChecked()) {
+        QMessageBox::information(this, tr("Info"),
+            tr("Method 2 requires recompiling with EXPORT_3DPDF_USE_LIBPRC=ON."));
+        return;
+    }
+#endif
 
+    exportViaU3D();
+}
+
+void DialogExport3DPdf::exportViaU3D()
+{
     ui->m_btnExport->setEnabled(false);
     ui->m_progressBar->setValue(10);
     ui->m_lblStatus->setText(tr("Selecting file..."));
@@ -39,7 +64,7 @@ void DialogExport3DPdf::onExportClicked()
     QString pdfPath = QFileDialog::getSaveFileName(
         this, tr("Save as 3D PDF File"), QString(), tr("PDF Files (*.pdf)"));
     if (pdfPath.isEmpty()) {
-        reject();
+        ui->m_btnExport->setEnabled(true);
         return;
     }
 
@@ -194,3 +219,47 @@ void DialogExport3DPdf::onExportClicked()
     QMessageBox::information(this, tr("Export Successful"), tr("📄 3D PDF file saved to:\n%1").arg(pdfPath));
     accept();
 }
+
+// ---------------------------------------------------------------------------
+// Method 2: OSG + libPRC + libHaru
+// ---------------------------------------------------------------------------
+#ifdef USE_LIBPRC
+void DialogExport3DPdf::exportViaPRC()
+{
+    ui->m_btnExport->setEnabled(false);
+    ui->m_progressBar->setValue(10);
+    ui->m_lblStatus->setText(tr("Selecting save path..."));
+
+    QString pdfPath = QFileDialog::getSaveFileName(
+        this, tr("Save as 3D PDF File"), QString(), tr("PDF Files (*.pdf)"));
+    if (pdfPath.isEmpty()) {
+        ui->m_btnExport->setEnabled(true);
+        return;
+    }
+
+    ui->m_progressBar->setValue(30);
+    ui->m_lblStatus->setText(tr("Building OSG scene and writing PRC..."));
+    QCoreApplication::processEvents(); // keep UI responsive
+
+    std::string errMsg;
+    bool ok = CoreApi::ExportApi::ExportToPrcPdf(
+        m_compound,
+        pdfPath.toStdString(),
+        m_bgColor,
+        errMsg);
+
+    if (!ok) {
+        ui->m_btnExport->setEnabled(true);
+        QMessageBox::critical(this, tr("Export 3D PDF"),
+            tr("Method 2 (PRC) export failed:\n%1").arg(QString::fromStdString(errMsg)));
+        return;
+    }
+
+    ui->m_progressBar->setValue(100);
+    ui->m_lblStatus->setText(tr("Done."));
+    ui->m_btnExport->setEnabled(true);
+    QMessageBox::information(this, tr("Export Successful"),
+        tr("📄 3D PDF (PRC) saved to:\n%1").arg(pdfPath));
+    accept();
+}
+#endif // USE_LIBPRC
