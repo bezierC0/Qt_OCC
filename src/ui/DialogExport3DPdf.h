@@ -20,6 +20,11 @@ private slots:
     void onExportClicked();
 
 private:
+    void exportViaU3D();
+#ifdef USE_LIBPRC
+    void exportViaPRC();
+#endif
+
     Ui::DialogExport3DPdf *ui;
     TopoDS_Compound m_compound;
     Quantity_Color m_bgColor;
