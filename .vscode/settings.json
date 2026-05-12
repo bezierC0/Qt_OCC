@@ -93,9 +93,6 @@
     "cmake.configureArgs": [
         "-DEXPORT_3DPDF_USE_LIBPRC=ON",
         "-DOSG_DIR=D:/Libs/OpenSceneGraph",
-        "-DLIBPRC_DIR=D:/Libs/libPRC",
-        "-DLIBPNG_DIR=D:/Libs/libpng",
-        "-DLIBHARU_DIR=D:/Libs/libharu-2.3.0",
         "-DOpenCASCADE_DIR=C:/Libs/OCCT/occt-7.8.0-vc14-64",
         "-DOpenCASCADE_3RDPARTY_DIR=C:/Libs/OCCT/3rdparty-vc14-64",
         "-DBOOST_ROOT=C:/Libs/boost/boost_1_86_0/lib64-msvc-14.2/cmake/Boost-1.86.0"

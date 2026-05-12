@@ -173,17 +173,17 @@ option(EXPORT_3DPDF_USE_LIBPRC "Enable 3D PDF export via OSG + libPRC + libHaru 
 
 if(EXPORT_3DPDF_USE_LIBPRC)
     # --- Library root directories (user configures these) ---
+    set(DEFAULT_LIBPRC_DIR  "${CMAKE_SOURCE_DIR}/3rdparty/libPRC")
+    set(DEFAULT_LIBHARU_DIR "${CMAKE_SOURCE_DIR}/3rdparty/libharu-2.3.0")
     set(OSG_DIR        CACHE PATH "Path to OpenSceneGraph root (for osgdb_prc plugin only)")
-    set(LIBPRC_DIR     CACHE PATH "Path to libPRC root")
-    set(LIBPNG_DIR     CACHE PATH "Path to libpng root")
-    set(LIBHARU_DIR    CACHE PATH "Path to libharu root")
+    set(LIBPRC_DIR     "${DEFAULT_LIBPRC_DIR}"  CACHE PATH "Path to libPRC root")
+    set(LIBHARU_DIR    "${DEFAULT_LIBHARU_DIR}" CACHE PATH "Path to libharu root")
 
     # --- Includes ---
     set(LIBPRC_INCLUDE_DIRS
         "${LIBPRC_DIR}/include"
         "${LIBPRC_DIR}/include/asymptote"
         "${LIBPRC_DIR}/include/libPRC"
-        "${LIBPNG_DIR}/include"
         "${LIBHARU_DIR}/include"
     )
 
@@ -192,8 +192,6 @@ if(EXPORT_3DPDF_USE_LIBPRC)
     find_library(PRC_LIB_DEBUG        NAMES libPRCd     PATHS "${LIBPRC_DIR}/lib" NO_DEFAULT_PATH)
     find_library(ASYMPTOTE_LIB_RELEASE NAMES asymptote  PATHS "${LIBPRC_DIR}/lib" NO_DEFAULT_PATH)
     find_library(ASYMPTOTE_LIB_DEBUG   NAMES asymptoted PATHS "${LIBPRC_DIR}/lib" NO_DEFAULT_PATH)
-    find_library(PNG_LIB_RELEASE      NAMES libpng16    PATHS "${LIBPNG_DIR}/lib" NO_DEFAULT_PATH)
-    find_library(PNG_LIB_DEBUG        NAMES libpng16d   PATHS "${LIBPNG_DIR}/lib" NO_DEFAULT_PATH)
 
     # libharu: used to embed the PRC file into a PDF 
     find_library(HPDF_LIB  NAMES libhpdf  PATHS "${LIBHARU_DIR}/lib" NO_DEFAULT_PATH)
@@ -243,14 +241,10 @@ if(EXPORT_3DPDF_USE_LIBPRC)
     if(NOT ASYMPTOTE_LIB_DEBUG)
         set(ASYMPTOTE_LIB_DEBUG ${ASYMPTOTE_LIB_RELEASE})
     endif()
-    if(NOT PNG_LIB_DEBUG)
-        set(PNG_LIB_DEBUG ${PNG_LIB_RELEASE})
-    endif()
 
     set(LIBPRC_LIBRARIES
         optimized ${PRC_LIB_RELEASE}       debug ${PRC_LIB_DEBUG}
         optimized ${ASYMPTOTE_LIB_RELEASE} debug ${ASYMPTOTE_LIB_DEBUG}
-        optimized ${PNG_LIB_RELEASE}       debug ${PNG_LIB_DEBUG}
         ${HPDF_LIB}
         ${ZLIB_LIB}
     )
@@ -282,7 +276,6 @@ target_include_directories(CoreApi PUBLIC
 if(LIBPRC_ENABLED)
     target_sources(CoreApi PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/core_api/ExportApi_PRC.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/core_api/ExportApi_PRC.h
     )
     target_include_directories(CoreApi PUBLIC ${LIBPRC_INCLUDE_DIRS})
     target_compile_definitions(CoreApi PUBLIC USE_LIBPRC)
@@ -402,7 +395,6 @@ if(IS_COPY_DLLS)
 endif()
 if(EXPORT_3DPDF_USE_LIBPRC)
     file(GLOB 3DPDF_USE_LIBPRC_DLLS "${LIBPRC_DIR}/bin/*.dll")
-    #file(GLOB 3DPDF_USE_LIBPNG_DLLS "${LIBPNG_DIR}/bin/*.dll")
     file(GLOB 3DPDF_USE_LIBHARU_DLLS "${LIBHARU_DIR}/bin/*.dll")
     if(WIN32)
         set(ALL_DLLS_TO_COPY ${3DPDF_USE_LIBPRC_DLLS} ${3DPDF_USE_LIBHARU_DLLS})
