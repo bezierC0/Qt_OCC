@@ -293,6 +293,11 @@ target_compile_definitions(CoreApi PRIVATE CADCORE_LIBRARY)
 # can still be discovered in CI.
 cmake_policy(SET CMP0167 OLD)
 set(Boost_NO_BOOST_CMAKE ON)
+# Keep external configuration minimal: if BOOST_INCLUDEDIR is not provided,
+# default it to BOOST_ROOT (Boost headers live under <root>/boost).
+if(DEFINED BOOST_ROOT AND NOT DEFINED BOOST_INCLUDEDIR)
+    set(BOOST_INCLUDEDIR "${BOOST_ROOT}" CACHE PATH "Boost include directory")
+endif()
 find_package(Boost REQUIRED)
 if(Boost_FOUND)
     message(STATUS "Boost_DIR: ${Boost_DIR}")
