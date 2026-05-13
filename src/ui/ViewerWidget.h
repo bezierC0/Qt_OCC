@@ -23,6 +23,7 @@ class DialogCreateBezier;
 class DialogCreateNurbs;
 class DialogExportImage;
 class DialogExport3DPdf;
+class DialogExportDwg;
 class WidgetInterference;
 class WidgetBoolean;
 class WidgetDistance;
@@ -164,6 +165,7 @@ private slots:
     
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
+    bool exportDxfToPath(const QString& savePath, QString* errorMessage);
 
 private:
     OCCView*                        m_occView{nullptr};
@@ -189,6 +191,7 @@ private:
     DialogCreateNurbs*    m_dlgNurbs{nullptr};
     DialogExportImage*    m_dlgExportImage{nullptr};
     DialogExport3DPdf*    m_dlgExport3dpdf{nullptr};
+    DialogExportDwg*      m_dlgExportDwg{nullptr};
     WidgetInterference*   m_widgetInterference{nullptr};
     WidgetDistance*       m_widgetDistance{nullptr};
     WidgetMeasureLength*  m_widgetLength{nullptr};
