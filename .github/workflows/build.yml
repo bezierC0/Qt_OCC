@@ -74,14 +74,40 @@ jobs:
       id: boost-root
       shell: pwsh
       run: |
-        $boostDir = Get-ChildItem -Path "${{ github.workspace }}" -Directory |
-          Where-Object { $_.Name -like "boost-*" -or $_.Name -like "boost_*" } |
-          Where-Object { Test-Path (Join-Path $_.FullName "boost\version.hpp") } |
-          Select-Object -First 1
-        if (-not $boostDir) {
+        $workspace = "${{ github.workspace }}"
+
+        # 1) Fast path: common extracted folder names.
+        $candidates = @(
+          (Join-Path $workspace "boost-${{ env.BOOST_VERSION }}"),
+          (Join-Path $workspace ("boost_" + "${{ env.BOOST_VERSION }}".Replace(".", "_"))),
+          $workspace
+        )
+        $boostRoot = $null
+        foreach ($candidate in $candidates) {
+          if (Test-Path (Join-Path $candidate "boost\version.hpp")) {
+            $boostRoot = $candidate
+            break
+          }
+        }
+
+        # 2) Fallback: recursively locate boost/version.hpp and use its parent as Boost root.
+        if (-not $boostRoot) {
+          $versionHeader = Get-ChildItem -Path $workspace -Recurse -File -Filter version.hpp -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "\\boost\\version\.hpp$" } |
+            Select-Object -First 1
+          if ($versionHeader) {
+            $boostRoot = Split-Path (Split-Path $versionHeader.FullName -Parent) -Parent
+          }
+        }
+
+        if (-not $boostRoot) {
+          Write-Host "Workspace directories after extraction:"
+          Get-ChildItem -Path $workspace -Force | Select-Object Name, FullName, Mode
           throw "Boost directory not found after extraction."
         }
-        "BOOST_ROOT=$($boostDir.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+        Write-Host "Resolved BOOST_ROOT: $boostRoot"
+        "BOOST_ROOT=$boostRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Cache OpenCASCADE archive
       id: cache-opencascade
