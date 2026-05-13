@@ -2,9 +2,9 @@
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ fix/boost ]
   pull_request:
-    branches: [ main ]
+    branches: [ fix/boost ]
   workflow_dispatch:
 
 jobs:
@@ -19,8 +19,9 @@ jobs:
       VS_VERSION: 'Visual Studio 17 2022'
       QT_ROOT: 'C:\Qt'
       OCC_ROOT: 'C:\opencascade'
-      BOOST_ZIP: 'boost-1.81.0.7z'
-      BOOST_URL: 'https://github.com/boostorg/boost/releases/download/boost-1.81.0/boost-1.81.0.7z'
+      BOOST_VERSION: '1.84.0'
+      BOOST_ZIP: 'boost-1.84.0.zip'
+      BOOST_URL: 'https://github.com/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.zip'
     
     steps:
     - name: Checkout code
@@ -41,14 +42,46 @@ jobs:
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
         modules: 'qtcharts qtdatavis3d qtnetworkauth'
 
-    - name: Install Boost
-      id: cache-boost
-      uses: MarkusJx/install-boost@v2.4.0
+    - name: Cache Boost archive
+      id: cache-boost-archive
+      uses: actions/cache@v4
       with:
-        boost_version: 1.81.0 
-        platform_version: 2022 
-        toolset: msvc 
-        link: static
+        path: ${{ env.BOOST_ZIP }}
+        key: ${{ runner.os }}-Boost-archive-${{ env.BOOST_VERSION }}
+
+    - name: Download Boost archive
+      if: steps.cache-boost-archive.outputs.cache-hit != 'true'
+      uses: carlosperate/download-file-action@v2
+      with:
+        file-url: ${{ env.BOOST_URL }}
+        file-path: ${{ env.BOOST_ZIP }}
+
+    - name: Cache Boost extracted
+      id: cache-boost-extract
+      uses: actions/cache@v4
+      with:
+        path: |
+          boost-*
+          boost_*
+        key: ${{ runner.os }}-Boost-extract-${{ env.BOOST_VERSION }}
+
+    - name: Extract Boost
+      if: steps.cache-boost-extract.outputs.cache-hit != 'true'
+      run: |
+        7z x ${{ env.BOOST_ZIP }}
+
+    - name: Resolve Boost root
+      id: boost-root
+      shell: pwsh
+      run: |
+        $boostDir = Get-ChildItem -Path "${{ github.workspace }}" -Directory |
+          Where-Object { $_.Name -like "boost-*" -or $_.Name -like "boost_*" } |
+          Where-Object { Test-Path (Join-Path $_.FullName "boost\version.hpp") } |
+          Select-Object -First 1
+        if (-not $boostDir) {
+          throw "Boost directory not found after extraction."
+        }
+        "BOOST_ROOT=$($boostDir.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
     - name: Cache OpenCASCADE archive
       id: cache-opencascade
@@ -92,7 +125,9 @@ jobs:
           cmake --version
           cmake .. ^
                 -DOpenCASCADE_DIR="${{github.workspace}}\occt-vc143-64" ^
-                -DOpenCASCADE_3RDPARTY_DIR="${{github.workspace}}\3rdparty-vc14-64" 
+                -DOpenCASCADE_3RDPARTY_DIR="${{github.workspace}}\3rdparty-vc14-64" ^
+                -DBoost_ROOT="%BOOST_ROOT%" ^
+                -DBoost_NO_SYSTEM_PATHS=ON
           cmake --build . ^
                 --config Release ^
                 --parallel ${{steps.cpu-cores.outputs.count}}
