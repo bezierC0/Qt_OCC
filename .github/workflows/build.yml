@@ -162,7 +162,6 @@ jobs:
                 -DOpenCASCADE_DIR="${{github.workspace}}\occt-vc143-64" ^
                 -DOpenCASCADE_3RDPARTY_DIR="${{github.workspace}}\3rdparty-vc14-64" ^
                 -DBOOST_ROOT="%BOOST_ROOT%" ^
-                -DBOOST_INCLUDEDIR="%BOOST_ROOT%" ^
                 -DBoost_NO_SYSTEM_PATHS=ON
           cmake --build . ^
                 --config Release ^
