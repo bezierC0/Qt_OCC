@@ -289,10 +289,14 @@ target_compile_definitions(CoreApi PRIVATE CADCORE_LIBRARY)
 #########
 # Boost
 #########
-cmake_policy(SET CMP0167 NEW)
+# Use legacy FindBoost module so source-only Boost archives (without BoostConfig.cmake)
+# can still be discovered in CI.
+cmake_policy(SET CMP0167 OLD)
+set(Boost_NO_BOOST_CMAKE ON)
 find_package(Boost REQUIRED)
 if(Boost_FOUND)
     message(STATUS "Boost_DIR: ${Boost_DIR}")
+    message(STATUS "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
     message(STATUS "Boost_VERSION: ${Boost_VERSION}")
 else()
     message(FATAL_ERROR "Boost_DIR not found or path does not exist. ")
