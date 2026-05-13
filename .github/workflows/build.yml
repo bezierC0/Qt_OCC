@@ -20,8 +20,8 @@ jobs:
       QT_ROOT: 'C:\Qt'
       OCC_ROOT: 'C:\opencascade'
       BOOST_VERSION: '1.84.0'
-      BOOST_ZIP: 'boost-1.84.0.zip'
-      BOOST_URL: 'https://github.com/boostorg/boost/releases/download/boost-1.84.0/boost-1.84.0.zip'
+      BOOST_ZIP: 'boost_1_84_0.zip'
+      BOOST_URL: 'https://archives.boost.org/release/1.84.0/source/boost_1_84_0.zip'
     
     steps:
     - name: Checkout code
@@ -47,7 +47,7 @@ jobs:
       uses: actions/cache@v4
       with:
         path: ${{ env.BOOST_ZIP }}
-        key: ${{ runner.os }}-Boost-archive-${{ env.BOOST_VERSION }}
+        key: ${{ runner.os }}-Boost-archive-official-${{ env.BOOST_VERSION }}
 
     - name: Download Boost archive
       if: steps.cache-boost-archive.outputs.cache-hit != 'true'
@@ -63,7 +63,7 @@ jobs:
         path: |
           boost-*
           boost_*
-        key: ${{ runner.os }}-Boost-extract-${{ env.BOOST_VERSION }}
+        key: ${{ runner.os }}-Boost-extract-official-${{ env.BOOST_VERSION }}
 
     - name: Extract Boost
       if: steps.cache-boost-extract.outputs.cache-hit != 'true'
@@ -108,6 +108,15 @@ jobs:
 
         Write-Host "Resolved BOOST_ROOT: $boostRoot"
         "BOOST_ROOT=$boostRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+    - name: Verify Boost headers
+      shell: pwsh
+      run: |
+        $required = Join-Path "$env:BOOST_ROOT" "boost\range\adaptors.hpp"
+        if (-not (Test-Path $required)) {
+          throw "Required Boost header missing: $required"
+        }
+        Write-Host "Boost header check passed: $required"
 
     - name: Cache OpenCASCADE archive
       id: cache-opencascade
