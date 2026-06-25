@@ -114,7 +114,7 @@
     <message>
         <location filename="../../src/MainWindow.ui" line="14"/>
         <source>MainWindow</source>
-        <translation type="unfinished"></translation>
+        <translation>MainWindow</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="102"/>
@@ -132,31 +132,31 @@
         <location filename="../../src/MainWindow.ui" line="126"/>
         <location filename="../../src/MainWindow.cpp" line="176"/>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Language</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="132"/>
         <location filename="../../src/MainWindow.cpp" line="313"/>
         <source>Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>Theme</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="210"/>
         <location filename="../../src/MainWindow.cpp" line="123"/>
         <source>MeasureLength</source>
-        <translation type="unfinished"></translation>
+        <translation>MeasureLength</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="219"/>
         <location filename="../../src/MainWindow.cpp" line="128"/>
         <source>MeasureArcLength</source>
-        <translation type="unfinished"></translation>
+        <translation>MeasureArcLength</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="228"/>
         <location filename="../../src/MainWindow.cpp" line="133"/>
         <source>MeasureAngle</source>
-        <translation type="unfinished"></translation>
+        <translation>MeasureAngle</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="246"/>
@@ -186,25 +186,25 @@
         <location filename="../../src/MainWindow.ui" line="287"/>
         <location filename="../../src/MainWindow.cpp" line="177"/>
         <source>Switch Language</source>
-        <translation type="unfinished"></translation>
+        <translation>Switch Language</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="292"/>
         <location filename="../../src/MainWindow.cpp" line="316"/>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>Light</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="297"/>
         <location filename="../../src/MainWindow.cpp" line="317"/>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>Dark</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="302"/>
         <location filename="../../src/MainWindow.cpp" line="326"/>
         <source>Switch Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>Switch Theme</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="95"/>
@@ -244,47 +244,47 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15503"/>
         <source>SARibbon Warning !!! customize rename category,but get an empty category object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon Warning !!! customize rename category,but get an empty category object name,if you want to customize SARibbon,please make sure every element has been set object name.</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15527"/>
         <source>SARibbon Warning !!! customize rename pannel,but get an empty category/pannel object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon Warning !!! customize rename pannel,but get an empty category/pannel object name,if you want to customize SARibbon,please make sure every element has been set object name.</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15550"/>
         <source>SARibbon Warning !!! customize change category order,but get an empty category object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon Warning !!! customize change category order,but get an empty category object name,if you want to customize SARibbon,please make sure every element has been set object name.</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15574"/>
         <source>SARibbon Warning !!! customize change pannel order,but get an empty category/pannel object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon Warning !!! customize change pannel order,but get an empty category/pannel object name,if you want to customize SARibbon,please make sure every element has been set object name.</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15603"/>
         <source>SARibbon Warning !!! customize change action order,but get an empty category/pannel/action object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon Warning !!! customize change action order,but get an empty category/pannel/action object name,if you want to customize SARibbon,please make sure every element has been set object name.</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15625"/>
         <source>SARibbon Warning !!! customize remove category,but get an empty category object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon Warning !!! customize remove category,but get an empty category object name,if you want to customize SARibbon,please make sure every element has been set object name.</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15646"/>
         <source>SARibbon Warning !!! customize remove pannel,but get an empty category/pannel object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon Warning !!! customize remove pannel,but get an empty category/pannel object name,if you want to customize SARibbon,please make sure every element has been set object name.</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15672"/>
         <source>SARibbon Warning !!! customize remove action,but get an empty category/pannel/action object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon Warning !!! customize remove action,but get an empty category/pannel/action object name,if you want to customize SARibbon,please make sure every element has been set object name.</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15694"/>
         <source>SARibbon Warning !!! customize visible category,but get an empty category object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon Warning !!! customize visible category,but get an empty category object name,if you want to customize SARibbon,please make sure every element has been set object name.</translation>
     </message>
 </context>
 <context>
@@ -292,17 +292,17 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="1917"/>
         <source>None</source>
-        <translation type="unfinished"></translation>
+        <translation>None</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="1951"/>
         <source>Theme Colors</source>
-        <translation type="unfinished"></translation>
+        <translation>Theme Colors</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="1958"/>
         <source>Custom Color</source>
-        <translation type="unfinished"></translation>
+        <translation>Custom Color</translation>
     </message>
 </context>
 <context>
@@ -310,7 +310,7 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="6316"/>
         <source>not in ribbon</source>
-        <translation type="unfinished"></translation>
+        <translation>not in ribbon</translation>
     </message>
 </context>
 <context>
@@ -318,7 +318,7 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="6511"/>
         <source>action name</source>
-        <translation type="unfinished"></translation>
+        <translation>action name</translation>
     </message>
 </context>
 <context>
@@ -326,7 +326,7 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="10351"/>
         <source>in SARibbonCategoryLayout cannot addItem,use addPannel instead</source>
-        <translation type="unfinished"></translation>
+        <translation>in SARibbonCategoryLayout cannot addItem,use addPannel instead</translation>
     </message>
 </context>
 <context>
@@ -334,7 +334,7 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="11014"/>
         <source>SARibbonContextCategory have category %1,will skip</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbonContextCategory have category %1,will skip</translation>
     </message>
 </context>
 <context>
@@ -342,17 +342,17 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17439"/>
         <source>Customize Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Customize Dialog</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17440"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>Cancel</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17441"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>OK</translation>
     </message>
 </context>
 <context>
@@ -360,114 +360,114 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16229"/>
         <source>Customize Widget</source>
-        <translation type="unfinished"></translation>
+        <translation>Customize Widget</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16230"/>
         <source>Please Select</source>
-        <translation type="unfinished"></translation>
+        <translation>Please Select</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16234"/>
         <source>Find Command</source>
-        <translation type="unfinished"></translation>
+        <translation>Find Command</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16235"/>
         <source>Add &gt;&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>Add &gt;&gt;</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16236"/>
         <source>&lt;&lt; Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;&lt; Remove</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16238"/>
         <source>Customize the Ribbon</source>
-        <translation type="unfinished"></translation>
+        <translation>Customize the Ribbon</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16239"/>
         <source>Main Category</source>
-        <translation type="unfinished"></translation>
+        <translation>Main Category</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16240"/>
         <source>All Category</source>
-        <translation type="unfinished"></translation>
+        <translation>All Category</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16241"/>
         <source>New Category</source>
-        <translation type="unfinished"></translation>
+        <translation>New Category</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16242"/>
         <source>New Group</source>
-        <translation type="unfinished"></translation>
+        <translation>New Group</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16243"/>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>Rename</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16244"/>
         <source>reset</source>
-        <translation type="unfinished"></translation>
+        <translation>reset</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16245"/>
         <source>proportion:</source>
-        <translation type="unfinished"></translation>
+        <translation>proportion:</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16640"/>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16643"/>
         <source>large</source>
-        <translation type="unfinished"></translation>
+        <translation>large</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16641"/>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16645"/>
         <source>small</source>
-        <translation type="unfinished"></translation>
+        <translation>small</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16644"/>
         <source>medium</source>
-        <translation type="unfinished"></translation>
+        <translation>medium</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17026"/>
         <source>new category[customize]%1</source>
-        <translation type="unfinished"></translation>
+        <translation>new category[customize]%1</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17053"/>
         <source>new pannel[customize]%1</source>
-        <translation type="unfinished"></translation>
+        <translation>new pannel[customize]%1</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17101"/>
         <source>rename</source>
-        <translation type="unfinished"></translation>
+        <translation>rename</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17101"/>
         <source>name:</source>
-        <translation type="unfinished"></translation>
+        <translation>name:</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17377"/>
         <source>Warning</source>
-        <translation type="unfinished"></translation>
+        <translation>Warning</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17378"/>
         <source>Are you sure reset all customize setting?</source>
-        <translation type="unfinished"></translation>
+        <translation>Are you sure reset all customize setting?</translation>
     </message>
 </context>
 <context>
@@ -475,12 +475,12 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="4281"/>
         <source>Restore</source>
-        <translation type="unfinished"></translation>
+        <translation>Restore</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="4281"/>
         <source>Maximize</source>
-        <translation type="unfinished"></translation>
+        <translation>Maximize</translation>
     </message>
 </context>
 <context>
@@ -488,7 +488,7 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="5667"/>
         <source>The TextEllipsisAspectFactor parameter cannot be set to 0 or a negative number</source>
-        <translation type="unfinished"></translation>
+        <translation>The TextEllipsisAspectFactor parameter cannot be set to 0 or a negative number</translation>
     </message>
 </context>
 <context>
