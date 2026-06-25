@@ -1,9 +1,6 @@
 #include "DialogExport3DPdf.h"
 #include "ui_DialogExport3DPdf.h"
 #include "../core_api/ExportApi.h"
-#ifdef USE_LIBPRC
-#  include "../core_api/ExportApi_PRC.h"
-#endif
 
 #include <QFileDialog>
 #include <QTemporaryDir>

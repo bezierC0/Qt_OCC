@@ -2,9 +2,9 @@
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ fix/boost ]
   pull_request:
-    branches: [ main ]
+    branches: [ fix/boost ]
   workflow_dispatch:
 
 jobs:
@@ -19,8 +19,9 @@ jobs:
       VS_VERSION: 'Visual Studio 17 2022'
       QT_ROOT: 'C:\Qt'
       OCC_ROOT: 'C:\opencascade'
-      BOOST_ZIP: 'boost-1.81.0.7z'
-      BOOST_URL: 'https://github.com/boostorg/boost/releases/download/boost-1.81.0/boost-1.81.0.7z'
+      BOOST_VERSION: '1.84.0'
+      BOOST_ZIP: 'boost_1_84_0.zip'
+      BOOST_URL: 'https://archives.boost.org/release/1.84.0/source/boost_1_84_0.zip'
     
     steps:
     - name: Checkout code
@@ -41,31 +42,105 @@ jobs:
         cached: ${{ steps.cache-qt.outputs.cache-hit }}
         modules: 'qtcharts qtdatavis3d qtnetworkauth'
 
-    - name: Install Boost
-      id: cache-boost
-      uses: MarkusJx/install-boost@v2.4.0
+    - name: Cache Boost archive
+      id: cache-boost-archive
+      uses: actions/cache@v4
       with:
-        boost_version: 1.81.0 
-        platform_version: 2022 
-        toolset: msvc 
-        link: static
+        path: ${{ env.BOOST_ZIP }}
+        key: ${{ runner.os }}-Boost-archive-official-${{ env.BOOST_VERSION }}
+
+    - name: Download Boost archive
+      if: steps.cache-boost-archive.outputs.cache-hit != 'true'
+      uses: carlosperate/download-file-action@v2
+      with:
+        file-url: ${{ env.BOOST_URL }}
+        file-path: ${{ env.BOOST_ZIP }}
+
+    - name: Cache Boost extracted
+      id: cache-boost-extract
+      uses: actions/cache@v4
+      with:
+        path: |
+          boost-*
+          boost_*
+        key: ${{ runner.os }}-Boost-extract-official-${{ env.BOOST_VERSION }}
+
+    - name: Extract Boost
+      if: steps.cache-boost-extract.outputs.cache-hit != 'true'
+      run: |
+        7z x ${{ env.BOOST_ZIP }}
+
+    - name: Resolve Boost root
+      id: boost-root
+      shell: pwsh
+      run: |
+        $workspace = "${{ github.workspace }}"
+
+        # 1) Fast path: common extracted folder names.
+        $candidates = @(
+          (Join-Path $workspace "boost-${{ env.BOOST_VERSION }}"),
+          (Join-Path $workspace ("boost_" + "${{ env.BOOST_VERSION }}".Replace(".", "_"))),
+          $workspace
+        )
+        $boostRoot = $null
+        foreach ($candidate in $candidates) {
+          if (Test-Path (Join-Path $candidate "boost\version.hpp")) {
+            $boostRoot = $candidate
+            break
+          }
+        }
+
+        # 2) Fallback: recursively locate boost/version.hpp and use its parent as Boost root.
+        if (-not $boostRoot) {
+          $versionHeader = Get-ChildItem -Path $workspace -Recurse -File -Filter version.hpp -ErrorAction SilentlyContinue |
+            Where-Object { $_.FullName -match "\\boost\\version\.hpp$" } |
+            Select-Object -First 1
+          if ($versionHeader) {
+            $boostRoot = Split-Path (Split-Path $versionHeader.FullName -Parent) -Parent
+          }
+        }
+
+        if (-not $boostRoot) {
+          Write-Host "Workspace directories after extraction:"
+          Get-ChildItem -Path $workspace -Force | Select-Object Name, FullName, Mode
+          throw "Boost directory not found after extraction."
+        }
+
+        Write-Host "Resolved BOOST_ROOT: $boostRoot"
+        "BOOST_ROOT=$boostRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+    - name: Verify Boost headers
+      shell: pwsh
+      run: |
+        $required = Join-Path "$env:BOOST_ROOT" "boost\range\adaptors.hpp"
+        if (-not (Test-Path $required)) {
+          throw "Required Boost header missing: $required"
+        }
+        Write-Host "Boost header check passed: $required"
 
     - name: Cache OpenCASCADE archive
-      id: cache-opencascade
+      id: cache-opencascade-core
       uses: actions/cache@v4
       with:
         path: occt-vc143-64.zip
         key: ${{ runner.os }}-OpenCASCADE-${{ env.OCC_VERSION }}-precompiled-vc143
 
+    - name: Cache OpenCASCADE 3rdparty archive
+      id: cache-opencascade-3rdparty
+      uses: actions/cache@v4
+      with:
+        path: 3rdparty-vc14-64.zip
+        key: ${{ runner.os }}-OpenCASCADE-${{ env.OCC_VERSION }}-3rdparty-vc14-64
+
     - name: Download OpenCascade
-      if: steps.cache-opencascade.outputs.cache-hit != 'true'
+      if: steps.cache-opencascade-core.outputs.cache-hit != 'true'
       uses: carlosperate/download-file-action@v2
       with:
           file-url: 'https://github.com/Open-Cascade-SAS/OCCT/releases/download/${{env.OCC_VERSION_TAG}}/occt-vc143-64.zip'
           file-path: occt-vc143-64.zip
 
     - name: Download OpenCascade 3rdparty
-      if: steps.cache-opencascade.outputs.cache-hit != 'true'
+      if: steps.cache-opencascade-3rdparty.outputs.cache-hit != 'true'
       uses: carlosperate/download-file-action@v2
       with:
           file-url: 'https://github.com/Open-Cascade-SAS/OCCT/releases/download/${{env.OCC_VERSION_TAG}}/3rdparty-vc14-64.zip'
@@ -92,7 +167,9 @@ jobs:
           cmake --version
           cmake .. ^
                 -DOpenCASCADE_DIR="${{github.workspace}}\occt-vc143-64" ^
-                -DOpenCASCADE_3RDPARTY_DIR="${{github.workspace}}\3rdparty-vc14-64" 
+                -DOpenCASCADE_3RDPARTY_DIR="${{github.workspace}}\3rdparty-vc14-64" ^
+                -DBOOST_ROOT="%BOOST_ROOT%" ^
+                -DBoost_NO_SYSTEM_PATHS=ON
           cmake --build . ^
                 --config Release ^
                 --parallel ${{steps.cpu-cores.outputs.count}}

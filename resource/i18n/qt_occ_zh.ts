@@ -106,19 +106,19 @@
     <message>
         <location filename="../../src/MainWindow.ui" line="14"/>
         <source>MainWindow</source>
-        <translation type="unfinished"></translation>
+        <translation>主窗口</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="80"/>
         <location filename="../../src/MainWindow.cpp" line="109"/>
         <source>Clipping Tool</source>
-        <translation type="unfinished"></translation>
+        <translation>剖切工具</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="86"/>
         <location filename="../../src/MainWindow.cpp" line="116"/>
         <source>Measure</source>
-        <translation type="unfinished"></translation>
+        <translation>测量</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="106"/>
@@ -130,37 +130,37 @@
         <location filename="../../src/MainWindow.ui" line="126"/>
         <location filename="../../src/MainWindow.cpp" line="176"/>
         <source>Language</source>
-        <translation type="unfinished"></translation>
+        <translation>语言</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="132"/>
         <location filename="../../src/MainWindow.cpp" line="313"/>
         <source>Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>主题</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="201"/>
         <location filename="../../src/MainWindow.cpp" line="118"/>
         <source>MeasureDistance</source>
-        <translation type="unfinished"></translation>
+        <translation>测量距离</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="210"/>
         <location filename="../../src/MainWindow.cpp" line="123"/>
         <source>MeasureLength</source>
-        <translation type="unfinished"></translation>
+        <translation>测量长度</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="219"/>
         <location filename="../../src/MainWindow.cpp" line="128"/>
         <source>MeasureArcLength</source>
-        <translation type="unfinished"></translation>
+        <translation>测量弧长</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="228"/>
         <location filename="../../src/MainWindow.cpp" line="133"/>
         <source>MeasureAngle</source>
-        <translation type="unfinished"></translation>
+        <translation>测量角度</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="246"/>
@@ -190,25 +190,25 @@
         <location filename="../../src/MainWindow.ui" line="287"/>
         <location filename="../../src/MainWindow.cpp" line="177"/>
         <source>Switch Language</source>
-        <translation type="unfinished"></translation>
+        <translation>切换语言</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="292"/>
         <location filename="../../src/MainWindow.cpp" line="316"/>
         <source>Light</source>
-        <translation type="unfinished"></translation>
+        <translation>浅色</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="297"/>
         <location filename="../../src/MainWindow.cpp" line="317"/>
         <source>Dark</source>
-        <translation type="unfinished"></translation>
+        <translation>深色</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="302"/>
         <location filename="../../src/MainWindow.cpp" line="326"/>
         <source>Switch Theme</source>
-        <translation type="unfinished"></translation>
+        <translation>切换主题</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="95"/>
@@ -248,47 +248,47 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15503"/>
         <source>SARibbon Warning !!! customize rename category,but get an empty category object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon 警告 !!! 自定义重命名类别，但获取到空的类别对象名称，如果您想自定义 SARibbon，请确保每个元素都已设置对象名称。</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15527"/>
         <source>SARibbon Warning !!! customize rename pannel,but get an empty category/pannel object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon 警告 !!! 自定义重命名面板，但获取到空的类别/面板对象名称，如果您想自定义 SARibbon，请确保每个元素都已设置对象名称。</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15550"/>
         <source>SARibbon Warning !!! customize change category order,but get an empty category object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon 警告 !!! 自定义更改类别顺序，但获取到空的类别对象名称，如果您想自定义 SARibbon，请确保每个元素都已设置对象名称。</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15574"/>
         <source>SARibbon Warning !!! customize change pannel order,but get an empty category/pannel object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon 警告 !!! 自定义更改面板顺序，但获取到空的类别/面板对象名称，如果您想自定义 SARibbon，请确保每个元素都已设置对象名称。</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15603"/>
         <source>SARibbon Warning !!! customize change action order,but get an empty category/pannel/action object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon 警告 !!! 自定义更改操作顺序，但获取到空的类别/面板/操作对象名称，如果您想自定义 SARibbon，请确保每个元素都已设置对象名称。</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15625"/>
         <source>SARibbon Warning !!! customize remove category,but get an empty category object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon 警告 !!! 自定义移除类别，但获取到空的类别对象名称，如果您想自定义 SARibbon，请确保每个元素都已设置对象名称。</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15646"/>
         <source>SARibbon Warning !!! customize remove pannel,but get an empty category/pannel object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon 警告 !!! 自定义移除面板，但获取到空的类别/面板对象名称，如果您想自定义 SARibbon，请确保每个元素都已设置对象名称。</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15672"/>
         <source>SARibbon Warning !!! customize remove action,but get an empty category/pannel/action object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon 警告 !!! 自定义移除操作，但获取到空的类别/面板/操作对象名称，如果您想自定义 SARibbon，请确保每个元素都已设置对象名称。</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="15694"/>
         <source>SARibbon Warning !!! customize visible category,but get an empty category object name,if you want to customize SARibbon,please make sure every element has been set object name.</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbon 警告 !!! 自定义可见类别，但获取到空的类别对象名称，如果您想自定义 SARibbon，请确保每个元素都已设置对象名称。</translation>
     </message>
 </context>
 <context>
@@ -296,17 +296,17 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="1917"/>
         <source>None</source>
-        <translation type="unfinished"></translation>
+        <translation>无</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="1951"/>
         <source>Theme Colors</source>
-        <translation type="unfinished"></translation>
+        <translation>主题颜色</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="1958"/>
         <source>Custom Color</source>
-        <translation type="unfinished"></translation>
+        <translation>自定义颜色</translation>
     </message>
 </context>
 <context>
@@ -314,7 +314,7 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="6316"/>
         <source>not in ribbon</source>
-        <translation type="unfinished"></translation>
+        <translation>不在功能区中</translation>
     </message>
 </context>
 <context>
@@ -322,7 +322,7 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="6511"/>
         <source>action name</source>
-        <translation type="unfinished"></translation>
+        <translation>操作名称</translation>
     </message>
 </context>
 <context>
@@ -330,7 +330,7 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="10351"/>
         <source>in SARibbonCategoryLayout cannot addItem,use addPannel instead</source>
-        <translation type="unfinished"></translation>
+        <translation>在 SARibbonCategoryLayout 中不能直接 addItem，请使用 addPannel</translation>
     </message>
 </context>
 <context>
@@ -338,7 +338,7 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="11014"/>
         <source>SARibbonContextCategory have category %1,will skip</source>
-        <translation type="unfinished"></translation>
+        <translation>SARibbonContextCategory 已有类别 %1，将跳过</translation>
     </message>
 </context>
 <context>
@@ -346,17 +346,17 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17439"/>
         <source>Customize Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>自定义对话框</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17440"/>
         <source>Cancel</source>
-        <translation type="unfinished"></translation>
+        <translation>取消</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17441"/>
         <source>OK</source>
-        <translation type="unfinished"></translation>
+        <translation>确定</translation>
     </message>
 </context>
 <context>
@@ -364,114 +364,114 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16229"/>
         <source>Customize Widget</source>
-        <translation type="unfinished"></translation>
+        <translation>自定义窗口小部件</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16230"/>
         <source>Please Select</source>
-        <translation type="unfinished"></translation>
+        <translation>请选择</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16234"/>
         <source>Find Command</source>
-        <translation type="unfinished"></translation>
+        <translation>查找命令</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16235"/>
         <source>Add &gt;&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>添加 &gt;&gt;</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16236"/>
         <source>&lt;&lt; Remove</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;&lt; 移除</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16238"/>
         <source>Customize the Ribbon</source>
-        <translation type="unfinished"></translation>
+        <translation>自定义功能区</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16239"/>
         <source>Main Category</source>
-        <translation type="unfinished"></translation>
+        <translation>主类别</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16240"/>
         <source>All Category</source>
-        <translation type="unfinished"></translation>
+        <translation>所有类别</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16241"/>
         <source>New Category</source>
-        <translation type="unfinished"></translation>
+        <translation>新建类别</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16242"/>
         <source>New Group</source>
-        <translation type="unfinished"></translation>
+        <translation>新建分组</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16243"/>
         <source>Rename</source>
-        <translation type="unfinished"></translation>
+        <translation>重命名</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16244"/>
         <source>reset</source>
-        <translation type="unfinished"></translation>
+        <translation>重置</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16245"/>
         <source>proportion:</source>
-        <translation type="unfinished"></translation>
+        <translation>比例:</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16640"/>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16643"/>
         <source>large</source>
-        <translation type="unfinished"></translation>
+        <translation>大</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16641"/>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16645"/>
         <source>small</source>
-        <translation type="unfinished"></translation>
+        <translation>小</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="16644"/>
         <source>medium</source>
-        <translation type="unfinished"></translation>
+        <translation>中</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17026"/>
         <source>new category[customize]%1</source>
-        <translation type="unfinished"></translation>
+        <translation>新建类别[自定义]%1</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17053"/>
         <source>new pannel[customize]%1</source>
-        <translation type="unfinished"></translation>
+        <translation>新建面板[自定义]%1</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17101"/>
         <source>rename</source>
-        <translation type="unfinished"></translation>
+        <translation>重命名</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17101"/>
         <source>name:</source>
-        <translation type="unfinished"></translation>
+        <translation>名称:</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17377"/>
         <source>Warning</source>
-        <translation type="unfinished"></translation>
+        <translation>警告</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="17378"/>
         <source>Are you sure reset all customize setting?</source>
-        <translation type="unfinished"></translation>
+        <translation>您确定要重置所有自定义设置吗？</translation>
     </message>
 </context>
 <context>
@@ -479,12 +479,12 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="4281"/>
         <source>Restore</source>
-        <translation type="unfinished"></translation>
+        <translation>还原</translation>
     </message>
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="4281"/>
         <source>Maximize</source>
-        <translation type="unfinished"></translation>
+        <translation>最大化</translation>
     </message>
 </context>
 <context>
@@ -492,7 +492,7 @@
     <message>
         <location filename="../../external/SARibbon/SARibbon.cpp" line="5667"/>
         <source>The TextEllipsisAspectFactor parameter cannot be set to 0 or a negative number</source>
-        <translation type="unfinished"></translation>
+        <translation>TextEllipsisAspectFactor 参数不能设置为 0 或负数</translation>
     </message>
 </context>
 <context>
@@ -501,49 +501,49 @@
         <location filename="../../src/ViewerWidget.cpp" line="153"/>
         <location filename="../../src/ViewerWidget.cpp" line="163"/>
         <source>Error</source>
-        <translation type="unfinished"></translation>
+        <translation>错误</translation>
     </message>
     <message>
         <location filename="../../src/ViewerWidget.cpp" line="153"/>
         <source>STEP file read failed</source>
-        <translation type="unfinished"></translation>
+        <translation>STEP 文件读取失败</translation>
     </message>
     <message>
         <location filename="../../src/ViewerWidget.cpp" line="163"/>
         <source>STEP transfer to document failed</source>
-        <translation type="unfinished"></translation>
+        <translation>STEP 转换文档失败</translation>
     </message>
     <message>
         <location filename="../../src/ViewerWidget.cpp" line="275"/>
         <source>Interference</source>
-        <translation type="unfinished">干涉</translation>
+        <translation>干涉</translation>
     </message>
     <message>
         <location filename="../../src/ViewerWidget.cpp" line="276"/>
         <source>Shape %1 intersects with Shape %2</source>
-        <translation type="unfinished"></translation>
+        <translation>形状 %1 与形状 %2 存在干涉</translation>
     </message>
     <message>
         <location filename="../../src/ViewerWidget.cpp" line="368"/>
         <location filename="../../src/ViewerWidget.cpp" line="387"/>
         <source>Selection Error</source>
-        <translation type="unfinished"></translation>
+        <translation>选择错误</translation>
     </message>
     <message>
         <location filename="../../src/ViewerWidget.cpp" line="368"/>
         <location filename="../../src/ViewerWidget.cpp" line="387"/>
         <source>Please select exactly two vertices.</source>
-        <translation type="unfinished"></translation>
+        <translation>请选择正好两个顶点。</translation>
     </message>
     <message>
         <location filename="../../src/ViewerWidget.cpp" line="398"/>
         <source>Distance</source>
-        <translation type="unfinished"></translation>
+        <translation>距离</translation>
     </message>
     <message>
         <location filename="../../src/ViewerWidget.cpp" line="399"/>
         <source>Distance between the two vertices: %1</source>
-        <translation type="unfinished"></translation>
+        <translation>两个顶点之间的距离: %1</translation>
     </message>
 </context>
 </TS>

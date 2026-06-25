@@ -19,13 +19,18 @@ if(WIN32)
         ${CMAKE_BINARY_DIR}/version.rc
         @ONLY
     )
+    configure_file(
+        ${RESOURCE_DIR}/icon/logo/logo.ico
+        ${CMAKE_BINARY_DIR}/logo.ico
+        COPYONLY
+    )
 elseif(APPLE)
     # macOS Info.plist configuration
     set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.company.CADHealingTool")
     set(MACOSX_BUNDLE_BUNDLE_NAME "CADHealingTool")
     set(MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}")
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}")
-    set(MACOSX_BUNDLE_ICON_FILE "icon.icns")
+    set(MACOSX_BUNDLE_ICON_FILE "logo.icns")
     set(MACOSX_BUNDLE_COPYRIGHT "Copyright (C) 2025")
 endif()
 
@@ -173,17 +178,17 @@ option(EXPORT_3DPDF_USE_LIBPRC "Enable 3D PDF export via OSG + libPRC + libHaru 
 
 if(EXPORT_3DPDF_USE_LIBPRC)
     # --- Library root directories (user configures these) ---
+    set(DEFAULT_LIBPRC_DIR  "${CMAKE_SOURCE_DIR}/3rdparty/libPRC")
+    set(DEFAULT_LIBHARU_DIR "${CMAKE_SOURCE_DIR}/3rdparty/libharu-2.3.0")
     set(OSG_DIR        CACHE PATH "Path to OpenSceneGraph root (for osgdb_prc plugin only)")
-    set(LIBPRC_DIR     CACHE PATH "Path to libPRC root")
-    set(LIBPNG_DIR     CACHE PATH "Path to libpng root")
-    set(LIBHARU_DIR    CACHE PATH "Path to libharu root")
+    set(LIBPRC_DIR     "${DEFAULT_LIBPRC_DIR}"  CACHE PATH "Path to libPRC root")
+    set(LIBHARU_DIR    "${DEFAULT_LIBHARU_DIR}" CACHE PATH "Path to libharu root")
 
     # --- Includes ---
     set(LIBPRC_INCLUDE_DIRS
         "${LIBPRC_DIR}/include"
         "${LIBPRC_DIR}/include/asymptote"
         "${LIBPRC_DIR}/include/libPRC"
-        "${LIBPNG_DIR}/include"
         "${LIBHARU_DIR}/include"
     )
 
@@ -192,8 +197,6 @@ if(EXPORT_3DPDF_USE_LIBPRC)
     find_library(PRC_LIB_DEBUG        NAMES libPRCd     PATHS "${LIBPRC_DIR}/lib" NO_DEFAULT_PATH)
     find_library(ASYMPTOTE_LIB_RELEASE NAMES asymptote  PATHS "${LIBPRC_DIR}/lib" NO_DEFAULT_PATH)
     find_library(ASYMPTOTE_LIB_DEBUG   NAMES asymptoted PATHS "${LIBPRC_DIR}/lib" NO_DEFAULT_PATH)
-    find_library(PNG_LIB_RELEASE      NAMES libpng16    PATHS "${LIBPNG_DIR}/lib" NO_DEFAULT_PATH)
-    find_library(PNG_LIB_DEBUG        NAMES libpng16d   PATHS "${LIBPNG_DIR}/lib" NO_DEFAULT_PATH)
 
     # libharu: used to embed the PRC file into a PDF 
     find_library(HPDF_LIB  NAMES libhpdf  PATHS "${LIBHARU_DIR}/lib" NO_DEFAULT_PATH)
@@ -243,14 +246,10 @@ if(EXPORT_3DPDF_USE_LIBPRC)
     if(NOT ASYMPTOTE_LIB_DEBUG)
         set(ASYMPTOTE_LIB_DEBUG ${ASYMPTOTE_LIB_RELEASE})
     endif()
-    if(NOT PNG_LIB_DEBUG)
-        set(PNG_LIB_DEBUG ${PNG_LIB_RELEASE})
-    endif()
 
     set(LIBPRC_LIBRARIES
         optimized ${PRC_LIB_RELEASE}       debug ${PRC_LIB_DEBUG}
         optimized ${ASYMPTOTE_LIB_RELEASE} debug ${ASYMPTOTE_LIB_DEBUG}
-        optimized ${PNG_LIB_RELEASE}       debug ${PNG_LIB_DEBUG}
         ${HPDF_LIB}
         ${ZLIB_LIB}
     )
@@ -282,7 +281,6 @@ target_include_directories(CoreApi PUBLIC
 if(LIBPRC_ENABLED)
     target_sources(CoreApi PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/core_api/ExportApi_PRC.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/core_api/ExportApi_PRC.h
     )
     target_include_directories(CoreApi PUBLIC ${LIBPRC_INCLUDE_DIRS})
     target_compile_definitions(CoreApi PUBLIC USE_LIBPRC)
@@ -296,10 +294,19 @@ target_compile_definitions(CoreApi PRIVATE CADCORE_LIBRARY)
 #########
 # Boost
 #########
-cmake_policy(SET CMP0167 NEW)
+# Use legacy FindBoost module so source-only Boost archives (without BoostConfig.cmake)
+# can still be discovered in CI.
+cmake_policy(SET CMP0167 OLD)
+set(Boost_NO_BOOST_CMAKE ON)
+# Keep external configuration minimal: if BOOST_INCLUDEDIR is not provided,
+# default it to BOOST_ROOT (Boost headers live under <root>/boost).
+if(DEFINED BOOST_ROOT AND NOT DEFINED BOOST_INCLUDEDIR)
+    set(BOOST_INCLUDEDIR "${BOOST_ROOT}" CACHE PATH "Boost include directory")
+endif()
 find_package(Boost REQUIRED)
 if(Boost_FOUND)
     message(STATUS "Boost_DIR: ${Boost_DIR}")
+    message(STATUS "Boost_INCLUDE_DIRS: ${Boost_INCLUDE_DIRS}")
     message(STATUS "Boost_VERSION: ${Boost_VERSION}")
 else()
     message(FATAL_ERROR "Boost_DIR not found or path does not exist. ")
@@ -378,6 +385,12 @@ add_executable(${PROJECT_NAME}
 #########
 if(WIN32)
     target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/version.rc)
+elseif(APPLE)
+    set(MACOSX_ICON_FILE "${RESOURCE_DIR}/icon/logo/logo.icns")
+    set_source_files_properties(${MACOSX_ICON_FILE} PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources"
+    )
+    target_sources(${PROJECT_NAME} PRIVATE ${MACOSX_ICON_FILE})
 endif()
 
 #########
@@ -402,7 +415,6 @@ if(IS_COPY_DLLS)
 endif()
 if(EXPORT_3DPDF_USE_LIBPRC)
     file(GLOB 3DPDF_USE_LIBPRC_DLLS "${LIBPRC_DIR}/bin/*.dll")
-    #file(GLOB 3DPDF_USE_LIBPNG_DLLS "${LIBPNG_DIR}/bin/*.dll")
     file(GLOB 3DPDF_USE_LIBHARU_DLLS "${LIBHARU_DIR}/bin/*.dll")
     if(WIN32)
         set(ALL_DLLS_TO_COPY ${3DPDF_USE_LIBPRC_DLLS} ${3DPDF_USE_LIBHARU_DLLS})

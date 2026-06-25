@@ -23,6 +23,7 @@
 #include "ui/DialogCreateCone.h"
 #include "ui/DialogCreatePolygon.h"
 #include "ui/DialogExportImage.h"
+#include "ui/DialogExportDwg.h"
 #include "WidgetBoolean.h"
 #include "WidgetInterference.h"
 #include "widget_distance.h"
@@ -74,6 +75,7 @@
 #include <QTemporaryDir>
 #include <QDir>
 #include <QFileInfo>
+#include <QSettings>
 #include <TDocStd_Document.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 /* boolean */
@@ -236,6 +238,98 @@ bool highlightLabelRecursively(const TDF_Label& targetLabel, const TDF_Label& cu
     
     return false;
 }
+
+enum class OdaOutputVersion {
+    ACAD9,
+    ACAD10,
+    ACAD13,
+    ACAD14,
+    ACAD2000,
+    ACAD2004,
+    ACAD2007,
+    ACAD2010,
+    ACAD2013,
+    ACAD2018
+};
+
+enum class OdaOutputFileType {
+    DWG,
+    DXF,
+    DXB
+};
+
+enum class OdaBooleanFlag {
+    Off,
+    On
+};
+
+struct OdaCommandOptions {
+    OdaOutputVersion outputVersion{OdaOutputVersion::ACAD2018};
+    OdaOutputFileType outputFileType{OdaOutputFileType::DWG};
+    OdaBooleanFlag recurseInputFolder{OdaBooleanFlag::On};
+    OdaBooleanFlag auditEachFile{OdaBooleanFlag::On};
+    QString inputFilter{QStringLiteral("*.dxf")};
+};
+
+QString toOdaArg(OdaOutputVersion version)
+{
+    switch (version) {
+    case OdaOutputVersion::ACAD9: return QStringLiteral("ACAD9");
+    case OdaOutputVersion::ACAD10: return QStringLiteral("ACAD10");
+    case OdaOutputVersion::ACAD13: return QStringLiteral("ACAD13");
+    case OdaOutputVersion::ACAD14: return QStringLiteral("ACAD14");
+    case OdaOutputVersion::ACAD2000: return QStringLiteral("ACAD2000");
+    case OdaOutputVersion::ACAD2004: return QStringLiteral("ACAD2004");
+    case OdaOutputVersion::ACAD2007: return QStringLiteral("ACAD2007");
+    case OdaOutputVersion::ACAD2010: return QStringLiteral("ACAD2010");
+    case OdaOutputVersion::ACAD2013: return QStringLiteral("ACAD2013");
+    case OdaOutputVersion::ACAD2018: return QStringLiteral("ACAD2018");
+    }
+    return QStringLiteral("ACAD2018");
+}
+
+QString toOdaArg(OdaOutputFileType type)
+{
+    switch (type) {
+    case OdaOutputFileType::DWG: return QStringLiteral("DWG");
+    case OdaOutputFileType::DXF: return QStringLiteral("DXF");
+    case OdaOutputFileType::DXB: return QStringLiteral("DXB");
+    }
+    return QStringLiteral("DWG");
+}
+
+QString toOdaArg(OdaBooleanFlag flag)
+{
+    return flag == OdaBooleanFlag::On ? QStringLiteral("1") : QStringLiteral("0");
+}
+
+QStringList buildOdaArguments(const QString& inputFolder,
+                              const QString& outputFolder,
+                              const OdaCommandOptions& options)
+{
+    // ODA format:
+    // <inputFolder> <outputFolder> <outputVersion> <outputFileType> <recurse> <audit> <filter>
+    return QStringList()
+           << QDir::toNativeSeparators(inputFolder)
+           << QDir::toNativeSeparators(outputFolder)
+           << toOdaArg(options.outputVersion)
+           << toOdaArg(options.outputFileType)
+           << toOdaArg(options.recurseInputFolder)
+           << toOdaArg(options.auditEachFile)
+           << options.inputFilter;
+}
+
+// Reserved options list for future switching logic (currently not exposed in UI).
+const QList<OdaOutputVersion> kSupportedOdaVersions = {
+    OdaOutputVersion::ACAD9, OdaOutputVersion::ACAD10, OdaOutputVersion::ACAD13,
+    OdaOutputVersion::ACAD14, OdaOutputVersion::ACAD2000, OdaOutputVersion::ACAD2004,
+    OdaOutputVersion::ACAD2007, OdaOutputVersion::ACAD2010, OdaOutputVersion::ACAD2013,
+    OdaOutputVersion::ACAD2018
+};
+
+const QList<OdaOutputFileType> kSupportedOdaOutputTypes = {
+    OdaOutputFileType::DWG, OdaOutputFileType::DXF, OdaOutputFileType::DXB
+};
 
 
 // mayo xcaf.cpp deepBuildAssemblyTree
@@ -576,12 +670,11 @@ void ViewerWidget::exportModel(const QString &filename)
     }
 }
 
-void ViewerWidget::exportDxf()
+bool ViewerWidget::exportDxfToPath(const QString& savePath, QString* errorMessage)
 {
-    // 1. Collect all top-level shapes from the OCAF document and merge into a Compound
     if (m_doc->m_ocafDoc.IsNull()) {
-        QMessageBox::warning(this, tr("Export DWG/DXF"), tr("No document available to export."));
-        return;
+        if (errorMessage) *errorMessage = tr("No document available to export.");
+        return false;
     }
 
     Handle(XCAFDoc_ShapeTool) shapeTool =
@@ -589,126 +682,20 @@ void ViewerWidget::exportDxf()
     TDF_LabelSequence labels;
     shapeTool->GetFreeShapes(labels);
     if (labels.IsEmpty()) {
-        QMessageBox::warning(this, tr("Export DWG/DXF"), tr("The document contains no shapes."));
-        return;
+        if (errorMessage) *errorMessage = tr("The document contains no shapes.");
+        return false;
     }
 
-    // Build a single Compound from all free shapes
     TopoDS_Compound compound;
     BRep_Builder builder;
     builder.MakeCompound(compound);
     for (Standard_Integer i = 1; i <= labels.Length(); ++i) {
         TopoDS_Shape s = shapeTool->GetShape(labels.Value(i));
-        if (!s.IsNull())
+        if (!s.IsNull()) {
             builder.Add(compound, s);
-    }
-
-    // 2. HLR projection 
-    gp_Ax2 frontView(gp_Pnt(0, 0, 0), gp_Dir(0, 1, 0), gp_Dir(1, 0, 0)); // front view (looking along +Y toward the origin)
-    HLRAlgo_Projector projector(frontView);
-
-    Handle(HLRBRep_Algo) hlrAlgo = new HLRBRep_Algo();
-    hlrAlgo->Add(compound);        // add geometry to the algorithm
-    hlrAlgo->Projector(projector); // set projection direction
-    hlrAlgo->Update();             // build internal data structures
-    hlrAlgo->Hide();               // compute visible / hidden classification
-
-    // 3. Extract visible edges from the HLR result
-    HLRBRep_HLRToShape extractor(hlrAlgo);
-    TopoDS_Shape visibleEdges    = extractor.VCompound();        // visible body edges
-    TopoDS_Shape visibleOutlines = extractor.OutLineVCompound(); // visible silhouette edges
-
-    // 4. Ask the user where to save the DXF file
-    QString savePath = QFileDialog::getSaveFileName(
-        this, tr("Save as DXF File"), QString(), tr("DXF Files (*.dxf)"));
-    if (savePath.isEmpty())
-        return;
-
-    // 5. Write DXF R12 ASCII format
-    QFile file(savePath);
-    if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::critical(this, tr("Export DXF"),
-            tr("Cannot open file for writing: ") + savePath);
-        return;
-    }
-    QTextStream out(&file);
-
-    // --- DXF HEADER section ---
-    out << "  0\nSECTION\n  2\nHEADER\n";
-    out << "  9\n$ACADVER\n  1\nAC1009\n"; // AutoCAD R12
-    out << "  0\nENDSEC\n";
-
-    // --- DXF ENTITIES section ---
-    out << "  0\nSECTION\n  2\nENTITIES\n";
-
-    // Helper lambda: tessellate each edge in the shape and write as DXF LINE segments
-    auto writeEdges = [&](const TopoDS_Shape& shape) {
-        if (shape.IsNull()) return;
-        for (TopExp_Explorer ex(shape, TopAbs_EDGE); ex.More(); ex.Next()) {
-            TopoDS_Edge edge = TopoDS::Edge(ex.Current());
-            BRepAdaptor_Curve adaptor(edge);
-            Standard_Real first = adaptor.FirstParameter();
-            Standard_Real last  = adaptor.LastParameter();
-
-            // Discretize the curve with angular and chord tolerances
-            GCPnts_TangentialDeflection disc(adaptor, 0.1, 0.01);
-            if (disc.NbPoints() < 2) {
-                // Fallback: use the two endpoint samples only
-                gp_Pnt p1 = adaptor.Value(first);
-                gp_Pnt p2 = adaptor.Value(last);
-                out << "  0\nLINE\n  8\n0\n"
-                    << " 10\n" << p1.X() << "\n 20\n" << p1.Y() << "\n 30\n" << p1.Z() << "\n"
-                    << " 11\n" << p2.X() << "\n 21\n" << p2.Y() << "\n 31\n" << p2.Z() << "\n";
-            } else {
-                for (Standard_Integer k = 1; k < disc.NbPoints(); ++k) {
-                    gp_Pnt p1 = disc.Value(k);
-                    gp_Pnt p2 = disc.Value(k + 1);
-                    out << "  0\nLINE\n  8\n0\n"
-                        << " 10\n" << p1.X() << "\n 20\n" << p1.Y() << "\n 30\n" << p1.Z() << "\n"
-                        << " 11\n" << p2.X() << "\n 21\n" << p2.Y() << "\n 31\n" << p2.Z() << "\n";
-                }
-            }
         }
-    };
-
-    writeEdges(visibleEdges);
-    writeEdges(visibleOutlines);
-
-    out << "  0\nENDSEC\n";
-    out << "  0\nEOF\n";
-    file.close();
-
-    QMessageBox::information(this, tr("Export Successful"),
-        tr("DXF file saved to:\n") + savePath);
-}
-
-void ViewerWidget::exportDwg()
-{
-    // 1. Collect all top-level shapes from the OCAF document and merge into a Compound
-    if (m_doc->m_ocafDoc.IsNull()) {
-        QMessageBox::warning(this, tr("Export DWG"), tr("No document available to export."));
-        return;
     }
 
-    Handle(XCAFDoc_ShapeTool) shapeTool =
-        XCAFDoc_DocumentTool::ShapeTool(m_doc->m_ocafDoc->Main());
-    TDF_LabelSequence labels;
-    shapeTool->GetFreeShapes(labels);
-    if (labels.IsEmpty()) {
-        QMessageBox::warning(this, tr("Export DWG"), tr("The document contains no shapes."));
-        return;
-    }
-
-    TopoDS_Compound compound;
-    BRep_Builder builder;
-    builder.MakeCompound(compound);
-    for (Standard_Integer i = 1; i <= labels.Length(); ++i) {
-        TopoDS_Shape s = shapeTool->GetShape(labels.Value(i));
-        if (!s.IsNull())
-            builder.Add(compound, s);
-    }
-
-    // 2. HLR projection - front view (looking along +Y toward the origin)
     gp_Ax2 frontView(gp_Pnt(0, 0, 0), gp_Dir(0, 1, 0), gp_Dir(1, 0, 0));
     HLRAlgo_Projector projector(frontView);
 
@@ -718,37 +705,21 @@ void ViewerWidget::exportDwg()
     hlrAlgo->Update();
     hlrAlgo->Hide();
 
-    // 3. Extract visible edges
     HLRBRep_HLRToShape extractor(hlrAlgo);
-    TopoDS_Shape visibleEdges    = extractor.VCompound();        // visible body edges
-    TopoDS_Shape visibleOutlines = extractor.OutLineVCompound(); // visible silhouette edges
+    TopoDS_Shape visibleEdges = extractor.VCompound();
+    TopoDS_Shape visibleOutlines = extractor.OutLineVCompound();
 
-    // 4. Ask the user where to save the DWG file
-    QString dwgPath = QFileDialog::getSaveFileName(
-        this, tr("Save as DWG File"), QString(), tr("DWG Files (*.dwg)"));
-    if (dwgPath.isEmpty())
-        return;
-
-    // 5. Write intermediate DXF to a temporary directory
-    QTemporaryDir tempDir;
-    if (!tempDir.isValid()) {
-        QMessageBox::critical(this, tr("Export DWG"), tr("Cannot create temporary directory."));
-        return;
-    }
-    const QString tempDxfName = QStringLiteral("export_temp.dxf");
-    const QString tempDxfPath = tempDir.filePath(tempDxfName);
-
-    QFile file(tempDxfPath);
+    QFile file(savePath);
     if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-        QMessageBox::critical(this, tr("Export DWG"),
-            tr("Cannot create temporary DXF file: ") + tempDxfPath);
-        return;
+        if (errorMessage) {
+            *errorMessage = tr("Cannot open file for writing: %1").arg(savePath);
+        }
+        return false;
     }
-    QTextStream out(&file);
 
-    // Write DXF R12 ASCII
+    QTextStream out(&file);
     out << "  0\nSECTION\n  2\nHEADER\n";
-    out << "  9\n$ACADVER\n  1\nAC1009\n"; // AutoCAD R12
+    out << "  9\n$ACADVER\n  1\nAC1009\n";
     out << "  0\nENDSEC\n";
     out << "  0\nSECTION\n  2\nENTITIES\n";
 
@@ -759,6 +730,7 @@ void ViewerWidget::exportDwg()
             BRepAdaptor_Curve adaptor(edge);
             Standard_Real first = adaptor.FirstParameter();
             Standard_Real last  = adaptor.LastParameter();
+
             GCPnts_TangentialDeflection disc(adaptor, 0.1, 0.01);
             if (disc.NbPoints() < 2) {
                 gp_Pnt p1 = adaptor.Value(first);
@@ -777,74 +749,169 @@ void ViewerWidget::exportDwg()
             }
         }
     };
+
     writeEdges(visibleEdges);
     writeEdges(visibleOutlines);
     out << "  0\nENDSEC\n";
     out << "  0\nEOF\n";
     file.close();
+    return true;
+}
 
-    // 6. Convert DXF -> DWG using ODA FileConverter
-    //    Command: ODAFileConverter.exe <inputDir> <outputDir> ACAD ACAD ACAD2018 0 *.dxf
-    const QString odaExe =
-        QStringLiteral("C:/Program Files/ODA/ODAFileConverter 27.1.0/ODAFileConverter.exe");
-    if (!QFileInfo::exists(odaExe)) {
-        QMessageBox::critical(this, tr("Export DWG"),
-            tr("ODA FileConverter not found:\n") + odaExe);
+void ViewerWidget::exportDxf()
+{
+    const QString savePath = QFileDialog::getSaveFileName(
+        this, tr("Save as DXF File"), QString(), tr("DXF Files (*.dxf)"));
+    if (savePath.isEmpty()) {
         return;
     }
 
-    // Output the DWG into a separate sub-folder inside tempDir to avoid collisions
-    const QString tempOutDir = tempDir.filePath(QStringLiteral("out"));
-    QDir().mkpath(tempOutDir);
-
-    // ODAFileConverter 
-    // C:\Program Files\ODA\ODAFileConverter 27.1.0>ODAFileConverter.exe "C:\Users\XXXX\Desktop\temp" "C:\Users\XXXX\Desktop\temp" ACAD2018 DWG 1 1 2.dxf
-    auto native = [](const QString& p) {
-        return QDir::toNativeSeparators(p);
-    };
-    QProcess process;
-    process.start(odaExe, QStringList()
-                              << native(tempDir.path()) 
-                              << native(tempOutDir) 
-                              << "ACAD2018" // out
-                              << "DWG"
-                              << "1"
-                              << "1"
-                              << "2"
-                              << "*.dxf");  // filter
-    if (!process.waitForFinished(30000)) { // 30-second timeout
-        process.kill();
-        QMessageBox::critical(this, tr("Export DWG"),
-            tr("ODA FileConverter timed out or could not be started."));
+    QString errorMessage;
+    if (!exportDxfToPath(savePath, &errorMessage)) {
+        QMessageBox::critical(this, tr("Export DXF"), errorMessage);
         return;
-    }
-    if (process.exitCode() != 0) {
-        QMessageBox::critical(this, tr("Export DWG"),
-            tr("ODA FileConverter returned error code %1.\nStderr: %2")
-            .arg(process.exitCode())
-            .arg(QString::fromLocal8Bit(process.readAllStandardError())));
-        return;
-    }
-
-    // 7. Move the converted DWG to the user-specified path
-    const QString convertedDwg = tempOutDir + QStringLiteral("/export_temp.dwg");
-    if (!QFileInfo::exists(convertedDwg)) {
-        QMessageBox::critical(this, tr("Export DWG"),
-            tr("Conversion finished but output DWG was not found.\n"
-               "Check that ODA FileConverter supports the installed version."));
-        return;
-    }
-
-    if (QFileInfo::exists(dwgPath))
-        QFile::remove(dwgPath);
-    if (!QFile::rename(convertedDwg, dwgPath)) {
-        // rename may fail across devices; fall back to copy + delete
-        QFile::copy(convertedDwg, dwgPath);
-        QFile::remove(convertedDwg);
     }
 
     QMessageBox::information(this, tr("Export Successful"),
-        tr("DWG file saved to:\n") + dwgPath);
+        tr("DXF file saved to:\n") + savePath);
+}
+
+void ViewerWidget::exportDwg()
+{
+    const QString keyOdaExe = QStringLiteral("Export/DwgOdaExePath");
+    const QString keyDwgOutput = QStringLiteral("Export/DwgOutputPath");
+    QSettings settings;
+    if (!m_dlgExportDwg) {
+        m_dlgExportDwg = new DialogExportDwg(this);
+        m_dlgExportDwg->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgExportDwg, &QDialog::destroyed, this, [this]() { m_dlgExportDwg = nullptr; });
+        connect(m_dlgExportDwg, &DialogExportDwg::signalExportRequested, this, [this, keyOdaExe, keyDwgOutput]() {
+            const QString odaExe = m_dlgExportDwg->odaExePath();
+            const QString dwgPath = m_dlgExportDwg->outputPath();
+            if (odaExe.isEmpty() || !QFileInfo::exists(odaExe)) {
+                QMessageBox::critical(this, tr("Export DWG"), tr("ODA FileConverter not found:\n%1").arg(odaExe));
+                return;
+            }
+            if (dwgPath.isEmpty()) {
+                QMessageBox::warning(this, tr("Export DWG"), tr("Please choose an output path."));
+                return;
+            }
+
+            QSettings localSettings;
+            localSettings.setValue(keyOdaExe, odaExe);
+            localSettings.setValue(keyDwgOutput, dwgPath);
+
+            m_dlgExportDwg->setExportEnabled(false);
+            m_dlgExportDwg->setProgressValue(10);
+            m_dlgExportDwg->setStatusText(
+                tr("Preparing export...\nODA: %1\nOutput: %2")
+                    .arg(QDir::toNativeSeparators(odaExe))
+                    .arg(QDir::toNativeSeparators(dwgPath)));
+            QCoreApplication::processEvents();
+
+            QTemporaryDir tempDir;
+            if (!tempDir.isValid()) {
+                m_dlgExportDwg->setExportEnabled(true);
+                QMessageBox::critical(this, tr("Export DWG"), tr("Cannot create temporary directory."));
+                return;
+            }
+
+            const QString tempDxfName = QStringLiteral("export_temp.dxf");
+            const QString tempInputDir = tempDir.filePath(QStringLiteral("input"));
+            QDir().mkpath(tempInputDir);
+            const QString tempDxfPath = tempInputDir + "/" + tempDxfName;
+
+            QString errorMessage;
+            if (!exportDxfToPath(tempDxfPath, &errorMessage)) {
+                m_dlgExportDwg->setExportEnabled(true);
+                QMessageBox::critical(this, tr("Export DWG"), errorMessage);
+                return;
+            }
+
+            m_dlgExportDwg->setProgressValue(60);
+            m_dlgExportDwg->setStatusText(
+                tr("Converting DXF to DWG...\nODA: %1\nOutput: %2")
+                    .arg(QDir::toNativeSeparators(odaExe))
+                    .arg(QDir::toNativeSeparators(dwgPath)));
+            QCoreApplication::processEvents();
+
+            const QString tempOutDir = tempDir.filePath(QStringLiteral("out"));
+            QDir().mkpath(tempOutDir);
+
+            const OdaCommandOptions odaOptions; // Change here in the future to switch arguments.
+            Q_UNUSED(kSupportedOdaVersions);
+            Q_UNUSED(kSupportedOdaOutputTypes);
+            QProcess process;
+            process.start(odaExe, buildOdaArguments(tempInputDir, tempOutDir, odaOptions));
+            if (!process.waitForFinished(30000)) {
+                process.kill();
+                m_dlgExportDwg->setExportEnabled(true);
+                QMessageBox::critical(this, tr("Export DWG"),
+                    tr("ODA FileConverter timed out or could not be started."));
+                return;
+            }
+            if (process.exitCode() != 0) {
+                m_dlgExportDwg->setExportEnabled(true);
+                QMessageBox::critical(this, tr("Export DWG"),
+                    tr("ODA FileConverter returned error code %1.\nStderr: %2")
+                        .arg(process.exitCode())
+                        .arg(QString::fromLocal8Bit(process.readAllStandardError())));
+                return;
+            }
+
+            m_dlgExportDwg->setProgressValue(90);
+            m_dlgExportDwg->setStatusText(
+                tr("Saving final DWG...\nODA: %1\nOutput: %2")
+                    .arg(QDir::toNativeSeparators(odaExe))
+                    .arg(QDir::toNativeSeparators(dwgPath)));
+            QCoreApplication::processEvents();
+
+            const QString convertedDwg = tempOutDir + QStringLiteral("/export_temp.dwg");
+            if (!QFileInfo::exists(convertedDwg)) {
+                m_dlgExportDwg->setExportEnabled(true);
+                QMessageBox::critical(this, tr("Export DWG"),
+                    tr("Conversion finished but output DWG was not found.\n"
+                       "Check that ODA FileConverter supports the installed version."));
+                return;
+            }
+
+            if (QFileInfo::exists(dwgPath))
+                QFile::remove(dwgPath);
+            if (!QFile::rename(convertedDwg, dwgPath)) {
+                QFile::copy(convertedDwg, dwgPath);
+                QFile::remove(convertedDwg);
+            }
+
+            m_dlgExportDwg->setProgressValue(100);
+            m_dlgExportDwg->setStatusText(tr("Done."));
+            m_dlgExportDwg->setExportEnabled(true);
+            QMessageBox::information(this, tr("Export Successful"),
+                tr("DWG file saved to:\n") + dwgPath);
+        });
+    }
+
+    QString odaExePath = settings.value(keyOdaExe).toString();
+    if (odaExePath.isEmpty()) {
+        const QStringList candidates = {
+            QStringLiteral("C:/Program Files/ODA/ODAFileConverter/ODAFileConverter.exe"),
+            QStringLiteral("C:/Program Files/ODA/ODAFileConverter 27.1.0/ODAFileConverter.exe"),
+            QStringLiteral("C:/Program Files/ODA/ODAFileConverter 27.0.0/ODAFileConverter.exe")
+        };
+        for (const QString& c : candidates) {
+            if (QFileInfo::exists(c)) {
+                odaExePath = c;
+                break;
+            }
+        }
+    }
+    const QString dwgPath = settings.value(keyDwgOutput).toString();
+
+    m_dlgExportDwg->setOdaExePath(odaExePath);
+    m_dlgExportDwg->setOutputPath(dwgPath);
+    m_dlgExportDwg->setStatusText(tr("Ready."));
+    m_dlgExportDwg->setProgressValue(0);
+    m_dlgExportDwg->show();
+    m_dlgExportDwg->raise();
 }
 
 void ViewerWidget::export3dpdf()
