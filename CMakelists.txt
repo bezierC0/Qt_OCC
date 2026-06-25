@@ -19,13 +19,18 @@ if(WIN32)
         ${CMAKE_BINARY_DIR}/version.rc
         @ONLY
     )
+    configure_file(
+        ${RESOURCE_DIR}/icon/logo/logo.ico
+        ${CMAKE_BINARY_DIR}/logo.ico
+        COPYONLY
+    )
 elseif(APPLE)
     # macOS Info.plist configuration
     set(MACOSX_BUNDLE_GUI_IDENTIFIER "com.company.CADHealingTool")
     set(MACOSX_BUNDLE_BUNDLE_NAME "CADHealingTool")
     set(MACOSX_BUNDLE_BUNDLE_VERSION "${PROJECT_VERSION}")
     set(MACOSX_BUNDLE_SHORT_VERSION_STRING "${PROJECT_VERSION}")
-    set(MACOSX_BUNDLE_ICON_FILE "icon.icns")
+    set(MACOSX_BUNDLE_ICON_FILE "logo.icns")
     set(MACOSX_BUNDLE_COPYRIGHT "Copyright (C) 2025")
 endif()
 
@@ -380,6 +385,12 @@ add_executable(${PROJECT_NAME}
 #########
 if(WIN32)
     target_sources(${PROJECT_NAME} PRIVATE ${CMAKE_BINARY_DIR}/version.rc)
+elseif(APPLE)
+    set(MACOSX_ICON_FILE "${RESOURCE_DIR}/icon/logo/logo.icns")
+    set_source_files_properties(${MACOSX_ICON_FILE} PROPERTIES
+        MACOSX_PACKAGE_LOCATION "Resources"
+    )
+    target_sources(${PROJECT_NAME} PRIVATE ${MACOSX_ICON_FILE})
 endif()
 
 #########

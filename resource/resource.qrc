@@ -63,6 +63,8 @@
         <file>icon/work_plane.svg</file>
         <file>icon/animation.svg</file>
         <file>icon/busbar.svg</file>
+        <file>icon/logo/logo.icns</file>
+        <file>icon/logo/logo.ico</file>
     </qresource>
     <qresource prefix="/images">
         <file>images/logo.png</file>
