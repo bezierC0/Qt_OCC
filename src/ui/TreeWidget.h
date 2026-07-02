@@ -5,6 +5,7 @@
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QHeaderView>
 #include <QMouseEvent>
+#include "ModelTreeContextMenu.h"
 
 class TopoDS_Shape;
 class TDF_Label;
@@ -25,7 +26,18 @@ public:
 
     void setData( const Tree<TDF_Label>& modelTree );
     std::shared_ptr<Tree<TDF_Label>> getModelTree() const { return m_modelTree; }
-    
+
+    /**
+     * @brief Set the filter level for tree display depth.
+     * @param level Filter level (Vertex, Edge, Face)
+     */
+    void setFilterLevel(TreeFilterLevel level);
+
+    /**
+     * @brief Get the current filter level.
+     */
+    TreeFilterLevel filterLevel() const { return m_filterLevel; }
+
 signals:
     void labelSelected(const TDF_Label& label);
 
@@ -38,4 +50,5 @@ private:
     void buildShapeTree(const Tree<TDF_Label>& tree, const TopoDS_Shape& shape, QTreeWidgetItem* parentItem );
 
     std::shared_ptr<Tree<TDF_Label>> m_modelTree = nullptr;
+    TreeFilterLevel m_filterLevel = TreeFilterLevel::Vertex;
 };

@@ -2,10 +2,10 @@
 #include <QtWidgets/QTreeWidget>
 #include <QtWidgets/QHeaderView>
 #include <memory>
+#include "ModelTreeContextMenu.h"
 
 class TreeWidget;
 class TDF_Label;
-class ModelTreeContextMenu;
 template<typename T>
 class Tree;
 
@@ -23,6 +23,7 @@ private slots:
     void onContextMenuRequested(const QPoint& pos);
     void onContextMenuPick();
     void onContextMenuRemove();
+    void onFilterLevelChanged(TreeFilterLevel level);
 private:
     TreeWidget*           m_treeWidget{nullptr};
     ModelTreeContextMenu* m_contextMenu{nullptr};

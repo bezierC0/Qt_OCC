@@ -82,6 +82,7 @@ void TreeWidget::setData( const Tree<TDF_Label>& modelTree )
 
 void TreeWidget::rebuildData( const Tree<TDF_Label>& modelTree )
 {
+    clear();
     for ( const auto& rootId : modelTree.m_vecRoot ) {
         const TDF_Label& label = modelTree.nodeData( rootId );
         QTreeWidgetItem* rootItem = new QTreeWidgetItem( this );
@@ -128,6 +129,16 @@ void TreeWidget::buildAssemblyTree( const Tree<TDF_Label>& modelTree, const Tree
     }
 }
 
+void TreeWidget::setFilterLevel(TreeFilterLevel level)
+{
+    if (m_filterLevel != level) {
+        m_filterLevel = level;
+        if (m_modelTree) {
+            rebuildData(*m_modelTree);
+        }
+    }
+}
+
 void TreeWidget::buildShapeTree(const Tree<TDF_Label>& tree, const TopoDS_Shape& shape, QTreeWidgetItem* parentItem)
 {
     // Shell
@@ -136,13 +147,17 @@ void TreeWidget::buildShapeTree(const Tree<TDF_Label>& tree, const TopoDS_Shape&
         TopoDS_Shell shell = TopoDS::Shell(shellExp.Current());
         auto* shellItem = new QTreeWidgetItem(parentItem);
         shellItem->setText(0, QString::fromStdString(Util::TopoShape::GetShapeTypeString(shell)));
-        
+
         // Face
         for (TopExp_Explorer faceExp(shell, TopAbs_FACE); faceExp.More(); faceExp.Next())
         {
             TopoDS_Face face = TopoDS::Face(faceExp.Current());
             auto* faceItem = new QTreeWidgetItem(shellItem);
             faceItem->setText(0, QString::fromStdString(Util::TopoShape::GetShapeTypeString(face)));
+
+            // Stop at Face level if filter is set to Face
+            if (m_filterLevel == TreeFilterLevel::Face)
+                continue;
 
             //  Edge
             for (TopExp_Explorer edgeExp(face, TopAbs_EDGE); edgeExp.More(); edgeExp.Next())
@@ -151,12 +166,16 @@ void TreeWidget::buildShapeTree(const Tree<TDF_Label>& tree, const TopoDS_Shape&
                 auto* edgeItem = new QTreeWidgetItem(faceItem);
                 edgeItem->setText(0, QString::fromStdString(Util::TopoShape::GetShapeTypeString(edge)));
 
+                // Stop at Edge level if filter is set to Edge
+                if (m_filterLevel == TreeFilterLevel::Edge)
+                    continue;
+
                 //  Vertex
                  for (TopExp_Explorer vertexExp(edge, TopAbs_VERTEX); vertexExp.More(); vertexExp.Next())
                 {
                     TopoDS_Vertex vertex = TopoDS::Vertex(vertexExp.Current());
                     gp_Pnt point = BRep_Tool::Pnt(vertex);
-                    
+
                     auto* vertexItem = new QTreeWidgetItem(edgeItem);
                     QString vertexText = QString::fromStdString(Util::TopoShape::GetShapeTypeString(vertex));
                     vertexText += QString(" (%1, %2, %3)")
