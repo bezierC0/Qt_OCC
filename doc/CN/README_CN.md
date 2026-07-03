@@ -41,6 +41,13 @@ Qt_OCC 是一个使用 Qt 框架开发用户界面并以 OpenCASCADE Technology 
 *   **OpenCASCADE Technology (OCCT)**: 强大的开源 3D 几何建模内核，处理所有 CAD 操作。
 *   **CMake**: 用于配置和构建项目的跨平台构建系统。
 
+## 📚 文档
+
+*   **开发与重构说明**: [`../development_refactoring.md`](../development_refactoring.md)
+*   **3D 铜排布线功能**: [`../tool_busbar.md`](../tool_busbar.md)
+*   **3D PDF 导出功能**: [`../file_export_3dpdf.md`](../file_export_3dpdf.md)
+*   **其他语言 README**: [`../JP/README_JP.md`](../JP/README_JP.md), [`../FR/README_FR.md`](../FR/README_FR.md), [`../RU/README_RU.md`](../RU/README_RU.md), [`../ES/README_ES.md`](../ES/README_ES.md)
+
 ## 🚀 快速开始
 
 按照以下说明在本地机器上设置项目，以便进行开发和测试。

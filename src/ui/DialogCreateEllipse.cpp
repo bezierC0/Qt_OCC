@@ -1,5 +1,6 @@
 #include "DialogCreateEllipse.h"
 #include "ShapePickSession.h"
+#include "command/CommandCommon.h"
 #include "command/ShapeCommandRegistry.h"
 
 #include <QIcon>
@@ -88,12 +89,12 @@ DialogCreateEllipse::DialogCreateEllipse(QWidget* parent)
         [this](const std::vector<gp_Pnt>& pts, const gp_Pnt& mouse) -> TopoDS_Shape {
             const double major = pts[0].Distance(mouse);
             CoreApi::ShapeParams p;
-            p["x"] = pts[0].X(); p["y"] = pts[0].Y(); p["z"] = pts[0].Z();
-            p["nx"] = m_spinBoxNormalX->value();
-            p["ny"] = m_spinBoxNormalY->value();
-            p["nz"] = m_spinBoxNormalZ->value();
-            p["majorRadius"] = major;
-            p["minorRadius"] = major / 2.0;
+            p[CoreApi::Param::X] = pts[0].X(); p[CoreApi::Param::Y] = pts[0].Y(); p[CoreApi::Param::Z] = pts[0].Z();
+            p[CoreApi::Param::NX] = m_spinBoxNormalX->value();
+            p[CoreApi::Param::NY] = m_spinBoxNormalY->value();
+            p[CoreApi::Param::NZ] = m_spinBoxNormalZ->value();
+            p[CoreApi::Param::MAJOR] = major;
+            p[CoreApi::Param::MINOR] = major / 2.0;
             return CoreApi::ShapeCommandRegistry::instance().execute("CreateEllipse", p);
         }, this);
 

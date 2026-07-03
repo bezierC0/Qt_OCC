@@ -71,8 +71,6 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
 
     setCentralWidget( splitter );
 
-    setCentralWidget( splitter );
-
     setupUi();
 
     resize(1200, 800);

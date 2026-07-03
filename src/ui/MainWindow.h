@@ -18,15 +18,6 @@ class WidgetExplodeAssembly;
 class WidgetClipping;
 class WidgetTransform;
 
-namespace{
-    // Status Bar
-    enum StatusType {
-        StatusCoord = 0,
-        StatusShapeInfo
-    };
-
-}
-
 class MainWindow : public SARibbonMainWindow {
     Q_OBJECT
 public:
@@ -123,6 +114,11 @@ private:
     void createToolGroup(); // Create tool group
     void createShapeGroup(); // Create shape group
     void createHelpGroup(); // Create help group
+
+    enum StatusType {
+        StatusCoord = 0,
+        StatusShapeInfo
+    };
     
     void setStatusText(StatusType type, const QString& text);
 

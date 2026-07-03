@@ -89,11 +89,8 @@
 #include <BRepPrimAPI_MakeCone.hxx>
 /* builder */
 #include <BRepBuilderAPI_MakeVertex.hxx>
-#include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
-#include <BRepBuilderAPI_MakePolygon.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
-#include <GC_MakeArcOfCircle.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
 #include <BRepFeat_MakeCylindricalHole.hxx>
 
@@ -123,8 +120,6 @@
 #include <TDF_ChildIterator.hxx>
 
 /* geomtry */
-#include <Geom_BezierCurve.hxx>
-#include <Geom_BSplineCurve.hxx>
 #include <Geom_Plane.hxx>
 #include <Geom_Surface.hxx>
 #include <Geom_Line.hxx>
@@ -152,6 +147,7 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include "common/ShapeLabelManager.h"
+#include "command/CommandCommon.h"
 #include "command/ShapeCommandRegistry.h"
 #include "core_api/ShapeFactory.h"
 
@@ -1246,19 +1242,11 @@ void ViewerWidget::createPolygon()
 
 void ViewerWidget::onCreatePolygon(const QList<gp_Pnt>& points, bool isClosed, const QColor& color)
 {
-    if (points.size() < 2) return;
-
-    BRepBuilderAPI_MakePolygon poly;
-    for (const auto& p : points) {
-        poly.Add(p);
-    }
-    if (isClosed) {
-        poly.Close();
-    }
-
-    if (poly.IsDone()) {
-        displayShape(poly.Wire(), color.redF(), color.greenF(), color.blueF());
-    }
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::POINTS] = QVariant::fromValue(PointList(points));
+    p[CoreApi::Param::CLOSED] = isClosed;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreatePolygon", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
 }
 
 void ViewerWidget::createBezierCurve()
@@ -1275,22 +1263,12 @@ void ViewerWidget::createBezierCurve()
 
 void ViewerWidget::onCreateBezier(const QList<gp_Pnt>& points, const QColor& color)
 {
-    if (points.size() < 2) return;
-
-    TColgp_Array1OfPnt poles(1, points.size());
-    for (int i = 0; i < points.size(); ++i) {
-        poles.SetValue(i + 1, points[i]);
-    }
-
-    // Geom_BezierCurve limits: check max degree if necessary, but OCC usually handles reasonable counts.
-    // Try to catch construction errors
-    try {
-        Handle(Geom_BezierCurve) bezier = new Geom_BezierCurve(poles);
-        BRepBuilderAPI_MakeEdge edge(bezier);
-        if (edge.IsDone()) {
-            displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-        }
-    } catch (...) {
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::POINTS] = QVariant::fromValue(PointList(points));
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateBezier", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
         QMessageBox::warning(this, "Error", "Failed to create Bezier curve (possibly too many points).");
     }
 }
@@ -1309,53 +1287,13 @@ void ViewerWidget::createNurbsCurve()
 
 void ViewerWidget::onCreateNurbs(const QList<gp_Pnt>& points, int degree, const QColor& color)
 {
-    Standard_Integer n = points.size();
-    if (n <= degree) {
-        return; // Should have been caught by dialog
-    }
-
-    TColgp_Array1OfPnt poles(1, n);
-    for (int i = 0; i < n; ++i) {
-        poles.SetValue(i + 1, points[i]);
-    }
-
-    // Construct Knots and Mults for a non-periodic BSpline
-    // Number of knots (distinct) = n - degree + 1
-    // Total knots including multiplicities = n + degree + 1 (classic definition)
-    
-    // Standard non-periodic configuration:
-    // Knots: 0, ..., 0 (degree+1 times), ..., 1, ..., 1 (degree+1 times)
-    // Internal knots are simple (mult=1).
-    // Number of internal intervals = n - degree
-    // Total distinct knots = 2 (endpoints) + (n - degree - 1) (internal) = n - degree + 1
-    
-    Standard_Integer nbKnots = n - degree + 1;
-    TColStd_Array1OfReal knots(1, nbKnots);
-    TColStd_Array1OfInteger mults(1, nbKnots);
-
-    // Endpoints multiplication
-    mults.SetValue(1, degree + 1);
-    mults.SetValue(nbKnots, degree + 1);
-
-    knots.SetValue(1, 0.0);
-    knots.SetValue(nbKnots, 1.0);
-
-    // Internal knots
-    if (nbKnots > 2) {
-        Standard_Real step = 1.0 / (Standard_Real)(nbKnots - 1);
-        for (Standard_Integer i = 2; i < nbKnots; ++i) {
-            mults.SetValue(i, 1);
-            knots.SetValue(i, (i - 1) * step);
-        }
-    }
-
-    try {
-        Handle(Geom_BSplineCurve) bspline = new Geom_BSplineCurve(poles, knots, mults, degree);
-        BRepBuilderAPI_MakeEdge edge(bspline);
-        if (edge.IsDone()) {
-            displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-        }
-    } catch (...) {
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::POINTS] = QVariant::fromValue(PointList(points));
+    p[CoreApi::Param::DEGREE] = degree;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateNurbs", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
          QMessageBox::warning(this, "Error", "Failed to create NURBS curve.");
     }
 }
@@ -2263,34 +2201,31 @@ void ViewerWidget::onCreateCircle(double x, double y, double z, double radius, c
 
 void ViewerWidget::onCreateArc(double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, const QColor& color)
 {
-    gp_Pnt p1(x1, y1, z1);
-    gp_Pnt p2(x2, y2, z2);
-    gp_Pnt p3(x3, y3, z3);
-    GC_MakeArcOfCircle arc(p1, p2, p3);
-    if (arc.IsDone()) {
-        BRepBuilderAPI_MakeEdge edge(arc.Value());
-        if (edge.IsDone()) {
-            displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-        }
-    }
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X1] = x1; p[CoreApi::Param::Y1] = y1; p[CoreApi::Param::Z1] = z1;
+    p[CoreApi::Param::X2] = x2; p[CoreApi::Param::Y2] = y2; p[CoreApi::Param::Z2] = z2;
+    p[CoreApi::Param::X3] = x3; p[CoreApi::Param::Y3] = y3; p[CoreApi::Param::Z3] = z3;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateArc", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgArc) m_dlgArc->raise();
 }
 
 void ViewerWidget::onCreateBox(double x, double y, double z, double dx, double dy, double dz, const QColor& color)
 {
-    const gp_Pnt P1{x, y, z};
-    const gp_Pnt P2{x + dx, y + dy, z + dz};
-    BRepPrimAPI_MakeBox box(P1, P2);
-    displayShape(box.Shape(), color.redF(), color.greenF(), color.blueF());
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::DX] = dx; p[CoreApi::Param::DY] = dy; p[CoreApi::Param::DZ] = dz;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateBox", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgBox) m_dlgBox->raise();
 }
 
 void ViewerWidget::onCreateEllipse(double centerX, double centerY, double centerZ, double normalX, double normalY, double normalZ, double majorRadius, double minorRadius, const QColor& color)
 {
     CoreApi::ShapeParams p;
-    p["x"] = centerX; p["y"] = centerY; p["z"] = centerZ;
-    p["nx"] = normalX; p["ny"] = normalY; p["nz"] = normalZ;
-    p["majorRadius"] = majorRadius; p["minorRadius"] = minorRadius;
+    p[CoreApi::Param::X] = centerX; p[CoreApi::Param::Y] = centerY; p[CoreApi::Param::Z] = centerZ;
+    p[CoreApi::Param::NX] = normalX; p[CoreApi::Param::NY] = normalY; p[CoreApi::Param::NZ] = normalZ;
+    p[CoreApi::Param::MAJOR] = majorRadius; p[CoreApi::Param::MINOR] = minorRadius;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateEllipse", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgEllipse) m_dlgEllipse->raise();
@@ -2298,25 +2233,29 @@ void ViewerWidget::onCreateEllipse(double centerX, double centerY, double center
 
 void ViewerWidget::onCreateCylinder(double x, double y, double z, double radius, double height, const QColor& color)
 {
-    gp_Ax2 axis(gp_Pnt(x, y, z), gp_Dir(0,0,1));
-    BRepPrimAPI_MakeCylinder cylinder(axis, radius, height);
-    displayShape(cylinder.Shape(), color.redF(), color.greenF(), color.blueF());
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::RADIUS] = radius; p[CoreApi::Param::HEIGHT] = height;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateCylinder", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgCylinder) m_dlgCylinder->raise();
 }
 
 void ViewerWidget::onCreateCone(double x, double y, double z, double radius1, double radius2,
                                 double height, const QColor &color)
 {
-    gp_Ax2 axis(gp_Pnt(x, y, z), gp_Dir(0,0,1));
-    BRepPrimAPI_MakeCone cone(axis, radius1, radius2, height);
-    displayShape(cone.Shape(), color.redF(), color.greenF(), color.blueF());
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::RADIUS1] = radius1; p[CoreApi::Param::RADIUS2] = radius2; p[CoreApi::Param::HEIGHT] = height;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateCone", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgCone) m_dlgCone->raise();
 }
 
 void ViewerWidget::onCreatePoint(double x, double y, double z, const QColor& color)
 {
     CoreApi::ShapeParams p;
-    p["x"] = x; p["y"] = y; p["z"] = z;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreatePoint", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgPoint) m_dlgPoint->raise();
@@ -2325,8 +2264,8 @@ void ViewerWidget::onCreatePoint(double x, double y, double z, const QColor& col
 void ViewerWidget::onCreateRectangle(double x, double y, double z, double width, double height, const QColor& color)
 {
     CoreApi::ShapeParams p;
-    p["x"] = x; p["y"] = y; p["z"] = z;
-    p["width"] = width; p["height"] = height;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::WIDTH] = width; p[CoreApi::Param::HEIGHT] = height;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateRectangle", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgRectangle) m_dlgRectangle->raise();
@@ -2334,9 +2273,11 @@ void ViewerWidget::onCreateRectangle(double x, double y, double z, double width,
 
 void ViewerWidget::onCreateSphere(double x, double y, double z, double radius, const QColor& color)
 {
-    gp_Pnt center(x, y, z);
-    BRepPrimAPI_MakeSphere sphere(center, radius);
-    displayShape(sphere.Shape(), color.redF(), color.greenF(), color.blueF());
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::RADIUS] = radius;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateSphere", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgSphere) m_dlgSphere->raise();
 }
 
