@@ -1,5 +1,6 @@
 #include "DialogCreateEllipse.h"
 #include "ShapePickSession.h"
+#include "command/CommandCommon.h"
 #include "command/ShapeCommandRegistry.h"
 
 #include <QIcon>
@@ -88,21 +89,21 @@ DialogCreateEllipse::DialogCreateEllipse(QWidget* parent)
         [this](const std::vector<gp_Pnt>& pts, const gp_Pnt& mouse) -> TopoDS_Shape {
             const double major = pts[0].Distance(mouse);
             CoreApi::ShapeParams p;
-            p["x"] = pts[0].X(); p["y"] = pts[0].Y(); p["z"] = pts[0].Z();
-            p["nx"] = m_spinBoxNormalX->value();
-            p["ny"] = m_spinBoxNormalY->value();
-            p["nz"] = m_spinBoxNormalZ->value();
-            p["majorRadius"] = major;
-            p["minorRadius"] = major / 2.0;
+            p[CoreApi::Param::X] = pts[0].X(); p[CoreApi::Param::Y] = pts[0].Y(); p[CoreApi::Param::Z] = pts[0].Z();
+            p[CoreApi::Param::NX] = m_spinBoxNormalX->value();
+            p[CoreApi::Param::NY] = m_spinBoxNormalY->value();
+            p[CoreApi::Param::NZ] = m_spinBoxNormalZ->value();
+            p[CoreApi::Param::MAJOR] = major;
+            p[CoreApi::Param::MINOR] = major / 2.0;
             return CoreApi::ShapeCommandRegistry::instance().execute("CreateEllipse", p);
         }, this);
 
     connect(m_session, &ShapePickSession::sessionCompleted, this, &DialogCreateEllipse::onSessionCompleted);
     connect(m_session, &ShapePickSession::stateChanged, this, [this](ShapePickSession::State s) {
         if (s == ShapePickSession::State::Preview)
-            m_statusLabel->setText("Step 2/2 : Drag to set major radius, then click");
+            m_statusLabel->setText(tr("Step 2/2 : Drag to set major radius, then click"));
         else if (s == ShapePickSession::State::Idle)
-            m_statusLabel->setText("Step 1/2 : Click centre point in 3D view");
+            m_statusLabel->setText(tr("Step 1/2 : Click centre point in 3D view"));
     });
 }
 
@@ -150,5 +151,5 @@ void DialogCreateEllipse::onSessionCompleted(QVector<gp_Pnt> points)
         m_spinBoxMajorRadius->setValue(major);
         m_spinBoxMinorRadius->setValue(major / 2.0);
     }
-    m_statusLabel->setText("Ellipse defined. Press [Create] to confirm.");
+    m_statusLabel->setText(tr("Ellipse defined. Press [Create] to confirm."));
 }

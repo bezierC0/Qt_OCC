@@ -1,6 +1,7 @@
 #pragma once
 
 #include <CoreApiGlobal.h>
+#include <vector>
 
 class gp_Pnt;
 class TopoDS_Shape;
@@ -29,8 +30,24 @@ public:
 
     TopoDS_Shape makeCircle(const gp_Pnt &center, double radius);
 
+    TopoDS_Shape makeArc(const gp_Pnt &p1, const gp_Pnt &p2, const gp_Pnt &p3);
+
+    TopoDS_Shape makePolygonWire(const std::vector<gp_Pnt> &points, bool closed);
+
+    TopoDS_Shape makeBezierCurve(const std::vector<gp_Pnt> &points);
+
+    TopoDS_Shape makeNurbsCurve(const std::vector<gp_Pnt> &points, int degree);
+
     TopoDS_Shape makeEllipse(const gp_Pnt &center, double nx, double ny, double nz,
                              double majorRadius, double minorRadius);
+
+    TopoDS_Shape makeBox(const gp_Pnt &corner, double dx, double dy, double dz);
+
+    TopoDS_Shape makeSphere(const gp_Pnt &center, double radius);
+
+    TopoDS_Shape makeCylinder(const gp_Pnt &baseCenter, double radius, double height);
+
+    TopoDS_Shape makeCone(const gp_Pnt &baseCenter, double radius1, double radius2, double height);
 
 private:
     ShapeFactory() = default;

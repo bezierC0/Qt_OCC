@@ -200,7 +200,7 @@ void WidgetMinimumDistance::calculateMinimumDistance()
         }
     } else {
         ui->labelDistanceValue->setText("N/A");
-        QMessageBox::warning(this, "Minimum Distance", "Failed to calculate the minimum distance between the two shapes.");
+        QMessageBox::warning(this, tr("Minimum Distance"), tr("Failed to calculate the minimum distance between the two shapes."));
     }
 }
 

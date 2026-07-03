@@ -89,11 +89,8 @@
 #include <BRepPrimAPI_MakeCone.hxx>
 /* builder */
 #include <BRepBuilderAPI_MakeVertex.hxx>
-#include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
-#include <BRepBuilderAPI_MakePolygon.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
-#include <GC_MakeArcOfCircle.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
 #include <BRepFeat_MakeCylindricalHole.hxx>
 
@@ -123,8 +120,6 @@
 #include <TDF_ChildIterator.hxx>
 
 /* geomtry */
-#include <Geom_BezierCurve.hxx>
-#include <Geom_BSplineCurve.hxx>
 #include <Geom_Plane.hxx>
 #include <Geom_Surface.hxx>
 #include <Geom_Line.hxx>
@@ -152,6 +147,7 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include "common/ShapeLabelManager.h"
+#include "command/CommandCommon.h"
 #include "command/ShapeCommandRegistry.h"
 #include "core_api/ShapeFactory.h"
 
@@ -627,7 +623,7 @@ void ViewerWidget::loadModel(const QString &filename)
 void ViewerWidget::exportModel(const QString &filename)
 {
     if (m_doc->m_ocafDoc.IsNull()) {
-        QMessageBox::warning(this, "Export", "No document to export.");
+        QMessageBox::warning(this, tr("Export"), tr("No document to export."));
         return;
     }
 
@@ -636,12 +632,12 @@ void ViewerWidget::exportModel(const QString &filename)
         writer.SetNameMode(true);
         // Transfer the document to the writer
         if (!writer.Transfer(m_doc->m_ocafDoc, STEPControl_AsIs)) {
-            QMessageBox::critical(this, "Error", "Failed to transfer document to STEP writer.");
+            QMessageBox::critical(this, tr("Error"), tr("Failed to transfer document to STEP writer."));
             return;
         }
         // Write the file
         if (writer.Write(filename.toUtf8().constData()) != IFSelect_RetDone) {
-            QMessageBox::critical(this, "Error", "Failed to write STEP file.");
+            QMessageBox::critical(this, tr("Error"), tr("Failed to write STEP file."));
         }
     } 
     else if (filename.endsWith(".iges", Qt::CaseInsensitive) || filename.endsWith(".igs", Qt::CaseInsensitive)) {
@@ -662,11 +658,11 @@ void ViewerWidget::exportModel(const QString &filename)
 
         writer.ComputeModel();
         if (!writer.Write(filename.toUtf8().constData())) {
-            QMessageBox::critical(this, "Error", "Failed to write IGES file.");
+            QMessageBox::critical(this, tr("Error"), tr("Failed to write IGES file."));
         }
     }
     else {
-        QMessageBox::warning(this, "Export", "Unsupported file format.");
+        QMessageBox::warning(this, tr("Export"), tr("Unsupported file format."));
     }
 }
 
@@ -1246,19 +1242,11 @@ void ViewerWidget::createPolygon()
 
 void ViewerWidget::onCreatePolygon(const QList<gp_Pnt>& points, bool isClosed, const QColor& color)
 {
-    if (points.size() < 2) return;
-
-    BRepBuilderAPI_MakePolygon poly;
-    for (const auto& p : points) {
-        poly.Add(p);
-    }
-    if (isClosed) {
-        poly.Close();
-    }
-
-    if (poly.IsDone()) {
-        displayShape(poly.Wire(), color.redF(), color.greenF(), color.blueF());
-    }
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::POINTS] = QVariant::fromValue(PointList(points));
+    p[CoreApi::Param::CLOSED] = isClosed;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreatePolygon", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
 }
 
 void ViewerWidget::createBezierCurve()
@@ -1275,23 +1263,13 @@ void ViewerWidget::createBezierCurve()
 
 void ViewerWidget::onCreateBezier(const QList<gp_Pnt>& points, const QColor& color)
 {
-    if (points.size() < 2) return;
-
-    TColgp_Array1OfPnt poles(1, points.size());
-    for (int i = 0; i < points.size(); ++i) {
-        poles.SetValue(i + 1, points[i]);
-    }
-
-    // Geom_BezierCurve limits: check max degree if necessary, but OCC usually handles reasonable counts.
-    // Try to catch construction errors
-    try {
-        Handle(Geom_BezierCurve) bezier = new Geom_BezierCurve(poles);
-        BRepBuilderAPI_MakeEdge edge(bezier);
-        if (edge.IsDone()) {
-            displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-        }
-    } catch (...) {
-        QMessageBox::warning(this, "Error", "Failed to create Bezier curve (possibly too many points).");
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::POINTS] = QVariant::fromValue(PointList(points));
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateBezier", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
+        QMessageBox::warning(this, tr("Error"), tr("Failed to create Bezier curve (possibly too many points)."));
     }
 }
 
@@ -1309,54 +1287,14 @@ void ViewerWidget::createNurbsCurve()
 
 void ViewerWidget::onCreateNurbs(const QList<gp_Pnt>& points, int degree, const QColor& color)
 {
-    Standard_Integer n = points.size();
-    if (n <= degree) {
-        return; // Should have been caught by dialog
-    }
-
-    TColgp_Array1OfPnt poles(1, n);
-    for (int i = 0; i < n; ++i) {
-        poles.SetValue(i + 1, points[i]);
-    }
-
-    // Construct Knots and Mults for a non-periodic BSpline
-    // Number of knots (distinct) = n - degree + 1
-    // Total knots including multiplicities = n + degree + 1 (classic definition)
-    
-    // Standard non-periodic configuration:
-    // Knots: 0, ..., 0 (degree+1 times), ..., 1, ..., 1 (degree+1 times)
-    // Internal knots are simple (mult=1).
-    // Number of internal intervals = n - degree
-    // Total distinct knots = 2 (endpoints) + (n - degree - 1) (internal) = n - degree + 1
-    
-    Standard_Integer nbKnots = n - degree + 1;
-    TColStd_Array1OfReal knots(1, nbKnots);
-    TColStd_Array1OfInteger mults(1, nbKnots);
-
-    // Endpoints multiplication
-    mults.SetValue(1, degree + 1);
-    mults.SetValue(nbKnots, degree + 1);
-
-    knots.SetValue(1, 0.0);
-    knots.SetValue(nbKnots, 1.0);
-
-    // Internal knots
-    if (nbKnots > 2) {
-        Standard_Real step = 1.0 / (Standard_Real)(nbKnots - 1);
-        for (Standard_Integer i = 2; i < nbKnots; ++i) {
-            mults.SetValue(i, 1);
-            knots.SetValue(i, (i - 1) * step);
-        }
-    }
-
-    try {
-        Handle(Geom_BSplineCurve) bspline = new Geom_BSplineCurve(poles, knots, mults, degree);
-        BRepBuilderAPI_MakeEdge edge(bspline);
-        if (edge.IsDone()) {
-            displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-        }
-    } catch (...) {
-         QMessageBox::warning(this, "Error", "Failed to create NURBS curve.");
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::POINTS] = QVariant::fromValue(PointList(points));
+    p[CoreApi::Param::DEGREE] = degree;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateNurbs", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
+         QMessageBox::warning(this, tr("Error"), tr("Failed to create NURBS curve."));
     }
 }
 
@@ -1547,10 +1485,10 @@ void ViewerWidget::repairAndSave(const TopoDS_Shape &shape)
     IFSelect_ReturnStatus status = writer.Write("fix.stp");
 
     if (status == IFSelect_RetDone) {
-        QMessageBox::information(this, "Success",
-                                 "Shape repaired and saved to fix.stp successfully!");
+        QMessageBox::information(this, tr("Success"),
+                                 tr("Shape repaired and saved to fix.stp successfully!"));
     } else {
-        QMessageBox::warning(this, "Error", "Failed to write fix.stp");
+        QMessageBox::warning(this, tr("Error"), tr("Failed to write fix.stp"));
     }
 }
 
@@ -1784,7 +1722,7 @@ void ViewerWidget::chamfer()
 void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance)
 {
     if (edgeShape.IsNull() || edgeShape.ShapeType() != TopAbs_EDGE || distance <= 0.0) {
-        QMessageBox::warning(this, "Chamfer Error", "Invalid edge or distance.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Invalid edge or distance."));
         return;
     }
     
@@ -1821,7 +1759,7 @@ void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance
         }
     }
     if (targetEdge.IsNull()) {
-        QMessageBox::warning(this, "Chamfer Error", "Selected edge does not belong to the target shape.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Selected edge does not belong to the target shape."));
         return;
     }
 
@@ -1829,13 +1767,13 @@ void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance
     TopExp::MapShapesAndAncestors(parentShape, TopAbs_EDGE, TopAbs_FACE, edgeFaceMap);
     
     if (!edgeFaceMap.Contains(targetEdge)) {
-        QMessageBox::warning(this, "Chamfer Error", "Cannot find adjacent faces for the edge.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Cannot find adjacent faces for the edge."));
         return;
     }
 
     const TopTools_ListOfShape& faceList = edgeFaceMap.FindFromKey(targetEdge);
     if (faceList.IsEmpty()) {
-        QMessageBox::warning(this, "Chamfer Error", "Cannot find adjacent faces for the edge.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Cannot find adjacent faces for the edge."));
         return;
     }
 
@@ -1851,7 +1789,7 @@ void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance
         m_occView->clearSelectedObjects();
         displayShape(newShape, color.Red(), color.Green(), color.Blue());
     } else {
-        QMessageBox::warning(this, "Chamfer Error", "Failed to create chamfer. Distance might be too large.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Failed to create chamfer. Distance might be too large."));
     }
 }
 
@@ -1882,7 +1820,7 @@ void ViewerWidget::hole()
 void ViewerWidget::onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shape& faceShape, const TopoDS_Shape& pointShape, double radius, int holeType, double depth)
 {
     if (parentShape.IsNull() || faceShape.IsNull() || faceShape.ShapeType() != TopAbs_FACE || pointShape.IsNull() || pointShape.ShapeType() != TopAbs_VERTEX) {
-            QMessageBox::warning(this, "Hole Error", "Invalid shape or inputs.");
+            QMessageBox::warning(this, tr("Hole Error"), tr("Invalid shape or inputs."));
             return;
     }
     
@@ -1936,7 +1874,7 @@ void ViewerWidget::onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shap
         m_occView->clearSelectedObjects();
         displayShape(newShape);
     } else {
-        QMessageBox::warning(this, "Hole Error", QString("BRepFeat status: %1").arg(status));
+        QMessageBox::warning(this, tr("Hole Error"), tr("BRepFeat status: %1").arg(status));
     }
 #if 0 // BRepAlgoAPI_Cut
     if (parentShape.IsNull() || faceShape.IsNull() || faceShape.ShapeType() != TopAbs_FACE || pointShape.IsNull() || pointShape.ShapeType() != TopAbs_VERTEX) {
@@ -2001,7 +1939,7 @@ void ViewerWidget::onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shap
 void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)
 {
     if (edgeShape.IsNull() || edgeShape.ShapeType() != TopAbs_EDGE || radius <= 0.0) {
-        QMessageBox::warning(this, "Fillet Error", "Invalid edge or radius.");
+        QMessageBox::warning(this, tr("Fillet Error"), tr("Invalid edge or radius."));
         return;
     }
     
@@ -2038,7 +1976,7 @@ void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)
         }
     }
     if (targetEdge.IsNull()) {
-        QMessageBox::warning(this, "Fillet Error", "Selected edge does not belong to the target shape.");
+        QMessageBox::warning(this, tr("Fillet Error"), tr("Selected edge does not belong to the target shape."));
         return;
     }
 
@@ -2052,7 +1990,7 @@ void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)
         m_occView->clearSelectedObjects();
         displayShape(newShape, color.Red(), color.Green(), color.Blue());
     } else {
-        QMessageBox::warning(this, "Fillet Error", "Failed to create fillet. Radius might be too large.");
+        QMessageBox::warning(this, tr("Fillet Error"), tr("Failed to create fillet. Radius might be too large."));
     }
 }
 
@@ -2263,34 +2201,31 @@ void ViewerWidget::onCreateCircle(double x, double y, double z, double radius, c
 
 void ViewerWidget::onCreateArc(double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, const QColor& color)
 {
-    gp_Pnt p1(x1, y1, z1);
-    gp_Pnt p2(x2, y2, z2);
-    gp_Pnt p3(x3, y3, z3);
-    GC_MakeArcOfCircle arc(p1, p2, p3);
-    if (arc.IsDone()) {
-        BRepBuilderAPI_MakeEdge edge(arc.Value());
-        if (edge.IsDone()) {
-            displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-        }
-    }
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X1] = x1; p[CoreApi::Param::Y1] = y1; p[CoreApi::Param::Z1] = z1;
+    p[CoreApi::Param::X2] = x2; p[CoreApi::Param::Y2] = y2; p[CoreApi::Param::Z2] = z2;
+    p[CoreApi::Param::X3] = x3; p[CoreApi::Param::Y3] = y3; p[CoreApi::Param::Z3] = z3;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateArc", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgArc) m_dlgArc->raise();
 }
 
 void ViewerWidget::onCreateBox(double x, double y, double z, double dx, double dy, double dz, const QColor& color)
 {
-    const gp_Pnt P1{x, y, z};
-    const gp_Pnt P2{x + dx, y + dy, z + dz};
-    BRepPrimAPI_MakeBox box(P1, P2);
-    displayShape(box.Shape(), color.redF(), color.greenF(), color.blueF());
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::DX] = dx; p[CoreApi::Param::DY] = dy; p[CoreApi::Param::DZ] = dz;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateBox", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgBox) m_dlgBox->raise();
 }
 
 void ViewerWidget::onCreateEllipse(double centerX, double centerY, double centerZ, double normalX, double normalY, double normalZ, double majorRadius, double minorRadius, const QColor& color)
 {
     CoreApi::ShapeParams p;
-    p["x"] = centerX; p["y"] = centerY; p["z"] = centerZ;
-    p["nx"] = normalX; p["ny"] = normalY; p["nz"] = normalZ;
-    p["majorRadius"] = majorRadius; p["minorRadius"] = minorRadius;
+    p[CoreApi::Param::X] = centerX; p[CoreApi::Param::Y] = centerY; p[CoreApi::Param::Z] = centerZ;
+    p[CoreApi::Param::NX] = normalX; p[CoreApi::Param::NY] = normalY; p[CoreApi::Param::NZ] = normalZ;
+    p[CoreApi::Param::MAJOR] = majorRadius; p[CoreApi::Param::MINOR] = minorRadius;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateEllipse", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgEllipse) m_dlgEllipse->raise();
@@ -2298,25 +2233,29 @@ void ViewerWidget::onCreateEllipse(double centerX, double centerY, double center
 
 void ViewerWidget::onCreateCylinder(double x, double y, double z, double radius, double height, const QColor& color)
 {
-    gp_Ax2 axis(gp_Pnt(x, y, z), gp_Dir(0,0,1));
-    BRepPrimAPI_MakeCylinder cylinder(axis, radius, height);
-    displayShape(cylinder.Shape(), color.redF(), color.greenF(), color.blueF());
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::RADIUS] = radius; p[CoreApi::Param::HEIGHT] = height;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateCylinder", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgCylinder) m_dlgCylinder->raise();
 }
 
 void ViewerWidget::onCreateCone(double x, double y, double z, double radius1, double radius2,
                                 double height, const QColor &color)
 {
-    gp_Ax2 axis(gp_Pnt(x, y, z), gp_Dir(0,0,1));
-    BRepPrimAPI_MakeCone cone(axis, radius1, radius2, height);
-    displayShape(cone.Shape(), color.redF(), color.greenF(), color.blueF());
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::RADIUS1] = radius1; p[CoreApi::Param::RADIUS2] = radius2; p[CoreApi::Param::HEIGHT] = height;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateCone", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgCone) m_dlgCone->raise();
 }
 
 void ViewerWidget::onCreatePoint(double x, double y, double z, const QColor& color)
 {
     CoreApi::ShapeParams p;
-    p["x"] = x; p["y"] = y; p["z"] = z;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreatePoint", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgPoint) m_dlgPoint->raise();
@@ -2325,8 +2264,8 @@ void ViewerWidget::onCreatePoint(double x, double y, double z, const QColor& col
 void ViewerWidget::onCreateRectangle(double x, double y, double z, double width, double height, const QColor& color)
 {
     CoreApi::ShapeParams p;
-    p["x"] = x; p["y"] = y; p["z"] = z;
-    p["width"] = width; p["height"] = height;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::WIDTH] = width; p[CoreApi::Param::HEIGHT] = height;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateRectangle", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgRectangle) m_dlgRectangle->raise();
@@ -2334,9 +2273,11 @@ void ViewerWidget::onCreateRectangle(double x, double y, double z, double width,
 
 void ViewerWidget::onCreateSphere(double x, double y, double z, double radius, const QColor& color)
 {
-    gp_Pnt center(x, y, z);
-    BRepPrimAPI_MakeSphere sphere(center, radius);
-    displayShape(sphere.Shape(), color.redF(), color.greenF(), color.blueF());
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::RADIUS] = radius;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateSphere", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgSphere) m_dlgSphere->raise();
 }
 

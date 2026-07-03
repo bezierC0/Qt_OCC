@@ -75,9 +75,9 @@ DialogCreateCircle::DialogCreateCircle(QWidget* parent)
     connect(m_session, &ShapePickSession::sessionCompleted, this, &DialogCreateCircle::onSessionCompleted);
     connect(m_session, &ShapePickSession::stateChanged, this, [this](ShapePickSession::State s) {
         if (s == ShapePickSession::State::Preview)
-            m_statusLabel->setText("Step 2/2 : Drag to set radius, then click");
+            m_statusLabel->setText(tr("Step 2/2 : Drag to set radius, then click"));
         else if (s == ShapePickSession::State::Idle)
-            m_statusLabel->setText("Step 1/2 : Click centre point in 3D view");
+            m_statusLabel->setText(tr("Step 1/2 : Click centre point in 3D view"));
     });
 }
 
@@ -116,5 +116,5 @@ void DialogCreateCircle::onSessionCompleted(QVector<gp_Pnt> points)
     m_spinBoxY->setValue(points[0].Y());
     m_spinBoxZ->setValue(points[0].Z());
     if (r > 0.001) m_spinBoxRadius->setValue(r);
-    m_statusLabel->setText("Circle defined. Press [Create] to confirm.");
+    m_statusLabel->setText(tr("Circle defined. Press [Create] to confirm."));
 }
