@@ -76,7 +76,7 @@ void WidgetHole::onPickPointClicked()
     if (!view) return;
 
     if (m_parentShape.IsNull() || m_selectedFace.IsNull()) {
-        QMessageBox::warning(this, "Warning", "Please pick a target face first.");
+        QMessageBox::warning(this, tr("Warning"), tr("Please pick a target face first."));
         return;
     }
 
@@ -127,7 +127,7 @@ void WidgetHole::onObjectSelected(const TopoDS_Shape& shape)
 void WidgetHole::onApplyClicked()
 {
     if (m_parentShape.IsNull() || m_selectedFace.IsNull() || m_selectedPoint.IsNull()) {
-        QMessageBox::warning(this, "Warning", "Please pick both a Face and a Vertex.");
+        QMessageBox::warning(this, tr("Warning"), tr("Please pick both a Face and a Vertex."));
         return;
     }
 

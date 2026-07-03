@@ -101,9 +101,9 @@ DialogCreateEllipse::DialogCreateEllipse(QWidget* parent)
     connect(m_session, &ShapePickSession::sessionCompleted, this, &DialogCreateEllipse::onSessionCompleted);
     connect(m_session, &ShapePickSession::stateChanged, this, [this](ShapePickSession::State s) {
         if (s == ShapePickSession::State::Preview)
-            m_statusLabel->setText("Step 2/2 : Drag to set major radius, then click");
+            m_statusLabel->setText(tr("Step 2/2 : Drag to set major radius, then click"));
         else if (s == ShapePickSession::State::Idle)
-            m_statusLabel->setText("Step 1/2 : Click centre point in 3D view");
+            m_statusLabel->setText(tr("Step 1/2 : Click centre point in 3D view"));
     });
 }
 
@@ -151,5 +151,5 @@ void DialogCreateEllipse::onSessionCompleted(QVector<gp_Pnt> points)
         m_spinBoxMajorRadius->setValue(major);
         m_spinBoxMinorRadius->setValue(major / 2.0);
     }
-    m_statusLabel->setText("Ellipse defined. Press [Create] to confirm.");
+    m_statusLabel->setText(tr("Ellipse defined. Press [Create] to confirm."));
 }

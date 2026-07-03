@@ -16,29 +16,7 @@
 #include <QStatusBar>
 #include <QLabel>
 
-#include <TopoDS_Shape.hxx> // This should be resolved by CMakeLists.txt fix
-#include <TopAbs_ShapeEnum.hxx>
-#include <BRepPrimAPI_MakeBox.hxx>
-#include <BRepPrimAPI_MakeSphere.hxx>
-#include <BRepPrimAPI_MakeCylinder.hxx>
-#include <BRepPrimAPI_MakeCone.hxx>
-#include <BRepBuilderAPI_MakeVertex.hxx>
-#include <BRepBuilderAPI_MakeEdge.hxx>
-#include <BRepBuilderAPI_MakeFace.hxx>
-#include <BRepBuilderAPI_MakePolygon.hxx>
-#include <BRepBuilderAPI_MakeWire.hxx>
-#include <GC_MakeArcOfCircle.hxx>
-#include <Geom_BezierCurve.hxx>
-#include <Geom_BSplineCurve.hxx>
-#include <TColStd_Array1OfInteger.hxx>
-#include <TColStd_Array1OfReal.hxx>
-#include <TColgp_Array1OfPnt.hxx>
-#include <TDataStd_Name.hxx>
-#include <gp_Ax2.hxx>
-#include <gp_Circ.hxx>
-#include <gp_Elips.hxx>
-#include <gp_Pnt.hxx>
-#include <gp_Dir.hxx>
+// Note: TopoDS_Shape and TopAbs_ShapeEnum are available through ViewerWidget.h includes
 
 #include "ViewerWidget.h"
 #include "WidgetModelTree.h"

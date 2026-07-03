@@ -542,4 +542,373 @@
         <translation>Distance between the two vertices: %1</translation>
     </message>
 </context>
+<context>
+    <name>Messages</name>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="626"/>
+        <source>Export</source>
+        <translation>Export</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="626"/>
+        <source>No document to export.</source>
+        <translation>No document to export.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="635"/>
+        <source>Error</source>
+        <translation>Error</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="635"/>
+        <source>Failed to transfer document to STEP writer.</source>
+        <translation>Failed to transfer document to STEP writer.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="640"/>
+        <source>Failed to write STEP file.</source>
+        <translation>Failed to write STEP file.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="661"/>
+        <source>Failed to write IGES file.</source>
+        <translation>Failed to write IGES file.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="665"/>
+        <source>Unsupported file format.</source>
+        <translation>Unsupported file format.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1272"/>
+        <source>Failed to create Bezier curve (possibly too many points).</source>
+        <translation>Failed to create Bezier curve (possibly too many points).</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1297"/>
+        <source>Failed to create NURBS curve.</source>
+        <translation>Failed to create NURBS curve.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1488"/>
+        <source>Success</source>
+        <translation>Success</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1490"/>
+        <source>Shape repaired and saved to fix.stp successfully!</source>
+        <translation>Shape repaired and saved to fix.stp successfully!</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1491"/>
+        <source>Failed to write fix.stp</source>
+        <translation>Failed to write fix.stp</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1725"/>
+        <source>Chamfer Error</source>
+        <translation>Chamfer Error</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1725"/>
+        <source>Invalid edge or distance.</source>
+        <translation>Invalid edge or distance.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1762"/>
+        <source>Selected edge does not belong to the target shape.</source>
+        <translation>Selected edge does not belong to the target shape.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1770"/>
+        <source>Cannot find adjacent faces for the edge.</source>
+        <translation>Cannot find adjacent faces for the edge.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1792"/>
+        <source>Failed to create chamfer. Distance might be too large.</source>
+        <translation>Failed to create chamfer. Distance might be too large.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1823"/>
+        <source>Hole Error</source>
+        <translation>Hole Error</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1823"/>
+        <source>Invalid shape or inputs.</source>
+        <translation>Invalid shape or inputs.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1877"/>
+        <source>BRepFeat status: %1</source>
+        <translation>BRepFeat status: %1</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1942"/>
+        <source>Fillet Error</source>
+        <translation>Fillet Error</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1942"/>
+        <source>Invalid edge or radius.</source>
+        <translation>Invalid edge or radius.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1979"/>
+        <source>Selected edge does not belong to the target shape.</source>
+        <translation>Selected edge does not belong to the target shape.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/ViewerWidget.cpp" line="1993"/>
+        <source>Failed to create fillet. Radius might be too large.</source>
+        <translation>Failed to create fillet. Radius might be too large.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_hole.cpp" line="79"/>
+        <source>Warning</source>
+        <translation>Warning</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_hole.cpp" line="79"/>
+        <source>Please pick a target face first.</source>
+        <translation>Please pick a target face first.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_hole.cpp" line="130"/>
+        <source>Please pick both a Face and a Vertex.</source>
+        <translation>Please pick both a Face and a Vertex.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_fillet.cpp" line="97"/>
+        <source>Please pick an edge first.</source>
+        <translation>Please pick an edge first.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_chamfer.cpp" line="97"/>
+        <source>Please pick an edge first.</source>
+        <translation>Please pick an edge first.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_minimum_distance.cpp" line="203"/>
+        <source>Minimum Distance</source>
+        <translation>Minimum Distance</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_minimum_distance.cpp" line="203"/>
+        <source>Failed to calculate the minimum distance between the two shapes.</source>
+        <translation>Failed to calculate the minimum distance between the two shapes.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/DialogCreateNurbs.cpp" line="126"/>
+        <source>Invalid Parameters</source>
+        <translation>Invalid Parameters</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/DialogCreateNurbs.cpp" line="128"/>
+        <source>Number of points (%1) must be greater than Degree (%2).</source>
+        <translation>Number of points (%1) must be greater than Degree (%2).</translation>
+    </message>
+    <!-- UI Strings for Dialogs and Widgets -->
+    <message>
+        <location filename="../../src/ui/DialogCreatePoint.cpp" line="51"/>
+        <source>Create</source>
+        <translation>Create</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/DialogCreateLine.cpp" line="120"/>
+        <source>Step 1/2 : Click start point in 3D view</source>
+        <translation>Step 1/2 : Click start point in 3D view</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/DialogCreateLine.cpp" line="122"/>
+        <source>Step 2/2 : Click end point in 3D view</source>
+        <translation>Step 2/2 : Click end point in 3D view</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/DialogCreateRectangle.cpp" line="121"/>
+        <source>Step 1/2 : Click origin corner in 3D view</source>
+        <translation>Step 1/2 : Click origin corner in 3D view</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/DialogCreateRectangle.cpp" line="123"/>
+        <source>Step 2/2 : Click opposite corner in 3D view</source>
+        <translation>Step 2/2 : Click opposite corner in 3D view</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/DialogCreateRectangle.cpp" line="197"/>
+        <source>Rectangle defined. Press [Create] to confirm.</source>
+        <translation>Rectangle defined. Press [Create] to confirm.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/DialogCreateCircle.cpp" line="87"/>
+        <source>Step 1/2 : Click centre point in 3D view</source>
+        <translation>Step 1/2 : Click centre point in 3D view</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/DialogCreateCircle.cpp" line="89"/>
+        <source>Step 2/2 : Click on circumference in 3D view</source>
+        <translation>Step 2/2 : Click on circumference in 3D view</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/DialogCreateCircle.cpp" line="135"/>
+        <source>Circle defined. Press [Create] to confirm.</source>
+        <translation>Circle defined. Press [Create] to confirm.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/DialogCreateEllipse.cpp" line="104"/>
+        <source>Step 1/2 : Click centre point in 3D view</source>
+        <translation>Step 1/2 : Click centre point in 3D view</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/DialogCreateEllipse.cpp" line="106"/>
+        <source>Step 2/2 : Drag to set major radius, then click</source>
+        <translation>Step 2/2 : Drag to set major radius, then click</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/DialogCreateEllipse.cpp" line="154"/>
+        <source>Ellipse defined. Press [Create] to confirm.</source>
+        <translation>Ellipse defined. Press [Create] to confirm.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_hole.cpp" line="70"/>
+        <source>Please select a Face.</source>
+        <translation>Please select a Face.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_hole.cpp" line="95"/>
+        <source>Please select a Vertex for Hole center.</source>
+        <translation>Please select a Vertex for Hole center.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_hole.cpp" line="117"/>
+        <source>Face picked. Now pick a center vertex.</source>
+        <translation>Face picked. Now pick a center vertex.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_hole.cpp" line="122"/>
+        <source>Point picked. Ready to apply.</source>
+        <translation>Point picked. Ready to apply.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_fillet.cpp" line="81"/>
+        <source>Please select an edge.</source>
+        <translation>Please select an edge.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_fillet.cpp" line="90"/>
+        <source>Edge picked. Ready to fillet.</source>
+        <translation>Edge picked. Ready to fillet.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_chamfer.cpp" line="81"/>
+        <source>Please select an edge.</source>
+        <translation>Please select an edge.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_chamfer.cpp" line="90"/>
+        <source>Edge picked. Ready to chamfer.</source>
+        <translation>Edge picked. Ready to chamfer.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_distance.cpp" line="170"/>
+        <source>Please select the first vertex.</source>
+        <translation>Please select the first vertex.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_distance.cpp" line="172"/>
+        <source>Please select the second vertex.</source>
+        <translation>Please select the second vertex.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_distance.cpp" line="174"/>
+        <source>Measurement complete.</source>
+        <translation>Measurement complete.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_distance.cpp" line="157"/>
+        <source>Not Selected</source>
+        <translation>Not Selected</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_distance.cpp" line="178"/>
+        <source>0.00</source>
+        <translation>0.00</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_minimum_distance.cpp" line="202"/>
+        <source>N/A</source>
+        <translation>N/A</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_measure_length.cpp" line="99"/>
+        <source>Please select edges or wires.</source>
+        <translation>Please select edges or wires.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_measure_length.cpp" line="178"/>
+        <source>Measurement complete.</source>
+        <translation>Measurement complete.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_measure_arc_length.cpp" line="109"/>
+        <source>Please select arc edges.</source>
+        <translation>Please select arc edges.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_measure_arc_length.cpp" line="171"/>
+        <source>Measurement complete.</source>
+        <translation>Measurement complete.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_measure_angle.cpp" line="128"/>
+        <source>Please select a line edge or a vertex.</source>
+        <translation>Please select a line edge or a vertex.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_measure_angle.cpp" line="206"/>
+        <source>Select two line edges or three vertices.</source>
+        <translation>Select two line edges or three vertices.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_measure_angle.cpp" line="214"/>
+        <source>Please select %1 more vertex/vertices.</source>
+        <translation>Please select %1 more vertex/vertices.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_measure_angle.cpp" line="215"/>
+        <source>Measurement complete.</source>
+        <translation>Measurement complete.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_measure_angle.cpp" line="217"/>
+        <source>Selected items cannot form a valid angle. Click 'Clear' or 'Pick' and try again.</source>
+        <translation>Selected items cannot form a valid angle. Click 'Clear' or 'Pick' and try again.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_measure_angle.cpp" line="223"/>
+        <source>Selected items cannot form a valid angle.</source>
+        <translation>Selected items cannot form a valid angle.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_measure_angle.cpp" line="225"/>
+        <source>Click 'Pick' and select two lines or three points.</source>
+        <translation>Click 'Pick' and select two lines or three points.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_minimum_distance.cpp" line="226"/>
+        <source>Please select the first object.</source>
+        <translation>Please select the first object.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_minimum_distance.cpp" line="232"/>
+        <source>Please select the second object.</source>
+        <translation>Please select the second object.</translation>
+    </message>
+    <message>
+        <location filename="../../src/ui/widget_minimum_distance.cpp" line="237"/>
+        <source>Measurement ready. Click Apply.</source>
+        <translation>Measurement ready. Click Apply.</translation>
+    </message>
+</context>
 </TS>

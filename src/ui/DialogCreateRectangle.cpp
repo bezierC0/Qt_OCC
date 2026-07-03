@@ -118,9 +118,9 @@ DialogCreateRectangle::DialogCreateRectangle(QWidget* parent)
     connect(m_session, &ShapePickSession::stateChanged,
             this, [this](ShapePickSession::State s) {
                 if (s == ShapePickSession::State::Preview) {
-                    m_statusLabel->setText("Step 2/2 : Click opposite corner in 3D view");
+                    m_statusLabel->setText(tr("Step 2/2 : Click opposite corner in 3D view"));
                 } else if (s == ShapePickSession::State::Idle) {
-                    m_statusLabel->setText("Step 1/2 : Click origin corner in 3D view");
+                    m_statusLabel->setText(tr("Step 1/2 : Click origin corner in 3D view"));
                 }
             });
 }
@@ -194,5 +194,5 @@ void DialogCreateRectangle::onSessionCompleted(QVector<gp_Pnt> points)
     m_spinBoxWidth->setValue(std::abs(p2.X() - p1.X()));
     m_spinBoxHeight->setValue(std::abs(p2.Y() - p1.Y()));
 
-    m_statusLabel->setText("Rectangle defined. Press [Create] to confirm.");
+    m_statusLabel->setText(tr("Rectangle defined. Press [Create] to confirm."));
 }

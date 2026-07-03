@@ -117,9 +117,9 @@ DialogCreateLine::DialogCreateLine(QWidget* parent)
     connect(m_session, &ShapePickSession::stateChanged,
             this, [this](ShapePickSession::State s) {
                 if (s == ShapePickSession::State::Preview) {
-                    m_statusLabel->setText("Step 2/2 : Click end point in 3D view");
+                    m_statusLabel->setText(tr("Step 2/2 : Click end point in 3D view"));
                 } else if (s == ShapePickSession::State::Idle) {
-                    m_statusLabel->setText("Step 1/2 : Click start point in 3D view");
+                    m_statusLabel->setText(tr("Step 1/2 : Click start point in 3D view"));
                 }
             });
 }
@@ -192,5 +192,5 @@ void DialogCreateLine::onSessionCompleted(QVector<gp_Pnt> points)
     m_spinBoxY2->setValue(points[1].Y());
     m_spinBoxZ2->setValue(points[1].Z());
 
-    m_statusLabel->setText("Line defined. Press [Create] to confirm.");
+    m_statusLabel->setText(tr("Line defined. Press [Create] to confirm."));
 }

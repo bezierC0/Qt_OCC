@@ -1,4 +1,4 @@
-﻿#include "DialogCreatePoint.h"
+#include "DialogCreatePoint.h"
 #include "ViewerPickHelper.h"
 #include "command/ShapeCommandRegistry.h"
 #include <QIcon>
@@ -48,7 +48,7 @@ DialogCreatePoint::DialogCreatePoint(QWidget *parent) : QDialog(parent), m_color
     mainLayout->addLayout(formLayout);
 
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-    buttonBox->button(QDialogButtonBox::Ok)->setText("Create");
+    buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Create"));
     connect(buttonBox, &QDialogButtonBox::accepted, this, &DialogCreatePoint::onBtnOkClicked);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 

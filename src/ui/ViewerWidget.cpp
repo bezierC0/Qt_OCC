@@ -623,7 +623,7 @@ void ViewerWidget::loadModel(const QString &filename)
 void ViewerWidget::exportModel(const QString &filename)
 {
     if (m_doc->m_ocafDoc.IsNull()) {
-        QMessageBox::warning(this, "Export", "No document to export.");
+        QMessageBox::warning(this, tr("Export"), tr("No document to export."));
         return;
     }
 
@@ -632,12 +632,12 @@ void ViewerWidget::exportModel(const QString &filename)
         writer.SetNameMode(true);
         // Transfer the document to the writer
         if (!writer.Transfer(m_doc->m_ocafDoc, STEPControl_AsIs)) {
-            QMessageBox::critical(this, "Error", "Failed to transfer document to STEP writer.");
+            QMessageBox::critical(this, tr("Error"), tr("Failed to transfer document to STEP writer."));
             return;
         }
         // Write the file
         if (writer.Write(filename.toUtf8().constData()) != IFSelect_RetDone) {
-            QMessageBox::critical(this, "Error", "Failed to write STEP file.");
+            QMessageBox::critical(this, tr("Error"), tr("Failed to write STEP file."));
         }
     } 
     else if (filename.endsWith(".iges", Qt::CaseInsensitive) || filename.endsWith(".igs", Qt::CaseInsensitive)) {
@@ -658,11 +658,11 @@ void ViewerWidget::exportModel(const QString &filename)
 
         writer.ComputeModel();
         if (!writer.Write(filename.toUtf8().constData())) {
-            QMessageBox::critical(this, "Error", "Failed to write IGES file.");
+            QMessageBox::critical(this, tr("Error"), tr("Failed to write IGES file."));
         }
     }
     else {
-        QMessageBox::warning(this, "Export", "Unsupported file format.");
+        QMessageBox::warning(this, tr("Export"), tr("Unsupported file format."));
     }
 }
 
@@ -1269,7 +1269,7 @@ void ViewerWidget::onCreateBezier(const QList<gp_Pnt>& points, const QColor& col
     if (!shape.IsNull()) {
         displayShape(shape, color.redF(), color.greenF(), color.blueF());
     } else {
-        QMessageBox::warning(this, "Error", "Failed to create Bezier curve (possibly too many points).");
+        QMessageBox::warning(this, tr("Error"), tr("Failed to create Bezier curve (possibly too many points)."));
     }
 }
 
@@ -1294,7 +1294,7 @@ void ViewerWidget::onCreateNurbs(const QList<gp_Pnt>& points, int degree, const 
     if (!shape.IsNull()) {
         displayShape(shape, color.redF(), color.greenF(), color.blueF());
     } else {
-         QMessageBox::warning(this, "Error", "Failed to create NURBS curve.");
+         QMessageBox::warning(this, tr("Error"), tr("Failed to create NURBS curve."));
     }
 }
 
@@ -1485,10 +1485,10 @@ void ViewerWidget::repairAndSave(const TopoDS_Shape &shape)
     IFSelect_ReturnStatus status = writer.Write("fix.stp");
 
     if (status == IFSelect_RetDone) {
-        QMessageBox::information(this, "Success",
-                                 "Shape repaired and saved to fix.stp successfully!");
+        QMessageBox::information(this, tr("Success"),
+                                 tr("Shape repaired and saved to fix.stp successfully!"));
     } else {
-        QMessageBox::warning(this, "Error", "Failed to write fix.stp");
+        QMessageBox::warning(this, tr("Error"), tr("Failed to write fix.stp"));
     }
 }
 
@@ -1722,7 +1722,7 @@ void ViewerWidget::chamfer()
 void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance)
 {
     if (edgeShape.IsNull() || edgeShape.ShapeType() != TopAbs_EDGE || distance <= 0.0) {
-        QMessageBox::warning(this, "Chamfer Error", "Invalid edge or distance.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Invalid edge or distance."));
         return;
     }
     
@@ -1759,7 +1759,7 @@ void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance
         }
     }
     if (targetEdge.IsNull()) {
-        QMessageBox::warning(this, "Chamfer Error", "Selected edge does not belong to the target shape.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Selected edge does not belong to the target shape."));
         return;
     }
 
@@ -1767,13 +1767,13 @@ void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance
     TopExp::MapShapesAndAncestors(parentShape, TopAbs_EDGE, TopAbs_FACE, edgeFaceMap);
     
     if (!edgeFaceMap.Contains(targetEdge)) {
-        QMessageBox::warning(this, "Chamfer Error", "Cannot find adjacent faces for the edge.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Cannot find adjacent faces for the edge."));
         return;
     }
 
     const TopTools_ListOfShape& faceList = edgeFaceMap.FindFromKey(targetEdge);
     if (faceList.IsEmpty()) {
-        QMessageBox::warning(this, "Chamfer Error", "Cannot find adjacent faces for the edge.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Cannot find adjacent faces for the edge."));
         return;
     }
 
@@ -1789,7 +1789,7 @@ void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance
         m_occView->clearSelectedObjects();
         displayShape(newShape, color.Red(), color.Green(), color.Blue());
     } else {
-        QMessageBox::warning(this, "Chamfer Error", "Failed to create chamfer. Distance might be too large.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Failed to create chamfer. Distance might be too large."));
     }
 }
 
@@ -1820,7 +1820,7 @@ void ViewerWidget::hole()
 void ViewerWidget::onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shape& faceShape, const TopoDS_Shape& pointShape, double radius, int holeType, double depth)
 {
     if (parentShape.IsNull() || faceShape.IsNull() || faceShape.ShapeType() != TopAbs_FACE || pointShape.IsNull() || pointShape.ShapeType() != TopAbs_VERTEX) {
-            QMessageBox::warning(this, "Hole Error", "Invalid shape or inputs.");
+            QMessageBox::warning(this, tr("Hole Error"), tr("Invalid shape or inputs."));
             return;
     }
     
@@ -1874,7 +1874,7 @@ void ViewerWidget::onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shap
         m_occView->clearSelectedObjects();
         displayShape(newShape);
     } else {
-        QMessageBox::warning(this, "Hole Error", QString("BRepFeat status: %1").arg(status));
+        QMessageBox::warning(this, tr("Hole Error"), tr("BRepFeat status: %1").arg(status));
     }
 #if 0 // BRepAlgoAPI_Cut
     if (parentShape.IsNull() || faceShape.IsNull() || faceShape.ShapeType() != TopAbs_FACE || pointShape.IsNull() || pointShape.ShapeType() != TopAbs_VERTEX) {
@@ -1939,7 +1939,7 @@ void ViewerWidget::onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shap
 void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)
 {
     if (edgeShape.IsNull() || edgeShape.ShapeType() != TopAbs_EDGE || radius <= 0.0) {
-        QMessageBox::warning(this, "Fillet Error", "Invalid edge or radius.");
+        QMessageBox::warning(this, tr("Fillet Error"), tr("Invalid edge or radius."));
         return;
     }
     
@@ -1976,7 +1976,7 @@ void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)
         }
     }
     if (targetEdge.IsNull()) {
-        QMessageBox::warning(this, "Fillet Error", "Selected edge does not belong to the target shape.");
+        QMessageBox::warning(this, tr("Fillet Error"), tr("Selected edge does not belong to the target shape."));
         return;
     }
 
@@ -1990,7 +1990,7 @@ void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)
         m_occView->clearSelectedObjects();
         displayShape(newShape, color.Red(), color.Green(), color.Blue());
     } else {
-        QMessageBox::warning(this, "Fillet Error", "Failed to create fillet. Radius might be too large.");
+        QMessageBox::warning(this, tr("Fillet Error"), tr("Failed to create fillet. Radius might be too large."));
     }
 }
 
