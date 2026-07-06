@@ -16,7 +16,7 @@ namespace CoreApi {
  * The caller (ViewerWidget) only knows the command name string - no
  * compile-time dependency on any concrete command class.
  *
- * Registration is done once in ShapeCommands.cpp via a static initializer.
+ * Registration is done once by CoreApi::registerShapeCommands().
  *
  * Usage:
  *   auto shape = ShapeCommandRegistry::instance().execute("CreatePoint", params);

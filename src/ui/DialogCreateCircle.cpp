@@ -1,5 +1,6 @@
 #include "DialogCreateCircle.h"
 #include "ShapePickSession.h"
+#include "command/CommandCommon.h"
 #include "command/ShapeCommandRegistry.h"
 
 #include <QIcon>
@@ -67,8 +68,10 @@ DialogCreateCircle::DialogCreateCircle(QWidget* parent)
     m_session = new ShapePickSession(2,
         [](const std::vector<gp_Pnt>& pts, const gp_Pnt& mouse) -> TopoDS_Shape {
             CoreApi::ShapeParams p;
-            p["x"] = pts[0].X(); p["y"] = pts[0].Y(); p["z"] = pts[0].Z();
-            p["radius"] = pts[0].Distance(mouse);
+            p[CoreApi::Param::X] = pts[0].X();
+            p[CoreApi::Param::Y] = pts[0].Y();
+            p[CoreApi::Param::Z] = pts[0].Z();
+            p[CoreApi::Param::RADIUS] = pts[0].Distance(mouse);
             return CoreApi::ShapeCommandRegistry::instance().execute("CreateCircle", p);
         }, this);
 
