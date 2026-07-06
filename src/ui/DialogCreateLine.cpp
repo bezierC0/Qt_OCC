@@ -1,5 +1,6 @@
 #include "DialogCreateLine.h"
 #include "ShapePickSession.h"
+#include "command/CommandCommon.h"
 #include "command/ShapeCommandRegistry.h"
 
 #include <QIcon>
@@ -104,8 +105,12 @@ DialogCreateLine::DialogCreateLine(QWidget* parent)
         [](const std::vector<gp_Pnt>& confirmedPts, const gp_Pnt& mousePt) -> TopoDS_Shape
         {
             CoreApi::ShapeParams p;
-            p["x1"] = confirmedPts[0].X(); p["y1"] = confirmedPts[0].Y(); p["z1"] = confirmedPts[0].Z();
-            p["x2"] = mousePt.X();         p["y2"] = mousePt.Y();         p["z2"] = mousePt.Z();
+            p[CoreApi::Param::X1] = confirmedPts[0].X();
+            p[CoreApi::Param::Y1] = confirmedPts[0].Y();
+            p[CoreApi::Param::Z1] = confirmedPts[0].Z();
+            p[CoreApi::Param::X2] = mousePt.X();
+            p[CoreApi::Param::Y2] = mousePt.Y();
+            p[CoreApi::Param::Z2] = mousePt.Z();
             return CoreApi::ShapeCommandRegistry::instance().execute("CreateLine", p);
         },
         this);

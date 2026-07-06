@@ -1,5 +1,6 @@
 #include "DialogCreatePoint.h"
 #include "ViewerPickHelper.h"
+#include "command/CommandCommon.h"
 #include "command/ShapeCommandRegistry.h"
 #include <QIcon>
 #include <QCloseEvent>
@@ -90,7 +91,7 @@ void DialogCreatePoint::onPointPicked(double x, double y, double z)
     m_spinBoxZ->setValue(z);
 
     CoreApi::ShapeParams p;
-    p["x"] = x; p["y"] = y; p["z"] = z;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreatePoint", p);
     if (!shape.IsNull() && m_pickHelper) {
         m_pickHelper->setPreviewShape(shape, m_color.redF(), m_color.greenF(), m_color.blueF());

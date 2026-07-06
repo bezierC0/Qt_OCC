@@ -148,6 +148,7 @@
 #include <TopoDS.hxx>
 #include "common/ShapeLabelManager.h"
 #include "command/CommandCommon.h"
+#include "command/ShapeCommands.h"
 #include "command/ShapeCommandRegistry.h"
 #include "core_api/ShapeFactory.h"
 
@@ -402,6 +403,8 @@ ViewerWidget::ViewerWidget(QWidget *parent) : QWidget(parent)
     , m_dlgCone(nullptr)
     , m_dlgPolygon(nullptr)
 {
+    CoreApi::registerShapeCommands();
+
     m_occView = new OCCView(this);
     connect(m_occView, &OCCView::signalMouseMove, this, &ViewerWidget::signalMouseMove);
     connect(m_occView, &OCCView::signalSpaceSelected, this, &ViewerWidget::signalSpaceSelected);
@@ -2183,8 +2186,8 @@ void ViewerWidget::highlightLabel(const TDF_Label& label)
 void ViewerWidget::onCreateLine(double x1, double y1, double z1, double x2, double y2, double z2, const QColor& color)
 {
     CoreApi::ShapeParams p;
-    p["x1"] = x1; p["y1"] = y1; p["z1"] = z1;
-    p["x2"] = x2; p["y2"] = y2; p["z2"] = z2;
+    p[CoreApi::Param::X1] = x1; p[CoreApi::Param::Y1] = y1; p[CoreApi::Param::Z1] = z1;
+    p[CoreApi::Param::X2] = x2; p[CoreApi::Param::Y2] = y2; p[CoreApi::Param::Z2] = z2;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateLine", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgLine) m_dlgLine->raise();
@@ -2193,7 +2196,8 @@ void ViewerWidget::onCreateLine(double x1, double y1, double z1, double x2, doub
 void ViewerWidget::onCreateCircle(double x, double y, double z, double radius, const QColor& color)
 {
     CoreApi::ShapeParams p;
-    p["x"] = x; p["y"] = y; p["z"] = z; p["radius"] = radius;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::RADIUS] = radius;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateCircle", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgCircle) m_dlgCircle->raise();

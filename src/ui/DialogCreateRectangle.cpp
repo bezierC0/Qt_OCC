@@ -1,5 +1,6 @@
 #include "DialogCreateRectangle.h"
 #include "ShapePickSession.h"
+#include "command/CommandCommon.h"
 #include "command/ShapeCommandRegistry.h"
 
 #include <QIcon>
@@ -105,9 +106,11 @@ DialogCreateRectangle::DialogCreateRectangle(QWidget* parent)
             const gp_Pnt& p1 = confirmedPts[0];
             // Build via registry using origin + derived width/height
             CoreApi::ShapeParams p;
-            p["x"] = p1.X(); p["y"] = p1.Y(); p["z"] = p1.Z();
-            p["width"]  = mousePt.X() - p1.X();
-            p["height"] = mousePt.Y() - p1.Y();
+            p[CoreApi::Param::X] = p1.X();
+            p[CoreApi::Param::Y] = p1.Y();
+            p[CoreApi::Param::Z] = p1.Z();
+            p[CoreApi::Param::WIDTH] = mousePt.X() - p1.X();
+            p[CoreApi::Param::HEIGHT] = mousePt.Y() - p1.Y();
             return CoreApi::ShapeCommandRegistry::instance().execute("CreateRectangle", p);
         },
         this);

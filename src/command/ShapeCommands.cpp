@@ -1,3 +1,4 @@
+#include "ShapeCommands.h"
 #include "IShapeCommand.h"
 #include "ShapeCommandRegistry.h"
 #include "ShapeFactory.h"
@@ -19,28 +20,28 @@
 
 namespace CoreApi {
 
-} // namespace CoreApi
+void registerShapeCommands()
+{
+    static bool registered = false;
+    if (registered) {
+        return;
+    }
+    registered = true;
 
-// ---------------------------------------------------------------------------
-// Self-registrations - executed at static init time
-// ---------------------------------------------------------------------------
-namespace {
-    struct ShapeCommandsRegistrar {
-        ShapeCommandsRegistrar() {
-            auto& reg = CoreApi::ShapeCommandRegistry::instance();
-            reg.registerCommand("CreatePoint",     []() -> std::unique_ptr<CoreApi::IShapeCommand> { return std::make_unique<CoreApi::CreatePointCommand>(); });
-            reg.registerCommand("CreateLine",      []() -> std::unique_ptr<CoreApi::IShapeCommand> { return std::make_unique<CoreApi::CreateLineCommand>(); });
-            reg.registerCommand("CreateRectangle", []() -> std::unique_ptr<CoreApi::IShapeCommand> { return std::make_unique<CoreApi::CreateRectangleCommand>(); });
-            reg.registerCommand("CreateCircle",    []() -> std::unique_ptr<CoreApi::IShapeCommand> { return std::make_unique<CoreApi::CreateCircleCommand>(); });
-            reg.registerCommand("CreateArc",       []() -> std::unique_ptr<CoreApi::IShapeCommand> { return std::make_unique<CoreApi::CreateArcCommand>(); });
-            reg.registerCommand("CreateEllipse",   []() -> std::unique_ptr<CoreApi::IShapeCommand> { return std::make_unique<CoreApi::CreateEllipseCommand>(); });
-            reg.registerCommand("CreatePolygon",   []() -> std::unique_ptr<CoreApi::IShapeCommand> { return std::make_unique<CoreApi::CreatePolygonCommand>(); });
-            reg.registerCommand("CreateBezier",    []() -> std::unique_ptr<CoreApi::IShapeCommand> { return std::make_unique<CoreApi::CreateBezierCommand>(); });
-            reg.registerCommand("CreateNurbs",     []() -> std::unique_ptr<CoreApi::IShapeCommand> { return std::make_unique<CoreApi::CreateNurbsCommand>(); });
-            reg.registerCommand("CreateBox",       []() -> std::unique_ptr<CoreApi::IShapeCommand> { return std::make_unique<CoreApi::CreateBoxCommand>(); });
-            reg.registerCommand("CreateSphere",    []() -> std::unique_ptr<CoreApi::IShapeCommand> { return std::make_unique<CoreApi::CreateSphereCommand>(); });
-            reg.registerCommand("CreateCylinder",  []() -> std::unique_ptr<CoreApi::IShapeCommand> { return std::make_unique<CoreApi::CreateCylinderCommand>(); });
-            reg.registerCommand("CreateCone",      []() -> std::unique_ptr<CoreApi::IShapeCommand> { return std::make_unique<CoreApi::CreateConeCommand>(); });
-        }
-    } g_shapeCommandsRegistrar;
+    auto& reg = ShapeCommandRegistry::instance();
+    reg.registerCommand("CreatePoint",     []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreatePointCommand>(); });
+    reg.registerCommand("CreateLine",      []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateLineCommand>(); });
+    reg.registerCommand("CreateRectangle", []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateRectangleCommand>(); });
+    reg.registerCommand("CreateCircle",    []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateCircleCommand>(); });
+    reg.registerCommand("CreateArc",       []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateArcCommand>(); });
+    reg.registerCommand("CreateEllipse",   []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateEllipseCommand>(); });
+    reg.registerCommand("CreatePolygon",   []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreatePolygonCommand>(); });
+    reg.registerCommand("CreateBezier",    []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateBezierCommand>(); });
+    reg.registerCommand("CreateNurbs",     []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateNurbsCommand>(); });
+    reg.registerCommand("CreateBox",       []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateBoxCommand>(); });
+    reg.registerCommand("CreateSphere",    []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateSphereCommand>(); });
+    reg.registerCommand("CreateCylinder",  []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateCylinderCommand>(); });
+    reg.registerCommand("CreateCone",      []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateConeCommand>(); });
 }
+
+} // namespace CoreApi

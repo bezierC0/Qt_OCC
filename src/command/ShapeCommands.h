@@ -9,5 +9,15 @@ class CreatePointCommand;
 class CreateLineCommand;
 class CreateRectangleCommand;
 class CreateCircleCommand;
+class CreateArcCommand;
 class CreateEllipseCommand;
+class CreatePolygonCommand;
+class CreateBezierCommand;
+class CreateNurbsCommand;
+class CreateBoxCommand;
+class CreateSphereCommand;
+class CreateCylinderCommand;
+class CreateConeCommand;
+
+void registerShapeCommands();
 } // namespace CoreApi
