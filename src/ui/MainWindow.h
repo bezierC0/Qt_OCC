@@ -6,6 +6,7 @@
 #include <QAction>
 #include <QLabel>
 #include <QStatusBar>
+#include <memory>
 
 class QTranslator;
 
@@ -18,10 +19,15 @@ class WidgetExplodeAssembly;
 class WidgetClipping;
 class WidgetTransform;
 
+namespace Cae {
+class CaeController;
+}
+
 class MainWindow : public SARibbonMainWindow {
     Q_OBJECT
 public:
     MainWindow(QWidget* parent = nullptr);
+    ~MainWindow() override;
     ViewerWidget* GetViewerWidget() const;
     ModelTreeWidget* GetModelTreeWidget() const;
 public slots:
@@ -93,6 +99,18 @@ private slots:
     void onShapeToolFillet();
     void onShapeToolHole();
 
+    /* CAE */
+    void onCaeNewStaticStudy();
+    void onCaeNewThermalStudy();
+    void onCaeUseCurrentGeometry();
+    void onCaeAssignMaterial();
+    void onCaeAddFixedSupport();
+    void onCaeGenerateMesh();
+    void onCaeRunSolver();
+    void onCaeShowDisplacement();
+    void onCaeShowStress();
+    void onCaeShowTemperature();
+
     /* help */
     void onSwitchLanguage();
     void onSwitchTheme();
@@ -113,6 +131,7 @@ private:
     void createViewGroup(); // Create view group
     void createToolGroup(); // Create tool group
     void createShapeGroup(); // Create shape group
+    void createCaeGroup(); // Create CAE workflow group
     void createHelpGroup(); // Create help group
 
     enum StatusType {
@@ -216,6 +235,26 @@ private:
     QAction* m_shapeToolFilletAction{};
     QAction* m_shapeToolHoleAction{};
 
+    // ---- CAE Group ----
+    SARibbonCategory* m_caeCategory{};
+    SARibbonPannel* m_caeStudyPannel{};
+    SARibbonPannel* m_caeGeometryPannel{};
+    SARibbonPannel* m_caeMaterialPannel{};
+    SARibbonPannel* m_caeBoundaryPannel{};
+    SARibbonPannel* m_caeMeshPannel{};
+    SARibbonPannel* m_caeSolvePannel{};
+    SARibbonPannel* m_caeResultsPannel{};
+    QAction* m_caeNewStaticAction{};
+    QAction* m_caeNewThermalAction{};
+    QAction* m_caeUseCurrentGeometryAction{};
+    QAction* m_caeAssignMaterialAction{};
+    QAction* m_caeFixedSupportAction{};
+    QAction* m_caeGenerateMeshAction{};
+    QAction* m_caeRunSolverAction{};
+    QAction* m_caeShowDisplacementAction{};
+    QAction* m_caeShowStressAction{};
+    QAction* m_caeShowTemperatureAction{};
+
 
     // ---- help Group ----
     SARibbonCategory* m_helpCategory;
@@ -235,6 +274,7 @@ private:
     WidgetTransform*                m_widgetTransform { nullptr };
 
     QMap<StatusType, QLabel*> m_statusLabels;
+    std::unique_ptr<Cae::CaeController> m_caeController;
 
 
 

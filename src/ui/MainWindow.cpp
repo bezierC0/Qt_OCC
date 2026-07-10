@@ -25,6 +25,8 @@
 #include "widget_clipping.h"
 #include "widget_set_coordinate_system.h"
 #include "widget_transform.h"
+#include "cae/CaeCommand.h"
+#include "cae/CaeController.h"
 
 MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
 {
@@ -35,6 +37,7 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
 
     m_modelTreeWidget = new ModelTreeWidget( this );
     m_viewerWidget = new ViewerWidget(this);
+    m_caeController = std::make_unique<Cae::CaeController>();
 
     const auto splitter = new QSplitter( Qt::Horizontal, this );
     splitter->addWidget( m_modelTreeWidget );
@@ -54,6 +57,8 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     resize(1200, 800);
 }
 
+MainWindow::~MainWindow() = default;
+
 void MainWindow::setupUi()
 {
     createRibbon();
@@ -61,6 +66,7 @@ void MainWindow::setupUi()
     createViewGroup();
     createToolGroup();
     createShapeGroup();
+    createCaeGroup();
     createHelpGroup();
 
     m_widgetExplodeAsm = new WidgetExplodeAssembly();
@@ -96,6 +102,7 @@ void MainWindow::createRibbon() {
         m_ribbon->removeCategory( m_viewCategory );
         m_ribbon->removeCategory( m_toolCategory );
         m_ribbon->removeCategory( m_shapeCategory );
+        m_ribbon->removeCategory( m_caeCategory );
         m_ribbon->removeCategory( m_helpCategory );
     }
     else
@@ -553,6 +560,58 @@ void MainWindow::createShapeGroup()
     createShapeToolPannel();
 }
 
+void MainWindow::createCaeGroup()
+{
+    m_caeCategory = m_ribbon->addCategoryPage(tr("CAE"));
+
+    m_caeStudyPannel = m_caeCategory->addPannel(tr("Study"));
+    m_caeNewStaticAction = new QAction(QIcon(":/icons/icon/cae_static_study.svg"), tr("Static"), this);
+    connect(m_caeNewStaticAction, &QAction::triggered, this, &MainWindow::onCaeNewStaticStudy);
+    m_caeStudyPannel->addLargeAction(m_caeNewStaticAction);
+
+    m_caeNewThermalAction = new QAction(QIcon(":/icons/icon/cae_thermal_study.svg"), tr("Thermal"), this);
+    connect(m_caeNewThermalAction, &QAction::triggered, this, &MainWindow::onCaeNewThermalStudy);
+    m_caeStudyPannel->addLargeAction(m_caeNewThermalAction);
+
+    m_caeGeometryPannel = m_caeCategory->addPannel(tr("Geometry"));
+    m_caeUseCurrentGeometryAction = new QAction(QIcon(":/icons/icon/cae_use_current_geometry.svg"), tr("Use Current"), this);
+    connect(m_caeUseCurrentGeometryAction, &QAction::triggered, this, &MainWindow::onCaeUseCurrentGeometry);
+    m_caeGeometryPannel->addLargeAction(m_caeUseCurrentGeometryAction);
+
+    m_caeMaterialPannel = m_caeCategory->addPannel(tr("Material"));
+    m_caeAssignMaterialAction = new QAction(QIcon(":/icons/icon/cae_assign_material.svg"), tr("Assign"), this);
+    connect(m_caeAssignMaterialAction, &QAction::triggered, this, &MainWindow::onCaeAssignMaterial);
+    m_caeMaterialPannel->addLargeAction(m_caeAssignMaterialAction);
+
+    m_caeBoundaryPannel = m_caeCategory->addPannel(tr("Boundary"));
+    m_caeFixedSupportAction = new QAction(QIcon(":/icons/icon/cae_fixed_support.svg"), tr("Fixed"), this);
+    connect(m_caeFixedSupportAction, &QAction::triggered, this, &MainWindow::onCaeAddFixedSupport);
+    m_caeBoundaryPannel->addLargeAction(m_caeFixedSupportAction);
+
+    m_caeMeshPannel = m_caeCategory->addPannel(tr("Mesh"));
+    m_caeGenerateMeshAction = new QAction(QIcon(":/icons/icon/cae_generate_mesh.svg"), tr("Generate"), this);
+    connect(m_caeGenerateMeshAction, &QAction::triggered, this, &MainWindow::onCaeGenerateMesh);
+    m_caeMeshPannel->addLargeAction(m_caeGenerateMeshAction);
+
+    m_caeSolvePannel = m_caeCategory->addPannel(tr("Solve"));
+    m_caeRunSolverAction = new QAction(QIcon(":/icons/icon/cae_run_solver.svg"), tr("Run"), this);
+    connect(m_caeRunSolverAction, &QAction::triggered, this, &MainWindow::onCaeRunSolver);
+    m_caeSolvePannel->addLargeAction(m_caeRunSolverAction);
+
+    m_caeResultsPannel = m_caeCategory->addPannel(tr("Results"));
+    m_caeShowDisplacementAction = new QAction(QIcon(":/icons/icon/cae_result_displacement.svg"), tr("Displacement"), this);
+    connect(m_caeShowDisplacementAction, &QAction::triggered, this, &MainWindow::onCaeShowDisplacement);
+    m_caeResultsPannel->addSmallAction(m_caeShowDisplacementAction);
+
+    m_caeShowStressAction = new QAction(QIcon(":/icons/icon/cae_result_stress.svg"), tr("Stress"), this);
+    connect(m_caeShowStressAction, &QAction::triggered, this, &MainWindow::onCaeShowStress);
+    m_caeResultsPannel->addSmallAction(m_caeShowStressAction);
+
+    m_caeShowTemperatureAction = new QAction(QIcon(":/icons/icon/cae_result_temperature.svg"), tr("Temperature"), this);
+    connect(m_caeShowTemperatureAction, &QAction::triggered, this, &MainWindow::onCaeShowTemperature);
+    m_caeResultsPannel->addSmallAction(m_caeShowTemperatureAction);
+}
+
 void MainWindow::createHelpGroup()
 {
     // ---- help Group ----
@@ -903,6 +962,56 @@ void MainWindow::onShapeToolFillet()
 void MainWindow::onShapeToolHole()
 {
     m_viewerWidget->hole();
+}
+
+void MainWindow::onCaeNewStaticStudy()
+{
+    updateStatusMessage(m_caeController->execute(std::make_unique<Cae::CreateStudyCommand>(Cae::StudyType::StaticStructural)), 5000);
+}
+
+void MainWindow::onCaeNewThermalStudy()
+{
+    updateStatusMessage(m_caeController->execute(std::make_unique<Cae::CreateStudyCommand>(Cae::StudyType::SteadyThermal)), 5000);
+}
+
+void MainWindow::onCaeUseCurrentGeometry()
+{
+    updateStatusMessage(m_caeController->useCurrentGeometry(), 5000);
+}
+
+void MainWindow::onCaeAssignMaterial()
+{
+    updateStatusMessage(tr("Material assignment step is prepared."), 5000);
+}
+
+void MainWindow::onCaeAddFixedSupport()
+{
+    updateStatusMessage(tr("Boundary condition step is prepared."), 5000);
+}
+
+void MainWindow::onCaeGenerateMesh()
+{
+    updateStatusMessage(m_caeController->generateMesh(), 5000);
+}
+
+void MainWindow::onCaeRunSolver()
+{
+    updateStatusMessage(m_caeController->runSolver(), 5000);
+}
+
+void MainWindow::onCaeShowDisplacement()
+{
+    updateStatusMessage(m_caeController->showResult(Cae::ResultFieldType::Displacement), 5000);
+}
+
+void MainWindow::onCaeShowStress()
+{
+    updateStatusMessage(m_caeController->showResult(Cae::ResultFieldType::VonMisesStress), 5000);
+}
+
+void MainWindow::onCaeShowTemperature()
+{
+    updateStatusMessage(m_caeController->showResult(Cae::ResultFieldType::Temperature), 5000);
 }
 
 ViewerWidget* MainWindow::GetViewerWidget() const

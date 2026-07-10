@@ -63,6 +63,16 @@
         <file>icon/work_plane.svg</file>
         <file>icon/animation.svg</file>
         <file>icon/busbar.svg</file>
+        <file>icon/cae_assign_material.svg</file>
+        <file>icon/cae_fixed_support.svg</file>
+        <file>icon/cae_generate_mesh.svg</file>
+        <file>icon/cae_result_displacement.svg</file>
+        <file>icon/cae_result_stress.svg</file>
+        <file>icon/cae_result_temperature.svg</file>
+        <file>icon/cae_run_solver.svg</file>
+        <file>icon/cae_static_study.svg</file>
+        <file>icon/cae_thermal_study.svg</file>
+        <file>icon/cae_use_current_geometry.svg</file>
         <file>icon/logo/logo.icns</file>
         <file>icon/logo/logo.ico</file>
     </qresource>

@@ -334,6 +334,7 @@ file(
     src/display/*.cpp
     src/util/*.cpp
     src/command/*.cpp
+    src/cae/*.cpp
     src/common/*.cpp
     #src/core/*.cpp
     # ui
@@ -353,6 +354,7 @@ file(
     src/display/*.h
     src/util/*.h
     src/command/*.h
+    src/cae/*.h
     src/common/*.h
     #src/core/*.h
 )
@@ -446,6 +448,7 @@ target_include_directories(${PROJECT_NAME}
         src/ui
         src/display
         src/util
+        src/cae
         src/common
         #src/core
 )
