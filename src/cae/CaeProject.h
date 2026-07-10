@@ -10,6 +10,7 @@ namespace Cae {
 class CaeProject {
 public:
     CaeStudy& createStudy(StudyType type);
+    void clear();
 
     CaeStudy* activeStudy();
     const CaeStudy* activeStudy() const;

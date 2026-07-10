@@ -11,6 +11,12 @@ CaeStudy& CaeProject::createStudy(StudyType type)
     return ref;
 }
 
+void CaeProject::clear()
+{
+    m_activeStudy = nullptr;
+    m_studies.clear();
+}
+
 CaeStudy* CaeProject::activeStudy()
 {
     return m_activeStudy;

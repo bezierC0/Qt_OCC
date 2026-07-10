@@ -14,6 +14,7 @@ class TopoDS_Shape;
 
 class ViewerWidget;
 class ModelTreeWidget;
+class CaeTreeWidget;
 class WidgetSetCoordinateSystem;
 class WidgetExplodeAssembly;
 class WidgetClipping;
@@ -21,6 +22,7 @@ class WidgetTransform;
 
 namespace Cae {
 class CaeController;
+enum class ResultFieldType;
 }
 
 class MainWindow : public SARibbonMainWindow {
@@ -102,14 +104,18 @@ private slots:
     /* CAE */
     void onCaeNewStaticStudy();
     void onCaeNewThermalStudy();
+    void onCaeRunDemoAnalysis();
     void onCaeUseCurrentGeometry();
+    void onCaeCreateNamedSelection();
     void onCaeAssignMaterial();
     void onCaeAddFixedSupport();
+    void onCaeAddForce();
     void onCaeGenerateMesh();
     void onCaeRunSolver();
     void onCaeShowDisplacement();
     void onCaeShowStress();
     void onCaeShowTemperature();
+    void onCaeSettings();
 
     /* help */
     void onSwitchLanguage();
@@ -123,6 +129,8 @@ private slots:
 
 private:
     void setupUi();
+    void refreshCaeTree();
+    void presentCaeResult(Cae::ResultFieldType fieldType);
     void createThemeActions();
 
     // Ribbon creation helper functions
@@ -144,6 +152,7 @@ private:
 private:
     ViewerWidget* m_viewerWidget;
     ModelTreeWidget* m_modelTreeWidget;
+    CaeTreeWidget* m_caeTreeWidget{nullptr};
     QTranslator* m_translator;
     int m_currentLanguage;
 
@@ -244,16 +253,21 @@ private:
     SARibbonPannel* m_caeMeshPannel{};
     SARibbonPannel* m_caeSolvePannel{};
     SARibbonPannel* m_caeResultsPannel{};
+    SARibbonPannel* m_caeSettingsPannel{};
     QAction* m_caeNewStaticAction{};
     QAction* m_caeNewThermalAction{};
+    QAction* m_caeRunDemoAnalysisAction{};
     QAction* m_caeUseCurrentGeometryAction{};
+    QAction* m_caeNamedSelectionAction{};
     QAction* m_caeAssignMaterialAction{};
     QAction* m_caeFixedSupportAction{};
+    QAction* m_caeForceAction{};
     QAction* m_caeGenerateMeshAction{};
     QAction* m_caeRunSolverAction{};
     QAction* m_caeShowDisplacementAction{};
     QAction* m_caeShowStressAction{};
     QAction* m_caeShowTemperatureAction{};
+    QAction* m_caeSettingsAction{};
 
 
     // ---- help Group ----

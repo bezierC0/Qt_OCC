@@ -50,6 +50,8 @@
 #include <QMessageBox>
 #include <QCoreApplication>
 #include <QDebug>
+#include <QLabel>
+#include <QResizeEvent>
 
 /* read */
 #include <STEPControl_Reader.hxx>
@@ -469,6 +471,8 @@ ViewerWidget::~ViewerWidget()
 
 void ViewerWidget::clearAll()
 {
+    clearScalarField();
+
     if (m_doc) {
         m_doc->m_list.clear();
     }
@@ -492,6 +496,92 @@ void ViewerWidget::clearAll()
             Tree<TDF_Label> emptyTree;
             treeWidget->setModelTree(emptyTree);
         }
+    }
+}
+
+bool ViewerWidget::hasGeometry() const
+{
+    return m_doc && !m_doc->m_list.empty();
+}
+
+bool ViewerWidget::showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage)
+{
+    if (!hasGeometry() || !m_occView || m_occView->Context().IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("No CAD geometry is available for result visualization.");
+        }
+        return false;
+    }
+
+    const auto scalarColor = [](double value) {
+        const double t = qBound(0.0, value, 1.0);
+        if (t < 0.25) {
+            return Quantity_Color(0.0, t * 4.0, 1.0, Quantity_TOC_RGB);
+        }
+        if (t < 0.5) {
+            return Quantity_Color(0.0, 1.0, 2.0 - t * 4.0, Quantity_TOC_RGB);
+        }
+        if (t < 0.75) {
+            return Quantity_Color(t * 4.0 - 2.0, 1.0, 0.0, Quantity_TOC_RGB);
+        }
+        return Quantity_Color(1.0, 4.0 - t * 4.0, 0.0, Quantity_TOC_RGB);
+    };
+
+    const std::size_t objectCount = m_doc->m_list.size();
+    for (std::size_t index = 0; index < objectCount; ++index) {
+        const double normalized = objectCount == 1
+            ? 0.65
+            : static_cast<double>(index) / static_cast<double>(objectCount - 1);
+        m_occView->Context()->SetColor(m_doc->m_list[index], scalarColor(normalized), false);
+        m_occView->Context()->Redisplay(m_doc->m_list[index], false);
+    }
+
+    if (!m_caeLegendLabel) {
+        m_caeLegendLabel = new QLabel(m_occView);
+        m_caeLegendLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
+        m_caeLegendLabel->setTextFormat(Qt::RichText);
+        m_caeLegendLabel->setStyleSheet(QStringLiteral(
+            "QLabel { background: rgba(30, 30, 30, 220); color: white; "
+            "border: 1px solid #808080; border-radius: 3px; padding: 8px; }"));
+    }
+
+    m_caeLegendLabel->setText(QStringLiteral(
+        "<b>%1</b><br/>"
+        "<span style='color:#ff0000'>&#9632;</span> Max: %2<br/>"
+        "<span style='color:#00ff00'>&#9632;</span> Mid: %3<br/>"
+        "<span style='color:#0000ff'>&#9632;</span> Min: %4")
+        .arg(title.toHtmlEscaped())
+        .arg(maximum, 0, 'g', 6)
+        .arg((minimum + maximum) * 0.5, 0, 'g', 6)
+        .arg(minimum, 0, 'g', 6));
+    m_caeLegendLabel->adjustSize();
+    m_caeLegendLabel->move(qMax(8, m_occView->width() - m_caeLegendLabel->width() - 12), 12);
+    m_caeLegendLabel->show();
+    m_caeLegendLabel->raise();
+    m_occView->Context()->UpdateCurrentViewer();
+    return true;
+}
+
+void ViewerWidget::clearScalarField()
+{
+    if (m_doc && m_occView && !m_occView->Context().IsNull()) {
+        for (const auto& object : m_doc->m_list) {
+            m_occView->Context()->UnsetColor(object, false);
+            m_occView->Context()->Redisplay(object, false);
+        }
+        m_occView->Context()->UpdateCurrentViewer();
+    }
+
+    if (m_caeLegendLabel) {
+        m_caeLegendLabel->hide();
+    }
+}
+
+void ViewerWidget::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+    if (m_caeLegendLabel && m_caeLegendLabel->isVisible() && m_occView) {
+        m_caeLegendLabel->move(qMax(8, m_occView->width() - m_caeLegendLabel->width() - 12), 12);
     }
 }
 

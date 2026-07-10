@@ -329,6 +329,7 @@ file(
 set(SOURCES)
 file(
     GLOB SOURCES
+    CONFIGURE_DEPENDS
     src/*.cpp
     src/ui/*.cpp
     src/display/*.cpp
@@ -349,6 +350,7 @@ file(
 set(HEADERS)
 file(
     GLOB HEADERS
+    CONFIGURE_DEPENDS
     src/*.h
     src/ui/*.h
     src/display/*.h

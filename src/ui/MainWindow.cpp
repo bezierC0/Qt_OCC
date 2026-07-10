@@ -15,18 +15,23 @@
 #include <QToolButton>
 #include <QStatusBar>
 #include <QLabel>
+#include <QTabWidget>
 
 // Note: TopoDS_Shape and TopAbs_ShapeEnum are available through ViewerWidget.h includes
 
 #include "ViewerWidget.h"
 #include "WidgetModelTree.h"
+#include "WidgetCaeTree.h"
 #include "DialogAbout.h"
+#include "DialogCaeSettings.h"
 #include "widget_explode_assembly.h"
 #include "widget_clipping.h"
 #include "widget_set_coordinate_system.h"
 #include "widget_transform.h"
 #include "cae/CaeCommand.h"
 #include "cae/CaeController.h"
+#include "cae/CaeExternalToolConfig.h"
+#include "cae/CaeExternalToolConfigStore.h"
 
 MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
 {
@@ -36,11 +41,17 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     m_currentLanguage = 0; // 0: English, 1: Chinese, 2: Japanese
 
     m_modelTreeWidget = new ModelTreeWidget( this );
+    m_caeTreeWidget = new CaeTreeWidget(this);
     m_viewerWidget = new ViewerWidget(this);
     m_caeController = std::make_unique<Cae::CaeController>();
+    m_caeController->externalToolConfig() = Cae::CaeExternalToolConfigStore().load();
+
+    auto* navigationTabs = new QTabWidget(this);
+    navigationTabs->addTab(m_modelTreeWidget, tr("Model"));
+    navigationTabs->addTab(m_caeTreeWidget, tr("CAE"));
 
     const auto splitter = new QSplitter( Qt::Horizontal, this );
-    splitter->addWidget( m_modelTreeWidget );
+    splitter->addWidget( navigationTabs );
     splitter->addWidget( m_viewerWidget );
 
     splitter->setStretchFactor( 0, 1 ); // m_modelTreeWidget
@@ -51,6 +62,7 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     connect(m_modelTreeWidget, &ModelTreeWidget::labelRemoveRequested, m_viewerWidget, &ViewerWidget::removeLabelShape);
 
     setCentralWidget( splitter );
+    refreshCaeTree();
 
     setupUi();
 
@@ -58,6 +70,13 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
 }
 
 MainWindow::~MainWindow() = default;
+
+void MainWindow::refreshCaeTree()
+{
+    if (m_caeTreeWidget && m_caeController) {
+        m_caeTreeWidget->setProject(m_caeController->project());
+    }
+}
 
 void MainWindow::setupUi()
 {
@@ -573,10 +592,18 @@ void MainWindow::createCaeGroup()
     connect(m_caeNewThermalAction, &QAction::triggered, this, &MainWindow::onCaeNewThermalStudy);
     m_caeStudyPannel->addLargeAction(m_caeNewThermalAction);
 
+    m_caeRunDemoAnalysisAction = new QAction(QIcon(":/icons/icon/cae_demo_analysis.svg"), tr("Demo Analysis"), this);
+    connect(m_caeRunDemoAnalysisAction, &QAction::triggered, this, &MainWindow::onCaeRunDemoAnalysis);
+    m_caeStudyPannel->addLargeAction(m_caeRunDemoAnalysisAction);
+
     m_caeGeometryPannel = m_caeCategory->addPannel(tr("Geometry"));
     m_caeUseCurrentGeometryAction = new QAction(QIcon(":/icons/icon/cae_use_current_geometry.svg"), tr("Use Current"), this);
     connect(m_caeUseCurrentGeometryAction, &QAction::triggered, this, &MainWindow::onCaeUseCurrentGeometry);
     m_caeGeometryPannel->addLargeAction(m_caeUseCurrentGeometryAction);
+
+    m_caeNamedSelectionAction = new QAction(QIcon(":/icons/icon/cae_named_selection.svg"), tr("Named Selection"), this);
+    connect(m_caeNamedSelectionAction, &QAction::triggered, this, &MainWindow::onCaeCreateNamedSelection);
+    m_caeGeometryPannel->addSmallAction(m_caeNamedSelectionAction);
 
     m_caeMaterialPannel = m_caeCategory->addPannel(tr("Material"));
     m_caeAssignMaterialAction = new QAction(QIcon(":/icons/icon/cae_assign_material.svg"), tr("Assign"), this);
@@ -587,6 +614,10 @@ void MainWindow::createCaeGroup()
     m_caeFixedSupportAction = new QAction(QIcon(":/icons/icon/cae_fixed_support.svg"), tr("Fixed"), this);
     connect(m_caeFixedSupportAction, &QAction::triggered, this, &MainWindow::onCaeAddFixedSupport);
     m_caeBoundaryPannel->addLargeAction(m_caeFixedSupportAction);
+
+    m_caeForceAction = new QAction(QIcon(":/icons/icon/cae_force.svg"), tr("Force"), this);
+    connect(m_caeForceAction, &QAction::triggered, this, &MainWindow::onCaeAddForce);
+    m_caeBoundaryPannel->addLargeAction(m_caeForceAction);
 
     m_caeMeshPannel = m_caeCategory->addPannel(tr("Mesh"));
     m_caeGenerateMeshAction = new QAction(QIcon(":/icons/icon/cae_generate_mesh.svg"), tr("Generate"), this);
@@ -610,6 +641,11 @@ void MainWindow::createCaeGroup()
     m_caeShowTemperatureAction = new QAction(QIcon(":/icons/icon/cae_result_temperature.svg"), tr("Temperature"), this);
     connect(m_caeShowTemperatureAction, &QAction::triggered, this, &MainWindow::onCaeShowTemperature);
     m_caeResultsPannel->addSmallAction(m_caeShowTemperatureAction);
+
+    m_caeSettingsPannel = m_caeCategory->addPannel(tr("Settings"));
+    m_caeSettingsAction = new QAction(QIcon(":/icons/icon/cae_settings.svg"), tr("Settings"), this);
+    connect(m_caeSettingsAction, &QAction::triggered, this, &MainWindow::onCaeSettings);
+    m_caeSettingsPannel->addLargeAction(m_caeSettingsAction);
 }
 
 void MainWindow::createHelpGroup()
@@ -639,13 +675,17 @@ void MainWindow::createHelpGroup()
 void MainWindow::onNewFile()
 {
     m_viewerWidget->clearAll();
+    m_caeController->clearProject();
+    refreshCaeTree();
 }
 void MainWindow::onOpenFile()
 {
     QString filename = QFileDialog::getOpenFileName(this, "Open CAD File", "", "STEP (*.step *.stp);;IGES (*.iges *.igs)");
     if (!filename.isEmpty())
     {
+        m_caeController->clearProject();
         m_viewerWidget->loadModel(filename);
+        refreshCaeTree();
     }
 }
 
@@ -966,52 +1006,146 @@ void MainWindow::onShapeToolHole()
 
 void MainWindow::onCaeNewStaticStudy()
 {
+    m_viewerWidget->clearScalarField();
     updateStatusMessage(m_caeController->execute(std::make_unique<Cae::CreateStudyCommand>(Cae::StudyType::StaticStructural)), 5000);
+    refreshCaeTree();
 }
 
 void MainWindow::onCaeNewThermalStudy()
 {
+    m_viewerWidget->clearScalarField();
     updateStatusMessage(m_caeController->execute(std::make_unique<Cae::CreateStudyCommand>(Cae::StudyType::SteadyThermal)), 5000);
+    refreshCaeTree();
+}
+
+void MainWindow::onCaeRunDemoAnalysis()
+{
+    updateStatusMessage(m_caeController->runDemoAnalysis(m_viewerWidget->hasGeometry()), 8000);
+    refreshCaeTree();
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    if (study && study->state() == Cae::StudyState::Solved) {
+        presentCaeResult(Cae::ResultFieldType::VonMisesStress);
+    }
 }
 
 void MainWindow::onCaeUseCurrentGeometry()
 {
-    updateStatusMessage(m_caeController->useCurrentGeometry(), 5000);
+    updateStatusMessage(m_caeController->useCurrentGeometry(m_viewerWidget->hasGeometry()), 5000);
+    refreshCaeTree();
+}
+
+void MainWindow::onCaeCreateNamedSelection()
+{
+    updateStatusMessage(m_caeController->createDefaultNamedSelection(), 5000);
+    refreshCaeTree();
 }
 
 void MainWindow::onCaeAssignMaterial()
 {
-    updateStatusMessage(tr("Material assignment step is prepared."), 5000);
+    updateStatusMessage(m_caeController->assignDefaultMaterial(), 5000);
+    refreshCaeTree();
 }
 
 void MainWindow::onCaeAddFixedSupport()
 {
-    updateStatusMessage(tr("Boundary condition step is prepared."), 5000);
+    updateStatusMessage(m_caeController->addFixedSupport(), 5000);
+    refreshCaeTree();
+}
+
+void MainWindow::onCaeAddForce()
+{
+    updateStatusMessage(m_caeController->addDefaultForce(), 5000);
+    refreshCaeTree();
 }
 
 void MainWindow::onCaeGenerateMesh()
 {
     updateStatusMessage(m_caeController->generateMesh(), 5000);
+    refreshCaeTree();
 }
 
 void MainWindow::onCaeRunSolver()
 {
     updateStatusMessage(m_caeController->runSolver(), 5000);
+    refreshCaeTree();
 }
 
 void MainWindow::onCaeShowDisplacement()
 {
-    updateStatusMessage(m_caeController->showResult(Cae::ResultFieldType::Displacement), 5000);
+    presentCaeResult(Cae::ResultFieldType::Displacement);
 }
 
 void MainWindow::onCaeShowStress()
 {
-    updateStatusMessage(m_caeController->showResult(Cae::ResultFieldType::VonMisesStress), 5000);
+    presentCaeResult(Cae::ResultFieldType::VonMisesStress);
 }
 
 void MainWindow::onCaeShowTemperature()
 {
-    updateStatusMessage(m_caeController->showResult(Cae::ResultFieldType::Temperature), 5000);
+    presentCaeResult(Cae::ResultFieldType::Temperature);
+}
+
+void MainWindow::presentCaeResult(Cae::ResultFieldType fieldType)
+{
+    updateStatusMessage(m_caeController->showResult(fieldType), 5000);
+    refreshCaeTree();
+
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    if (!study || !study->result()) {
+        return;
+    }
+
+    const Cae::CaeResultField* field = study->result()->field(fieldType);
+    if (!field) {
+        return;
+    }
+
+    QString errorMessage;
+    const QString title = QStringLiteral("%1 (%2)").arg(Cae::toDisplayString(fieldType), field->unit());
+    if (!m_viewerWidget->showScalarField(title, field->minValue(), field->maxValue(), &errorMessage)) {
+        updateStatusMessage(errorMessage, 5000);
+    }
+}
+
+void MainWindow::onCaeSettings()
+{
+    DialogCaeSettings dialog(m_caeController->externalToolConfig(), this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    m_caeController->externalToolConfig() = dialog.config();
+    const Cae::CaeExternalToolConfig& config = m_caeController->externalToolConfig();
+    Cae::CaeExternalToolConfigStore().save(config);
+    QStringList configuredTools;
+    QStringList missingTools;
+
+    const auto collectToolStatus = [&](Cae::ExternalTool tool) {
+        if (config.hasExecutablePath(tool)) {
+            configuredTools << Cae::toDisplayString(tool);
+        } else {
+            missingTools << Cae::toDisplayString(tool);
+        }
+    };
+
+    collectToolStatus(Cae::ExternalTool::Gmsh);
+    collectToolStatus(Cae::ExternalTool::CalculiX);
+    collectToolStatus(Cae::ExternalTool::GetDP);
+
+    const QString workingDirectory = config.workingDirectory().isEmpty()
+        ? tr("not set")
+        : config.workingDirectory();
+    const QString configuredText = configuredTools.isEmpty()
+        ? tr("none")
+        : configuredTools.join(QStringLiteral(", "));
+
+    updateStatusMessage(
+        tr("CAE tools configured: %1; missing: %2; work dir: %3; timeout: %4 ms.")
+            .arg(configuredText,
+                 missingTools.join(QStringLiteral(", ")),
+                 workingDirectory)
+            .arg(config.timeoutMilliseconds()),
+        8000);
 }
 
 ViewerWidget* MainWindow::GetViewerWidget() const
