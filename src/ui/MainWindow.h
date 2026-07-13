@@ -6,6 +6,7 @@
 #include <QAction>
 #include <QLabel>
 #include <QStatusBar>
+#include <memory>
 
 class QTranslator;
 
@@ -13,15 +14,22 @@ class TopoDS_Shape;
 
 class ViewerWidget;
 class ModelTreeWidget;
+class CaeTreeWidget;
 class WidgetSetCoordinateSystem;
 class WidgetExplodeAssembly;
 class WidgetClipping;
 class WidgetTransform;
 
+namespace Cae {
+class CaeController;
+enum class ResultFieldType;
+}
+
 class MainWindow : public SARibbonMainWindow {
     Q_OBJECT
 public:
     MainWindow(QWidget* parent = nullptr);
+    ~MainWindow() override;
     ViewerWidget* GetViewerWidget() const;
     ModelTreeWidget* GetModelTreeWidget() const;
 public slots:
@@ -93,6 +101,22 @@ private slots:
     void onShapeToolFillet();
     void onShapeToolHole();
 
+    /* CAE */
+    void onCaeNewStaticStudy();
+    void onCaeNewThermalStudy();
+    void onCaeRunDemoAnalysis();
+    void onCaeUseCurrentGeometry();
+    void onCaeCreateNamedSelection();
+    void onCaeAssignMaterial();
+    void onCaeAddFixedSupport();
+    void onCaeAddForce();
+    void onCaeGenerateMesh();
+    void onCaeRunSolver();
+    void onCaeShowDisplacement();
+    void onCaeShowStress();
+    void onCaeShowTemperature();
+    void onCaeSettings();
+
     /* help */
     void onSwitchLanguage();
     void onSwitchTheme();
@@ -105,6 +129,8 @@ private slots:
 
 private:
     void setupUi();
+    void refreshCaeTree();
+    void presentCaeResult(Cae::ResultFieldType fieldType);
     void createThemeActions();
 
     // Ribbon creation helper functions
@@ -113,6 +139,7 @@ private:
     void createViewGroup(); // Create view group
     void createToolGroup(); // Create tool group
     void createShapeGroup(); // Create shape group
+    void createCaeGroup(); // Create CAE workflow group
     void createHelpGroup(); // Create help group
 
     enum StatusType {
@@ -125,6 +152,7 @@ private:
 private:
     ViewerWidget* m_viewerWidget;
     ModelTreeWidget* m_modelTreeWidget;
+    CaeTreeWidget* m_caeTreeWidget{nullptr};
     QTranslator* m_translator;
     int m_currentLanguage;
 
@@ -216,6 +244,31 @@ private:
     QAction* m_shapeToolFilletAction{};
     QAction* m_shapeToolHoleAction{};
 
+    // ---- CAE Group ----
+    SARibbonCategory* m_caeCategory{};
+    SARibbonPannel* m_caeStudyPannel{};
+    SARibbonPannel* m_caeGeometryPannel{};
+    SARibbonPannel* m_caeMaterialPannel{};
+    SARibbonPannel* m_caeBoundaryPannel{};
+    SARibbonPannel* m_caeMeshPannel{};
+    SARibbonPannel* m_caeSolvePannel{};
+    SARibbonPannel* m_caeResultsPannel{};
+    SARibbonPannel* m_caeSettingsPannel{};
+    QAction* m_caeNewStaticAction{};
+    QAction* m_caeNewThermalAction{};
+    QAction* m_caeRunDemoAnalysisAction{};
+    QAction* m_caeUseCurrentGeometryAction{};
+    QAction* m_caeNamedSelectionAction{};
+    QAction* m_caeAssignMaterialAction{};
+    QAction* m_caeFixedSupportAction{};
+    QAction* m_caeForceAction{};
+    QAction* m_caeGenerateMeshAction{};
+    QAction* m_caeRunSolverAction{};
+    QAction* m_caeShowDisplacementAction{};
+    QAction* m_caeShowStressAction{};
+    QAction* m_caeShowTemperatureAction{};
+    QAction* m_caeSettingsAction{};
+
 
     // ---- help Group ----
     SARibbonCategory* m_helpCategory;
@@ -235,6 +288,7 @@ private:
     WidgetTransform*                m_widgetTransform { nullptr };
 
     QMap<StatusType, QLabel*> m_statusLabels;
+    std::unique_ptr<Cae::CaeController> m_caeController;
 
 
 

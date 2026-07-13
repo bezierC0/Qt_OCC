@@ -50,6 +50,9 @@
 #include <QMessageBox>
 #include <QCoreApplication>
 #include <QDebug>
+#include <QLabel>
+#include <QResizeEvent>
+#include <utility>
 
 /* read */
 #include <STEPControl_Reader.hxx>
@@ -151,6 +154,13 @@
 #include "command/ShapeCommands.h"
 #include "command/ShapeCommandRegistry.h"
 #include "core_api/ShapeFactory.h"
+#include "cae/CaeMsh2Reader.h"
+#include "cae/CaeOccMeshDataSource.h"
+
+#include <MeshVS_Drawer.hxx>
+#include <MeshVS_DrawerAttribute.hxx>
+#include <MeshVS_Mesh.hxx>
+#include <MeshVS_MeshPrsBuilder.hxx>
 
 namespace
 {
@@ -390,6 +400,9 @@ uint32_t deepBuildAssemblyTree(uint32_t parentNode, const TDF_Label &label,
 
 struct ViewerWidget::Document {
     std::vector<opencascade::handle<AIS_InteractiveObject>> m_list;
+    std::vector<opencascade::handle<AIS_InteractiveObject>> m_scalarOverlays;
+    std::vector<opencascade::handle<AIS_InteractiveObject>> m_scalarHiddenObjects;
+    Handle(MeshVS_Mesh) m_caeMesh;
     Handle(TDocStd_Document) m_ocafDoc;
 };
 
@@ -469,6 +482,9 @@ ViewerWidget::~ViewerWidget()
 
 void ViewerWidget::clearAll()
 {
+    clearScalarField();
+    clearCaeMesh();
+
     if (m_doc) {
         m_doc->m_list.clear();
     }
@@ -492,6 +508,208 @@ void ViewerWidget::clearAll()
             Tree<TDF_Label> emptyTree;
             treeWidget->setModelTree(emptyTree);
         }
+    }
+}
+
+bool ViewerWidget::hasGeometry() const
+{
+    return m_doc && !m_doc->m_list.empty();
+}
+
+bool ViewerWidget::exportCaeGeometry(const QString& filePath, QString* errorMessage)
+{
+    if (!hasGeometry() || m_doc->m_ocafDoc.IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("No CAD geometry is available for CAE export.");
+        }
+        return false;
+    }
+
+    STEPCAFControl_Writer writer;
+    writer.SetNameMode(true);
+    if (!writer.Transfer(m_doc->m_ocafDoc, STEPControl_AsIs)) {
+        if (errorMessage) {
+            *errorMessage = tr("Failed to transfer CAD geometry to the STEP writer.");
+        }
+        return false;
+    }
+    if (writer.Write(filePath.toUtf8().constData()) != IFSelect_RetDone) {
+        if (errorMessage) {
+            *errorMessage = tr("Failed to write CAE geometry: %1").arg(filePath);
+        }
+        return false;
+    }
+    return true;
+}
+
+bool ViewerWidget::showCaeMesh(const QString& meshFilePath, QString* errorMessage)
+{
+    if (!m_occView || m_occView->Context().IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("OCCT viewer is not available for mesh display.");
+        }
+        return false;
+    }
+
+    Cae::Msh2MeshData meshData;
+    if (!Cae::Msh2Reader::read(meshFilePath, &meshData, errorMessage)) {
+        return false;
+    }
+
+    clearScalarField();
+    clearCaeMesh();
+
+    Handle(Cae::OccMeshDataSource) dataSource = new Cae::OccMeshDataSource(std::move(meshData));
+    Handle(MeshVS_Mesh) mesh = new MeshVS_Mesh();
+    mesh->SetDataSource(dataSource);
+    Handle(MeshVS_MeshPrsBuilder) builder = new MeshVS_MeshPrsBuilder(
+        mesh,
+        MeshVS_DMF_WireFrame,
+        dataSource);
+    mesh->AddBuilder(builder, true);
+    mesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor, Quantity_NOC_GREEN);
+    mesh->GetDrawer()->SetDouble(MeshVS_DA_EdgeWidth, 1.5);
+    mesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, false);
+
+    m_occView->Context()->Display(mesh, MeshVS_DMF_WireFrame, 0, false);
+    m_doc->m_caeMesh = mesh;
+    m_occView->Context()->UpdateCurrentViewer();
+    return true;
+}
+
+void ViewerWidget::clearCaeMesh()
+{
+    if (!m_doc || m_doc->m_caeMesh.IsNull()) {
+        return;
+    }
+    if (m_occView && !m_occView->Context().IsNull()) {
+        m_occView->Context()->Remove(m_doc->m_caeMesh, false);
+        m_occView->Context()->UpdateCurrentViewer();
+    }
+    m_doc->m_caeMesh.Nullify();
+}
+
+bool ViewerWidget::showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage)
+{
+    if (!hasGeometry() || !m_occView || m_occView->Context().IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("No CAD geometry is available for result visualization.");
+        }
+        return false;
+    }
+
+    const auto scalarColor = [](double value) {
+        const double t = qBound(0.0, value, 1.0);
+        if (t < 0.25) {
+            return Quantity_Color(0.0, t * 4.0, 1.0, Quantity_TOC_RGB);
+        }
+        if (t < 0.5) {
+            return Quantity_Color(0.0, 1.0, 2.0 - t * 4.0, Quantity_TOC_RGB);
+        }
+        if (t < 0.75) {
+            return Quantity_Color(t * 4.0 - 2.0, 1.0, 0.0, Quantity_TOC_RGB);
+        }
+        return Quantity_Color(1.0, 4.0 - t * 4.0, 0.0, Quantity_TOC_RGB);
+    };
+
+    clearScalarField();
+    clearCaeMesh();
+
+    const std::size_t objectCount = m_doc->m_list.size();
+    for (std::size_t index = 0; index < objectCount; ++index) {
+        const double normalized = objectCount == 1
+            ? 0.65
+            : static_cast<double>(index) / static_cast<double>(objectCount - 1);
+
+        TopoDS_Shape shape;
+        const Handle(AIS_Shape) aisShape = Handle(AIS_Shape)::DownCast(m_doc->m_list[index]);
+        if (!aisShape.IsNull()) {
+            shape = aisShape->Shape();
+        } else {
+            const Handle(XCAFPrs_AISObject) xcafObject =
+                Handle(XCAFPrs_AISObject)::DownCast(m_doc->m_list[index]);
+            if (!xcafObject.IsNull()) {
+                XCAFDoc_ShapeTool::GetShape(xcafObject->GetLabel(), shape);
+            }
+        }
+
+        if (shape.IsNull()) {
+            continue;
+        }
+
+        Handle(AIS_Shape) overlay = new AIS_Shape(shape);
+        overlay->SetDisplayMode(AIS_Shaded);
+        overlay->SetColor(scalarColor(normalized));
+        overlay->Attributes()->SetFaceBoundaryDraw(true);
+        overlay->Attributes()->SetFaceBoundaryAspect(
+            new Prs3d_LineAspect(Quantity_NOC_BLACK, Aspect_TOL_SOLID, 1.0));
+
+        if (m_occView->Context()->IsDisplayed(m_doc->m_list[index])) {
+            m_occView->Context()->Erase(m_doc->m_list[index], false);
+            m_doc->m_scalarHiddenObjects.push_back(m_doc->m_list[index]);
+        }
+        m_occView->Context()->Display(overlay, AIS_Shaded, 0, false);
+        m_doc->m_scalarOverlays.push_back(overlay);
+    }
+
+    if (m_doc->m_scalarOverlays.empty()) {
+        if (errorMessage) {
+            *errorMessage = tr("The current CAD objects cannot be converted to result overlays.");
+        }
+        clearScalarField();
+        return false;
+    }
+
+    if (!m_caeLegendLabel) {
+        m_caeLegendLabel = new QLabel(m_occView);
+        m_caeLegendLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
+        m_caeLegendLabel->setTextFormat(Qt::RichText);
+        m_caeLegendLabel->setStyleSheet(QStringLiteral(
+            "QLabel { background: rgba(30, 30, 30, 220); color: white; "
+            "border: 1px solid #808080; border-radius: 3px; padding: 8px; }"));
+    }
+
+    m_caeLegendLabel->setText(QStringLiteral(
+        "<b>%1</b><br/>"
+        "<span style='color:#ff0000'>&#9632;</span> Max: %2<br/>"
+        "<span style='color:#00ff00'>&#9632;</span> Mid: %3<br/>"
+        "<span style='color:#0000ff'>&#9632;</span> Min: %4")
+        .arg(title.toHtmlEscaped())
+        .arg(maximum, 0, 'g', 6)
+        .arg((minimum + maximum) * 0.5, 0, 'g', 6)
+        .arg(minimum, 0, 'g', 6));
+    m_caeLegendLabel->adjustSize();
+    m_caeLegendLabel->move(qMax(8, m_occView->width() - m_caeLegendLabel->width() - 12), 12);
+    m_caeLegendLabel->show();
+    m_caeLegendLabel->raise();
+    m_occView->Context()->UpdateCurrentViewer();
+    return true;
+}
+
+void ViewerWidget::clearScalarField()
+{
+    if (m_doc && m_occView && !m_occView->Context().IsNull()) {
+        for (const auto& overlay : m_doc->m_scalarOverlays) {
+            m_occView->Context()->Remove(overlay, false);
+        }
+        for (const auto& object : m_doc->m_scalarHiddenObjects) {
+            m_occView->Context()->Display(object, object->DisplayMode(), 0, false);
+        }
+        m_doc->m_scalarOverlays.clear();
+        m_doc->m_scalarHiddenObjects.clear();
+        m_occView->Context()->UpdateCurrentViewer();
+    }
+
+    if (m_caeLegendLabel) {
+        m_caeLegendLabel->hide();
+    }
+}
+
+void ViewerWidget::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+    if (m_caeLegendLabel && m_caeLegendLabel->isVisible() && m_occView) {
+        m_caeLegendLabel->move(qMax(8, m_occView->width() - m_caeLegendLabel->width() - 12), 12);
     }
 }
 

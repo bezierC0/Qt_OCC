@@ -7,6 +7,8 @@
 class AIS_InteractiveObject;
 class gp_Dir;
 class gp_Pnt;
+class QLabel;
+class QResizeEvent;
 
 class DialogCreateArc;
 class DialogCreateBox;
@@ -129,6 +131,12 @@ public:
     const std::map<TopAbs_ShapeEnum, bool>& getSelectionFilters() const ;
     void repairAndSave(const TopoDS_Shape& shape);
     void updateTree();
+    bool hasGeometry() const;
+    bool exportCaeGeometry(const QString& filePath, QString* errorMessage);
+    bool showCaeMesh(const QString& meshFilePath, QString* errorMessage = nullptr);
+    void clearCaeMesh();
+    bool showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage = nullptr);
+    void clearScalarField();
 
     void onFunctionTest();
 signals:
@@ -144,6 +152,9 @@ private slots:
 public slots:
     void highlightLabel(const TDF_Label& label);
     void removeLabelShape(const TDF_Label& label);
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
 
 private slots:
     void onCreateArc(double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, const QColor& color);
@@ -173,6 +184,7 @@ private:
     bool                            m_importWithHealing{false};
     Handle(AIS_InteractiveObject)   m_highlightedShape{nullptr};
     bool                            m_isShowBoundingBox{true};  
+    QLabel*                         m_caeLegendLabel{nullptr};
 
     //TopoDS_Shape m_loadedShape;
 
