@@ -106,7 +106,7 @@ QString CaeController::addDefaultForce()
     return QStringLiteral("Added load to %1: Force 100 N -> %2.").arg(study->name(), targetName);
 }
 
-QString CaeController::generateMesh()
+QString CaeController::generateMesh(const QString& geometryFilePath)
 {
     CaeStudy* study = m_project->activeStudy();
     const QString validationError = CaeWorkflowValidator::requireMeshInputs(study);
@@ -117,7 +117,7 @@ QString CaeController::generateMesh()
     const CaeMeshSetup setup(1.0, MeshElementOrder::First);
     MeshResult meshResult;
     QString errorMessage;
-    if (!m_services.meshGenerator->generate(MeshRequest{setup.globalSize()}, &meshResult, &errorMessage)) {
+    if (!m_services.meshGenerator->generate(MeshRequest{setup.globalSize(), geometryFilePath}, &meshResult, &errorMessage)) {
         study->setState(StudyState::Failed);
         return errorMessage;
     }
@@ -209,7 +209,7 @@ QString CaeController::showResult(ResultFieldType fieldType)
     return QStringLiteral("Result field prepared: %1.").arg(toDisplayString(fieldType));
 }
 
-QString CaeController::runDemoAnalysis(bool hasGeometry)
+QString CaeController::runDemoAnalysis(bool hasGeometry, const QString& geometryFilePath)
 {
     createStudy(StudyType::StaticStructural);
 
@@ -223,7 +223,7 @@ QString CaeController::runDemoAnalysis(bool hasGeometry)
     addFixedSupport();
     addDefaultForce();
 
-    message = generateMesh();
+    message = generateMesh(geometryFilePath);
     if (m_project->activeStudy()->state() == StudyState::Failed) {
         return message;
     }
@@ -266,6 +266,12 @@ CaeExternalToolConfig& CaeController::externalToolConfig()
 const CaeExternalToolConfig& CaeController::externalToolConfig() const
 {
     return m_services.externalToolConfig;
+}
+
+void CaeController::setExternalToolConfig(const CaeExternalToolConfig& config)
+{
+    m_services.externalToolConfig = config;
+    CaeServiceFactory::configureExternalMeshGenerator(m_services);
 }
 
 } // namespace Cae

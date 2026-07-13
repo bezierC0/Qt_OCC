@@ -44,7 +44,7 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     m_caeTreeWidget = new CaeTreeWidget(this);
     m_viewerWidget = new ViewerWidget(this);
     m_caeController = std::make_unique<Cae::CaeController>();
-    m_caeController->externalToolConfig() = Cae::CaeExternalToolConfigStore().load();
+    m_caeController->setExternalToolConfig(Cae::CaeExternalToolConfigStore().load());
 
     auto* navigationTabs = new QTabWidget(this);
     navigationTabs->addTab(m_modelTreeWidget, tr("Model"));
@@ -1007,6 +1007,7 @@ void MainWindow::onShapeToolHole()
 void MainWindow::onCaeNewStaticStudy()
 {
     m_viewerWidget->clearScalarField();
+    m_viewerWidget->clearCaeMesh();
     updateStatusMessage(m_caeController->execute(std::make_unique<Cae::CreateStudyCommand>(Cae::StudyType::StaticStructural)), 5000);
     refreshCaeTree();
 }
@@ -1014,13 +1015,35 @@ void MainWindow::onCaeNewStaticStudy()
 void MainWindow::onCaeNewThermalStudy()
 {
     m_viewerWidget->clearScalarField();
+    m_viewerWidget->clearCaeMesh();
     updateStatusMessage(m_caeController->execute(std::make_unique<Cae::CreateStudyCommand>(Cae::StudyType::SteadyThermal)), 5000);
     refreshCaeTree();
 }
 
 void MainWindow::onCaeRunDemoAnalysis()
 {
-    updateStatusMessage(m_caeController->runDemoAnalysis(m_viewerWidget->hasGeometry()), 8000);
+    QString geometryFilePath;
+    const Cae::CaeExternalToolConfig& config = m_caeController->externalToolConfig();
+    if (config.hasExecutablePath(Cae::ExternalTool::Gmsh) && m_viewerWidget->hasGeometry()) {
+        QString workingDirectory = config.workingDirectory();
+        if (workingDirectory.isEmpty()) {
+            workingDirectory = QDir::temp().filePath(QStringLiteral("Qt_OCC_CAE"));
+        }
+        if (!QDir().mkpath(workingDirectory)) {
+            updateStatusMessage(tr("Failed to create CAE working directory: %1").arg(workingDirectory), 8000);
+            return;
+        }
+        geometryFilePath = QDir(workingDirectory).filePath(QStringLiteral("cae_geometry.step"));
+        QString exportError;
+        if (!m_viewerWidget->exportCaeGeometry(geometryFilePath, &exportError)) {
+            updateStatusMessage(exportError, 8000);
+            return;
+        }
+    }
+
+    updateStatusMessage(
+        m_caeController->runDemoAnalysis(m_viewerWidget->hasGeometry(), geometryFilePath),
+        8000);
     refreshCaeTree();
     const Cae::CaeStudy* study = m_caeController->project().activeStudy();
     if (study && study->state() == Cae::StudyState::Solved) {
@@ -1030,6 +1053,7 @@ void MainWindow::onCaeRunDemoAnalysis()
 
 void MainWindow::onCaeUseCurrentGeometry()
 {
+    m_viewerWidget->clearCaeMesh();
     updateStatusMessage(m_caeController->useCurrentGeometry(m_viewerWidget->hasGeometry()), 5000);
     refreshCaeTree();
 }
@@ -1060,8 +1084,43 @@ void MainWindow::onCaeAddForce()
 
 void MainWindow::onCaeGenerateMesh()
 {
-    updateStatusMessage(m_caeController->generateMesh(), 5000);
+    QString geometryFilePath;
+    const Cae::CaeExternalToolConfig& config = m_caeController->externalToolConfig();
+    if (config.hasExecutablePath(Cae::ExternalTool::Gmsh)) {
+        QString workingDirectory = config.workingDirectory();
+        if (workingDirectory.isEmpty()) {
+            workingDirectory = QDir::temp().filePath(QStringLiteral("Qt_OCC_CAE"));
+        }
+        if (!QDir().mkpath(workingDirectory)) {
+            updateStatusMessage(tr("Failed to create CAE working directory: %1").arg(workingDirectory), 8000);
+            return;
+        }
+
+        geometryFilePath = QDir(workingDirectory).filePath(QStringLiteral("cae_geometry.step"));
+        QString exportError;
+        if (!m_viewerWidget->exportCaeGeometry(geometryFilePath, &exportError)) {
+            updateStatusMessage(exportError, 8000);
+            return;
+        }
+    }
+
+    const QString meshMessage = m_caeController->generateMesh(geometryFilePath);
+    updateStatusMessage(meshMessage, 8000);
     refreshCaeTree();
+
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    if (!study || !study->mesh()) {
+        return;
+    }
+    const QString meshFilePath = study->mesh()->source();
+    if (!QFileInfo::exists(meshFilePath)) {
+        return;
+    }
+
+    QString displayError;
+    if (!m_viewerWidget->showCaeMesh(meshFilePath, &displayError)) {
+        updateStatusMessage(displayError, 8000);
+    }
 }
 
 void MainWindow::onCaeRunSolver()
@@ -1114,7 +1173,7 @@ void MainWindow::onCaeSettings()
         return;
     }
 
-    m_caeController->externalToolConfig() = dialog.config();
+    m_caeController->setExternalToolConfig(dialog.config());
     const Cae::CaeExternalToolConfig& config = m_caeController->externalToolConfig();
     Cae::CaeExternalToolConfigStore().save(config);
     QStringList configuredTools;

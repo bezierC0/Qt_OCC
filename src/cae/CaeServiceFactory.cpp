@@ -1,6 +1,7 @@
 #include "CaeServiceFactory.h"
 
 #include "CaeDummyServices.h"
+#include "CaeGmshMeshGenerator.h"
 #include "CaeQtProcessRunner.h"
 
 namespace Cae {
@@ -35,6 +36,18 @@ CaeServiceBundle CaeServiceFactory::create(CaeServiceProfile profile)
     }
 
     return bundle;
+}
+
+void CaeServiceFactory::configureExternalMeshGenerator(CaeServiceBundle& bundle)
+{
+    if (bundle.externalToolConfig.hasExecutablePath(ExternalTool::Gmsh) && bundle.processRunner) {
+        bundle.meshGenerator = std::make_unique<GmshMeshGenerator>(
+            bundle.externalToolConfig,
+            bundle.processRunner.get());
+        return;
+    }
+
+    bundle.meshGenerator = std::make_unique<DummyMeshGenerator>();
 }
 
 } // namespace Cae

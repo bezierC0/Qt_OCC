@@ -132,6 +132,9 @@ public:
     void repairAndSave(const TopoDS_Shape& shape);
     void updateTree();
     bool hasGeometry() const;
+    bool exportCaeGeometry(const QString& filePath, QString* errorMessage);
+    bool showCaeMesh(const QString& meshFilePath, QString* errorMessage = nullptr);
+    void clearCaeMesh();
     bool showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage = nullptr);
     void clearScalarField();
 

@@ -28,6 +28,7 @@ struct CaeServiceBundle {
 class CaeServiceFactory {
 public:
     static CaeServiceBundle create(CaeServiceProfile profile = CaeServiceProfile::Dummy);
+    static void configureExternalMeshGenerator(CaeServiceBundle& bundle);
 };
 
 } // namespace Cae

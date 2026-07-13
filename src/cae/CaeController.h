@@ -25,16 +25,17 @@ public:
     QString assignDefaultMaterial();
     QString addFixedSupport();
     QString addDefaultForce();
-    QString generateMesh();
+    QString generateMesh(const QString& geometryFilePath = QString());
     QString runSolver();
     QString showResult(ResultFieldType fieldType);
-    QString runDemoAnalysis(bool hasGeometry = true);
+    QString runDemoAnalysis(bool hasGeometry = true, const QString& geometryFilePath = QString());
     QString summary() const;
 
     CaeProject& project();
     const CaeProject& project() const;
     CaeExternalToolConfig& externalToolConfig();
     const CaeExternalToolConfig& externalToolConfig() const;
+    void setExternalToolConfig(const CaeExternalToolConfig& config);
 
 private:
     std::unique_ptr<CaeProject> m_project;

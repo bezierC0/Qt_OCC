@@ -9,6 +9,7 @@ namespace Cae {
 
 struct MeshRequest {
     double globalSize{1.0};
+    QString geometryFilePath;
 };
 
 struct SolverRequest {
