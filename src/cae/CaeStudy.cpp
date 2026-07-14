@@ -1,5 +1,7 @@
 #include "CaeStudy.h"
 
+#include <utility>
+
 namespace Cae {
 
 CaeStudy::CaeStudy(StudyType type)
@@ -111,12 +113,12 @@ void CaeStudy::setSolution(const CaeSolution& solution)
     m_solution = solution;
 }
 
-void CaeStudy::addResultField(const CaeResultField& field)
+void CaeStudy::addResultField(CaeResultField field)
 {
     if (!m_result) {
         m_result = CaeResult();
     }
-    m_result->addOrReplaceField(field);
+    m_result->addOrReplaceField(std::move(field));
 }
 
 void CaeStudy::invalidateMeshAndSolution()

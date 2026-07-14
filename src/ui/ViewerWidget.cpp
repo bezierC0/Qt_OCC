@@ -161,6 +161,8 @@
 #include <MeshVS_DrawerAttribute.hxx>
 #include <MeshVS_Mesh.hxx>
 #include <MeshVS_MeshPrsBuilder.hxx>
+#include <MeshVS_NodalColorPrsBuilder.hxx>
+#include <Aspect_SequenceOfColor.hxx>
 
 namespace
 {
@@ -555,6 +557,12 @@ bool ViewerWidget::showCaeMesh(const QString& meshFilePath, QString* errorMessag
     if (!Cae::Msh2Reader::read(meshFilePath, &meshData, errorMessage)) {
         return false;
     }
+    if (meshData.surfaceElements.empty()) {
+        if (errorMessage) {
+            *errorMessage = tr("The Gmsh mesh contains no displayable surface elements.");
+        }
+        return false;
+    }
 
     clearScalarField();
     clearCaeMesh();
@@ -587,6 +595,82 @@ void ViewerWidget::clearCaeMesh()
         m_occView->Context()->UpdateCurrentViewer();
     }
     m_doc->m_caeMesh.Nullify();
+}
+
+bool ViewerWidget::showCaeScalarField(
+    const QString& meshFilePath,
+    const QString& title,
+    const std::map<int, double>& nodalValues,
+    double minimum,
+    double maximum,
+    QString* errorMessage)
+{
+    if (!m_occView || m_occView->Context().IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("OCCT viewer is not available for result display.");
+        }
+        return false;
+    }
+    if (nodalValues.empty()) {
+        if (errorMessage) {
+            *errorMessage = tr("The result field contains no nodal values.");
+        }
+        return false;
+    }
+
+    Cae::Msh2MeshData meshData;
+    if (!Cae::Msh2Reader::read(meshFilePath, &meshData, errorMessage)) {
+        return false;
+    }
+    if (meshData.surfaceElements.empty()) {
+        if (errorMessage) {
+            *errorMessage = tr("The result mesh contains no displayable surface elements.");
+        }
+        return false;
+    }
+
+    const double range = maximum - minimum;
+    Handle(Cae::OccMeshDataSource) dataSource = new Cae::OccMeshDataSource(std::move(meshData));
+    Handle(MeshVS_Mesh) mesh = new MeshVS_Mesh();
+    mesh->SetDataSource(dataSource);
+
+    Handle(MeshVS_NodalColorPrsBuilder) colorBuilder = new MeshVS_NodalColorPrsBuilder(
+        mesh,
+        MeshVS_DMF_NodalColorDataPrs,
+        dataSource);
+    Aspect_SequenceOfColor colorMap;
+    colorMap.Append(Quantity_Color(0.0, 0.0, 1.0, Quantity_TOC_RGB));
+    colorMap.Append(Quantity_Color(0.0, 1.0, 1.0, Quantity_TOC_RGB));
+    colorMap.Append(Quantity_Color(0.0, 1.0, 0.0, Quantity_TOC_RGB));
+    colorMap.Append(Quantity_Color(1.0, 1.0, 0.0, Quantity_TOC_RGB));
+    colorMap.Append(Quantity_Color(1.0, 0.0, 0.0, Quantity_TOC_RGB));
+    colorBuilder->UseTexture(Standard_True);
+    colorBuilder->SetColorMap(colorMap);
+    colorBuilder->SetInvalidColor(Quantity_Color(0.5, 0.5, 0.5, Quantity_TOC_RGB));
+    for (const auto& value : nodalValues) {
+        const double normalized = range > 0.0 ? (value.second - minimum) / range : 0.5;
+        colorBuilder->SetTextureCoord(value.first, qBound(0.0, normalized, 1.0));
+    }
+    mesh->AddBuilder(colorBuilder, false);
+
+    Handle(MeshVS_MeshPrsBuilder) wireBuilder = new MeshVS_MeshPrsBuilder(
+        mesh,
+        MeshVS_DMF_WireFrame,
+        dataSource);
+    mesh->AddBuilder(wireBuilder, true);
+    mesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor, Quantity_NOC_BLACK);
+    mesh->GetDrawer()->SetDouble(MeshVS_DA_EdgeWidth, 1.0);
+    mesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, false);
+
+    clearScalarField();
+    clearCaeMesh();
+    hideCadGeometryForCaeResult();
+    const Standard_Integer displayMode = MeshVS_DMF_NodalColorDataPrs | MeshVS_DMF_WireFrame;
+    m_occView->Context()->Display(mesh, displayMode, 0, false);
+    m_doc->m_caeMesh = mesh;
+    updateCaeLegend(title, minimum, maximum);
+    m_occView->Context()->UpdateCurrentViewer();
+    return true;
 }
 
 bool ViewerWidget::showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage)
@@ -660,6 +744,26 @@ bool ViewerWidget::showScalarField(const QString& title, double minimum, double 
         return false;
     }
 
+    updateCaeLegend(title, minimum, maximum);
+    m_occView->Context()->UpdateCurrentViewer();
+    return true;
+}
+
+void ViewerWidget::hideCadGeometryForCaeResult()
+{
+    if (!m_doc || !m_occView || m_occView->Context().IsNull()) {
+        return;
+    }
+    for (const auto& object : m_doc->m_list) {
+        if (m_occView->Context()->IsDisplayed(object)) {
+            m_occView->Context()->Erase(object, false);
+            m_doc->m_scalarHiddenObjects.push_back(object);
+        }
+    }
+}
+
+void ViewerWidget::updateCaeLegend(const QString& title, double minimum, double maximum)
+{
     if (!m_caeLegendLabel) {
         m_caeLegendLabel = new QLabel(m_occView);
         m_caeLegendLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -682,8 +786,6 @@ bool ViewerWidget::showScalarField(const QString& title, double minimum, double 
     m_caeLegendLabel->move(qMax(8, m_occView->width() - m_caeLegendLabel->width() - 12), 12);
     m_caeLegendLabel->show();
     m_caeLegendLabel->raise();
-    m_occView->Context()->UpdateCurrentViewer();
-    return true;
 }
 
 void ViewerWidget::clearScalarField()

@@ -1,6 +1,8 @@
 #include "CaeServiceFactory.h"
 
 #include "CaeDummyServices.h"
+#include "CaeCalculixSolver.h"
+#include "CaeCalculixFrdReader.h"
 #include "CaeGmshMeshGenerator.h"
 #include "CaeQtProcessRunner.h"
 
@@ -48,6 +50,20 @@ void CaeServiceFactory::configureExternalMeshGenerator(CaeServiceBundle& bundle)
     }
 
     bundle.meshGenerator = std::make_unique<DummyMeshGenerator>();
+}
+
+void CaeServiceFactory::configureExternalSolver(CaeServiceBundle& bundle)
+{
+    if (bundle.externalToolConfig.hasExecutablePath(ExternalTool::CalculiX) && bundle.processRunner) {
+        bundle.solver = std::make_unique<CalculixSolver>(
+            bundle.externalToolConfig,
+            bundle.processRunner.get());
+        bundle.resultReader = std::make_unique<CalculixFrdReader>();
+        return;
+    }
+
+    bundle.solver = std::make_unique<DummySolver>();
+    bundle.resultReader = std::make_unique<DummyResultReader>();
 }
 
 } // namespace Cae

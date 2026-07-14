@@ -3,6 +3,7 @@
 #include "CaeTypes.h"
 
 #include <QString>
+#include <map>
 #include <vector>
 
 namespace Cae {
@@ -13,7 +14,12 @@ struct MeshRequest {
 };
 
 struct SolverRequest {
+    QString meshFilePath;
     QString workingDirectory;
+    double youngModulus{210000.0};
+    double poissonRatio{0.3};
+    double force{100.0};
+    StudyType studyType{StudyType::StaticStructural};
 };
 
 struct MeshResult {
@@ -30,6 +36,7 @@ struct SolverResult {
 struct ResultField {
     ResultFieldType type{ResultFieldType::Displacement};
     std::vector<double> values;
+    std::map<int, double> nodalValues;
 };
 
 struct ResultRenderOptions {

@@ -26,6 +26,18 @@ int surfaceNodeCount(int gmshElementType)
     }
 }
 
+int volumeNodeCount(int gmshElementType)
+{
+    switch (gmshElementType) {
+    case 4:
+        return 4;
+    case 5:
+        return 8;
+    default:
+        return 0;
+    }
+}
+
 } // namespace
 
 bool Msh2Reader::read(const QString& filePath, Msh2MeshData* meshData, QString* errorMessage)
@@ -47,6 +59,7 @@ bool Msh2Reader::read(const QString& filePath, Msh2MeshData* meshData, QString* 
 
     meshData->nodes.clear();
     meshData->surfaceElements.clear();
+    meshData->volumeElements.clear();
     QTextStream stream(&file);
     while (!stream.atEnd()) {
         const QString section = stream.readLine().trimmed();
@@ -68,7 +81,10 @@ bool Msh2Reader::read(const QString& filePath, Msh2MeshData* meshData, QString* 
                     continue;
                 }
 
-                const int nodeCount = surfaceNodeCount(values[1].toInt());
+                const int gmshType = values[1].toInt();
+                const int surfaceNodes = surfaceNodeCount(gmshType);
+                const int volumeNodes = volumeNodeCount(gmshType);
+                const int nodeCount = surfaceNodes > 0 ? surfaceNodes : volumeNodes;
                 const int tagCount = values[2].toInt();
                 const int nodeOffset = 3 + tagCount;
                 if (nodeCount == 0 || values.size() < nodeOffset + nodeCount) {
@@ -77,18 +93,24 @@ bool Msh2Reader::read(const QString& filePath, Msh2MeshData* meshData, QString* 
 
                 Msh2Element element;
                 element.id = values[0].toInt();
+                element.gmshType = gmshType;
                 element.nodeIds.reserve(static_cast<std::size_t>(nodeCount));
                 for (int nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
                     element.nodeIds.push_back(values[nodeOffset + nodeIndex].toInt());
                 }
-                meshData->surfaceElements.push_back(std::move(element));
+                if (surfaceNodes > 0) {
+                    meshData->surfaceElements.push_back(std::move(element));
+                } else {
+                    meshData->volumeElements.push_back(std::move(element));
+                }
             }
         }
     }
 
-    if (meshData->nodes.empty() || meshData->surfaceElements.empty()) {
+    if (meshData->nodes.empty() ||
+        (meshData->surfaceElements.empty() && meshData->volumeElements.empty())) {
         if (errorMessage) {
-            *errorMessage = QStringLiteral("MSH2 contains no displayable surface elements: %1").arg(filePath);
+            *errorMessage = QStringLiteral("MSH2 contains no supported elements: %1").arg(filePath);
         }
         return false;
     }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <map>
+
 #include <QWidget>
 #include <TopoDS_Shape.hxx> 
 #include <TDocStd_Document.hxx>
@@ -135,6 +137,13 @@ public:
     bool exportCaeGeometry(const QString& filePath, QString* errorMessage);
     bool showCaeMesh(const QString& meshFilePath, QString* errorMessage = nullptr);
     void clearCaeMesh();
+    bool showCaeScalarField(
+        const QString& meshFilePath,
+        const QString& title,
+        const std::map<int, double>& nodalValues,
+        double minimum,
+        double maximum,
+        QString* errorMessage = nullptr);
     bool showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage = nullptr);
     void clearScalarField();
 
@@ -177,6 +186,8 @@ private slots:
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
     bool exportDxfToPath(const QString& savePath, QString* errorMessage);
+    void hideCadGeometryForCaeResult();
+    void updateCaeLegend(const QString& title, double minimum, double maximum);
 
 private:
     OCCView*                        m_occView{nullptr};

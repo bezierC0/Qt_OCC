@@ -5,12 +5,19 @@
 
 namespace Cae {
 
-CaeResultField::CaeResultField(ResultFieldType type, QString unit, double minValue, double maxValue, QString source)
+CaeResultField::CaeResultField(
+    ResultFieldType type,
+    QString unit,
+    double minValue,
+    double maxValue,
+    QString source,
+    std::map<int, double> nodalValues)
     : m_type(type)
     , m_unit(std::move(unit))
     , m_minValue(minValue)
     , m_maxValue(maxValue)
     , m_source(std::move(source))
+    , m_nodalValues(std::move(nodalValues))
 {
 }
 
@@ -39,7 +46,12 @@ QString CaeResultField::source() const
     return m_source;
 }
 
-void CaeResult::addOrReplaceField(const CaeResultField& field)
+const std::map<int, double>& CaeResultField::nodalValues() const
+{
+    return m_nodalValues;
+}
+
+void CaeResult::addOrReplaceField(CaeResultField field)
 {
     const auto existing = std::find_if(
         m_fields.begin(),
@@ -49,11 +61,11 @@ void CaeResult::addOrReplaceField(const CaeResultField& field)
         });
 
     if (existing != m_fields.end()) {
-        *existing = field;
+        *existing = std::move(field);
         return;
     }
 
-    m_fields.push_back(field);
+    m_fields.push_back(std::move(field));
 }
 
 const CaeResultField* CaeResult::field(ResultFieldType type) const

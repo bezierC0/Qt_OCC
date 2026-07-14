@@ -1053,6 +1053,7 @@ void MainWindow::onCaeRunDemoAnalysis()
 
 void MainWindow::onCaeUseCurrentGeometry()
 {
+    m_viewerWidget->clearScalarField();
     m_viewerWidget->clearCaeMesh();
     updateStatusMessage(m_caeController->useCurrentGeometry(m_viewerWidget->hasGeometry()), 5000);
     refreshCaeTree();
@@ -1161,7 +1162,23 @@ void MainWindow::presentCaeResult(Cae::ResultFieldType fieldType)
 
     QString errorMessage;
     const QString title = QStringLiteral("%1 (%2)").arg(Cae::toDisplayString(fieldType), field->unit());
-    if (!m_viewerWidget->showScalarField(title, field->minValue(), field->maxValue(), &errorMessage)) {
+    bool displayed = false;
+    if (!field->nodalValues().empty() && study->mesh() && QFileInfo::exists(study->mesh()->source())) {
+        displayed = m_viewerWidget->showCaeScalarField(
+            study->mesh()->source(),
+            title,
+            field->nodalValues(),
+            field->minValue(),
+            field->maxValue(),
+            &errorMessage);
+    } else {
+        displayed = m_viewerWidget->showScalarField(
+            title,
+            field->minValue(),
+            field->maxValue(),
+            &errorMessage);
+    }
+    if (!displayed) {
         updateStatusMessage(errorMessage, 5000);
     }
 }

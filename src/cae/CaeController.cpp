@@ -4,6 +4,7 @@
 #include "CaeWorkflowValidator.h"
 
 #include <algorithm>
+#include <utility>
 
 namespace Cae {
 
@@ -143,7 +144,21 @@ QString CaeController::runSolver()
     study->setState(StudyState::Solving);
     SolverResult solverResult;
     QString errorMessage;
-    if (!m_services.solver->solve(SolverRequest{QString()}, &solverResult, &errorMessage)) {
+    double force = 0.0;
+    for (const CaeBoundaryCondition& condition : study->boundaryConditions()) {
+        if (condition.type() == BoundaryConditionType::Force) {
+            force += condition.value();
+        }
+    }
+    const CaeMaterial& material = study->materials().front();
+    const SolverRequest solverRequest{
+        study->mesh()->source(),
+        m_services.externalToolConfig.workingDirectory(),
+        material.youngModulus(),
+        material.poissonRatio(),
+        force,
+        study->type()};
+    if (!m_services.solver->solve(solverRequest, &solverResult, &errorMessage)) {
         study->setSolution(CaeSolution(setup, SolutionStatus::Failed, errorMessage));
         study->setState(StudyState::Failed);
         return errorMessage;
@@ -156,7 +171,7 @@ QString CaeController::runSolver()
         solverResult.resultFilePath,
         solverResult.logFilePath));
     study->setState(StudyState::Solved);
-    return QStringLiteral("Solver setup prepared for %1: %2 / %3.")
+    return QStringLiteral("Solver completed for %1: %2 / %3.")
         .arg(study->name(), toDisplayString(setup.backend()), toDisplayString(setup.studyType()));
 }
 
@@ -204,7 +219,8 @@ QString CaeController::showResult(ResultFieldType fieldType)
         minValue,
         maxValue,
         QStringLiteral("Read by %1 from %2.")
-            .arg(m_services.resultReader->name(), solution.resultFilePath())));
+            .arg(m_services.resultReader->name(), solution.resultFilePath()),
+        std::move(resultField.nodalValues)));
 
     return QStringLiteral("Result field prepared: %1.").arg(toDisplayString(fieldType));
 }
@@ -235,7 +251,8 @@ QString CaeController::runDemoAnalysis(bool hasGeometry, const QString& geometry
 
     showResult(ResultFieldType::Displacement);
     showResult(ResultFieldType::VonMisesStress);
-    return QStringLiteral("Demo static CAE analysis completed with the offline demonstration backend.");
+    return QStringLiteral("Demo static CAE analysis completed with %1 and %2.")
+        .arg(m_services.meshGenerator->name(), m_services.solver->name());
 }
 
 QString CaeController::summary() const
@@ -272,6 +289,7 @@ void CaeController::setExternalToolConfig(const CaeExternalToolConfig& config)
 {
     m_services.externalToolConfig = config;
     CaeServiceFactory::configureExternalMeshGenerator(m_services);
+    CaeServiceFactory::configureExternalSolver(m_services);
 }
 
 } // namespace Cae
