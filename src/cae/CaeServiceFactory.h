@@ -29,6 +29,7 @@ class CaeServiceFactory {
 public:
     static CaeServiceBundle create(CaeServiceProfile profile = CaeServiceProfile::Dummy);
     static void configureExternalMeshGenerator(CaeServiceBundle& bundle);
+    static void configureExternalSolver(CaeServiceBundle& bundle);
 };
 
 } // namespace Cae

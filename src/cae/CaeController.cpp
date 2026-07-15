@@ -4,6 +4,7 @@
 #include "CaeWorkflowValidator.h"
 
 #include <algorithm>
+#include <utility>
 
 namespace Cae {
 
@@ -69,15 +70,32 @@ QString CaeController::createDefaultNamedSelection()
 
 QString CaeController::assignDefaultMaterial()
 {
+    return assignMaterial(QStringLiteral("Default Steel"), 210000.0, 0.3);
+}
+
+QString CaeController::assignMaterial(
+    const QString& name,
+    double youngModulus,
+    double poissonRatio)
+{
     CaeStudy* study = m_project->activeStudy();
     const QString validationError = CaeWorkflowValidator::requireNamedSelection(study);
     if (!validationError.isEmpty()) {
         return validationError;
     }
 
+    if (youngModulus <= 0.0 || poissonRatio < 0.0 || poissonRatio >= 0.5) {
+        return QStringLiteral("Material requires E > 0 and 0 <= nu < 0.5.");
+    }
+
+    const QString materialName = name.trimmed().isEmpty() ? QStringLiteral("Material") : name.trimmed();
     const QString targetName = study->namedSelections().front().name();
-    study->addMaterial(CaeMaterial(QStringLiteral("Default Steel"), targetName, 210000.0, 0.3));
-    return QStringLiteral("Assigned material to %1: Default Steel -> %2.").arg(study->name(), targetName);
+    study->addMaterial(CaeMaterial(materialName, targetName, youngModulus, poissonRatio));
+    return QStringLiteral("Assigned material to %1: %2 (E=%3 MPa, nu=%4) -> %5.")
+        .arg(study->name(), materialName)
+        .arg(youngModulus)
+        .arg(poissonRatio)
+        .arg(targetName);
 }
 
 QString CaeController::addFixedSupport()
@@ -95,18 +113,27 @@ QString CaeController::addFixedSupport()
 
 QString CaeController::addDefaultForce()
 {
+    return addForce(100.0);
+}
+
+QString CaeController::addForce(double force)
+{
     CaeStudy* study = m_project->activeStudy();
     const QString validationError = CaeWorkflowValidator::requireNamedSelection(study);
     if (!validationError.isEmpty()) {
         return validationError;
     }
 
+    if (force == 0.0) {
+        return QStringLiteral("Force must be non-zero.");
+    }
+
     const QString targetName = study->namedSelections().front().name();
-    study->addBoundaryCondition(CaeBoundaryCondition(QStringLiteral("Default Force"), targetName, BoundaryConditionType::Force, 100.0, QStringLiteral("N")));
-    return QStringLiteral("Added load to %1: Force 100 N -> %2.").arg(study->name(), targetName);
+    study->addBoundaryCondition(CaeBoundaryCondition(QStringLiteral("Force"), targetName, BoundaryConditionType::Force, force, QStringLiteral("N")));
+    return QStringLiteral("Added load to %1: X force %2 N -> %3.").arg(study->name()).arg(force).arg(targetName);
 }
 
-QString CaeController::generateMesh(const QString& geometryFilePath)
+QString CaeController::generateMesh(const QString& geometryFilePath, double globalSize)
 {
     CaeStudy* study = m_project->activeStudy();
     const QString validationError = CaeWorkflowValidator::requireMeshInputs(study);
@@ -114,7 +141,11 @@ QString CaeController::generateMesh(const QString& geometryFilePath)
         return validationError;
     }
 
-    const CaeMeshSetup setup(1.0, MeshElementOrder::First);
+    if (globalSize <= 0.0) {
+        return QStringLiteral("Global mesh size must be greater than zero.");
+    }
+
+    const CaeMeshSetup setup(globalSize, MeshElementOrder::First);
     MeshResult meshResult;
     QString errorMessage;
     if (!m_services.meshGenerator->generate(MeshRequest{setup.globalSize(), geometryFilePath}, &meshResult, &errorMessage)) {
@@ -143,7 +174,21 @@ QString CaeController::runSolver()
     study->setState(StudyState::Solving);
     SolverResult solverResult;
     QString errorMessage;
-    if (!m_services.solver->solve(SolverRequest{QString()}, &solverResult, &errorMessage)) {
+    double force = 0.0;
+    for (const CaeBoundaryCondition& condition : study->boundaryConditions()) {
+        if (condition.type() == BoundaryConditionType::Force) {
+            force += condition.value();
+        }
+    }
+    const CaeMaterial& material = study->materials().front();
+    const SolverRequest solverRequest{
+        study->mesh()->source(),
+        m_services.externalToolConfig.workingDirectory(),
+        material.youngModulus(),
+        material.poissonRatio(),
+        force,
+        study->type()};
+    if (!m_services.solver->solve(solverRequest, &solverResult, &errorMessage)) {
         study->setSolution(CaeSolution(setup, SolutionStatus::Failed, errorMessage));
         study->setState(StudyState::Failed);
         return errorMessage;
@@ -156,7 +201,7 @@ QString CaeController::runSolver()
         solverResult.resultFilePath,
         solverResult.logFilePath));
     study->setState(StudyState::Solved);
-    return QStringLiteral("Solver setup prepared for %1: %2 / %3.")
+    return QStringLiteral("Solver completed for %1: %2 / %3.")
         .arg(study->name(), toDisplayString(setup.backend()), toDisplayString(setup.studyType()));
 }
 
@@ -204,7 +249,9 @@ QString CaeController::showResult(ResultFieldType fieldType)
         minValue,
         maxValue,
         QStringLiteral("Read by %1 from %2.")
-            .arg(m_services.resultReader->name(), solution.resultFilePath())));
+            .arg(m_services.resultReader->name(), solution.resultFilePath()),
+        std::move(resultField.nodalValues),
+        std::move(resultField.nodalDisplacements)));
 
     return QStringLiteral("Result field prepared: %1.").arg(toDisplayString(fieldType));
 }
@@ -235,7 +282,8 @@ QString CaeController::runDemoAnalysis(bool hasGeometry, const QString& geometry
 
     showResult(ResultFieldType::Displacement);
     showResult(ResultFieldType::VonMisesStress);
-    return QStringLiteral("Demo static CAE analysis completed with the offline demonstration backend.");
+    return QStringLiteral("Demo static CAE analysis completed with %1 and %2.")
+        .arg(m_services.meshGenerator->name(), m_services.solver->name());
 }
 
 QString CaeController::summary() const
@@ -272,6 +320,7 @@ void CaeController::setExternalToolConfig(const CaeExternalToolConfig& config)
 {
     m_services.externalToolConfig = config;
     CaeServiceFactory::configureExternalMeshGenerator(m_services);
+    CaeServiceFactory::configureExternalSolver(m_services);
 }
 
 } // namespace Cae

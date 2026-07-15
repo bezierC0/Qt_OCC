@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "SARibbon.h"
 
 #include <QMenu>
@@ -115,6 +117,7 @@ private slots:
     void onCaeShowDisplacement();
     void onCaeShowStress();
     void onCaeShowTemperature();
+    void onCaeSetDeformationScale();
     void onCaeSettings();
 
     /* help */
@@ -130,7 +133,8 @@ private slots:
 private:
     void setupUi();
     void refreshCaeTree();
-    void presentCaeResult(Cae::ResultFieldType fieldType);
+    void resetCaeResultPresentation(bool preserveMesh);
+    void presentCaeResult(Cae::ResultFieldType fieldType, bool reloadField = true);
     void createThemeActions();
 
     // Ribbon creation helper functions
@@ -267,7 +271,12 @@ private:
     QAction* m_caeShowDisplacementAction{};
     QAction* m_caeShowStressAction{};
     QAction* m_caeShowTemperatureAction{};
+    QAction* m_caeDeformationScaleAction{};
     QAction* m_caeSettingsAction{};
+    double m_caeDeformationScale{0.0};
+    double m_caeForceValue{100.0};
+    double m_caeGlobalMeshSize{1.0};
+    std::optional<Cae::ResultFieldType> m_currentCaeResultField;
 
 
     // ---- help Group ----

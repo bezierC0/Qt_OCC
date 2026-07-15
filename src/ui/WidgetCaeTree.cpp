@@ -58,7 +58,9 @@ void CaeTreeWidget::addStudyItem(QTreeWidgetItem* parent, const Cae::CaeStudy& s
         studyItem,
         {tr("Materials"), study.materials().empty() ? tr("Pending") : tr("%1 assigned").arg(static_cast<int>(study.materials().size()))});
     for (const auto& material : study.materials()) {
-        new QTreeWidgetItem(materialsItem, {material.name(), tr("Target: %1").arg(material.targetName())});
+        auto* materialItem = new QTreeWidgetItem(materialsItem, {material.name(), tr("Target: %1").arg(material.targetName())});
+        new QTreeWidgetItem(materialItem, {tr("Young's Modulus"), tr("%1 MPa").arg(material.youngModulus())});
+        new QTreeWidgetItem(materialItem, {tr("Poisson Ratio"), QString::number(material.poissonRatio())});
     }
 
     auto* boundaryItem = new QTreeWidgetItem(

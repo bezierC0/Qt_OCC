@@ -1,5 +1,8 @@
 #include "CaeStudy.h"
 
+#include <algorithm>
+#include <utility>
+
 namespace Cae {
 
 CaeStudy::CaeStudy(StudyType type)
@@ -89,6 +92,16 @@ void CaeStudy::addNamedSelection(const CaeNamedSelection& namedSelection)
 void CaeStudy::addMaterial(const CaeMaterial& material)
 {
     invalidateMeshAndSolution();
+    const auto existing = std::find_if(
+        m_materials.begin(),
+        m_materials.end(),
+        [&material](const CaeMaterial& item) {
+            return item.targetName() == material.targetName();
+        });
+    if (existing != m_materials.end()) {
+        *existing = material;
+        return;
+    }
     m_materials.push_back(material);
 }
 
@@ -111,12 +124,12 @@ void CaeStudy::setSolution(const CaeSolution& solution)
     m_solution = solution;
 }
 
-void CaeStudy::addResultField(const CaeResultField& field)
+void CaeStudy::addResultField(CaeResultField field)
 {
     if (!m_result) {
         m_result = CaeResult();
     }
-    m_result->addOrReplaceField(field);
+    m_result->addOrReplaceField(std::move(field));
 }
 
 void CaeStudy::invalidateMeshAndSolution()

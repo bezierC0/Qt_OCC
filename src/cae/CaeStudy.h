@@ -38,7 +38,7 @@ public:
     void addBoundaryCondition(const CaeBoundaryCondition& boundaryCondition);
     void setMesh(const CaeMesh& mesh);
     void setSolution(const CaeSolution& solution);
-    void addResultField(const CaeResultField& field);
+    void addResultField(CaeResultField field);
 
 private:
     void invalidateMeshAndSolution();

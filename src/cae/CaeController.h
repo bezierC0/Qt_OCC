@@ -22,10 +22,12 @@ public:
     QString createStudy(StudyType type);
     QString useCurrentGeometry(bool hasGeometry = true);
     QString createDefaultNamedSelection();
+    QString assignMaterial(const QString& name, double youngModulus, double poissonRatio);
     QString assignDefaultMaterial();
     QString addFixedSupport();
+    QString addForce(double force);
     QString addDefaultForce();
-    QString generateMesh(const QString& geometryFilePath = QString());
+    QString generateMesh(const QString& geometryFilePath = QString(), double globalSize = 1.0);
     QString runSolver();
     QString showResult(ResultFieldType fieldType);
     QString runDemoAnalysis(bool hasGeometry = true, const QString& geometryFilePath = QString());

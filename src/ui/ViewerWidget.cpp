@@ -52,6 +52,9 @@
 #include <QDebug>
 #include <QLabel>
 #include <QResizeEvent>
+#include <algorithm>
+#include <array>
+#include <cmath>
 #include <utility>
 
 /* read */
@@ -159,8 +162,11 @@
 
 #include <MeshVS_Drawer.hxx>
 #include <MeshVS_DrawerAttribute.hxx>
+#include <MeshVS_DeformedDataSource.hxx>
 #include <MeshVS_Mesh.hxx>
 #include <MeshVS_MeshPrsBuilder.hxx>
+#include <MeshVS_NodalColorPrsBuilder.hxx>
+#include <Aspect_SequenceOfColor.hxx>
 
 namespace
 {
@@ -555,6 +561,12 @@ bool ViewerWidget::showCaeMesh(const QString& meshFilePath, QString* errorMessag
     if (!Cae::Msh2Reader::read(meshFilePath, &meshData, errorMessage)) {
         return false;
     }
+    if (meshData.surfaceElements.empty()) {
+        if (errorMessage) {
+            *errorMessage = tr("The Gmsh mesh contains no displayable surface elements.");
+        }
+        return false;
+    }
 
     clearScalarField();
     clearCaeMesh();
@@ -587,6 +599,127 @@ void ViewerWidget::clearCaeMesh()
         m_occView->Context()->UpdateCurrentViewer();
     }
     m_doc->m_caeMesh.Nullify();
+}
+
+bool ViewerWidget::showCaeScalarField(
+    const QString& meshFilePath,
+    const QString& title,
+    const std::map<int, double>& nodalValues,
+    const std::map<int, std::array<double, 3>>& nodalDisplacements,
+    double deformationScale,
+    double minimum,
+    double maximum,
+    QString* errorMessage)
+{
+    if (!m_occView || m_occView->Context().IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("OCCT viewer is not available for result display.");
+        }
+        return false;
+    }
+    if (nodalValues.empty()) {
+        if (errorMessage) {
+            *errorMessage = tr("The result field contains no nodal values.");
+        }
+        return false;
+    }
+
+    Cae::Msh2MeshData meshData;
+    if (!Cae::Msh2Reader::read(meshFilePath, &meshData, errorMessage)) {
+        return false;
+    }
+    if (meshData.surfaceElements.empty()) {
+        if (errorMessage) {
+            *errorMessage = tr("The result mesh contains no displayable surface elements.");
+        }
+        return false;
+    }
+
+    double effectiveScale = deformationScale;
+    if (!nodalDisplacements.empty() && effectiveScale <= 0.0) {
+        auto coordinateMinimum = meshData.nodes.cbegin()->second;
+        auto coordinateMaximum = coordinateMinimum;
+        for (const auto& node : meshData.nodes) {
+            for (int coordinate = 0; coordinate < 3; ++coordinate) {
+                coordinateMinimum[coordinate] = std::min(coordinateMinimum[coordinate], node.second[coordinate]);
+                coordinateMaximum[coordinate] = std::max(coordinateMaximum[coordinate], node.second[coordinate]);
+            }
+        }
+        const double dx = coordinateMaximum[0] - coordinateMinimum[0];
+        const double dy = coordinateMaximum[1] - coordinateMinimum[1];
+        const double dz = coordinateMaximum[2] - coordinateMinimum[2];
+        const double modelDiagonal = std::sqrt(dx * dx + dy * dy + dz * dz);
+        double maximumDisplacement = 0.0;
+        for (const auto& displacement : nodalDisplacements) {
+            const auto& vector = displacement.second;
+            maximumDisplacement = std::max(
+                maximumDisplacement,
+                std::sqrt(vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]));
+        }
+        effectiveScale = maximumDisplacement > 0.0
+            ? std::clamp(modelDiagonal * 0.1 / maximumDisplacement, 0.01, 1.0e6)
+            : 1.0;
+    }
+
+    const double range = maximum - minimum;
+    Handle(Cae::OccMeshDataSource) dataSource = new Cae::OccMeshDataSource(std::move(meshData));
+    Handle(MeshVS_DataSource) displayDataSource = dataSource;
+    if (!nodalDisplacements.empty()) {
+        Handle(MeshVS_DeformedDataSource) deformedDataSource =
+            new MeshVS_DeformedDataSource(dataSource, effectiveScale);
+        for (const auto& displacement : nodalDisplacements) {
+            const auto& vector = displacement.second;
+            deformedDataSource->SetVector(
+                displacement.first,
+                gp_Vec(vector[0], vector[1], vector[2]));
+        }
+        displayDataSource = deformedDataSource;
+    }
+    Handle(MeshVS_Mesh) mesh = new MeshVS_Mesh();
+    mesh->SetDataSource(displayDataSource);
+
+    Handle(MeshVS_NodalColorPrsBuilder) colorBuilder = new MeshVS_NodalColorPrsBuilder(
+        mesh,
+        MeshVS_DMF_NodalColorDataPrs,
+        displayDataSource);
+    Aspect_SequenceOfColor colorMap;
+    colorMap.Append(Quantity_Color(0.0, 0.0, 1.0, Quantity_TOC_RGB));
+    colorMap.Append(Quantity_Color(0.0, 1.0, 1.0, Quantity_TOC_RGB));
+    colorMap.Append(Quantity_Color(0.0, 1.0, 0.0, Quantity_TOC_RGB));
+    colorMap.Append(Quantity_Color(1.0, 1.0, 0.0, Quantity_TOC_RGB));
+    colorMap.Append(Quantity_Color(1.0, 0.0, 0.0, Quantity_TOC_RGB));
+    colorBuilder->UseTexture(Standard_True);
+    colorBuilder->SetColorMap(colorMap);
+    colorBuilder->SetInvalidColor(Quantity_Color(0.5, 0.5, 0.5, Quantity_TOC_RGB));
+    for (const auto& value : nodalValues) {
+        const double normalized = range > 0.0 ? (value.second - minimum) / range : 0.5;
+        colorBuilder->SetTextureCoord(value.first, qBound(0.0, normalized, 1.0));
+    }
+    mesh->AddBuilder(colorBuilder, false);
+
+    Handle(MeshVS_MeshPrsBuilder) wireBuilder = new MeshVS_MeshPrsBuilder(
+        mesh,
+        MeshVS_DMF_WireFrame,
+        displayDataSource);
+    mesh->AddBuilder(wireBuilder, true);
+    mesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor, Quantity_NOC_BLACK);
+    mesh->GetDrawer()->SetDouble(MeshVS_DA_EdgeWidth, 1.0);
+    mesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, false);
+
+    clearScalarField();
+    clearCaeMesh();
+    hideCadGeometryForCaeResult();
+    const Standard_Integer displayMode = MeshVS_DMF_NodalColorDataPrs | MeshVS_DMF_WireFrame;
+    m_occView->Context()->Display(mesh, displayMode, 0, false);
+    m_doc->m_caeMesh = mesh;
+    const QString legendTitle = nodalDisplacements.empty()
+        ? title
+        : QStringLiteral("%1 [Deformation x%2]")
+              .arg(title)
+              .arg(effectiveScale, 0, 'g', 5);
+    updateCaeLegend(legendTitle, minimum, maximum);
+    m_occView->Context()->UpdateCurrentViewer();
+    return true;
 }
 
 bool ViewerWidget::showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage)
@@ -660,6 +793,26 @@ bool ViewerWidget::showScalarField(const QString& title, double minimum, double 
         return false;
     }
 
+    updateCaeLegend(title, minimum, maximum);
+    m_occView->Context()->UpdateCurrentViewer();
+    return true;
+}
+
+void ViewerWidget::hideCadGeometryForCaeResult()
+{
+    if (!m_doc || !m_occView || m_occView->Context().IsNull()) {
+        return;
+    }
+    for (const auto& object : m_doc->m_list) {
+        if (m_occView->Context()->IsDisplayed(object)) {
+            m_occView->Context()->Erase(object, false);
+            m_doc->m_scalarHiddenObjects.push_back(object);
+        }
+    }
+}
+
+void ViewerWidget::updateCaeLegend(const QString& title, double minimum, double maximum)
+{
     if (!m_caeLegendLabel) {
         m_caeLegendLabel = new QLabel(m_occView);
         m_caeLegendLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
@@ -682,8 +835,6 @@ bool ViewerWidget::showScalarField(const QString& title, double minimum, double 
     m_caeLegendLabel->move(qMax(8, m_occView->width() - m_caeLegendLabel->width() - 12), 12);
     m_caeLegendLabel->show();
     m_caeLegendLabel->raise();
-    m_occView->Context()->UpdateCurrentViewer();
-    return true;
 }
 
 void ViewerWidget::clearScalarField()
