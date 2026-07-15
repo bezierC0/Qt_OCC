@@ -3,6 +3,7 @@
 #include "CaeTypes.h"
 
 #include <QString>
+#include <array>
 #include <map>
 #include <vector>
 
@@ -16,7 +17,8 @@ public:
         double minValue,
         double maxValue,
         QString source,
-        std::map<int, double> nodalValues = {});
+        std::map<int, double> nodalValues = {},
+        std::map<int, std::array<double, 3>> nodalDisplacements = {});
 
     ResultFieldType type() const;
     QString unit() const;
@@ -24,6 +26,7 @@ public:
     double maxValue() const;
     QString source() const;
     const std::map<int, double>& nodalValues() const;
+    const std::map<int, std::array<double, 3>>& nodalDisplacements() const;
 
 private:
     ResultFieldType m_type{ResultFieldType::Displacement};
@@ -32,6 +35,7 @@ private:
     double m_maxValue{0.0};
     QString m_source;
     std::map<int, double> m_nodalValues;
+    std::map<int, std::array<double, 3>> m_nodalDisplacements;
 };
 
 class CaeResult {

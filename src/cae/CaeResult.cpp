@@ -11,13 +11,15 @@ CaeResultField::CaeResultField(
     double minValue,
     double maxValue,
     QString source,
-    std::map<int, double> nodalValues)
+    std::map<int, double> nodalValues,
+    std::map<int, std::array<double, 3>> nodalDisplacements)
     : m_type(type)
     , m_unit(std::move(unit))
     , m_minValue(minValue)
     , m_maxValue(maxValue)
     , m_source(std::move(source))
     , m_nodalValues(std::move(nodalValues))
+    , m_nodalDisplacements(std::move(nodalDisplacements))
 {
 }
 
@@ -49,6 +51,11 @@ QString CaeResultField::source() const
 const std::map<int, double>& CaeResultField::nodalValues() const
 {
     return m_nodalValues;
+}
+
+const std::map<int, std::array<double, 3>>& CaeResultField::nodalDisplacements() const
+{
+    return m_nodalDisplacements;
 }
 
 void CaeResult::addOrReplaceField(CaeResultField field)

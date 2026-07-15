@@ -15,6 +15,7 @@
 #include <QToolButton>
 #include <QStatusBar>
 #include <QLabel>
+#include <QInputDialog>
 #include <QTabWidget>
 
 // Note: TopoDS_Shape and TopAbs_ShapeEnum are available through ViewerWidget.h includes
@@ -23,6 +24,7 @@
 #include "WidgetModelTree.h"
 #include "WidgetCaeTree.h"
 #include "DialogAbout.h"
+#include "DialogCaeMaterial.h"
 #include "DialogCaeSettings.h"
 #include "widget_explode_assembly.h"
 #include "widget_clipping.h"
@@ -642,6 +644,10 @@ void MainWindow::createCaeGroup()
     connect(m_caeShowTemperatureAction, &QAction::triggered, this, &MainWindow::onCaeShowTemperature);
     m_caeResultsPannel->addSmallAction(m_caeShowTemperatureAction);
 
+    m_caeDeformationScaleAction = new QAction(QIcon(":/icons/icon/cae_deformation_scale.svg"), tr("Deformation Scale"), this);
+    connect(m_caeDeformationScaleAction, &QAction::triggered, this, &MainWindow::onCaeSetDeformationScale);
+    m_caeResultsPannel->addSmallAction(m_caeDeformationScaleAction);
+
     m_caeSettingsPannel = m_caeCategory->addPannel(tr("Settings"));
     m_caeSettingsAction = new QAction(QIcon(":/icons/icon/cae_settings.svg"), tr("Settings"), this);
     connect(m_caeSettingsAction, &QAction::triggered, this, &MainWindow::onCaeSettings);
@@ -1006,6 +1012,7 @@ void MainWindow::onShapeToolHole()
 
 void MainWindow::onCaeNewStaticStudy()
 {
+    m_currentCaeResultField.reset();
     m_viewerWidget->clearScalarField();
     m_viewerWidget->clearCaeMesh();
     updateStatusMessage(m_caeController->execute(std::make_unique<Cae::CreateStudyCommand>(Cae::StudyType::StaticStructural)), 5000);
@@ -1014,6 +1021,7 @@ void MainWindow::onCaeNewStaticStudy()
 
 void MainWindow::onCaeNewThermalStudy()
 {
+    m_currentCaeResultField.reset();
     m_viewerWidget->clearScalarField();
     m_viewerWidget->clearCaeMesh();
     updateStatusMessage(m_caeController->execute(std::make_unique<Cae::CreateStudyCommand>(Cae::StudyType::SteadyThermal)), 5000);
@@ -1022,6 +1030,7 @@ void MainWindow::onCaeNewThermalStudy()
 
 void MainWindow::onCaeRunDemoAnalysis()
 {
+    m_currentCaeResultField.reset();
     QString geometryFilePath;
     const Cae::CaeExternalToolConfig& config = m_caeController->externalToolConfig();
     if (config.hasExecutablePath(Cae::ExternalTool::Gmsh) && m_viewerWidget->hasGeometry()) {
@@ -1053,6 +1062,7 @@ void MainWindow::onCaeRunDemoAnalysis()
 
 void MainWindow::onCaeUseCurrentGeometry()
 {
+    m_currentCaeResultField.reset();
     m_viewerWidget->clearScalarField();
     m_viewerWidget->clearCaeMesh();
     updateStatusMessage(m_caeController->useCurrentGeometry(m_viewerWidget->hasGeometry()), 5000);
@@ -1062,29 +1072,87 @@ void MainWindow::onCaeUseCurrentGeometry()
 void MainWindow::onCaeCreateNamedSelection()
 {
     updateStatusMessage(m_caeController->createDefaultNamedSelection(), 5000);
+    resetCaeResultPresentation(false);
     refreshCaeTree();
 }
 
 void MainWindow::onCaeAssignMaterial()
 {
-    updateStatusMessage(m_caeController->assignDefaultMaterial(), 5000);
+    DialogCaeMaterial dialog(this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+    updateStatusMessage(
+        m_caeController->assignMaterial(
+            dialog.materialName(),
+            dialog.youngModulus(),
+            dialog.poissonRatio()),
+        5000);
+    resetCaeResultPresentation(false);
     refreshCaeTree();
 }
 
 void MainWindow::onCaeAddFixedSupport()
 {
     updateStatusMessage(m_caeController->addFixedSupport(), 5000);
+    resetCaeResultPresentation(true);
     refreshCaeTree();
 }
 
 void MainWindow::onCaeAddForce()
 {
-    updateStatusMessage(m_caeController->addDefaultForce(), 5000);
+    bool accepted = false;
+    const double force = QInputDialog::getDouble(
+        this,
+        tr("Add CAE Force"),
+        tr("Total X force (N):"),
+        m_caeForceValue,
+        -1.0e12,
+        1.0e12,
+        3,
+        &accepted);
+    if (!accepted || force == 0.0) {
+        return;
+    }
+    m_caeForceValue = force;
+    updateStatusMessage(m_caeController->addForce(force), 5000);
+    resetCaeResultPresentation(true);
     refreshCaeTree();
+}
+
+void MainWindow::resetCaeResultPresentation(bool preserveMesh)
+{
+    m_currentCaeResultField.reset();
+    m_viewerWidget->clearScalarField();
+
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    if (preserveMesh && study && study->mesh() && QFileInfo::exists(study->mesh()->source())) {
+        QString errorMessage;
+        if (!m_viewerWidget->showCaeMesh(study->mesh()->source(), &errorMessage)) {
+            updateStatusMessage(errorMessage, 5000);
+        }
+        return;
+    }
+    m_viewerWidget->clearCaeMesh();
 }
 
 void MainWindow::onCaeGenerateMesh()
 {
+    bool accepted = false;
+    const double globalSize = QInputDialog::getDouble(
+        this,
+        tr("Generate CAE Mesh"),
+        tr("Global element size:"),
+        m_caeGlobalMeshSize,
+        1.0e-6,
+        1.0e9,
+        6,
+        &accepted);
+    if (!accepted) {
+        return;
+    }
+    m_caeGlobalMeshSize = globalSize;
+    m_currentCaeResultField.reset();
     QString geometryFilePath;
     const Cae::CaeExternalToolConfig& config = m_caeController->externalToolConfig();
     if (config.hasExecutablePath(Cae::ExternalTool::Gmsh)) {
@@ -1105,7 +1173,7 @@ void MainWindow::onCaeGenerateMesh()
         }
     }
 
-    const QString meshMessage = m_caeController->generateMesh(geometryFilePath);
+    const QString meshMessage = m_caeController->generateMesh(geometryFilePath, globalSize);
     updateStatusMessage(meshMessage, 8000);
     refreshCaeTree();
 
@@ -1126,6 +1194,7 @@ void MainWindow::onCaeGenerateMesh()
 
 void MainWindow::onCaeRunSolver()
 {
+    m_currentCaeResultField.reset();
     updateStatusMessage(m_caeController->runSolver(), 5000);
     refreshCaeTree();
 }
@@ -1145,10 +1214,36 @@ void MainWindow::onCaeShowTemperature()
     presentCaeResult(Cae::ResultFieldType::Temperature);
 }
 
-void MainWindow::presentCaeResult(Cae::ResultFieldType fieldType)
+void MainWindow::onCaeSetDeformationScale()
 {
-    updateStatusMessage(m_caeController->showResult(fieldType), 5000);
-    refreshCaeTree();
+    bool accepted = false;
+    const double scale = QInputDialog::getDouble(
+        this,
+        tr("CAE Deformation Scale"),
+        tr("Scale factor (0 = Auto):"),
+        m_caeDeformationScale,
+        0.0,
+        1.0e6,
+        2,
+        &accepted);
+    if (!accepted) {
+        return;
+    }
+
+    m_caeDeformationScale = scale;
+    if (m_currentCaeResultField) {
+        presentCaeResult(*m_currentCaeResultField, false);
+    } else {
+        updateStatusMessage(tr("Select a CAE result field before setting deformation scale."), 5000);
+    }
+}
+
+void MainWindow::presentCaeResult(Cae::ResultFieldType fieldType, bool reloadField)
+{
+    if (reloadField) {
+        updateStatusMessage(m_caeController->showResult(fieldType), 5000);
+        refreshCaeTree();
+    }
 
     const Cae::CaeStudy* study = m_caeController->project().activeStudy();
     if (!study || !study->result()) {
@@ -1159,6 +1254,7 @@ void MainWindow::presentCaeResult(Cae::ResultFieldType fieldType)
     if (!field) {
         return;
     }
+    m_currentCaeResultField = fieldType;
 
     QString errorMessage;
     const QString title = QStringLiteral("%1 (%2)").arg(Cae::toDisplayString(fieldType), field->unit());
@@ -1168,6 +1264,8 @@ void MainWindow::presentCaeResult(Cae::ResultFieldType fieldType)
             study->mesh()->source(),
             title,
             field->nodalValues(),
+            field->nodalDisplacements(),
+            m_caeDeformationScale,
             field->minValue(),
             field->maxValue(),
             &errorMessage);

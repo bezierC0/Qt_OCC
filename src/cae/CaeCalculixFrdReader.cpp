@@ -116,6 +116,7 @@ bool CalculixFrdReader::read(
     QTextStream stream(&file);
     field->values.clear();
     field->nodalValues.clear();
+    field->nodalDisplacements.clear();
     while (!stream.atEnd()) {
         const QString line = stream.readLine();
         const QString trimmedLine = line.trimmed();
@@ -126,6 +127,9 @@ bool CalculixFrdReader::read(
                 dataset = FrdDataset::Stress;
             } else {
                 dataset = FrdDataset::None;
+            }
+            if (dataset == FrdDataset::Displacement) {
+                field->nodalDisplacements.clear();
             }
             const bool wantsDisplacement = field->type == ResultFieldType::Displacement;
             if ((wantsDisplacement && dataset == FrdDataset::Displacement) ||
@@ -143,9 +147,7 @@ bool CalculixFrdReader::read(
             continue;
         }
 
-        const bool wantsDisplacement = field->type == ResultFieldType::Displacement;
-        if ((wantsDisplacement && dataset != FrdDataset::Displacement) ||
-            (!wantsDisplacement && dataset != FrdDataset::Stress)) {
+        if (dataset != FrdDataset::Displacement && dataset != FrdDataset::Stress) {
             continue;
         }
 
@@ -154,14 +156,18 @@ bool CalculixFrdReader::read(
         if (!nodalValues(line, &nodeId, &components)) {
             continue;
         }
-        if (wantsDisplacement && components.size() >= 3) {
+        const bool wantsDisplacement = field->type == ResultFieldType::Displacement;
+        if (dataset == FrdDataset::Displacement && components.size() >= 3) {
             const double x = components[0];
             const double y = components[1];
             const double z = components[2];
-            const double magnitude = std::sqrt(x * x + y * y + z * z);
-            field->values.push_back(magnitude);
-            field->nodalValues[nodeId] = magnitude;
-        } else if (!wantsDisplacement && components.size() >= 6) {
+            field->nodalDisplacements[nodeId] = {x, y, z};
+            if (wantsDisplacement) {
+                const double magnitude = std::sqrt(x * x + y * y + z * z);
+                field->values.push_back(magnitude);
+                field->nodalValues[nodeId] = magnitude;
+            }
+        } else if (dataset == FrdDataset::Stress && !wantsDisplacement && components.size() >= 6) {
             const double stress = vonMises({
                 components[0], components[1], components[2],
                 components[3], components[4], components[5]});

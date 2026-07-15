@@ -3,6 +3,7 @@
 #include "CaeTypes.h"
 
 #include <QString>
+#include <array>
 #include <map>
 #include <vector>
 
@@ -37,6 +38,7 @@ struct ResultField {
     ResultFieldType type{ResultFieldType::Displacement};
     std::vector<double> values;
     std::map<int, double> nodalValues;
+    std::map<int, std::array<double, 3>> nodalDisplacements;
 };
 
 struct ResultRenderOptions {

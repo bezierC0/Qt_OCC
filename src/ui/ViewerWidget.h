@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <map>
 
 #include <QWidget>
@@ -141,6 +142,8 @@ public:
         const QString& meshFilePath,
         const QString& title,
         const std::map<int, double>& nodalValues,
+        const std::map<int, std::array<double, 3>>& nodalDisplacements,
+        double deformationScale,
         double minimum,
         double maximum,
         QString* errorMessage = nullptr);

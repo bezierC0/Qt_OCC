@@ -1,5 +1,6 @@
 #include "CaeStudy.h"
 
+#include <algorithm>
 #include <utility>
 
 namespace Cae {
@@ -91,6 +92,16 @@ void CaeStudy::addNamedSelection(const CaeNamedSelection& namedSelection)
 void CaeStudy::addMaterial(const CaeMaterial& material)
 {
     invalidateMeshAndSolution();
+    const auto existing = std::find_if(
+        m_materials.begin(),
+        m_materials.end(),
+        [&material](const CaeMaterial& item) {
+            return item.targetName() == material.targetName();
+        });
+    if (existing != m_materials.end()) {
+        *existing = material;
+        return;
+    }
     m_materials.push_back(material);
 }
 
