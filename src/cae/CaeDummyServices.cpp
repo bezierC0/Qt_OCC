@@ -18,7 +18,8 @@ bool DummyMeshGenerator::generate(const MeshRequest& request, MeshResult* result
 
     result->meshFilePath = QStringLiteral("dummy://mesh/global-size-%1").arg(request.globalSize);
     result->nodeCount = 125;
-    result->elementCount = 384;
+    result->surfaceElementCount = 96;
+    result->volumeElementCount = 288;
     return true;
 }
 

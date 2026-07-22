@@ -5,9 +5,16 @@
 #include <QString>
 #include <array>
 #include <map>
+#include <optional>
 #include <vector>
 
 namespace Cae {
+
+struct CaeResultProbe {
+    int nodeId{0};
+    double value{0.0};
+    std::optional<std::array<double, 3>> displacement;
+};
 
 class CaeResultField {
 public:
@@ -27,6 +34,7 @@ public:
     QString source() const;
     const std::map<int, double>& nodalValues() const;
     const std::map<int, std::array<double, 3>>& nodalDisplacements() const;
+    std::optional<CaeResultProbe> probeNode(int nodeId) const;
 
 private:
     ResultFieldType m_type{ResultFieldType::Displacement};

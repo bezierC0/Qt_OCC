@@ -20,10 +20,16 @@ MeshElementOrder CaeMeshSetup::elementOrder() const
     return m_elementOrder;
 }
 
-CaeMesh::CaeMesh(CaeMeshSetup setup, int nodeCount, int elementCount, QString source)
+CaeMesh::CaeMesh(
+    CaeMeshSetup setup,
+    int nodeCount,
+    int surfaceElementCount,
+    int volumeElementCount,
+    QString source)
     : m_setup(std::move(setup))
     , m_nodeCount(nodeCount)
-    , m_elementCount(elementCount)
+    , m_surfaceElementCount(surfaceElementCount)
+    , m_volumeElementCount(volumeElementCount)
     , m_source(std::move(source))
 {
 }
@@ -40,7 +46,17 @@ int CaeMesh::nodeCount() const
 
 int CaeMesh::elementCount() const
 {
-    return m_elementCount;
+    return m_surfaceElementCount + m_volumeElementCount;
+}
+
+int CaeMesh::surfaceElementCount() const
+{
+    return m_surfaceElementCount;
+}
+
+int CaeMesh::volumeElementCount() const
+{
+    return m_volumeElementCount;
 }
 
 QString CaeMesh::source() const

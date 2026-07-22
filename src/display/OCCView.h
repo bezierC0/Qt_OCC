@@ -102,6 +102,8 @@ signals:
     void signalSelectedObjects(const std::vector<std::shared_ptr<View::SelectedEntity>>& selectedObjects);
     void signalManipulatorChange(const gp_Trsf& trsf);
     void signalMouseMove(double x, double y, double z);
+    void signalViewportMouseMoved(int x, int y);
+    void signalViewportClicked(int x, int y);
 public:
     //! Main constructor.
     OCCView(QWidget *theParent = nullptr);

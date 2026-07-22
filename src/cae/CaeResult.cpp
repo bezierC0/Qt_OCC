@@ -58,6 +58,23 @@ const std::map<int, std::array<double, 3>>& CaeResultField::nodalDisplacements()
     return m_nodalDisplacements;
 }
 
+std::optional<CaeResultProbe> CaeResultField::probeNode(int nodeId) const
+{
+    const auto value = m_nodalValues.find(nodeId);
+    if (value == m_nodalValues.end()) {
+        return std::nullopt;
+    }
+
+    CaeResultProbe probe;
+    probe.nodeId = nodeId;
+    probe.value = value->second;
+    const auto displacement = m_nodalDisplacements.find(nodeId);
+    if (displacement != m_nodalDisplacements.end()) {
+        probe.displacement = displacement->second;
+    }
+    return probe;
+}
+
 void CaeResult::addOrReplaceField(CaeResultField field)
 {
     const auto existing = std::find_if(

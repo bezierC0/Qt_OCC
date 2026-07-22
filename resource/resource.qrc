@@ -64,13 +64,14 @@
         <file>icon/animation.svg</file>
         <file>icon/busbar.svg</file>
         <file>icon/cae_assign_material.svg</file>
-        <file>icon/cae_demo_analysis.svg</file>
         <file>icon/cae_deformation_scale.svg</file>
         <file>icon/cae_fixed_support.svg</file>
         <file>icon/cae_force.svg</file>
         <file>icon/cae_generate_mesh.svg</file>
         <file>icon/cae_named_selection.svg</file>
+        <file>icon/cae_pick_node.svg</file>
         <file>icon/cae_result_displacement.svg</file>
+        <file>icon/cae_result_probe.svg</file>
         <file>icon/cae_result_stress.svg</file>
         <file>icon/cae_result_temperature.svg</file>
         <file>icon/cae_run_solver.svg</file>

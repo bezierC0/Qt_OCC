@@ -76,10 +76,12 @@ void CaeTreeWidget::addStudyItem(QTreeWidgetItem* parent, const Cae::CaeStudy& s
     auto* meshItem = new QTreeWidgetItem(studyItem, {tr("Mesh"), hasMesh ? tr("Ready") : tr("Pending")});
     if (study.mesh()) {
         const auto& mesh = *study.mesh();
-        new QTreeWidgetItem(meshItem, {tr("Global Size"), QString::number(mesh.setup().globalSize())});
+        new QTreeWidgetItem(meshItem, {tr("Maximum Element Size"), QString::number(mesh.setup().globalSize())});
         new QTreeWidgetItem(meshItem, {tr("Element Order"), Cae::toDisplayString(mesh.setup().elementOrder())});
         new QTreeWidgetItem(meshItem, {tr("Nodes"), QString::number(mesh.nodeCount())});
-        new QTreeWidgetItem(meshItem, {tr("Elements"), QString::number(mesh.elementCount())});
+        new QTreeWidgetItem(meshItem, {tr("Surface Elements"), QString::number(mesh.surfaceElementCount())});
+        new QTreeWidgetItem(meshItem, {tr("Volume Elements"), QString::number(mesh.volumeElementCount())});
+        new QTreeWidgetItem(meshItem, {tr("Supported Elements"), QString::number(mesh.elementCount())});
         new QTreeWidgetItem(meshItem, {tr("Source"), mesh.source()});
     }
 
@@ -104,6 +106,7 @@ void CaeTreeWidget::addStudyItem(QTreeWidgetItem* parent, const Cae::CaeStudy& s
             auto* fieldItem = new QTreeWidgetItem(resultsItem, {Cae::toDisplayString(field.type()), field.unit()});
             new QTreeWidgetItem(fieldItem, {tr("Min"), QString::number(field.minValue())});
             new QTreeWidgetItem(fieldItem, {tr("Max"), QString::number(field.maxValue())});
+            new QTreeWidgetItem(fieldItem, {tr("Nodal Values"), QString::number(static_cast<qulonglong>(field.nodalValues().size()))});
             new QTreeWidgetItem(fieldItem, {tr("Source"), field.source()});
         }
     }
