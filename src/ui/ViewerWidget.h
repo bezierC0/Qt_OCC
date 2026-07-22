@@ -4,12 +4,13 @@
 #include <map>
 
 #include <QWidget>
+#include <AIS_Point.hxx>
+#include <gp_Pnt.hxx>
 #include <TopoDS_Shape.hxx> 
 #include <TDocStd_Document.hxx>
 #include "OCCView.h" 
 class AIS_InteractiveObject;
 class gp_Dir;
-class gp_Pnt;
 class QLabel;
 class QResizeEvent;
 
@@ -149,6 +150,7 @@ public:
         QString* errorMessage = nullptr);
     bool showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage = nullptr);
     void clearScalarField();
+    bool setCaeNodePickingEnabled(bool enabled, QString* errorMessage = nullptr);
 
     void onFunctionTest();
 signals:
@@ -157,9 +159,12 @@ signals:
  //   void signalSelectedObjects(const std::vector<opencascade::handle<AIS_InteractiveObject>>& objects);
     void signalSelectedObjects(const std::vector<std::shared_ptr<View::SelectedEntity>>& objects);
     void signalSelectionInfo(const QString& info);
+    void signalCaeNodePicked(int nodeId);
 
 private slots:
     void onUpdateSelectionInfo(const std::vector<std::shared_ptr<View::SelectedEntity>>& selectedObjects);
+    void onCaePickMouseMoved(int x, int y);
+    void onCaePickMousePressed(int x, int y);
 
 public slots:
     void highlightLabel(const TDF_Label& label);
@@ -191,6 +196,9 @@ private:
     bool exportDxfToPath(const QString& savePath, QString* errorMessage);
     void hideCadGeometryForCaeResult();
     void updateCaeLegend(const QString& title, double minimum, double maximum);
+    int findCaeNodeAt(int x, int y) const;
+    void updateCaeNodeHover(int nodeId);
+    void clearCaeNodeHover();
 
 private:
     OCCView*                        m_occView{nullptr};
@@ -199,6 +207,10 @@ private:
     Handle(AIS_InteractiveObject)   m_highlightedShape{nullptr};
     bool                            m_isShowBoundingBox{true};  
     QLabel*                         m_caeLegendLabel{nullptr};
+    bool                            m_caeNodePickingEnabled{false};
+    std::map<int, gp_Pnt>           m_caePickNodes;
+    Handle(AIS_Point)               m_caeNodeHoverMarker;
+    int                             m_caeHoveredNodeId{-1};
 
     //TopoDS_Shape m_loadedShape;
 

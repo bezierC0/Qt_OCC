@@ -142,7 +142,7 @@ QString CaeController::generateMesh(const QString& geometryFilePath, double glob
     }
 
     if (globalSize <= 0.0) {
-        return QStringLiteral("Global mesh size must be greater than zero.");
+        return QStringLiteral("Maximum element size must be greater than zero.");
     }
 
     const CaeMeshSetup setup(globalSize, MeshElementOrder::First);
@@ -153,7 +153,12 @@ QString CaeController::generateMesh(const QString& geometryFilePath, double glob
         return errorMessage;
     }
 
-    study->setMesh(CaeMesh(setup, meshResult.nodeCount, meshResult.elementCount, meshResult.meshFilePath));
+    study->setMesh(CaeMesh(
+        setup,
+        meshResult.nodeCount,
+        meshResult.surfaceElementCount,
+        meshResult.volumeElementCount,
+        meshResult.meshFilePath));
     study->setState(StudyState::Meshed);
     return QStringLiteral("Mesh setup prepared for %1 by %2: size=%3, order=%4.")
         .arg(study->name())
@@ -254,36 +259,6 @@ QString CaeController::showResult(ResultFieldType fieldType)
         std::move(resultField.nodalDisplacements)));
 
     return QStringLiteral("Result field prepared: %1.").arg(toDisplayString(fieldType));
-}
-
-QString CaeController::runDemoAnalysis(bool hasGeometry, const QString& geometryFilePath)
-{
-    createStudy(StudyType::StaticStructural);
-
-    QString message = useCurrentGeometry(hasGeometry);
-    if (m_project->activeStudy()->state() != StudyState::GeometryReady) {
-        return message;
-    }
-
-    createDefaultNamedSelection();
-    assignDefaultMaterial();
-    addFixedSupport();
-    addDefaultForce();
-
-    message = generateMesh(geometryFilePath);
-    if (m_project->activeStudy()->state() == StudyState::Failed) {
-        return message;
-    }
-
-    message = runSolver();
-    if (m_project->activeStudy()->state() == StudyState::Failed) {
-        return message;
-    }
-
-    showResult(ResultFieldType::Displacement);
-    showResult(ResultFieldType::VonMisesStress);
-    return QStringLiteral("Demo static CAE analysis completed with %1 and %2.")
-        .arg(m_services.meshGenerator->name(), m_services.solver->name());
 }
 
 QString CaeController::summary() const

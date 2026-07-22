@@ -30,7 +30,6 @@ public:
     QString generateMesh(const QString& geometryFilePath = QString(), double globalSize = 1.0);
     QString runSolver();
     QString showResult(ResultFieldType fieldType);
-    QString runDemoAnalysis(bool hasGeometry = true, const QString& geometryFilePath = QString());
     QString summary() const;
 
     CaeProject& project();

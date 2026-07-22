@@ -334,6 +334,10 @@ void OCCView::keyPressEvent(QKeyEvent *theEvent)
 
 void OCCView::mousePressEvent(QMouseEvent *theEvent)
 {
+    if (theEvent->button() == Qt::LeftButton) {
+        emit signalViewportClicked(theEvent->pos().x(), theEvent->pos().y());
+    }
+
     if (m_mouseMode == View::SELECTION) {
         // Check manipulator intersection first when in SELECTION mode
         if (!m_manipulator.IsNull() && m_manipulator->HasActiveMode()) {
@@ -438,6 +442,8 @@ void OCCView::mouseDoubleClickEvent(QMouseEvent *event)
 
 void OCCView::mouseMoveEvent(QMouseEvent *theEvent)
 {
+    emit signalViewportMouseMoved(theEvent->pos().x(), theEvent->pos().y());
+
     if (m_mouseMode == View::MANIPULATING && !m_manipulator.IsNull())
     {
         m_manipulator->Transform(theEvent->pos().x(), theEvent->pos().y(), m_view);

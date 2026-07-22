@@ -1,9 +1,9 @@
 #include "CaeGmshMeshGenerator.h"
 
+#include "CaeMsh2Reader.h"
+
 #include <QDir>
-#include <QFile>
 #include <QFileInfo>
-#include <QTextStream>
 
 #include <utility>
 
@@ -81,30 +81,21 @@ bool GmshMeshGenerator::readMeshStatistics(
     MeshResult* result,
     QString* errorMessage) const
 {
-    QFile meshFile(meshFilePath);
-    if (!meshFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
+    Msh2MeshData meshData;
+    if (!Msh2Reader::read(meshFilePath, &meshData, errorMessage)) {
+        return false;
+    }
+
+    if (meshData.volumeElements.empty()) {
         if (errorMessage) {
-            *errorMessage = QStringLiteral("Gmsh did not produce a readable mesh file: %1").arg(meshFilePath);
+            *errorMessage = QStringLiteral("Gmsh mesh contains no supported volume elements: %1").arg(meshFilePath);
         }
         return false;
     }
 
-    QTextStream stream(&meshFile);
-    while (!stream.atEnd()) {
-        const QString line = stream.readLine().trimmed();
-        if (line == QStringLiteral("$Nodes") && !stream.atEnd()) {
-            result->nodeCount = stream.readLine().trimmed().toInt();
-        } else if (line == QStringLiteral("$Elements") && !stream.atEnd()) {
-            result->elementCount = stream.readLine().trimmed().toInt();
-        }
-    }
-
-    if (result->nodeCount <= 0 || result->elementCount <= 0) {
-        if (errorMessage) {
-            *errorMessage = QStringLiteral("Gmsh mesh contains no nodes or elements: %1").arg(meshFilePath);
-        }
-        return false;
-    }
+    result->nodeCount = static_cast<int>(meshData.nodes.size());
+    result->surfaceElementCount = static_cast<int>(meshData.surfaceElements.size());
+    result->volumeElementCount = static_cast<int>(meshData.volumeElements.size());
     return true;
 }
 

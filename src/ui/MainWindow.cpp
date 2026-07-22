@@ -16,6 +16,8 @@
 #include <QStatusBar>
 #include <QLabel>
 #include <QInputDialog>
+#include <QMessageBox>
+#include <QSignalBlocker>
 #include <QTabWidget>
 
 // Note: TopoDS_Shape and TopAbs_ShapeEnum are available through ViewerWidget.h includes
@@ -62,6 +64,7 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     connect(m_modelTreeWidget, &ModelTreeWidget::labelSelected,      m_viewerWidget, &ViewerWidget::highlightLabel);
     connect(m_modelTreeWidget, &ModelTreeWidget::labelPickRequested, m_viewerWidget, &ViewerWidget::highlightLabel);
     connect(m_modelTreeWidget, &ModelTreeWidget::labelRemoveRequested, m_viewerWidget, &ViewerWidget::removeLabelShape);
+    connect(m_viewerWidget, &ViewerWidget::signalCaeNodePicked, this, &MainWindow::onCaeNodePicked);
 
     setCentralWidget( splitter );
     refreshCaeTree();
@@ -594,10 +597,6 @@ void MainWindow::createCaeGroup()
     connect(m_caeNewThermalAction, &QAction::triggered, this, &MainWindow::onCaeNewThermalStudy);
     m_caeStudyPannel->addLargeAction(m_caeNewThermalAction);
 
-    m_caeRunDemoAnalysisAction = new QAction(QIcon(":/icons/icon/cae_demo_analysis.svg"), tr("Demo Analysis"), this);
-    connect(m_caeRunDemoAnalysisAction, &QAction::triggered, this, &MainWindow::onCaeRunDemoAnalysis);
-    m_caeStudyPannel->addLargeAction(m_caeRunDemoAnalysisAction);
-
     m_caeGeometryPannel = m_caeCategory->addPannel(tr("Geometry"));
     m_caeUseCurrentGeometryAction = new QAction(QIcon(":/icons/icon/cae_use_current_geometry.svg"), tr("Use Current"), this);
     connect(m_caeUseCurrentGeometryAction, &QAction::triggered, this, &MainWindow::onCaeUseCurrentGeometry);
@@ -647,6 +646,15 @@ void MainWindow::createCaeGroup()
     m_caeDeformationScaleAction = new QAction(QIcon(":/icons/icon/cae_deformation_scale.svg"), tr("Deformation Scale"), this);
     connect(m_caeDeformationScaleAction, &QAction::triggered, this, &MainWindow::onCaeSetDeformationScale);
     m_caeResultsPannel->addSmallAction(m_caeDeformationScaleAction);
+
+    m_caeProbeResultAction = new QAction(QIcon(":/icons/icon/cae_result_probe.svg"), tr("Probe"), this);
+    connect(m_caeProbeResultAction, &QAction::triggered, this, &MainWindow::onCaeProbeResult);
+    m_caeResultsPannel->addSmallAction(m_caeProbeResultAction);
+
+    m_caePickNodeAction = new QAction(QIcon(":/icons/icon/cae_pick_node.svg"), tr("Pick Node"), this);
+    m_caePickNodeAction->setCheckable(true);
+    connect(m_caePickNodeAction, &QAction::toggled, this, &MainWindow::onCaePickNodeToggled);
+    m_caeResultsPannel->addSmallAction(m_caePickNodeAction);
 
     m_caeSettingsPannel = m_caeCategory->addPannel(tr("Settings"));
     m_caeSettingsAction = new QAction(QIcon(":/icons/icon/cae_settings.svg"), tr("Settings"), this);
@@ -1012,6 +1020,7 @@ void MainWindow::onShapeToolHole()
 
 void MainWindow::onCaeNewStaticStudy()
 {
+    m_caePickNodeAction->setChecked(false);
     m_currentCaeResultField.reset();
     m_viewerWidget->clearScalarField();
     m_viewerWidget->clearCaeMesh();
@@ -1021,6 +1030,7 @@ void MainWindow::onCaeNewStaticStudy()
 
 void MainWindow::onCaeNewThermalStudy()
 {
+    m_caePickNodeAction->setChecked(false);
     m_currentCaeResultField.reset();
     m_viewerWidget->clearScalarField();
     m_viewerWidget->clearCaeMesh();
@@ -1028,40 +1038,9 @@ void MainWindow::onCaeNewThermalStudy()
     refreshCaeTree();
 }
 
-void MainWindow::onCaeRunDemoAnalysis()
-{
-    m_currentCaeResultField.reset();
-    QString geometryFilePath;
-    const Cae::CaeExternalToolConfig& config = m_caeController->externalToolConfig();
-    if (config.hasExecutablePath(Cae::ExternalTool::Gmsh) && m_viewerWidget->hasGeometry()) {
-        QString workingDirectory = config.workingDirectory();
-        if (workingDirectory.isEmpty()) {
-            workingDirectory = QDir::temp().filePath(QStringLiteral("Qt_OCC_CAE"));
-        }
-        if (!QDir().mkpath(workingDirectory)) {
-            updateStatusMessage(tr("Failed to create CAE working directory: %1").arg(workingDirectory), 8000);
-            return;
-        }
-        geometryFilePath = QDir(workingDirectory).filePath(QStringLiteral("cae_geometry.step"));
-        QString exportError;
-        if (!m_viewerWidget->exportCaeGeometry(geometryFilePath, &exportError)) {
-            updateStatusMessage(exportError, 8000);
-            return;
-        }
-    }
-
-    updateStatusMessage(
-        m_caeController->runDemoAnalysis(m_viewerWidget->hasGeometry(), geometryFilePath),
-        8000);
-    refreshCaeTree();
-    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
-    if (study && study->state() == Cae::StudyState::Solved) {
-        presentCaeResult(Cae::ResultFieldType::VonMisesStress);
-    }
-}
-
 void MainWindow::onCaeUseCurrentGeometry()
 {
+    m_caePickNodeAction->setChecked(false);
     m_currentCaeResultField.reset();
     m_viewerWidget->clearScalarField();
     m_viewerWidget->clearCaeMesh();
@@ -1122,6 +1101,9 @@ void MainWindow::onCaeAddForce()
 
 void MainWindow::resetCaeResultPresentation(bool preserveMesh)
 {
+    if (m_caePickNodeAction) {
+        m_caePickNodeAction->setChecked(false);
+    }
     m_currentCaeResultField.reset();
     m_viewerWidget->clearScalarField();
 
@@ -1142,7 +1124,7 @@ void MainWindow::onCaeGenerateMesh()
     const double globalSize = QInputDialog::getDouble(
         this,
         tr("Generate CAE Mesh"),
-        tr("Global element size:"),
+        tr("Maximum element size:"),
         m_caeGlobalMeshSize,
         1.0e-6,
         1.0e9,
@@ -1152,6 +1134,7 @@ void MainWindow::onCaeGenerateMesh()
         return;
     }
     m_caeGlobalMeshSize = globalSize;
+    m_caePickNodeAction->setChecked(false);
     m_currentCaeResultField.reset();
     QString geometryFilePath;
     const Cae::CaeExternalToolConfig& config = m_caeController->externalToolConfig();
@@ -1194,6 +1177,7 @@ void MainWindow::onCaeGenerateMesh()
 
 void MainWindow::onCaeRunSolver()
 {
+    m_caePickNodeAction->setChecked(false);
     m_currentCaeResultField.reset();
     updateStatusMessage(m_caeController->runSolver(), 5000);
     refreshCaeTree();
@@ -1236,6 +1220,119 @@ void MainWindow::onCaeSetDeformationScale()
     } else {
         updateStatusMessage(tr("Select a CAE result field before setting deformation scale."), 5000);
     }
+}
+
+void MainWindow::onCaeProbeResult()
+{
+    if (!m_currentCaeResultField) {
+        updateStatusMessage(tr("Display a CAE result field before probing a node."), 5000);
+        return;
+    }
+
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    if (!study || !study->result()) {
+        updateStatusMessage(tr("No CAE result is available for probing."), 5000);
+        return;
+    }
+
+    const Cae::CaeResultField* field = study->result()->field(*m_currentCaeResultField);
+    if (!field || field->nodalValues().empty()) {
+        updateStatusMessage(tr("The current result field has no nodal values."), 5000);
+        return;
+    }
+
+    const int minimumNodeId = field->nodalValues().cbegin()->first;
+    const int maximumNodeId = field->nodalValues().crbegin()->first;
+    const int initialNodeId = m_caeProbeNodeId >= minimumNodeId && m_caeProbeNodeId <= maximumNodeId
+        ? m_caeProbeNodeId
+        : minimumNodeId;
+    bool accepted = false;
+    const int nodeId = QInputDialog::getInt(
+        this,
+        tr("CAE Result Probe"),
+        tr("Node ID (%1 - %2):").arg(minimumNodeId).arg(maximumNodeId),
+        initialNodeId,
+        minimumNodeId,
+        maximumNodeId,
+        1,
+        &accepted);
+    if (!accepted) {
+        return;
+    }
+
+    showCaeNodeProbe(nodeId);
+}
+
+void MainWindow::onCaePickNodeToggled(bool enabled)
+{
+    if (enabled && !m_currentCaeResultField) {
+        const QSignalBlocker blocker(m_caePickNodeAction);
+        m_caePickNodeAction->setChecked(false);
+        updateStatusMessage(tr("Display a nodal CAE result before enabling node picking."), 5000);
+        return;
+    }
+
+    QString errorMessage;
+    if (!m_viewerWidget->setCaeNodePickingEnabled(enabled, &errorMessage)) {
+        const QSignalBlocker blocker(m_caePickNodeAction);
+        m_caePickNodeAction->setChecked(false);
+        updateStatusMessage(errorMessage, 5000);
+        return;
+    }
+
+    updateStatusMessage(
+        enabled ? tr("Node picking enabled. Click a displayed mesh node.")
+                : tr("Node picking disabled."),
+        5000);
+}
+
+void MainWindow::onCaeNodePicked(int nodeId)
+{
+    if (m_caePickNodeAction && m_caePickNodeAction->isChecked()) {
+        showCaeNodeProbe(nodeId);
+    }
+}
+
+void MainWindow::showCaeNodeProbe(int nodeId)
+{
+    if (!m_currentCaeResultField) {
+        updateStatusMessage(tr("Display a CAE result field before probing a node."), 5000);
+        return;
+    }
+
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    if (!study || !study->result()) {
+        updateStatusMessage(tr("No CAE result is available for probing."), 5000);
+        return;
+    }
+
+    const Cae::CaeResultField* field = study->result()->field(*m_currentCaeResultField);
+    if (!field) {
+        updateStatusMessage(tr("The current CAE result field is unavailable."), 5000);
+        return;
+    }
+
+    const auto probe = field->probeNode(nodeId);
+    if (!probe) {
+        updateStatusMessage(tr("Node %1 has no value in the current result field.").arg(nodeId), 5000);
+        return;
+    }
+
+    m_caeProbeNodeId = nodeId;
+    QString details = tr("Node: %1\nField: %2\nValue: %3 %4")
+        .arg(probe->nodeId)
+        .arg(Cae::toDisplayString(field->type()))
+        .arg(QString::number(probe->value, 'g', 12))
+        .arg(field->unit());
+    if (probe->displacement) {
+        const auto& displacement = *probe->displacement;
+        details += tr("\nUx: %1 %4\nUy: %2 %4\nUz: %3 %4")
+            .arg(QString::number(displacement[0], 'g', 12))
+            .arg(QString::number(displacement[1], 'g', 12))
+            .arg(QString::number(displacement[2], 'g', 12))
+            .arg(field->unit());
+    }
+    QMessageBox::information(this, tr("CAE Result Probe"), details);
 }
 
 void MainWindow::presentCaeResult(Cae::ResultFieldType fieldType, bool reloadField)

@@ -23,17 +23,25 @@ private:
 
 class CaeMesh {
 public:
-    CaeMesh(CaeMeshSetup setup, int nodeCount, int elementCount, QString source);
+    CaeMesh(
+        CaeMeshSetup setup,
+        int nodeCount,
+        int surfaceElementCount,
+        int volumeElementCount,
+        QString source);
 
     const CaeMeshSetup& setup() const;
     int nodeCount() const;
     int elementCount() const;
+    int surfaceElementCount() const;
+    int volumeElementCount() const;
     QString source() const;
 
 private:
     CaeMeshSetup m_setup;
     int m_nodeCount{0};
-    int m_elementCount{0};
+    int m_surfaceElementCount{0};
+    int m_volumeElementCount{0};
     QString m_source;
 };
 

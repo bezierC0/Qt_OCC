@@ -26,7 +26,8 @@ struct SolverRequest {
 struct MeshResult {
     QString meshFilePath;
     int nodeCount{0};
-    int elementCount{0};
+    int surfaceElementCount{0};
+    int volumeElementCount{0};
 };
 
 struct SolverResult {

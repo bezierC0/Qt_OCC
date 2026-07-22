@@ -106,7 +106,6 @@ private slots:
     /* CAE */
     void onCaeNewStaticStudy();
     void onCaeNewThermalStudy();
-    void onCaeRunDemoAnalysis();
     void onCaeUseCurrentGeometry();
     void onCaeCreateNamedSelection();
     void onCaeAssignMaterial();
@@ -118,6 +117,9 @@ private slots:
     void onCaeShowStress();
     void onCaeShowTemperature();
     void onCaeSetDeformationScale();
+    void onCaeProbeResult();
+    void onCaePickNodeToggled(bool enabled);
+    void onCaeNodePicked(int nodeId);
     void onCaeSettings();
 
     /* help */
@@ -135,6 +137,7 @@ private:
     void refreshCaeTree();
     void resetCaeResultPresentation(bool preserveMesh);
     void presentCaeResult(Cae::ResultFieldType fieldType, bool reloadField = true);
+    void showCaeNodeProbe(int nodeId);
     void createThemeActions();
 
     // Ribbon creation helper functions
@@ -260,7 +263,6 @@ private:
     SARibbonPannel* m_caeSettingsPannel{};
     QAction* m_caeNewStaticAction{};
     QAction* m_caeNewThermalAction{};
-    QAction* m_caeRunDemoAnalysisAction{};
     QAction* m_caeUseCurrentGeometryAction{};
     QAction* m_caeNamedSelectionAction{};
     QAction* m_caeAssignMaterialAction{};
@@ -272,10 +274,13 @@ private:
     QAction* m_caeShowStressAction{};
     QAction* m_caeShowTemperatureAction{};
     QAction* m_caeDeformationScaleAction{};
+    QAction* m_caeProbeResultAction{};
+    QAction* m_caePickNodeAction{};
     QAction* m_caeSettingsAction{};
     double m_caeDeformationScale{0.0};
     double m_caeForceValue{100.0};
     double m_caeGlobalMeshSize{1.0};
+    int m_caeProbeNodeId{0};
     std::optional<Cae::ResultFieldType> m_currentCaeResultField;
 
 

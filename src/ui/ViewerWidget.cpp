@@ -117,11 +117,14 @@
 #include <BRep_Builder.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <AIS_Shape.hxx>
+#include <AIS_Point.hxx>
 #include <AIS_InteractiveObject.hxx>
 #include <Graphic3d_ClipPlane.hxx> // Added missing include for clipping
 #include <gp_Pln.hxx>              // Added missing include for clipping
 #include <Quantity_Color.hxx>      // Added missing include for colors
 #include <gp_Vec.hxx>
+#include <Geom_CartesianPoint.hxx>
+#include <Prs3d_PointAspect.hxx>
 #include <GProp_GProps.hxx>
 #include <TDF_ChildIterator.hxx>
 
@@ -166,6 +169,7 @@
 #include <MeshVS_Mesh.hxx>
 #include <MeshVS_MeshPrsBuilder.hxx>
 #include <MeshVS_NodalColorPrsBuilder.hxx>
+#include <MeshVS_MeshSelectionMethod.hxx>
 #include <Aspect_SequenceOfColor.hxx>
 
 namespace
@@ -429,6 +433,8 @@ ViewerWidget::ViewerWidget(QWidget *parent) : QWidget(parent)
     connect(m_occView, &OCCView::signalSpaceSelected, this, &ViewerWidget::signalSpaceSelected);
     connect(m_occView, &OCCView::signalSelectedObjects, this, &ViewerWidget::signalSelectedObjects);
     connect(m_occView, &OCCView::signalSelectedObjects, this, &ViewerWidget::onUpdateSelectionInfo);
+    connect(m_occView, &OCCView::signalViewportMouseMoved, this, &ViewerWidget::onCaePickMouseMoved);
+    connect(m_occView, &OCCView::signalViewportClicked, this, &ViewerWidget::onCaePickMousePressed);
 
     connect(m_occView, &OCCView::selectionChanged, this, [this](){
         if (m_occView->Context()->NbSelected() == 0) {
@@ -571,6 +577,13 @@ bool ViewerWidget::showCaeMesh(const QString& meshFilePath, QString* errorMessag
     clearScalarField();
     clearCaeMesh();
 
+    std::map<int, gp_Pnt> pickNodes;
+    for (const auto& node : meshData.nodes) {
+        pickNodes.emplace(
+            node.first,
+            gp_Pnt(node.second[0], node.second[1], node.second[2]));
+    }
+
     Handle(Cae::OccMeshDataSource) dataSource = new Cae::OccMeshDataSource(std::move(meshData));
     Handle(MeshVS_Mesh) mesh = new MeshVS_Mesh();
     mesh->SetDataSource(dataSource);
@@ -585,12 +598,18 @@ bool ViewerWidget::showCaeMesh(const QString& meshFilePath, QString* errorMessag
 
     m_occView->Context()->Display(mesh, MeshVS_DMF_WireFrame, 0, false);
     m_doc->m_caeMesh = mesh;
+    m_caePickNodes = std::move(pickNodes);
+    if (m_caeNodePickingEnabled) {
+        setCaeNodePickingEnabled(true);
+    }
     m_occView->Context()->UpdateCurrentViewer();
     return true;
 }
 
 void ViewerWidget::clearCaeMesh()
 {
+    clearCaeNodeHover();
+    m_caePickNodes.clear();
     if (!m_doc || m_doc->m_caeMesh.IsNull()) {
         return;
     }
@@ -661,6 +680,20 @@ bool ViewerWidget::showCaeScalarField(
             : 1.0;
     }
 
+    std::map<int, gp_Pnt> pickNodes;
+    for (const auto& node : meshData.nodes) {
+        gp_Pnt point(node.second[0], node.second[1], node.second[2]);
+        const auto displacement = nodalDisplacements.find(node.first);
+        if (displacement != nodalDisplacements.end()) {
+            const auto& vector = displacement->second;
+            point.Translate(gp_Vec(
+                vector[0] * effectiveScale,
+                vector[1] * effectiveScale,
+                vector[2] * effectiveScale));
+        }
+        pickNodes.emplace(node.first, point);
+    }
+
     const double range = maximum - minimum;
     Handle(Cae::OccMeshDataSource) dataSource = new Cae::OccMeshDataSource(std::move(meshData));
     Handle(MeshVS_DataSource) displayDataSource = dataSource;
@@ -712,6 +745,10 @@ bool ViewerWidget::showCaeScalarField(
     const Standard_Integer displayMode = MeshVS_DMF_NodalColorDataPrs | MeshVS_DMF_WireFrame;
     m_occView->Context()->Display(mesh, displayMode, 0, false);
     m_doc->m_caeMesh = mesh;
+    m_caePickNodes = std::move(pickNodes);
+    if (m_caeNodePickingEnabled) {
+        setCaeNodePickingEnabled(true);
+    }
     const QString legendTitle = nodalDisplacements.empty()
         ? title
         : QStringLiteral("%1 [Deformation x%2]")
@@ -720,6 +757,142 @@ bool ViewerWidget::showCaeScalarField(
     updateCaeLegend(legendTitle, minimum, maximum);
     m_occView->Context()->UpdateCurrentViewer();
     return true;
+}
+
+bool ViewerWidget::setCaeNodePickingEnabled(bool enabled, QString* errorMessage)
+{
+    if (!m_occView || m_occView->Context().IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("OCCT viewer is not available for node picking.");
+        }
+        return false;
+    }
+    if (!m_doc || m_doc->m_caeMesh.IsNull()) {
+        m_caeNodePickingEnabled = false;
+        if (enabled && errorMessage) {
+            *errorMessage = tr("Display a nodal CAE result before enabling node picking.");
+        }
+        return !enabled;
+    }
+
+    const Handle(MeshVS_Mesh) mesh = m_doc->m_caeMesh;
+    const auto& selectionFilters = m_occView->getSelectionFilters();
+    if (enabled) {
+        m_occView->clearSelectedObjects();
+        m_occView->Context()->ClearDetected(false);
+        for (const auto& object : m_doc->m_list) {
+            m_occView->Context()->Deactivate(object);
+        }
+    }
+
+    m_occView->Context()->Deactivate(mesh);
+    clearCaeNodeHover();
+    if (!enabled) {
+        mesh->SetMeshSelMethod(MeshVS_MSM_PRECISE);
+        mesh->UpdateSelection(0);
+        m_occView->Context()->Activate(mesh, 0, true);
+        for (const auto& object : m_doc->m_list) {
+            for (const auto& filter : selectionFilters) {
+                if (filter.second) {
+                    m_occView->Context()->Activate(
+                        object,
+                        AIS_Shape::SelectionMode(filter.first),
+                        true);
+                }
+            }
+        }
+    }
+    mesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, false);
+    m_occView->Context()->Redisplay(mesh, false);
+    m_caeNodePickingEnabled = enabled;
+
+    bool cadSelectionEnabled = false;
+    for (const auto& filter : selectionFilters) {
+        if (filter.second) {
+            cadSelectionEnabled = true;
+            break;
+        }
+    }
+    m_occView->setMouseMode(
+        enabled || cadSelectionEnabled ? View::MouseMode::SELECTION : View::MouseMode::NONE);
+    m_occView->Context()->UpdateCurrentViewer();
+    return true;
+}
+
+int ViewerWidget::findCaeNodeAt(int x, int y) const
+{
+    if (!m_caeNodePickingEnabled || !m_occView || m_occView->View().IsNull()) {
+        return -1;
+    }
+
+    constexpr int pickRadius = 10;
+    int nearestNodeId = -1;
+    int nearestDistanceSquared = pickRadius * pickRadius + 1;
+    for (const auto& node : m_caePickNodes) {
+        Standard_Integer projectedX = 0;
+        Standard_Integer projectedY = 0;
+        m_occView->View()->Convert(
+            node.second.X(), node.second.Y(), node.second.Z(), projectedX, projectedY);
+        const int dx = projectedX - x;
+        const int dy = projectedY - y;
+        const int distanceSquared = dx * dx + dy * dy;
+        if (distanceSquared < nearestDistanceSquared) {
+            nearestDistanceSquared = distanceSquared;
+            nearestNodeId = node.first;
+        }
+    }
+    return nearestNodeId;
+}
+
+void ViewerWidget::updateCaeNodeHover(int nodeId)
+{
+    if (nodeId == m_caeHoveredNodeId) {
+        return;
+    }
+    clearCaeNodeHover();
+
+    const auto node = m_caePickNodes.find(nodeId);
+    if (node == m_caePickNodes.end() || !m_occView || m_occView->Context().IsNull()) {
+        return;
+    }
+
+    m_caeNodeHoverMarker = new AIS_Point(new Geom_CartesianPoint(node->second));
+    m_caeNodeHoverMarker->SetMarker(Aspect_TOM_O_POINT);
+    m_caeNodeHoverMarker->SetColor(Quantity_NOC_YELLOW);
+    m_caeNodeHoverMarker->Attributes()->SetPointAspect(
+        new Prs3d_PointAspect(Aspect_TOM_O_POINT, Quantity_NOC_YELLOW, 3.0));
+    m_occView->Context()->Display(m_caeNodeHoverMarker, false);
+    m_occView->Context()->Deactivate(m_caeNodeHoverMarker);
+    m_caeHoveredNodeId = nodeId;
+    m_occView->Context()->UpdateCurrentViewer();
+}
+
+void ViewerWidget::clearCaeNodeHover()
+{
+    if (!m_caeNodeHoverMarker.IsNull() && m_occView && !m_occView->Context().IsNull()) {
+        m_occView->Context()->Remove(m_caeNodeHoverMarker, false);
+    }
+    m_caeNodeHoverMarker.Nullify();
+    m_caeHoveredNodeId = -1;
+}
+
+void ViewerWidget::onCaePickMouseMoved(int x, int y)
+{
+    if (m_caeNodePickingEnabled) {
+        updateCaeNodeHover(findCaeNodeAt(x, y));
+    }
+}
+
+void ViewerWidget::onCaePickMousePressed(int x, int y)
+{
+    if (!m_caeNodePickingEnabled) {
+        return;
+    }
+    const int nodeId = findCaeNodeAt(x, y);
+    if (nodeId >= 0) {
+        updateCaeNodeHover(nodeId);
+        emit signalCaeNodePicked(nodeId);
+    }
 }
 
 bool ViewerWidget::showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage)
@@ -1389,7 +1562,8 @@ void ViewerWidget::setFilters(const std::map<TopAbs_ShapeEnum, bool> &filters)
             break;
         }
     }
-    m_occView->setMouseMode(anyFilterActive ? View::MouseMode::SELECTION : View::MouseMode::NONE);
+    m_occView->setMouseMode(
+        anyFilterActive || m_caeNodePickingEnabled ? View::MouseMode::SELECTION : View::MouseMode::NONE);
 
     for (const auto &pair : filters) {
         m_occView->updateSelectionFilter(pair.first, pair.second);
@@ -1410,7 +1584,8 @@ void ViewerWidget::updateSelectionFilter(TopAbs_ShapeEnum filter, bool isActive)
             break;
         }
     }
-    m_occView->setMouseMode(anyFilterActive ? View::MouseMode::SELECTION : View::MouseMode::NONE);
+    m_occView->setMouseMode(
+        anyFilterActive || m_caeNodePickingEnabled ? View::MouseMode::SELECTION : View::MouseMode::NONE);
 }
 
 void ViewerWidget::createWorkPlane()
