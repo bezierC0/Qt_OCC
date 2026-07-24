@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <optional>
 
 #include "SARibbon.h"
@@ -111,6 +112,7 @@ private slots:
     void onCaeAssignMaterial();
     void onCaeAddFixedSupport();
     void onCaeAddForce();
+    void onCaeAddPressure();
     void onCaeGenerateMesh();
     void onCaeRunSolver();
     void onCaeShowDisplacement();
@@ -138,6 +140,7 @@ private:
     void resetCaeResultPresentation(bool preserveMesh);
     void presentCaeResult(Cae::ResultFieldType fieldType, bool reloadField = true);
     void showCaeNodeProbe(int nodeId);
+    QString chooseCaeFaceTarget(const QString& title, bool* accepted);
     void createThemeActions();
 
     // Ribbon creation helper functions
@@ -268,6 +271,7 @@ private:
     QAction* m_caeAssignMaterialAction{};
     QAction* m_caeFixedSupportAction{};
     QAction* m_caeForceAction{};
+    QAction* m_caePressureAction{};
     QAction* m_caeGenerateMeshAction{};
     QAction* m_caeRunSolverAction{};
     QAction* m_caeShowDisplacementAction{};
@@ -278,7 +282,8 @@ private:
     QAction* m_caePickNodeAction{};
     QAction* m_caeSettingsAction{};
     double m_caeDeformationScale{0.0};
-    double m_caeForceValue{100.0};
+    std::array<double, 3> m_caeForceComponents{100.0, 0.0, 0.0};
+    double m_caePressureValue{1.0};
     double m_caeGlobalMeshSize{1.0};
     int m_caeProbeNodeId{0};
     std::optional<Cae::ResultFieldType> m_currentCaeResultField;

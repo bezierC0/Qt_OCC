@@ -8,6 +8,34 @@
 
 namespace Cae {
 
+namespace {
+
+const CaeNamedSelection* findPlanarTarget(
+    const CaeStudy* study,
+    const QString& targetName)
+{
+    if (!study) {
+        return nullptr;
+    }
+    const CaeNamedSelection* target = targetName.isEmpty()
+        ? nullptr
+        : study->findNamedSelection(targetName);
+    if (target) {
+        return target;
+    }
+
+    const auto firstFace = std::find_if(
+        study->namedSelections().cbegin(),
+        study->namedSelections().cend(),
+        [](const CaeNamedSelection& selection) {
+            return selection.scope() == NamedSelectionScope::Face &&
+                selection.planarRegion().has_value();
+        });
+    return firstFace == study->namedSelections().cend() ? nullptr : &*firstFace;
+}
+
+} // namespace
+
 CaeController::CaeController()
     : CaeController(CaeServiceProfile::Dummy)
 {
@@ -53,6 +81,8 @@ QString CaeController::useCurrentGeometry(bool hasGeometry)
     }
 
     study->resetForGeometry();
+    study->addNamedSelection(
+        CaeNamedSelection(QStringLiteral("All Geometry"), NamedSelectionScope::Geometry));
     return QStringLiteral("%1 uses the current CAD geometry.").arg(study->name());
 }
 
@@ -66,6 +96,29 @@ QString CaeController::createDefaultNamedSelection()
 
     study->addNamedSelection(CaeNamedSelection(QStringLiteral("Current Geometry"), NamedSelectionScope::Geometry));
     return QStringLiteral("Created named selection in %1: Current Geometry.").arg(study->name());
+}
+
+QString CaeController::createNamedSelection(
+    const QString& name,
+    const PlanarSelectionRegion& region)
+{
+    CaeStudy* study = m_project->activeStudy();
+    const QString validationError = CaeWorkflowValidator::requireGeometryReady(study);
+    if (!validationError.isEmpty()) {
+        return validationError;
+    }
+
+    const QString selectionName = name.trimmed();
+    if (selectionName.isEmpty()) {
+        return QStringLiteral("Named selection requires a name.");
+    }
+    if (selectionName.compare(QStringLiteral("All Geometry"), Qt::CaseInsensitive) == 0) {
+        return QStringLiteral("All Geometry is reserved for material assignment.");
+    }
+    study->addNamedSelection(
+        CaeNamedSelection(selectionName, NamedSelectionScope::Face, region));
+    return QStringLiteral("Created planar face selection in %1: %2.")
+        .arg(study->name(), selectionName);
 }
 
 QString CaeController::assignDefaultMaterial()
@@ -89,7 +142,15 @@ QString CaeController::assignMaterial(
     }
 
     const QString materialName = name.trimmed().isEmpty() ? QStringLiteral("Material") : name.trimmed();
-    const QString targetName = study->namedSelections().front().name();
+    const auto geometrySelection = std::find_if(
+        study->namedSelections().cbegin(),
+        study->namedSelections().cend(),
+        [](const CaeNamedSelection& selection) {
+            return selection.scope() == NamedSelectionScope::Geometry;
+        });
+    const QString targetName = geometrySelection != study->namedSelections().cend()
+        ? geometrySelection->name()
+        : study->namedSelections().front().name();
     study->addMaterial(CaeMaterial(materialName, targetName, youngModulus, poissonRatio));
     return QStringLiteral("Assigned material to %1: %2 (E=%3 MPa, nu=%4) -> %5.")
         .arg(study->name(), materialName)
@@ -98,7 +159,7 @@ QString CaeController::assignMaterial(
         .arg(targetName);
 }
 
-QString CaeController::addFixedSupport()
+QString CaeController::addFixedSupport(const QString& targetName)
 {
     CaeStudy* study = m_project->activeStudy();
     const QString validationError = CaeWorkflowValidator::requireNamedSelection(study);
@@ -106,9 +167,16 @@ QString CaeController::addFixedSupport()
         return validationError;
     }
 
-    const QString targetName = study->namedSelections().front().name();
-    study->addBoundaryCondition(CaeBoundaryCondition(QStringLiteral("Fixed Support"), targetName, BoundaryConditionType::FixedSupport));
-    return QStringLiteral("Added boundary condition to %1: Fixed Support -> %2.").arg(study->name(), targetName);
+    const CaeNamedSelection* target = findPlanarTarget(study, targetName);
+    if (!target || target->scope() != NamedSelectionScope::Face || !target->planarRegion()) {
+        return QStringLiteral("Fixed support requires a planar face named selection.");
+    }
+    study->addBoundaryCondition(CaeBoundaryCondition(
+        QStringLiteral("Fixed Support"),
+        target->name(),
+        BoundaryConditionType::FixedSupport));
+    return QStringLiteral("Added boundary condition to %1: Fixed Support -> %2.")
+        .arg(study->name(), target->name());
 }
 
 QString CaeController::addDefaultForce()
@@ -116,7 +184,14 @@ QString CaeController::addDefaultForce()
     return addForce(100.0);
 }
 
-QString CaeController::addForce(double force)
+QString CaeController::addForce(double force, const QString& targetName)
+{
+    return addForce({force, 0.0, 0.0}, targetName);
+}
+
+QString CaeController::addForce(
+    const std::array<double, 3>& force,
+    const QString& targetName)
 {
     CaeStudy* study = m_project->activeStudy();
     const QString validationError = CaeWorkflowValidator::requireNamedSelection(study);
@@ -124,13 +199,53 @@ QString CaeController::addForce(double force)
         return validationError;
     }
 
-    if (force == 0.0) {
-        return QStringLiteral("Force must be non-zero.");
+    if (force[0] == 0.0 && force[1] == 0.0 && force[2] == 0.0) {
+        return QStringLiteral("At least one force component must be non-zero.");
     }
 
-    const QString targetName = study->namedSelections().front().name();
-    study->addBoundaryCondition(CaeBoundaryCondition(QStringLiteral("Force"), targetName, BoundaryConditionType::Force, force, QStringLiteral("N")));
-    return QStringLiteral("Added load to %1: X force %2 N -> %3.").arg(study->name()).arg(force).arg(targetName);
+    const CaeNamedSelection* target = findPlanarTarget(study, targetName);
+    if (!target || target->scope() != NamedSelectionScope::Face || !target->planarRegion()) {
+        return QStringLiteral("Force requires a planar face named selection.");
+    }
+    study->addBoundaryCondition(CaeBoundaryCondition(
+        QStringLiteral("Force"),
+        target->name(),
+        BoundaryConditionType::Force,
+        force,
+        QStringLiteral("N")));
+    return QStringLiteral("Added load to %1: F=(%2, %3, %4) N -> %5.")
+        .arg(study->name())
+        .arg(force[0])
+        .arg(force[1])
+        .arg(force[2])
+        .arg(target->name());
+}
+
+QString CaeController::addPressure(double pressure, const QString& targetName)
+{
+    CaeStudy* study = m_project->activeStudy();
+    const QString validationError = CaeWorkflowValidator::requireNamedSelection(study);
+    if (!validationError.isEmpty()) {
+        return validationError;
+    }
+    if (pressure <= 0.0) {
+        return QStringLiteral("Pressure must be greater than zero.");
+    }
+
+    const CaeNamedSelection* target = findPlanarTarget(study, targetName);
+    if (!target || target->scope() != NamedSelectionScope::Face || !target->planarRegion()) {
+        return QStringLiteral("Pressure requires a planar face named selection.");
+    }
+    study->addBoundaryCondition(CaeBoundaryCondition(
+        QStringLiteral("Pressure"),
+        target->name(),
+        BoundaryConditionType::Pressure,
+        pressure,
+        QStringLiteral("MPa")));
+    return QStringLiteral("Added pressure to %1: %2 MPa -> %3.")
+        .arg(study->name())
+        .arg(pressure)
+        .arg(target->name());
 }
 
 QString CaeController::generateMesh(const QString& geometryFilePath, double globalSize)
@@ -179,10 +294,29 @@ QString CaeController::runSolver()
     study->setState(StudyState::Solving);
     SolverResult solverResult;
     QString errorMessage;
-    double force = 0.0;
+    std::array<double, 3> force{};
+    std::optional<PlanarSelectionRegion> fixedRegion;
+    std::optional<PlanarSelectionRegion> loadRegion;
+    double pressure = 0.0;
+    std::optional<PlanarSelectionRegion> pressureRegion;
     for (const CaeBoundaryCondition& condition : study->boundaryConditions()) {
+        const CaeNamedSelection* target = study->findNamedSelection(condition.targetName());
+        if (!target || !target->planarRegion()) {
+            study->setState(StudyState::Failed);
+            return QStringLiteral("Boundary condition target is no longer available: %1.")
+                .arg(condition.targetName());
+        }
+        if (condition.type() == BoundaryConditionType::FixedSupport) {
+            fixedRegion = target->planarRegion();
+        }
         if (condition.type() == BoundaryConditionType::Force) {
-            force += condition.value();
+            for (int axis = 0; axis < 3; ++axis) {
+                force[axis] += condition.components()[axis];
+            }
+            loadRegion = target->planarRegion();
+        } else if (condition.type() == BoundaryConditionType::Pressure) {
+            pressure = condition.value();
+            pressureRegion = target->planarRegion();
         }
     }
     const CaeMaterial& material = study->materials().front();
@@ -192,6 +326,10 @@ QString CaeController::runSolver()
         material.youngModulus(),
         material.poissonRatio(),
         force,
+        fixedRegion,
+        loadRegion,
+        pressure,
+        pressureRegion,
         study->type()};
     if (!m_services.solver->solve(solverRequest, &solverResult, &errorMessage)) {
         study->setSolution(CaeSolution(setup, SolutionStatus::Failed, errorMessage));

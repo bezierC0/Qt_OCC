@@ -1,5 +1,7 @@
 #include "CaeWorkflowValidator.h"
 
+#include <QStringList>
+
 namespace Cae {
 
 QString CaeWorkflowValidator::requireActiveStudy(const CaeStudy* study)
@@ -66,9 +68,23 @@ QString CaeWorkflowValidator::requireMeshReady(const CaeStudy* study)
 
     bool hasConstraint = false;
     bool hasLoad = false;
+    QString fixedTarget;
+    QStringList loadTargets;
     for (const CaeBoundaryCondition& condition : study->boundaryConditions()) {
         hasConstraint = hasConstraint || condition.type() == BoundaryConditionType::FixedSupport;
-        hasLoad = hasLoad || condition.type() == BoundaryConditionType::Force;
+        hasLoad = hasLoad ||
+            condition.type() == BoundaryConditionType::Force ||
+            condition.type() == BoundaryConditionType::Pressure;
+        const CaeNamedSelection* target = study->findNamedSelection(condition.targetName());
+        if (!target || !target->planarRegion()) {
+            return QStringLiteral("Boundary condition target is invalid: %1.")
+                .arg(condition.targetName());
+        }
+        if (condition.type() == BoundaryConditionType::FixedSupport) {
+            fixedTarget = condition.targetName();
+        } else {
+            loadTargets.push_back(condition.targetName());
+        }
     }
 
     if (!hasConstraint) {
@@ -77,6 +93,9 @@ QString CaeWorkflowValidator::requireMeshReady(const CaeStudy* study)
 
     if (study->type() == StudyType::StaticStructural && !hasLoad) {
         return QStringLiteral("Add a force before running a static structural analysis.");
+    }
+    if (!fixedTarget.isEmpty() && loadTargets.contains(fixedTarget)) {
+        return QStringLiteral("Fixed Support and surface loads must target different named faces.");
     }
 
     return QString();

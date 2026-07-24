@@ -16,9 +16,11 @@
 #include <QStatusBar>
 #include <QLabel>
 #include <QInputDialog>
+#include <QLineEdit>
 #include <QMessageBox>
 #include <QSignalBlocker>
 #include <QTabWidget>
+#include <algorithm>
 
 // Note: TopoDS_Shape and TopAbs_ShapeEnum are available through ViewerWidget.h includes
 
@@ -26,6 +28,7 @@
 #include "WidgetModelTree.h"
 #include "WidgetCaeTree.h"
 #include "DialogAbout.h"
+#include "DialogCaeForce.h"
 #include "DialogCaeMaterial.h"
 #include "DialogCaeSettings.h"
 #include "widget_explode_assembly.h"
@@ -620,6 +623,10 @@ void MainWindow::createCaeGroup()
     connect(m_caeForceAction, &QAction::triggered, this, &MainWindow::onCaeAddForce);
     m_caeBoundaryPannel->addLargeAction(m_caeForceAction);
 
+    m_caePressureAction = new QAction(QIcon(":/icons/icon/cae_pressure.svg"), tr("Pressure"), this);
+    connect(m_caePressureAction, &QAction::triggered, this, &MainWindow::onCaeAddPressure);
+    m_caeBoundaryPannel->addLargeAction(m_caePressureAction);
+
     m_caeMeshPannel = m_caeCategory->addPannel(tr("Mesh"));
     m_caeGenerateMeshAction = new QAction(QIcon(":/icons/icon/cae_generate_mesh.svg"), tr("Generate"), this);
     connect(m_caeGenerateMeshAction, &QAction::triggered, this, &MainWindow::onCaeGenerateMesh);
@@ -1050,7 +1057,43 @@ void MainWindow::onCaeUseCurrentGeometry()
 
 void MainWindow::onCaeCreateNamedSelection()
 {
-    updateStatusMessage(m_caeController->createDefaultNamedSelection(), 5000);
+    Cae::PlanarSelectionRegion region;
+    QString errorMessage;
+    if (!m_viewerWidget->selectedCaePlanarFace(&region, &errorMessage)) {
+        m_viewerWidget->setFilters({
+            {TopAbs_VERTEX, false},
+            {TopAbs_EDGE, false},
+            {TopAbs_FACE, true},
+            {TopAbs_SOLID, false}});
+        updateStatusMessage(
+            tr("%1 Face selection mode is now active; select one face and click Named Selection again.")
+                .arg(errorMessage),
+            8000);
+        return;
+    }
+
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    const int faceSelectionCount = study
+        ? static_cast<int>(std::count_if(
+              study->namedSelections().cbegin(),
+              study->namedSelections().cend(),
+              [](const Cae::CaeNamedSelection& selection) {
+                  return selection.scope() == Cae::NamedSelectionScope::Face;
+              }))
+        : 0;
+    bool accepted = false;
+    const QString name = QInputDialog::getText(
+        this,
+        tr("Create Named Selection"),
+        tr("Selection name:"),
+        QLineEdit::Normal,
+        tr("Face Selection %1").arg(faceSelectionCount + 1),
+        &accepted);
+    if (!accepted || name.trimmed().isEmpty()) {
+        return;
+    }
+
+    updateStatusMessage(m_caeController->createNamedSelection(name, region), 5000);
     resetCaeResultPresentation(false);
     refreshCaeTree();
 }
@@ -1073,30 +1116,107 @@ void MainWindow::onCaeAssignMaterial()
 
 void MainWindow::onCaeAddFixedSupport()
 {
-    updateStatusMessage(m_caeController->addFixedSupport(), 5000);
+    bool accepted = false;
+    const QString targetName = chooseCaeFaceTarget(tr("Fixed Support Target"), &accepted);
+    if (!accepted) {
+        return;
+    }
+    updateStatusMessage(m_caeController->addFixedSupport(targetName), 5000);
     resetCaeResultPresentation(true);
     refreshCaeTree();
 }
 
 void MainWindow::onCaeAddForce()
 {
-    bool accepted = false;
-    const double force = QInputDialog::getDouble(
-        this,
-        tr("Add CAE Force"),
-        tr("Total X force (N):"),
-        m_caeForceValue,
-        -1.0e12,
-        1.0e12,
-        3,
-        &accepted);
-    if (!accepted || force == 0.0) {
+    bool targetAccepted = false;
+    const QString targetName = chooseCaeFaceTarget(tr("Force Target"), &targetAccepted);
+    if (!targetAccepted) {
         return;
     }
-    m_caeForceValue = force;
-    updateStatusMessage(m_caeController->addForce(force), 5000);
+
+    DialogCaeForce dialog(m_caeForceComponents, this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+    m_caeForceComponents = dialog.force();
+    updateStatusMessage(
+        m_caeController->addForce(m_caeForceComponents, targetName),
+        5000);
     resetCaeResultPresentation(true);
     refreshCaeTree();
+}
+
+void MainWindow::onCaeAddPressure()
+{
+    bool targetAccepted = false;
+    const QString targetName = chooseCaeFaceTarget(tr("Pressure Target"), &targetAccepted);
+    if (!targetAccepted) {
+        return;
+    }
+
+    bool accepted = false;
+    const double pressure = QInputDialog::getDouble(
+        this,
+        tr("Add CAE Pressure"),
+        tr("Pressure (MPa):"),
+        m_caePressureValue,
+        1.0e-12,
+        1.0e12,
+        6,
+        &accepted);
+    if (!accepted) {
+        return;
+    }
+    m_caePressureValue = pressure;
+    updateStatusMessage(
+        m_caeController->addPressure(pressure, targetName),
+        5000);
+    resetCaeResultPresentation(true);
+    refreshCaeTree();
+}
+
+QString MainWindow::chooseCaeFaceTarget(const QString& title, bool* accepted)
+{
+    if (accepted) {
+        *accepted = false;
+    }
+
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    QStringList faceNames;
+    if (study) {
+        for (const Cae::CaeNamedSelection& selection : study->namedSelections()) {
+            if (selection.scope() == Cae::NamedSelectionScope::Face &&
+                selection.planarRegion()) {
+                faceNames.push_back(selection.name());
+            }
+        }
+    }
+    if (faceNames.isEmpty()) {
+        updateStatusMessage(
+            tr("Create at least one planar face Named Selection first."),
+            8000);
+        return QString();
+    }
+    if (faceNames.size() == 1) {
+        if (accepted) {
+            *accepted = true;
+        }
+        return faceNames.front();
+    }
+
+    bool itemAccepted = false;
+    const QString targetName = QInputDialog::getItem(
+        this,
+        title,
+        tr("Named selection:"),
+        faceNames,
+        0,
+        false,
+        &itemAccepted);
+    if (accepted) {
+        *accepted = itemAccepted;
+    }
+    return targetName;
 }
 
 void MainWindow::resetCaeResultPresentation(bool preserveMesh)

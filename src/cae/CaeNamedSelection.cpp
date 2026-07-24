@@ -10,6 +10,16 @@ CaeNamedSelection::CaeNamedSelection(QString name, NamedSelectionScope scope)
 {
 }
 
+CaeNamedSelection::CaeNamedSelection(
+    QString name,
+    NamedSelectionScope scope,
+    PlanarSelectionRegion region)
+    : m_name(std::move(name))
+    , m_scope(scope)
+    , m_planarRegion(std::move(region))
+{
+}
+
 QString CaeNamedSelection::name() const
 {
     return m_name;
@@ -18,6 +28,11 @@ QString CaeNamedSelection::name() const
 NamedSelectionScope CaeNamedSelection::scope() const
 {
     return m_scope;
+}
+
+const std::optional<PlanarSelectionRegion>& CaeNamedSelection::planarRegion() const
+{
+    return m_planarRegion;
 }
 
 QString toDisplayString(NamedSelectionScope scope)

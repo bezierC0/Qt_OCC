@@ -1,10 +1,12 @@
 #pragma once
 
+#include "CaeNamedSelection.h"
 #include "CaeTypes.h"
 
 #include <QString>
 #include <array>
 #include <map>
+#include <optional>
 #include <vector>
 
 namespace Cae {
@@ -19,7 +21,11 @@ struct SolverRequest {
     QString workingDirectory;
     double youngModulus{210000.0};
     double poissonRatio{0.3};
-    double force{100.0};
+    std::array<double, 3> force{100.0, 0.0, 0.0};
+    std::optional<PlanarSelectionRegion> fixedRegion;
+    std::optional<PlanarSelectionRegion> loadRegion;
+    double pressure{0.0};
+    std::optional<PlanarSelectionRegion> pressureRegion;
     StudyType studyType{StudyType::StaticStructural};
 };
 
