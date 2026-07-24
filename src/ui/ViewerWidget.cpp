@@ -71,6 +71,7 @@
 #include <HLRBRep_HLRToShape.hxx>
 #include <HLRAlgo_Projector.hxx>
 #include <BRepAdaptor_Curve.hxx>
+#include <BRepAdaptor_Surface.hxx>
 #include <GCPnts_TangentialDeflection.hxx>
 
 /* Qt */
@@ -551,6 +552,73 @@ bool ViewerWidget::exportCaeGeometry(const QString& filePath, QString* errorMess
         }
         return false;
     }
+    return true;
+}
+
+bool ViewerWidget::selectedCaePlanarFace(
+    Cae::PlanarSelectionRegion* region,
+    QString* errorMessage) const
+{
+    if (!region || !m_occView) {
+        if (errorMessage) {
+            *errorMessage = tr("CAE face selection output is not available.");
+        }
+        return false;
+    }
+
+    const auto& selectedObjects = m_occView->getSelectedObjects();
+    if (selectedObjects.size() != 1 || !selectedObjects.front() ||
+        selectedObjects.front()->GetSelectedShape().IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("Select exactly one planar CAD face.");
+        }
+        return false;
+    }
+
+    const TopoDS_Shape selectedShape = selectedObjects.front()->GetSelectedShape()->Shape();
+    if (selectedShape.ShapeType() != TopAbs_FACE) {
+        if (errorMessage) {
+            *errorMessage = tr("The named selection requires a CAD face, not the whole solid.");
+        }
+        return false;
+    }
+
+    const TopoDS_Face face = TopoDS::Face(selectedShape);
+    const BRepAdaptor_Surface surface(face, true);
+    if (surface.GetType() != GeomAbs_Plane) {
+        if (errorMessage) {
+            *errorMessage = tr("Phase 1 named selections currently support planar faces only.");
+        }
+        return false;
+    }
+
+    Bnd_Box bounds;
+    bounds.SetGap(0.0);
+    BRepBndLib::Add(face, bounds, false);
+    if (bounds.IsVoid()) {
+        if (errorMessage) {
+            *errorMessage = tr("Cannot calculate the selected face bounds.");
+        }
+        return false;
+    }
+
+    Standard_Real xMin = 0.0;
+    Standard_Real yMin = 0.0;
+    Standard_Real zMin = 0.0;
+    Standard_Real xMax = 0.0;
+    Standard_Real yMax = 0.0;
+    Standard_Real zMax = 0.0;
+    bounds.Get(xMin, yMin, zMin, xMax, yMax, zMax);
+    const gp_Pln plane = surface.Plane();
+    const gp_Pnt origin = plane.Location();
+    gp_Dir normal = plane.Axis().Direction();
+    if (face.Orientation() == TopAbs_REVERSED) {
+        normal.Reverse();
+    }
+    region->origin = {origin.X(), origin.Y(), origin.Z()};
+    region->normal = {normal.X(), normal.Y(), normal.Z()};
+    region->minimum = {xMin, yMin, zMin};
+    region->maximum = {xMax, yMax, zMax};
     return true;
 }
 

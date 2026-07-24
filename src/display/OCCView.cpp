@@ -354,6 +354,9 @@ void OCCView::mousePressEvent(QMouseEvent *theEvent)
                                                 ? AIS_SelectionScheme_Add
                                                 : AIS_SelectionScheme_Replace;
         m_context->SelectDetected(aScheme);
+        if (aScheme == AIS_SelectionScheme_Replace) {
+            m_selectedObjects.clear();
+        }
 
         // Now process the selected objects
         if (m_context->NbSelected()) {
@@ -397,6 +400,9 @@ void OCCView::mousePressEvent(QMouseEvent *theEvent)
             for (const auto &shape : selectedShapesToSignal) {
                 emit signalSpaceSelected(shape);
             }
+        } else if (aScheme == AIS_SelectionScheme_Replace) {
+            emit signalSelectedObjects(m_selectedObjects);
+            emit selectionChanged();
         }
     } else {
         if (!m_selectedObjects.empty()) {

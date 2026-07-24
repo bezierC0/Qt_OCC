@@ -9,6 +9,7 @@
 #include <TopoDS_Shape.hxx> 
 #include <TDocStd_Document.hxx>
 #include "OCCView.h" 
+#include "cae/CaeNamedSelection.h"
 class AIS_InteractiveObject;
 class gp_Dir;
 class QLabel;
@@ -137,6 +138,7 @@ public:
     void updateTree();
     bool hasGeometry() const;
     bool exportCaeGeometry(const QString& filePath, QString* errorMessage);
+    bool selectedCaePlanarFace(Cae::PlanarSelectionRegion* region, QString* errorMessage) const;
     bool showCaeMesh(const QString& meshFilePath, QString* errorMessage = nullptr);
     void clearCaeMesh();
     bool showCaeScalarField(

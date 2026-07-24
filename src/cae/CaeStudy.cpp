@@ -37,6 +37,15 @@ const std::vector<CaeNamedSelection>& CaeStudy::namedSelections() const
     return m_namedSelections;
 }
 
+const CaeNamedSelection* CaeStudy::findNamedSelection(const QString& name) const
+{
+    const auto selection = std::find_if(
+        m_namedSelections.cbegin(),
+        m_namedSelections.cend(),
+        [&name](const CaeNamedSelection& item) { return item.name() == name; });
+    return selection == m_namedSelections.cend() ? nullptr : &*selection;
+}
+
 const std::vector<CaeMaterial>& CaeStudy::materials() const
 {
     return m_materials;
@@ -86,6 +95,16 @@ void CaeStudy::resetForGeometry()
 void CaeStudy::addNamedSelection(const CaeNamedSelection& namedSelection)
 {
     invalidateMeshAndSolution();
+    const auto existing = std::find_if(
+        m_namedSelections.begin(),
+        m_namedSelections.end(),
+        [&namedSelection](const CaeNamedSelection& item) {
+            return item.name() == namedSelection.name();
+        });
+    if (existing != m_namedSelections.end()) {
+        *existing = namedSelection;
+        return;
+    }
     m_namedSelections.push_back(namedSelection);
 }
 
@@ -108,6 +127,16 @@ void CaeStudy::addMaterial(const CaeMaterial& material)
 void CaeStudy::addBoundaryCondition(const CaeBoundaryCondition& boundaryCondition)
 {
     invalidateSolution();
+    const auto existing = std::find_if(
+        m_boundaryConditions.begin(),
+        m_boundaryConditions.end(),
+        [&boundaryCondition](const CaeBoundaryCondition& item) {
+            return item.type() == boundaryCondition.type();
+        });
+    if (existing != m_boundaryConditions.end()) {
+        *existing = boundaryCondition;
+        return;
+    }
     m_boundaryConditions.push_back(boundaryCondition);
 }
 

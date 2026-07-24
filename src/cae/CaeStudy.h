@@ -24,6 +24,7 @@ public:
     StudyState state() const;
     QString name() const;
     const std::vector<CaeNamedSelection>& namedSelections() const;
+    const CaeNamedSelection* findNamedSelection(const QString& name) const;
     const std::vector<CaeMaterial>& materials() const;
     const std::vector<CaeBoundaryCondition>& boundaryConditions() const;
     const std::optional<CaeMesh>& mesh() const;
