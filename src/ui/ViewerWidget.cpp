@@ -119,10 +119,13 @@
 #include <BRepBuilderAPI_Transform.hxx>
 #include <AIS_Shape.hxx>
 #include <AIS_Point.hxx>
+#include <AIS_TextLabel.hxx>
 #include <AIS_InteractiveObject.hxx>
 #include <Graphic3d_ClipPlane.hxx> // Added missing include for clipping
 #include <gp_Pln.hxx>              // Added missing include for clipping
 #include <Quantity_Color.hxx>      // Added missing include for colors
+#include <Precision.hxx>
+#include <gp_Ax2.hxx>
 #include <gp_Vec.hxx>
 #include <Geom_CartesianPoint.hxx>
 #include <Prs3d_PointAspect.hxx>
@@ -175,6 +178,59 @@
 
 namespace
 {
+gp_Pnt markerCenter(const Cae::PlanarSelectionRegion& region)
+{
+    gp_Pnt center(
+        (region.minimum[0] + region.maximum[0]) * 0.5,
+        (region.minimum[1] + region.maximum[1]) * 0.5,
+        (region.minimum[2] + region.maximum[2]) * 0.5);
+    const gp_Vec normal(region.normal[0], region.normal[1], region.normal[2]);
+    if (normal.SquareMagnitude() <= Precision::SquareConfusion()) {
+        return center;
+    }
+
+    const gp_Vec fromOrigin(
+        gp_Pnt(region.origin[0], region.origin[1], region.origin[2]),
+        center);
+    const gp_Vec unitNormal = normal.Normalized();
+    center.Translate(-unitNormal * fromOrigin.Dot(unitNormal));
+    return center;
+}
+
+double markerScale(const Cae::PlanarSelectionRegion& region)
+{
+    const double dx = region.maximum[0] - region.minimum[0];
+    const double dy = region.maximum[1] - region.minimum[1];
+    const double dz = region.maximum[2] - region.minimum[2];
+    return std::max(std::sqrt(dx * dx + dy * dy + dz * dz) * 0.25, 1.0e-3);
+}
+
+TopoDS_Shape makeArrow(const gp_Pnt& origin, const gp_Dir& direction, double length)
+{
+    const double headLength = length * 0.3;
+    const double shaftLength = length - headLength;
+    const double shaftRadius = length * 0.035;
+    const double headRadius = length * 0.09;
+
+    const TopoDS_Shape shaft = BRepPrimAPI_MakeCylinder(
+        gp_Ax2(origin, direction),
+        shaftRadius,
+        shaftLength);
+    const gp_Pnt headOrigin = origin.Translated(gp_Vec(direction) * shaftLength);
+    const TopoDS_Shape head = BRepPrimAPI_MakeCone(
+        gp_Ax2(headOrigin, direction),
+        headRadius,
+        0.0,
+        headLength);
+
+    TopoDS_Compound arrow;
+    BRep_Builder builder;
+    builder.MakeCompound(arrow);
+    builder.Add(arrow, shaft);
+    builder.Add(arrow, head);
+    return arrow;
+}
+
 // TODO move to Util
 bool isShapeAssembly(const TDF_Label &lbl)
 {
@@ -411,6 +467,7 @@ uint32_t deepBuildAssemblyTree(uint32_t parentNode, const TDF_Label &label,
 
 struct ViewerWidget::Document {
     std::vector<opencascade::handle<AIS_InteractiveObject>> m_list;
+    std::vector<opencascade::handle<AIS_InteractiveObject>> m_caeBoundaryMarkers;
     std::vector<opencascade::handle<AIS_InteractiveObject>> m_scalarOverlays;
     std::vector<opencascade::handle<AIS_InteractiveObject>> m_scalarHiddenObjects;
     Handle(MeshVS_Mesh) m_caeMesh;
@@ -497,6 +554,7 @@ void ViewerWidget::clearAll()
 {
     clearScalarField();
     clearCaeMesh();
+    clearCaeBoundaryMarkers();
 
     if (m_doc) {
         m_doc->m_list.clear();
@@ -686,6 +744,72 @@ void ViewerWidget::clearCaeMesh()
         m_occView->Context()->UpdateCurrentViewer();
     }
     m_doc->m_caeMesh.Nullify();
+}
+
+void ViewerWidget::showCaeBoundaryMarkers(const Cae::BoundaryMarkers& markers)
+{
+    clearCaeBoundaryMarkers();
+    if (!m_doc || !m_occView || m_occView->Context().IsNull()) {
+        return;
+    }
+
+    const Handle(AIS_InteractiveContext)& context = m_occView->Context();
+    for (const Cae::BoundaryMarker& marker : markers) {
+        const gp_Pnt center = markerCenter(marker.region);
+        const double scale = markerScale(marker.region);
+        Quantity_Color color(0.2, 0.6, 1.0, Quantity_TOC_RGB);
+        TopoDS_Shape markerShape;
+
+        if (marker.type == Cae::BoundaryMarkerType::FixedSupport) {
+            markerShape = BRepPrimAPI_MakeSphere(center, scale * 0.12);
+        } else {
+            gp_Vec direction(marker.direction[0], marker.direction[1], marker.direction[2]);
+            if (direction.SquareMagnitude() <= Precision::SquareConfusion()) {
+                continue;
+            }
+            direction.Normalize();
+            if (marker.type == Cae::BoundaryMarkerType::Pressure) {
+                color = Quantity_Color(1.0, 0.55, 0.1, Quantity_TOC_RGB);
+                markerShape = makeArrow(
+                    center.Translated(-direction * scale),
+                    gp_Dir(direction),
+                    scale);
+            } else {
+                color = Quantity_Color(0.95, 0.2, 0.2, Quantity_TOC_RGB);
+                markerShape = makeArrow(center, gp_Dir(direction), scale);
+            }
+        }
+
+        Handle(AIS_Shape) shape = new AIS_Shape(markerShape);
+        shape->SetColor(color);
+        context->Display(shape, false);
+        context->Deactivate(shape);
+        m_doc->m_caeBoundaryMarkers.push_back(shape);
+
+        Handle(AIS_TextLabel) label = new AIS_TextLabel();
+        label->SetText(marker.label.toStdString().c_str());
+        label->SetPosition(center.Translated(gp_Vec(0.0, 0.0, scale * 0.18)));
+        label->SetColor(color);
+        label->SetHeight(14.0);
+        context->Display(label, false);
+        context->Deactivate(label);
+        m_doc->m_caeBoundaryMarkers.push_back(label);
+    }
+    context->UpdateCurrentViewer();
+}
+
+void ViewerWidget::clearCaeBoundaryMarkers()
+{
+    if (!m_doc) {
+        return;
+    }
+    if (m_occView && !m_occView->Context().IsNull()) {
+        for (const auto& marker : m_doc->m_caeBoundaryMarkers) {
+            m_occView->Context()->Remove(marker, false);
+        }
+        m_occView->Context()->UpdateCurrentViewer();
+    }
+    m_doc->m_caeBoundaryMarkers.clear();
 }
 
 bool ViewerWidget::showCaeScalarField(

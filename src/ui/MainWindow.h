@@ -137,6 +137,7 @@ private slots:
 private:
     void setupUi();
     void refreshCaeTree();
+    void refreshCaeBoundaryVisualization();
     void resetCaeResultPresentation(bool preserveMesh);
     void presentCaeResult(Cae::ResultFieldType fieldType, bool reloadField = true);
     void showCaeNodeProbe(int nodeId);
