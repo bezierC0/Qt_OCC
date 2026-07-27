@@ -9,6 +9,7 @@
 #include <TopoDS_Shape.hxx> 
 #include <TDocStd_Document.hxx>
 #include "OCCView.h" 
+#include "cae/CaeBoundaryVisualization.h"
 #include "cae/CaeNamedSelection.h"
 class AIS_InteractiveObject;
 class gp_Dir;
@@ -141,6 +142,8 @@ public:
     bool selectedCaePlanarFace(Cae::PlanarSelectionRegion* region, QString* errorMessage) const;
     bool showCaeMesh(const QString& meshFilePath, QString* errorMessage = nullptr);
     void clearCaeMesh();
+    void showCaeBoundaryMarkers(const Cae::BoundaryMarkers& markers);
+    void clearCaeBoundaryMarkers();
     bool showCaeScalarField(
         const QString& meshFilePath,
         const QString& title,

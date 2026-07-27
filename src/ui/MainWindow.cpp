@@ -21,6 +21,7 @@
 #include <QSignalBlocker>
 #include <QTabWidget>
 #include <algorithm>
+#include <utility>
 
 // Note: TopoDS_Shape and TopAbs_ShapeEnum are available through ViewerWidget.h includes
 
@@ -35,6 +36,7 @@
 #include "widget_clipping.h"
 #include "widget_set_coordinate_system.h"
 #include "widget_transform.h"
+#include "cae/CaeBoundaryVisualization.h"
 #include "cae/CaeCommand.h"
 #include "cae/CaeController.h"
 #include "cae/CaeExternalToolConfig.h"
@@ -84,6 +86,42 @@ void MainWindow::refreshCaeTree()
     if (m_caeTreeWidget && m_caeController) {
         m_caeTreeWidget->setProject(m_caeController->project());
     }
+}
+
+void MainWindow::refreshCaeBoundaryVisualization()
+{
+    Cae::BoundaryMarkers markers;
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    if (study) {
+        for (const Cae::CaeBoundaryCondition& condition : study->boundaryConditions()) {
+            const Cae::CaeNamedSelection* target = study->findNamedSelection(condition.targetName());
+            if (!target || !target->planarRegion()) {
+                continue;
+            }
+
+            Cae::BoundaryMarker marker;
+            marker.label = condition.name();
+            marker.region = *target->planarRegion();
+            switch (condition.type()) {
+            case Cae::BoundaryConditionType::FixedSupport:
+                marker.type = Cae::BoundaryMarkerType::FixedSupport;
+                break;
+            case Cae::BoundaryConditionType::Force:
+                marker.type = Cae::BoundaryMarkerType::Force;
+                marker.direction = condition.components();
+                break;
+            case Cae::BoundaryConditionType::Pressure:
+                marker.type = Cae::BoundaryMarkerType::Pressure;
+                marker.direction = {
+                    -marker.region.normal[0],
+                    -marker.region.normal[1],
+                    -marker.region.normal[2]};
+                break;
+            }
+            markers.push_back(std::move(marker));
+        }
+    }
+    m_viewerWidget->showCaeBoundaryMarkers(markers);
 }
 
 void MainWindow::setupUi()
@@ -1031,6 +1069,7 @@ void MainWindow::onCaeNewStaticStudy()
     m_currentCaeResultField.reset();
     m_viewerWidget->clearScalarField();
     m_viewerWidget->clearCaeMesh();
+    m_viewerWidget->clearCaeBoundaryMarkers();
     updateStatusMessage(m_caeController->execute(std::make_unique<Cae::CreateStudyCommand>(Cae::StudyType::StaticStructural)), 5000);
     refreshCaeTree();
 }
@@ -1041,6 +1080,7 @@ void MainWindow::onCaeNewThermalStudy()
     m_currentCaeResultField.reset();
     m_viewerWidget->clearScalarField();
     m_viewerWidget->clearCaeMesh();
+    m_viewerWidget->clearCaeBoundaryMarkers();
     updateStatusMessage(m_caeController->execute(std::make_unique<Cae::CreateStudyCommand>(Cae::StudyType::SteadyThermal)), 5000);
     refreshCaeTree();
 }
@@ -1051,6 +1091,7 @@ void MainWindow::onCaeUseCurrentGeometry()
     m_currentCaeResultField.reset();
     m_viewerWidget->clearScalarField();
     m_viewerWidget->clearCaeMesh();
+    m_viewerWidget->clearCaeBoundaryMarkers();
     updateStatusMessage(m_caeController->useCurrentGeometry(m_viewerWidget->hasGeometry()), 5000);
     refreshCaeTree();
 }
@@ -1123,6 +1164,7 @@ void MainWindow::onCaeAddFixedSupport()
     }
     updateStatusMessage(m_caeController->addFixedSupport(targetName), 5000);
     resetCaeResultPresentation(true);
+    refreshCaeBoundaryVisualization();
     refreshCaeTree();
 }
 
@@ -1143,6 +1185,7 @@ void MainWindow::onCaeAddForce()
         m_caeController->addForce(m_caeForceComponents, targetName),
         5000);
     resetCaeResultPresentation(true);
+    refreshCaeBoundaryVisualization();
     refreshCaeTree();
 }
 
@@ -1172,6 +1215,7 @@ void MainWindow::onCaeAddPressure()
         m_caeController->addPressure(pressure, targetName),
         5000);
     resetCaeResultPresentation(true);
+    refreshCaeBoundaryVisualization();
     refreshCaeTree();
 }
 
@@ -1292,6 +1336,8 @@ void MainWindow::onCaeGenerateMesh()
     QString displayError;
     if (!m_viewerWidget->showCaeMesh(meshFilePath, &displayError)) {
         updateStatusMessage(displayError, 8000);
+    } else {
+        refreshCaeBoundaryVisualization();
     }
 }
 
@@ -1472,6 +1518,7 @@ void MainWindow::presentCaeResult(Cae::ResultFieldType fieldType, bool reloadFie
         return;
     }
     m_currentCaeResultField = fieldType;
+    m_viewerWidget->clearCaeBoundaryMarkers();
 
     QString errorMessage;
     const QString title = QStringLiteral("%1 (%2)").arg(Cae::toDisplayString(fieldType), field->unit());
