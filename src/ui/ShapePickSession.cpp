@@ -20,6 +20,8 @@ ShapePickSession::ShapePickSession(int            requiredPointCount,
 
 ShapePickSession::~ShapePickSession()
 {
+    QObject::disconnect(this, nullptr, nullptr, nullptr);
+
     // stop() clears the preview and halts the helper; no-op when already Idle.
     stop();
 }
