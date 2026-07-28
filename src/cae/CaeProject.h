@@ -14,6 +14,7 @@ public:
 
     CaeStudy* activeStudy();
     const CaeStudy* activeStudy() const;
+    bool activateStudy(const QUuid& studyId);
 
     const std::vector<std::unique_ptr<CaeStudy>>& studies() const;
 

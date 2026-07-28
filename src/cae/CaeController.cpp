@@ -62,6 +62,11 @@ void CaeController::clearProject()
     m_project->clear();
 }
 
+bool CaeController::activateStudy(const QUuid& studyId)
+{
+    return m_project->activateStudy(studyId);
+}
+
 QString CaeController::createStudy(StudyType type)
 {
     CaeStudy& study = m_project->createStudy(type);

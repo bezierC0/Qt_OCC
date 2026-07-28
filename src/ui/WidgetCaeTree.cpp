@@ -4,9 +4,33 @@
 #include "cae/CaeStudy.h"
 #include "cae/CaeTypes.h"
 
+#include <QFont>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
+
+namespace {
+
+enum class CaeTreeItemKind {
+    None,
+    Mesh,
+    ResultField
+};
+
+constexpr int ItemKindRole = Qt::UserRole;
+constexpr int ResultFieldTypeRole = Qt::UserRole + 1;
+constexpr int StudyIdRole = Qt::UserRole + 2;
+
+void setActionData(
+    QTreeWidgetItem* item,
+    CaeTreeItemKind kind,
+    const QUuid& studyId)
+{
+    item->setData(0, ItemKindRole, static_cast<int>(kind));
+    item->setData(0, StudyIdRole, studyId);
+}
+
+} // namespace
 
 CaeTreeWidget::CaeTreeWidget(QWidget* parent)
     : QWidget(parent)
@@ -14,6 +38,11 @@ CaeTreeWidget::CaeTreeWidget(QWidget* parent)
     m_treeWidget = new QTreeWidget(this);
     m_treeWidget->setColumnCount(2);
     m_treeWidget->setHeaderLabels({tr("CAE Item"), tr("State")});
+    connect(
+        m_treeWidget,
+        &QTreeWidget::itemActivated,
+        this,
+        [this](QTreeWidgetItem* item, int) { activateItem(item); });
 
     auto* layout = new QVBoxLayout(this);
     layout->addWidget(m_treeWidget);
@@ -28,7 +57,7 @@ void CaeTreeWidget::setProject(const Cae::CaeProject& project)
     auto* root = new QTreeWidgetItem(m_treeWidget, {tr("CAE Project"), QString()});
     for (const auto& study : project.studies()) {
         if (study) {
-            addStudyItem(root, *study);
+            addStudyItem(root, *study, project.activeStudy() == study.get());
         }
     }
 
@@ -41,9 +70,41 @@ void CaeTreeWidget::clearProject()
     m_treeWidget->clear();
 }
 
-void CaeTreeWidget::addStudyItem(QTreeWidgetItem* parent, const Cae::CaeStudy& study)
+void CaeTreeWidget::activateItem(QTreeWidgetItem* item)
+{
+    if (!item) {
+        return;
+    }
+
+    const auto kind = static_cast<CaeTreeItemKind>(item->data(0, ItemKindRole).toInt());
+    const QUuid studyId = item->data(0, StudyIdRole).toUuid();
+    switch (kind) {
+    case CaeTreeItemKind::Mesh:
+        emit meshActivated(studyId);
+        break;
+    case CaeTreeItemKind::ResultField:
+        emit resultFieldActivated(
+            studyId,
+            static_cast<Cae::ResultFieldType>(
+                item->data(0, ResultFieldTypeRole).toInt()));
+        break;
+    case CaeTreeItemKind::None:
+        break;
+    }
+}
+
+void CaeTreeWidget::addStudyItem(
+    QTreeWidgetItem* parent,
+    const Cae::CaeStudy& study,
+    bool active)
 {
     auto* studyItem = new QTreeWidgetItem(parent, {study.name(), Cae::toDisplayString(study.state())});
+    QFont studyFont = studyItem->font(0);
+    studyFont.setBold(active);
+    studyItem->setFont(0, studyFont);
+    if (active) {
+        studyItem->setToolTip(0, tr("Active CAE study"));
+    }
     studyItem->setExpanded(true);
 
     new QTreeWidgetItem(studyItem, {tr("Geometry"), study.state() == Cae::StudyState::Empty ? tr("Not selected") : tr("Ready")});
@@ -75,6 +136,8 @@ void CaeTreeWidget::addStudyItem(QTreeWidgetItem* parent, const Cae::CaeStudy& s
                          study.state() == Cae::StudyState::Solved;
     auto* meshItem = new QTreeWidgetItem(studyItem, {tr("Mesh"), hasMesh ? tr("Ready") : tr("Pending")});
     if (study.mesh()) {
+        setActionData(meshItem, CaeTreeItemKind::Mesh, study.id());
+        meshItem->setToolTip(0, tr("Double-click to display the mesh."));
         const auto& mesh = *study.mesh();
         new QTreeWidgetItem(meshItem, {tr("Maximum Element Size"), QString::number(mesh.setup().globalSize())});
         new QTreeWidgetItem(meshItem, {tr("Element Order"), Cae::toDisplayString(mesh.setup().elementOrder())});
@@ -101,9 +164,13 @@ void CaeTreeWidget::addStudyItem(QTreeWidgetItem* parent, const Cae::CaeStudy& s
         }
     }
     auto* resultsItem = new QTreeWidgetItem(studyItem, {tr("Results"), study.result() ? tr("Available") : tr("Pending")});
+    resultsItem->setExpanded(study.result().has_value());
     if (study.result()) {
         for (const auto& field : study.result()->fields()) {
             auto* fieldItem = new QTreeWidgetItem(resultsItem, {Cae::toDisplayString(field.type()), field.unit()});
+            setActionData(fieldItem, CaeTreeItemKind::ResultField, study.id());
+            fieldItem->setData(0, ResultFieldTypeRole, static_cast<int>(field.type()));
+            fieldItem->setToolTip(0, tr("Double-click to display this result."));
             new QTreeWidgetItem(fieldItem, {tr("Min"), QString::number(field.minValue())});
             new QTreeWidgetItem(fieldItem, {tr("Max"), QString::number(field.maxValue())});
             new QTreeWidgetItem(fieldItem, {tr("Nodal Values"), QString::number(static_cast<qulonglong>(field.nodalValues().size()))});

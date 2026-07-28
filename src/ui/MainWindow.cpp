@@ -70,6 +70,8 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     connect(m_modelTreeWidget, &ModelTreeWidget::labelPickRequested, m_viewerWidget, &ViewerWidget::highlightLabel);
     connect(m_modelTreeWidget, &ModelTreeWidget::labelRemoveRequested, m_viewerWidget, &ViewerWidget::removeLabelShape);
     connect(m_viewerWidget, &ViewerWidget::signalCaeNodePicked, this, &MainWindow::onCaeNodePicked);
+    connect(m_caeTreeWidget, &CaeTreeWidget::meshActivated, this, &MainWindow::onCaeTreeMeshActivated);
+    connect(m_caeTreeWidget, &CaeTreeWidget::resultFieldActivated, this, &MainWindow::onCaeTreeResultActivated);
 
     setCentralWidget( splitter );
     refreshCaeTree();
@@ -1362,6 +1364,37 @@ void MainWindow::onCaeShowStress()
 void MainWindow::onCaeShowTemperature()
 {
     presentCaeResult(Cae::ResultFieldType::Temperature);
+}
+
+void MainWindow::onCaeTreeMeshActivated(const QUuid& studyId)
+{
+    if (!m_caeController->activateStudy(studyId)) {
+        updateStatusMessage(tr("The selected CAE study is unavailable."), 5000);
+        return;
+    }
+    refreshCaeTree();
+
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    if (!study || !study->mesh()) {
+        updateStatusMessage(tr("The active CAE study has no mesh to display."), 5000);
+        return;
+    }
+
+    resetCaeResultPresentation(true);
+    refreshCaeBoundaryVisualization();
+    updateStatusMessage(tr("CAE mesh displayed."), 3000);
+}
+
+void MainWindow::onCaeTreeResultActivated(
+    const QUuid& studyId,
+    Cae::ResultFieldType fieldType)
+{
+    if (!m_caeController->activateStudy(studyId)) {
+        updateStatusMessage(tr("The selected CAE study is unavailable."), 5000);
+        return;
+    }
+    refreshCaeTree();
+    presentCaeResult(fieldType, false);
 }
 
 void MainWindow::onCaeSetDeformationScale()

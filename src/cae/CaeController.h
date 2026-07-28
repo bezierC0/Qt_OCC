@@ -19,6 +19,7 @@ public:
 
     QString execute(std::unique_ptr<ICaeCommand> command);
     void clearProject();
+    bool activateStudy(const QUuid& studyId);
 
     QString createStudy(StudyType type);
     QString useCurrentGeometry(bool hasGeometry = true);
