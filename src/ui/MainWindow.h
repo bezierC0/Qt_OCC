@@ -9,6 +9,7 @@
 #include <QAction>
 #include <QLabel>
 #include <QStatusBar>
+#include <QUuid>
 #include <memory>
 
 class QTranslator;
@@ -118,6 +119,8 @@ private slots:
     void onCaeShowDisplacement();
     void onCaeShowStress();
     void onCaeShowTemperature();
+    void onCaeTreeMeshActivated(const QUuid& studyId);
+    void onCaeTreeResultActivated(const QUuid& studyId, Cae::ResultFieldType fieldType);
     void onCaeSetDeformationScale();
     void onCaeProbeResult();
     void onCaePickNodeToggled(bool enabled);
