@@ -5,6 +5,7 @@
 #include "cae/CaeTypes.h"
 
 #include <QFont>
+#include <QMenu>
 #include <QTreeWidget>
 #include <QTreeWidgetItem>
 #include <QVBoxLayout>
@@ -14,12 +15,14 @@ namespace {
 enum class CaeTreeItemKind {
     None,
     Mesh,
-    ResultField
+    ResultField,
+    BoundaryCondition
 };
 
 constexpr int ItemKindRole = Qt::UserRole;
 constexpr int ResultFieldTypeRole = Qt::UserRole + 1;
 constexpr int StudyIdRole = Qt::UserRole + 2;
+constexpr int ItemNameRole = Qt::UserRole + 3;
 
 void setActionData(
     QTreeWidgetItem* item,
@@ -38,11 +41,17 @@ CaeTreeWidget::CaeTreeWidget(QWidget* parent)
     m_treeWidget = new QTreeWidget(this);
     m_treeWidget->setColumnCount(2);
     m_treeWidget->setHeaderLabels({tr("CAE Item"), tr("State")});
+    m_treeWidget->setContextMenuPolicy(Qt::CustomContextMenu);
     connect(
         m_treeWidget,
         &QTreeWidget::itemActivated,
         this,
         [this](QTreeWidgetItem* item, int) { activateItem(item); });
+    connect(
+        m_treeWidget,
+        &QTreeWidget::customContextMenuRequested,
+        this,
+        &CaeTreeWidget::showContextMenu);
 
     auto* layout = new QVBoxLayout(this);
     layout->addWidget(m_treeWidget);
@@ -88,9 +97,33 @@ void CaeTreeWidget::activateItem(QTreeWidgetItem* item)
             static_cast<Cae::ResultFieldType>(
                 item->data(0, ResultFieldTypeRole).toInt()));
         break;
+    case CaeTreeItemKind::BoundaryCondition:
     case CaeTreeItemKind::None:
         break;
     }
+}
+
+void CaeTreeWidget::showContextMenu(const QPoint& position)
+{
+    QTreeWidgetItem* item = m_treeWidget->itemAt(position);
+    if (!item) {
+        return;
+    }
+
+    const auto kind = static_cast<CaeTreeItemKind>(item->data(0, ItemKindRole).toInt());
+    if (kind != CaeTreeItemKind::BoundaryCondition) {
+        return;
+    }
+
+    QMenu menu(this);
+    QAction* removeAction = menu.addAction(tr("Delete Boundary Condition"));
+    if (menu.exec(m_treeWidget->viewport()->mapToGlobal(position)) != removeAction) {
+        return;
+    }
+
+    emit removeBoundaryConditionRequested(
+        item->data(0, StudyIdRole).toUuid(),
+        item->data(0, ItemNameRole).toString());
 }
 
 void CaeTreeWidget::addStudyItem(
@@ -128,7 +161,12 @@ void CaeTreeWidget::addStudyItem(
         studyItem,
         {tr("Boundary Conditions"), study.boundaryConditions().empty() ? tr("Pending") : tr("%1 defined").arg(static_cast<int>(study.boundaryConditions().size()))});
     for (const auto& boundaryCondition : study.boundaryConditions()) {
-        new QTreeWidgetItem(boundaryItem, {boundaryCondition.name(), boundaryCondition.summary()});
+        auto* conditionItem = new QTreeWidgetItem(
+            boundaryItem,
+            {boundaryCondition.name(), boundaryCondition.summary()});
+        setActionData(conditionItem, CaeTreeItemKind::BoundaryCondition, study.id());
+        conditionItem->setData(0, ItemNameRole, boundaryCondition.name());
+        conditionItem->setToolTip(0, tr("Right-click to delete this boundary condition."));
     }
 
     const bool hasMesh = study.state() == Cae::StudyState::Meshed ||

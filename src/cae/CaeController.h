@@ -33,6 +33,7 @@ public:
         const std::array<double, 3>& force,
         const QString& targetName = QString());
     QString addPressure(double pressure, const QString& targetName = QString());
+    QString removeBoundaryCondition(const QUuid& studyId, const QString& name);
     QString addDefaultForce();
     QString generateMesh(const QString& geometryFilePath = QString(), double globalSize = 1.0);
     QString runSolver();

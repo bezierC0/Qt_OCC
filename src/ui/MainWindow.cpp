@@ -72,6 +72,11 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     connect(m_viewerWidget, &ViewerWidget::signalCaeNodePicked, this, &MainWindow::onCaeNodePicked);
     connect(m_caeTreeWidget, &CaeTreeWidget::meshActivated, this, &MainWindow::onCaeTreeMeshActivated);
     connect(m_caeTreeWidget, &CaeTreeWidget::resultFieldActivated, this, &MainWindow::onCaeTreeResultActivated);
+    connect(
+        m_caeTreeWidget,
+        &CaeTreeWidget::removeBoundaryConditionRequested,
+        this,
+        &MainWindow::onCaeRemoveBoundaryConditionRequested);
 
     setCentralWidget( splitter );
     refreshCaeTree();
@@ -1395,6 +1400,29 @@ void MainWindow::onCaeTreeResultActivated(
     }
     refreshCaeTree();
     presentCaeResult(fieldType, false);
+}
+
+void MainWindow::onCaeRemoveBoundaryConditionRequested(
+    const QUuid& studyId,
+    const QString& name)
+{
+    const QMessageBox::StandardButton answer = QMessageBox::question(
+        this,
+        tr("Delete CAE Boundary Condition"),
+        tr("Delete \"%1\"?\nExisting solution results for this study will be cleared.")
+            .arg(name),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+    if (answer != QMessageBox::Yes) {
+        return;
+    }
+
+    updateStatusMessage(
+        m_caeController->removeBoundaryCondition(studyId, name),
+        5000);
+    resetCaeResultPresentation(true);
+    refreshCaeBoundaryVisualization();
+    refreshCaeTree();
 }
 
 void MainWindow::onCaeSetDeformationScale()

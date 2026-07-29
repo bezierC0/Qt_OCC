@@ -37,6 +37,7 @@ public:
     void addNamedSelection(const CaeNamedSelection& namedSelection);
     void addMaterial(const CaeMaterial& material);
     void addBoundaryCondition(const CaeBoundaryCondition& boundaryCondition);
+    bool removeBoundaryCondition(const QString& name);
     void setMesh(const CaeMesh& mesh);
     void setSolution(const CaeSolution& solution);
     void addResultField(CaeResultField field);

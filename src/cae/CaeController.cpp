@@ -253,6 +253,22 @@ QString CaeController::addPressure(double pressure, const QString& targetName)
         .arg(target->name());
 }
 
+QString CaeController::removeBoundaryCondition(
+    const QUuid& studyId,
+    const QString& name)
+{
+    if (!m_project->activateStudy(studyId)) {
+        return QStringLiteral("The selected CAE study is unavailable.");
+    }
+
+    CaeStudy* study = m_project->activeStudy();
+    if (!study || !study->removeBoundaryCondition(name)) {
+        return QStringLiteral("Boundary condition was not found: %1.").arg(name);
+    }
+    return QStringLiteral("Removed boundary condition from %1: %2.")
+        .arg(study->name(), name);
+}
+
 QString CaeController::generateMesh(const QString& geometryFilePath, double globalSize)
 {
     CaeStudy* study = m_project->activeStudy();

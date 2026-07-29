@@ -140,6 +140,23 @@ void CaeStudy::addBoundaryCondition(const CaeBoundaryCondition& boundaryConditio
     m_boundaryConditions.push_back(boundaryCondition);
 }
 
+bool CaeStudy::removeBoundaryCondition(const QString& name)
+{
+    const auto condition = std::find_if(
+        m_boundaryConditions.begin(),
+        m_boundaryConditions.end(),
+        [&name](const CaeBoundaryCondition& item) {
+            return item.name() == name;
+        });
+    if (condition == m_boundaryConditions.end()) {
+        return false;
+    }
+
+    invalidateSolution();
+    m_boundaryConditions.erase(condition);
+    return true;
+}
+
 void CaeStudy::setMesh(const CaeMesh& mesh)
 {
     m_solution.reset();

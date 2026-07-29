@@ -2,6 +2,7 @@
 
 #include "cae/CaeTypes.h"
 
+#include <QPoint>
 #include <QUuid>
 #include <QWidget>
 
@@ -24,10 +25,12 @@ public:
 signals:
     void meshActivated(const QUuid& studyId);
     void resultFieldActivated(const QUuid& studyId, Cae::ResultFieldType fieldType);
+    void removeBoundaryConditionRequested(const QUuid& studyId, const QString& name);
 
 private:
     void addStudyItem(QTreeWidgetItem* parent, const Cae::CaeStudy& study, bool active);
     void activateItem(QTreeWidgetItem* item);
+    void showContextMenu(const QPoint& position);
 
 private:
     QTreeWidget* m_treeWidget{nullptr};
