@@ -74,6 +74,16 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     connect(m_caeTreeWidget, &CaeTreeWidget::resultFieldActivated, this, &MainWindow::onCaeTreeResultActivated);
     connect(
         m_caeTreeWidget,
+        &CaeTreeWidget::removeNamedSelectionRequested,
+        this,
+        &MainWindow::onCaeRemoveNamedSelectionRequested);
+    connect(
+        m_caeTreeWidget,
+        &CaeTreeWidget::removeMaterialRequested,
+        this,
+        &MainWindow::onCaeRemoveMaterialRequested);
+    connect(
+        m_caeTreeWidget,
         &CaeTreeWidget::removeBoundaryConditionRequested,
         this,
         &MainWindow::onCaeRemoveBoundaryConditionRequested);
@@ -1419,6 +1429,52 @@ void MainWindow::onCaeRemoveBoundaryConditionRequested(
 
     updateStatusMessage(
         m_caeController->removeBoundaryCondition(studyId, name),
+        5000);
+    resetCaeResultPresentation(true);
+    refreshCaeBoundaryVisualization();
+    refreshCaeTree();
+}
+
+void MainWindow::onCaeRemoveNamedSelectionRequested(
+    const QUuid& studyId,
+    const QString& name)
+{
+    const QMessageBox::StandardButton answer = QMessageBox::question(
+        this,
+        tr("Delete CAE Named Selection"),
+        tr("Delete \"%1\"?\nDependent boundary conditions, mesh and results will be cleared.")
+            .arg(name),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+    if (answer != QMessageBox::Yes) {
+        return;
+    }
+
+    updateStatusMessage(
+        m_caeController->removeNamedSelection(studyId, name),
+        5000);
+    resetCaeResultPresentation(false);
+    refreshCaeBoundaryVisualization();
+    refreshCaeTree();
+}
+
+void MainWindow::onCaeRemoveMaterialRequested(
+    const QUuid& studyId,
+    const QString& name)
+{
+    const QMessageBox::StandardButton answer = QMessageBox::question(
+        this,
+        tr("Delete CAE Material"),
+        tr("Delete \"%1\"?\nExisting solution results for this study will be cleared.")
+            .arg(name),
+        QMessageBox::Yes | QMessageBox::No,
+        QMessageBox::No);
+    if (answer != QMessageBox::Yes) {
+        return;
+    }
+
+    updateStatusMessage(
+        m_caeController->removeMaterial(studyId, name),
         5000);
     resetCaeResultPresentation(true);
     refreshCaeBoundaryVisualization();

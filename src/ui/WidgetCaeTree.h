@@ -25,6 +25,8 @@ public:
 signals:
     void meshActivated(const QUuid& studyId);
     void resultFieldActivated(const QUuid& studyId, Cae::ResultFieldType fieldType);
+    void removeNamedSelectionRequested(const QUuid& studyId, const QString& name);
+    void removeMaterialRequested(const QUuid& studyId, const QString& name);
     void removeBoundaryConditionRequested(const QUuid& studyId, const QString& name);
 
 private:

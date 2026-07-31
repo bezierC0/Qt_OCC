@@ -16,6 +16,8 @@ enum class CaeTreeItemKind {
     None,
     Mesh,
     ResultField,
+    NamedSelection,
+    Material,
     BoundaryCondition
 };
 
@@ -98,6 +100,8 @@ void CaeTreeWidget::activateItem(QTreeWidgetItem* item)
                 item->data(0, ResultFieldTypeRole).toInt()));
         break;
     case CaeTreeItemKind::BoundaryCondition:
+    case CaeTreeItemKind::NamedSelection:
+    case CaeTreeItemKind::Material:
     case CaeTreeItemKind::None:
         break;
     }
@@ -111,19 +115,40 @@ void CaeTreeWidget::showContextMenu(const QPoint& position)
     }
 
     const auto kind = static_cast<CaeTreeItemKind>(item->data(0, ItemKindRole).toInt());
-    if (kind != CaeTreeItemKind::BoundaryCondition) {
+    QMenu menu(this);
+    QAction* removeAction = nullptr;
+    switch (kind) {
+    case CaeTreeItemKind::NamedSelection:
+        removeAction = menu.addAction(tr("Delete Named Selection"));
+        break;
+    case CaeTreeItemKind::Material:
+        removeAction = menu.addAction(tr("Delete Material"));
+        break;
+    case CaeTreeItemKind::BoundaryCondition:
+        removeAction = menu.addAction(tr("Delete Boundary Condition"));
+        break;
+    default:
         return;
     }
-
-    QMenu menu(this);
-    QAction* removeAction = menu.addAction(tr("Delete Boundary Condition"));
     if (menu.exec(m_treeWidget->viewport()->mapToGlobal(position)) != removeAction) {
         return;
     }
 
-    emit removeBoundaryConditionRequested(
-        item->data(0, StudyIdRole).toUuid(),
-        item->data(0, ItemNameRole).toString());
+    const QUuid studyId = item->data(0, StudyIdRole).toUuid();
+    const QString name = item->data(0, ItemNameRole).toString();
+    switch (kind) {
+    case CaeTreeItemKind::NamedSelection:
+        emit removeNamedSelectionRequested(studyId, name);
+        break;
+    case CaeTreeItemKind::Material:
+        emit removeMaterialRequested(studyId, name);
+        break;
+    case CaeTreeItemKind::BoundaryCondition:
+        emit removeBoundaryConditionRequested(studyId, name);
+        break;
+    default:
+        break;
+    }
 }
 
 void CaeTreeWidget::addStudyItem(
@@ -145,7 +170,14 @@ void CaeTreeWidget::addStudyItem(
         studyItem,
         {tr("Named Selections"), study.namedSelections().empty() ? tr("Pending") : tr("%1 defined").arg(static_cast<int>(study.namedSelections().size()))});
     for (const auto& namedSelection : study.namedSelections()) {
-        new QTreeWidgetItem(namedSelectionsItem, {namedSelection.name(), Cae::toDisplayString(namedSelection.scope())});
+        auto* selectionItem = new QTreeWidgetItem(
+            namedSelectionsItem,
+            {namedSelection.name(), Cae::toDisplayString(namedSelection.scope())});
+        if (namedSelection.scope() != Cae::NamedSelectionScope::Geometry) {
+            setActionData(selectionItem, CaeTreeItemKind::NamedSelection, study.id());
+            selectionItem->setData(0, ItemNameRole, namedSelection.name());
+            selectionItem->setToolTip(0, tr("Right-click to delete this named selection."));
+        }
     }
 
     auto* materialsItem = new QTreeWidgetItem(
@@ -153,6 +185,9 @@ void CaeTreeWidget::addStudyItem(
         {tr("Materials"), study.materials().empty() ? tr("Pending") : tr("%1 assigned").arg(static_cast<int>(study.materials().size()))});
     for (const auto& material : study.materials()) {
         auto* materialItem = new QTreeWidgetItem(materialsItem, {material.name(), tr("Target: %1").arg(material.targetName())});
+        setActionData(materialItem, CaeTreeItemKind::Material, study.id());
+        materialItem->setData(0, ItemNameRole, material.name());
+        materialItem->setToolTip(0, tr("Right-click to delete this material."));
         new QTreeWidgetItem(materialItem, {tr("Young's Modulus"), tr("%1 MPa").arg(material.youngModulus())});
         new QTreeWidgetItem(materialItem, {tr("Poisson Ratio"), QString::number(material.poissonRatio())});
     }

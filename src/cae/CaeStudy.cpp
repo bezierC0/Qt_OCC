@@ -108,9 +108,42 @@ void CaeStudy::addNamedSelection(const CaeNamedSelection& namedSelection)
     m_namedSelections.push_back(namedSelection);
 }
 
+bool CaeStudy::removeNamedSelection(const QString& name)
+{
+    const auto selection = std::find_if(
+        m_namedSelections.begin(),
+        m_namedSelections.end(),
+        [&name](const CaeNamedSelection& item) {
+            return item.name() == name;
+        });
+    if (selection == m_namedSelections.end()) {
+        return false;
+    }
+
+    invalidateMeshAndSolution();
+    m_materials.erase(
+        std::remove_if(
+            m_materials.begin(),
+            m_materials.end(),
+            [&name](const CaeMaterial& item) {
+                return item.targetName() == name;
+            }),
+        m_materials.end());
+    m_boundaryConditions.erase(
+        std::remove_if(
+            m_boundaryConditions.begin(),
+            m_boundaryConditions.end(),
+            [&name](const CaeBoundaryCondition& item) {
+                return item.targetName() == name;
+            }),
+        m_boundaryConditions.end());
+    m_namedSelections.erase(selection);
+    return true;
+}
+
 void CaeStudy::addMaterial(const CaeMaterial& material)
 {
-    invalidateMeshAndSolution();
+    invalidateSolution();
     const auto existing = std::find_if(
         m_materials.begin(),
         m_materials.end(),
@@ -122,6 +155,23 @@ void CaeStudy::addMaterial(const CaeMaterial& material)
         return;
     }
     m_materials.push_back(material);
+}
+
+bool CaeStudy::removeMaterial(const QString& name)
+{
+    const auto material = std::find_if(
+        m_materials.begin(),
+        m_materials.end(),
+        [&name](const CaeMaterial& item) {
+            return item.name() == name;
+        });
+    if (material == m_materials.end()) {
+        return false;
+    }
+
+    invalidateSolution();
+    m_materials.erase(material);
+    return true;
 }
 
 void CaeStudy::addBoundaryCondition(const CaeBoundaryCondition& boundaryCondition)

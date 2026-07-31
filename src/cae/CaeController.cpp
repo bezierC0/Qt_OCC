@@ -126,6 +126,31 @@ QString CaeController::createNamedSelection(
         .arg(study->name(), selectionName);
 }
 
+QString CaeController::removeNamedSelection(
+    const QUuid& studyId,
+    const QString& name)
+{
+    if (!m_project->activateStudy(studyId)) {
+        return QStringLiteral("The selected CAE study is unavailable.");
+    }
+
+    CaeStudy* study = m_project->activeStudy();
+    const CaeNamedSelection* selection = study
+        ? study->findNamedSelection(name)
+        : nullptr;
+    if (!selection) {
+        return QStringLiteral("Named selection was not found: %1.").arg(name);
+    }
+    if (selection->scope() == NamedSelectionScope::Geometry) {
+        return QStringLiteral("The geometry selection cannot be removed.");
+    }
+    if (!study->removeNamedSelection(name)) {
+        return QStringLiteral("Named selection was not removed: %1.").arg(name);
+    }
+    return QStringLiteral("Removed named selection from %1: %2.")
+        .arg(study->name(), name);
+}
+
 QString CaeController::assignDefaultMaterial()
 {
     return assignMaterial(QStringLiteral("Default Steel"), 210000.0, 0.3);
@@ -162,6 +187,22 @@ QString CaeController::assignMaterial(
         .arg(youngModulus)
         .arg(poissonRatio)
         .arg(targetName);
+}
+
+QString CaeController::removeMaterial(
+    const QUuid& studyId,
+    const QString& name)
+{
+    if (!m_project->activateStudy(studyId)) {
+        return QStringLiteral("The selected CAE study is unavailable.");
+    }
+
+    CaeStudy* study = m_project->activeStudy();
+    if (!study || !study->removeMaterial(name)) {
+        return QStringLiteral("Material was not found: %1.").arg(name);
+    }
+    return QStringLiteral("Removed material from %1: %2.")
+        .arg(study->name(), name);
 }
 
 QString CaeController::addFixedSupport(const QString& targetName)

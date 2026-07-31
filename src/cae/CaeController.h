@@ -25,8 +25,10 @@ public:
     QString useCurrentGeometry(bool hasGeometry = true);
     QString createDefaultNamedSelection();
     QString createNamedSelection(const QString& name, const PlanarSelectionRegion& region);
+    QString removeNamedSelection(const QUuid& studyId, const QString& name);
     QString assignMaterial(const QString& name, double youngModulus, double poissonRatio);
     QString assignDefaultMaterial();
+    QString removeMaterial(const QUuid& studyId, const QString& name);
     QString addFixedSupport(const QString& targetName = QString());
     QString addForce(double force, const QString& targetName = QString());
     QString addForce(
