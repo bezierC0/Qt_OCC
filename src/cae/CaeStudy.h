@@ -35,8 +35,11 @@ public:
     void setState(StudyState state);
     void resetForGeometry();
     void addNamedSelection(const CaeNamedSelection& namedSelection);
+    bool removeNamedSelection(const QString& name);
     void addMaterial(const CaeMaterial& material);
+    bool removeMaterial(const QString& name);
     void addBoundaryCondition(const CaeBoundaryCondition& boundaryCondition);
+    bool removeBoundaryCondition(const QString& name);
     void setMesh(const CaeMesh& mesh);
     void setSolution(const CaeSolution& solution);
     void addResultField(CaeResultField field);

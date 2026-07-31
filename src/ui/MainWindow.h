@@ -121,6 +121,9 @@ private slots:
     void onCaeShowTemperature();
     void onCaeTreeMeshActivated(const QUuid& studyId);
     void onCaeTreeResultActivated(const QUuid& studyId, Cae::ResultFieldType fieldType);
+    void onCaeRemoveNamedSelectionRequested(const QUuid& studyId, const QString& name);
+    void onCaeRemoveMaterialRequested(const QUuid& studyId, const QString& name);
+    void onCaeRemoveBoundaryConditionRequested(const QUuid& studyId, const QString& name);
     void onCaeSetDeformationScale();
     void onCaeProbeResult();
     void onCaePickNodeToggled(bool enabled);
