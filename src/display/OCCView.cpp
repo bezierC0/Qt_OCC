@@ -674,6 +674,8 @@ void OCCView::clearShape()
         m_context->Erase(object, false);
     }
     m_loadedObjects.clear();
+    m_explosionSourceShapes.clear();
+    m_explosionSourceTransforms.clear();
 
     // clear interference
     for (const auto &object : m_interferenceObjects)
@@ -694,33 +696,40 @@ void OCCView::clearShape()
 void OCCView::setShape(const Handle(AIS_InteractiveObject) & loadedShape)
 {
     m_loadedObjects.emplace_back(loadedShape);
+
+    // XCAFPrs_AISObject loads its TopoDS_Shape lazily during the first Compute().
+    // Explosion needs the part shape before the object is displayed, so dispatch it now.
+    const Handle(XCAFPrs_AISObject) xcafObject =
+        Handle(XCAFPrs_AISObject)::DownCast(loadedShape);
+    if (!xcafObject.IsNull()) {
+        xcafObject->DispatchStyles();
+    }
+
+    const Handle(AIS_Shape) aisShape = Handle(AIS_Shape)::DownCast(loadedShape);
+    m_explosionSourceShapes.emplace_back(aisShape.IsNull() ? TopoDS_Shape() : aisShape->Shape());
+    m_explosionSourceTransforms.emplace_back(
+        loadedShape.IsNull() ? gp_Trsf() : loadedShape->LocalTransformation());
 }
 
 void OCCView::removeShape(const TopoDS_Shape& removeShape)
 {
-    auto it = std::find_if(m_loadedObjects.begin(), m_loadedObjects.end(), [&](const Handle(AIS_InteractiveObject)& obj) {
-        if (obj.IsNull()) {
-            return false;
+    auto it = m_loadedObjects.end();
+    for (std::size_t index = 0; index < m_loadedObjects.size(); ++index) {
+        const TopoDS_Shape& currentShape = m_explosionSourceShapes[index];
+        if (!currentShape.IsNull() && currentShape.IsSame(removeShape)) {
+            it = m_loadedObjects.begin() + index;
+            break;
         }
-
-        TopoDS_Shape currentShape;
-        if (obj->IsKind(STANDARD_TYPE(AIS_Shape)))
-        {
-            currentShape = Handle(AIS_Shape)::DownCast(obj)->Shape();
-        }
-        else if (obj->IsKind(STANDARD_TYPE(XCAFPrs_AISObject)))
-        {
-            return false; 
-        }
-
-        return !currentShape.IsNull() && currentShape.IsSame(removeShape);
-    });
+    }
 
     if (it != m_loadedObjects.end()) {
         // remove from context (preview)
         m_context->Erase(*it, false);
         
+        const auto index = static_cast<std::size_t>(std::distance(m_loadedObjects.begin(), it));
         m_loadedObjects.erase(it);
+        m_explosionSourceShapes.erase(m_explosionSourceShapes.begin() + index);
+        m_explosionSourceTransforms.erase(m_explosionSourceTransforms.begin() + index);
     }
     auto size1 = m_loadedObjects.size();
 }
@@ -1303,54 +1312,78 @@ void OCCView::setCappingPlaneIsCap(const bool isCap)
 
 void OCCView::explosion(const double theFactor) 
 {
-    auto applyExplosion = [&](const std::vector<Handle(AIS_InteractiveObject)> &objectList, const double distanceMultiplier = 50.0)
-    {
-        auto computeShapeCenter = [](const TopoDS_Shape &shape) -> gp_Pnt
-        {
-            Bnd_Box bbox;
-            BRepBndLib::Add(shape, bbox);
-            Standard_Real xMin{}, yMin{}, zMin{}, xMax{}, yMax{}, zMax{};
-            bbox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
-            return gp_Pnt((xMin + xMax) / 2.0, (yMin + yMax) / 2.0, (zMin + zMax) / 2.0);
-        };
-
-        gp_Pnt globalCenter(0, 0, 0);
-        if (!objectList.empty())
-        {
-            Bnd_Box globalBox;
-            for (const auto &object : objectList)
-            {
-                const auto aisShape = Handle(AIS_Shape)::DownCast(object);
-                const auto &shape = aisShape->Shape();
-                BRepBndLib::Add(shape, globalBox);
+    if (std::abs(theFactor) <= Precision::Confusion()) {
+        for (std::size_t index = 0; index < m_loadedObjects.size(); ++index) {
+            if (!m_loadedObjects[index].IsNull()) {
+                m_context->SetLocation(
+                    m_loadedObjects[index], TopLoc_Location(m_explosionSourceTransforms[index]));
             }
-            Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
-            globalBox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
-            globalCenter = gp_Pnt((xMin + xMax) / 2.0, (yMin + yMax) / 2.0, (zMin + zMax) / 2.0);
         }
-        
-        // transform
-        for (const auto &object : objectList)
-        {
-            const auto aisShape = Handle(AIS_Shape)::DownCast(object);
-            const auto &shape = aisShape->Shape();
-            gp_Pnt center = computeShapeCenter(shape);
-            gp_Vec moveDir(globalCenter, center);
-            if (moveDir.Magnitude() > 0.0)
-            {
-                moveDir.Normalize();
-                moveDir *= distanceMultiplier;
-            }
-            gp_Trsf currentTrsf = aisShape->LocalTransformation();
-            gp_Trsf transform;
-            transform.SetTranslation(moveDir);
-            currentTrsf.Multiply(transform);
-            aisShape->SetLocalTransformation(currentTrsf);
-        }
+        reDraw();
+        updateView();
+        return;
+    }
 
+    struct Component {
+        std::size_t objectIndex;
+        TopoDS_Shape shape;
+        gp_Pnt center;
     };
 
-    applyExplosion(m_loadedObjects, theFactor * 100);
+    auto shapeCenter = [](const TopoDS_Shape& shape, gp_Pnt& center) {
+        Bnd_Box box;
+        BRepBndLib::Add(shape, box);
+        if (box.IsVoid()) {
+            return false;
+        }
+        Standard_Real xMin{}, yMin{}, zMin{}, xMax{}, yMax{}, zMax{};
+        box.Get(xMin, yMin, zMin, xMax, yMax, zMax);
+        center.SetCoord((xMin + xMax) * 0.5, (yMin + yMax) * 0.5, (zMin + zMax) * 0.5);
+        return true;
+    };
+
+    std::vector<Component> components;
+    Bnd_Box globalBox;
+    for (std::size_t index = 0; index < m_explosionSourceShapes.size(); ++index) {
+        const TopoDS_Shape& sourceShape = m_explosionSourceShapes[index];
+        if (sourceShape.IsNull()) {
+            continue;
+        }
+
+        TopoDS_Shape locatedShape = sourceShape;
+        locatedShape.Location(TopLoc_Location(m_explosionSourceTransforms[index])
+                              * sourceShape.Location());
+        gp_Pnt center;
+        if (shapeCenter(locatedShape, center)) {
+            components.push_back({index, locatedShape, center});
+            BRepBndLib::Add(locatedShape, globalBox);
+        }
+    }
+
+    if (components.empty() || globalBox.IsVoid()) {
+        return;
+    }
+
+    Standard_Real xMin{}, yMin{}, zMin{}, xMax{}, yMax{}, zMax{};
+    globalBox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
+    const gp_Pnt globalCenter((xMin + xMax) * 0.5,
+                              (yMin + yMax) * 0.5,
+                              (zMin + zMax) * 0.5);
+
+    const Standard_Real explosionDistance = theFactor * 100.0;
+    for (const Component& component : components) {
+        gp_Vec moveDirection(globalCenter, component.center);
+        if (moveDirection.SquareMagnitude() > gp::Resolution()) {
+            moveDirection.Normalize();
+            moveDirection *= explosionDistance;
+        }
+
+        gp_Trsf explodedTransform;
+        explodedTransform.SetTranslation(moveDirection);
+        explodedTransform.Multiply(m_explosionSourceTransforms[component.objectIndex]);
+        m_context->SetLocation(
+            m_loadedObjects[component.objectIndex], TopLoc_Location(explodedTransform));
+    }
 
     reDraw();
     updateView();
