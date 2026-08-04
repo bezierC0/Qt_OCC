@@ -7,21 +7,30 @@
 #include <QVBoxLayout>
 
 DialogCaeMaterial::DialogCaeMaterial(QWidget* parent)
+    : DialogCaeMaterial(QStringLiteral("Default Steel"), 210000.0, 0.3, parent)
+{
+}
+
+DialogCaeMaterial::DialogCaeMaterial(
+    const QString& name,
+    double youngModulus,
+    double poissonRatio,
+    QWidget* parent)
     : QDialog(parent)
 {
     setWindowTitle(tr("Assign CAE Material"));
 
-    m_nameEdit = new QLineEdit(tr("Default Steel"), this);
+    m_nameEdit = new QLineEdit(name, this);
     m_youngModulusSpinBox = new QDoubleSpinBox(this);
     m_youngModulusSpinBox->setRange(1.0, 1.0e12);
     m_youngModulusSpinBox->setDecimals(3);
-    m_youngModulusSpinBox->setValue(210000.0);
+    m_youngModulusSpinBox->setValue(youngModulus);
     m_youngModulusSpinBox->setSuffix(tr(" MPa"));
     m_poissonRatioSpinBox = new QDoubleSpinBox(this);
     m_poissonRatioSpinBox->setRange(0.0, 0.4999);
     m_poissonRatioSpinBox->setDecimals(4);
     m_poissonRatioSpinBox->setSingleStep(0.01);
-    m_poissonRatioSpinBox->setValue(0.3);
+    m_poissonRatioSpinBox->setValue(poissonRatio);
 
     auto* formLayout = new QFormLayout;
     formLayout->addRow(tr("Name"), m_nameEdit);

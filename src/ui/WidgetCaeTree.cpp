@@ -99,9 +99,17 @@ void CaeTreeWidget::activateItem(QTreeWidgetItem* item)
             static_cast<Cae::ResultFieldType>(
                 item->data(0, ResultFieldTypeRole).toInt()));
         break;
-    case CaeTreeItemKind::BoundaryCondition:
-    case CaeTreeItemKind::NamedSelection:
     case CaeTreeItemKind::Material:
+        emit materialActivated(
+            studyId,
+            item->data(0, ItemNameRole).toString());
+        break;
+    case CaeTreeItemKind::BoundaryCondition:
+        emit boundaryConditionActivated(
+            studyId,
+            item->data(0, ItemNameRole).toString());
+        break;
+    case CaeTreeItemKind::NamedSelection:
     case CaeTreeItemKind::None:
         break;
     }
@@ -187,7 +195,7 @@ void CaeTreeWidget::addStudyItem(
         auto* materialItem = new QTreeWidgetItem(materialsItem, {material.name(), tr("Target: %1").arg(material.targetName())});
         setActionData(materialItem, CaeTreeItemKind::Material, study.id());
         materialItem->setData(0, ItemNameRole, material.name());
-        materialItem->setToolTip(0, tr("Right-click to delete this material."));
+        materialItem->setToolTip(0, tr("Double-click to edit; right-click to delete."));
         new QTreeWidgetItem(materialItem, {tr("Young's Modulus"), tr("%1 MPa").arg(material.youngModulus())});
         new QTreeWidgetItem(materialItem, {tr("Poisson Ratio"), QString::number(material.poissonRatio())});
     }
@@ -201,7 +209,7 @@ void CaeTreeWidget::addStudyItem(
             {boundaryCondition.name(), boundaryCondition.summary()});
         setActionData(conditionItem, CaeTreeItemKind::BoundaryCondition, study.id());
         conditionItem->setData(0, ItemNameRole, boundaryCondition.name());
-        conditionItem->setToolTip(0, tr("Right-click to delete this boundary condition."));
+        conditionItem->setToolTip(0, tr("Double-click to edit; right-click to delete."));
     }
 
     const bool hasMesh = study.state() == Cae::StudyState::Meshed ||

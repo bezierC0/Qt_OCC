@@ -72,6 +72,12 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     connect(m_viewerWidget, &ViewerWidget::signalCaeNodePicked, this, &MainWindow::onCaeNodePicked);
     connect(m_caeTreeWidget, &CaeTreeWidget::meshActivated, this, &MainWindow::onCaeTreeMeshActivated);
     connect(m_caeTreeWidget, &CaeTreeWidget::resultFieldActivated, this, &MainWindow::onCaeTreeResultActivated);
+    connect(m_caeTreeWidget, &CaeTreeWidget::materialActivated, this, &MainWindow::onCaeMaterialActivated);
+    connect(
+        m_caeTreeWidget,
+        &CaeTreeWidget::boundaryConditionActivated,
+        this,
+        &MainWindow::onCaeBoundaryConditionActivated);
     connect(
         m_caeTreeWidget,
         &CaeTreeWidget::removeNamedSelectionRequested,
@@ -1410,6 +1416,103 @@ void MainWindow::onCaeTreeResultActivated(
     }
     refreshCaeTree();
     presentCaeResult(fieldType, false);
+}
+
+void MainWindow::onCaeMaterialActivated(
+    const QUuid& studyId,
+    const QString& name)
+{
+    if (!m_caeController->activateStudy(studyId)) {
+        updateStatusMessage(tr("The selected CAE study is unavailable."), 5000);
+        return;
+    }
+    refreshCaeTree();
+
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    const Cae::CaeMaterial* material = study ? study->findMaterial(name) : nullptr;
+    if (!material) {
+        updateStatusMessage(tr("The selected CAE material is unavailable."), 5000);
+        return;
+    }
+
+    DialogCaeMaterial dialog(
+        material->name(),
+        material->youngModulus(),
+        material->poissonRatio(),
+        this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    updateStatusMessage(
+        m_caeController->assignMaterial(
+            dialog.materialName(),
+            dialog.youngModulus(),
+            dialog.poissonRatio()),
+        5000);
+    resetCaeResultPresentation(true);
+    refreshCaeBoundaryVisualization();
+    refreshCaeTree();
+}
+
+void MainWindow::onCaeBoundaryConditionActivated(
+    const QUuid& studyId,
+    const QString& name)
+{
+    if (!m_caeController->activateStudy(studyId)) {
+        updateStatusMessage(tr("The selected CAE study is unavailable."), 5000);
+        return;
+    }
+    refreshCaeTree();
+
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    const Cae::CaeBoundaryCondition* condition = study
+        ? study->findBoundaryCondition(name)
+        : nullptr;
+    if (!condition) {
+        updateStatusMessage(tr("The selected CAE boundary condition is unavailable."), 5000);
+        return;
+    }
+
+    const Cae::BoundaryConditionType type = condition->type();
+    const QString targetName = condition->targetName();
+    QString updateMessage;
+    if (type == Cae::BoundaryConditionType::FixedSupport) {
+        bool accepted = false;
+        const QString newTarget = chooseCaeFaceTarget(tr("Fixed Support Target"), &accepted);
+        if (!accepted) {
+            return;
+        }
+        updateMessage = m_caeController->addFixedSupport(newTarget);
+    } else if (type == Cae::BoundaryConditionType::Force) {
+        DialogCaeForce dialog(condition->components(), this);
+        if (dialog.exec() != QDialog::Accepted) {
+            return;
+        }
+        m_caeForceComponents = dialog.force();
+        updateMessage = m_caeController->addForce(m_caeForceComponents, targetName);
+    } else {
+        bool accepted = false;
+        const double pressure = QInputDialog::getDouble(
+            this,
+            tr("Edit CAE Pressure"),
+            tr("Pressure (MPa):"),
+            condition->value(),
+            1.0e-12,
+            1.0e12,
+            6,
+            &accepted);
+        if (!accepted) {
+            return;
+        }
+        m_caePressureValue = pressure;
+        updateMessage = m_caeController->addPressure(pressure, targetName);
+    }
+
+    updateStatusMessage(updateMessage, 5000);
+    resetCaeResultPresentation(true);
+    refreshCaeBoundaryVisualization();
+    refreshCaeTree();
 }
 
 void MainWindow::onCaeRemoveBoundaryConditionRequested(

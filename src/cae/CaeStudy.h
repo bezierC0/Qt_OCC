@@ -26,7 +26,9 @@ public:
     const std::vector<CaeNamedSelection>& namedSelections() const;
     const CaeNamedSelection* findNamedSelection(const QString& name) const;
     const std::vector<CaeMaterial>& materials() const;
+    const CaeMaterial* findMaterial(const QString& name) const;
     const std::vector<CaeBoundaryCondition>& boundaryConditions() const;
+    const CaeBoundaryCondition* findBoundaryCondition(const QString& name) const;
     const std::optional<CaeMesh>& mesh() const;
     const std::optional<CaeSolution>& solution() const;
     const std::optional<CaeResult>& result() const;
