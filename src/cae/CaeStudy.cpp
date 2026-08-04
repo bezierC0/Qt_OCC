@@ -51,9 +51,27 @@ const std::vector<CaeMaterial>& CaeStudy::materials() const
     return m_materials;
 }
 
+const CaeMaterial* CaeStudy::findMaterial(const QString& name) const
+{
+    const auto material = std::find_if(
+        m_materials.cbegin(),
+        m_materials.cend(),
+        [&name](const CaeMaterial& item) { return item.name() == name; });
+    return material == m_materials.cend() ? nullptr : &*material;
+}
+
 const std::vector<CaeBoundaryCondition>& CaeStudy::boundaryConditions() const
 {
     return m_boundaryConditions;
+}
+
+const CaeBoundaryCondition* CaeStudy::findBoundaryCondition(const QString& name) const
+{
+    const auto condition = std::find_if(
+        m_boundaryConditions.cbegin(),
+        m_boundaryConditions.cend(),
+        [&name](const CaeBoundaryCondition& item) { return item.name() == name; });
+    return condition == m_boundaryConditions.cend() ? nullptr : &*condition;
 }
 
 const std::optional<CaeMesh>& CaeStudy::mesh() const

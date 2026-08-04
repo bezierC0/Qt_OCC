@@ -10,6 +10,11 @@ class DialogCaeMaterial final : public QDialog {
 
 public:
     explicit DialogCaeMaterial(QWidget* parent = nullptr);
+    DialogCaeMaterial(
+        const QString& name,
+        double youngModulus,
+        double poissonRatio,
+        QWidget* parent = nullptr);
 
     QString materialName() const;
     double youngModulus() const;
