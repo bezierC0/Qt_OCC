@@ -13,6 +13,7 @@
 #include <V3d_View.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopTools_ListOfShape.hxx>
+#include <TopoDS_Shape.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Pnt2d.hxx>
 #include <ProjLib.hxx>
@@ -295,6 +296,8 @@ private:
     //! Core profile flag.
 
     std::vector<Handle(AIS_InteractiveObject)> m_loadedObjects;
+    std::vector<TopoDS_Shape> m_explosionSourceShapes;
+    std::vector<gp_Trsf> m_explosionSourceTransforms;
     std::vector<std::shared_ptr<View::SelectedEntity>> m_selectedObjects;
     Handle(AIS_Shape) m_boundingBoxNode{nullptr};
     std::vector<std::shared_ptr<View::IInterferece>> m_interferenceObjects;

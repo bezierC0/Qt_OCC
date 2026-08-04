@@ -131,6 +131,7 @@
 #include <Prs3d_PointAspect.hxx>
 #include <GProp_GProps.hxx>
 #include <TDF_ChildIterator.hxx>
+#include <TopLoc_Location.hxx>
 
 /* geomtry */
 #include <Geom_Plane.hxx>
@@ -278,6 +279,44 @@ TDF_Label shapeReferred(const TDF_Label &lbl)
     TDF_Label referred;
     XCAFDoc_ShapeTool::GetReferredShape(lbl, referred);
     return referred;
+}
+
+struct PartOccurrence {
+    TDF_Label label;
+    TopLoc_Location ancestorLocation;
+};
+
+void collectPartOccurrences(const TDF_Label& label,
+                            const TopLoc_Location& ancestorLocation,
+                            std::vector<PartOccurrence>& parts)
+{
+    if (isShapeAssembly(label)) {
+        for (const TDF_Label& component : shapeComponents(label)) {
+            collectPartOccurrences(component, ancestorLocation, parts);
+        }
+        return;
+    }
+
+    if (isShapeReference(label)) {
+        const TDF_Label referred = shapeReferred(label);
+        if (referred.IsNull()) {
+            return;
+        }
+
+        if (isShapeAssembly(referred)) {
+            const TopLoc_Location assemblyLocation =
+                ancestorLocation * XCAFDoc_ShapeTool::GetLocation(label);
+            collectPartOccurrences(referred, assemblyLocation, parts);
+            return;
+        }
+
+        parts.push_back({label, ancestorLocation});
+        return;
+    }
+
+    if (isShape(label)) {
+        parts.push_back({label, ancestorLocation});
+    }
 }
 
 #include <TDF_ChildIterator.hxx>
@@ -1306,18 +1345,22 @@ void ViewerWidget::loadModel(const QString &filename)
             }
         }
 
-        // Display Shapes
+        // Display one interactive object per part occurrence. This keeps selection,
+        // interference input, and explosion ownership at the same semantic level.
         for (Standard_Integer i = 1; i <= labels.Length(); ++i) {
-            TDF_Label label = labels.Value(i);
-            
-            // Better to just create XCAFPrs object for top level shapes
-            Handle(XCAFPrs_AISObject) object = new XCAFPrs_AISObject(label);
-            object->SetDisplayMode(AIS_Shaded);
-            //object->SetMaterial(Graphic3d_NOM_PLASTER); // Set Material
-            object->Attributes()->SetFaceBoundaryDraw(true);
-            object->Attributes()->SetFaceBoundaryAspect(new Prs3d_LineAspect(Quantity_NOC_BLACK, Aspect_TOL_SOLID, 1.));
-
-            m_doc->m_list.emplace_back(object);
+            std::vector<PartOccurrence> parts;
+            collectPartOccurrences(labels.Value(i), TopLoc_Location(), parts);
+            for (const PartOccurrence& part : parts) {
+                Handle(XCAFPrs_AISObject) object = new XCAFPrs_AISObject(part.label);
+                object->SetDisplayMode(AIS_Shaded);
+                object->Attributes()->SetFaceBoundaryDraw(true);
+                object->Attributes()->SetFaceBoundaryAspect(
+                    new Prs3d_LineAspect(Quantity_NOC_BLACK, Aspect_TOL_SOLID, 1.));
+                if (!part.ancestorLocation.IsIdentity()) {
+                    object->SetLocalTransformation(part.ancestorLocation.Transformation());
+                }
+                m_doc->m_list.emplace_back(object);
+            }
         }
     } else if (filename.endsWith(".iges") || filename.endsWith(".igs")) {
         IGESControl_Reader reader;
@@ -1348,7 +1391,7 @@ void ViewerWidget::loadModel(const QString &filename)
     
     updateTree();
 
-    for (const auto &aisObject : m_doc->m_list) {
+    for (const auto& aisObject : m_doc->m_list) {
         m_occView->setShape(aisObject);
     }
 
