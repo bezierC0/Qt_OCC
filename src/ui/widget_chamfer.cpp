@@ -8,10 +8,11 @@
 #include "ViewManager.h"
 #include "OCCView.h"
 #include "SelectedEntity.h"
+#include "SelectionPickSession.h"
 #include <BRep_Tool.hxx>
 
 WidgetChamfer::WidgetChamfer(QWidget* parent)
-    : QWidget(parent), m_isPicking(false)
+    : QWidget(parent), m_pickSession(new SelectionPickSession(this))
 {
     setWindowTitle("Chamfer Feature");
     setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint);
@@ -37,6 +38,8 @@ WidgetChamfer::WidgetChamfer(QWidget* parent)
 
     connect(btnPick, &QPushButton::clicked, this, &WidgetChamfer::onPickClicked);
     connect(btnApply, &QPushButton::clicked, this, &WidgetChamfer::onApplyClicked);
+    connect(m_pickSession, &SelectionPickSession::shapePicked,
+            this, &WidgetChamfer::onObjectSelected);
 }
 
 WidgetChamfer::~WidgetChamfer()
@@ -50,7 +53,7 @@ void WidgetChamfer::show()
 
 void WidgetChamfer::hide()
 {
-    if (m_isPicking) {
+    if (m_pickSession->isActive()) {
         restoreMouseState();
     }
     QWidget::hide();
@@ -58,7 +61,7 @@ void WidgetChamfer::hide()
 
 void WidgetChamfer::closeEvent(QCloseEvent* event)
 {
-    if (m_isPicking) {
+    if (m_pickSession->isActive()) {
         restoreMouseState();
     }
     QWidget::closeEvent(event);
@@ -66,24 +69,14 @@ void WidgetChamfer::closeEvent(QCloseEvent* event)
 
 void WidgetChamfer::onPickClicked()
 {
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view) return;
-    if (m_isPicking) return;
-
-    saveMouseState();
-    m_isPicking = true;
-
-    view->clearSelectedObjects();
-    view->updateSelectionFilter(TopAbs_EDGE, true);
-    view->setMouseMode(View::MouseMode::SELECTION);
-
-    connect(view, &OCCView::signalSpaceSelected, this, &WidgetChamfer::onObjectSelected);
+    if (m_pickSession->isActive()) return;
+    if (!m_pickSession->start({{TopAbs_EDGE}})) return;
     lblStatus->setText("Please select an edge.");
 }
 
 void WidgetChamfer::onObjectSelected(const TopoDS_Shape& shape)
 {
-    if (!m_isPicking || shape.IsNull()) return;
+    if (!m_pickSession->isActive() || shape.IsNull()) return;
     if (shape.ShapeType() != TopAbs_EDGE) return;
 
     m_selectedEdge = shape;
@@ -100,23 +93,7 @@ void WidgetChamfer::onApplyClicked()
     emit signalChamfer(m_selectedEdge, spinDistance->value());
 }
 
-void WidgetChamfer::saveMouseState()
-{
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view) return;
-    m_savedMouseMode = static_cast<int>(view->getMouseMode());
-    m_savedFilters = view->getSelectionFilters();
-}
-
 void WidgetChamfer::restoreMouseState()
 {
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view) return;
-
-    disconnect(view, &OCCView::signalSpaceSelected, this, &WidgetChamfer::onObjectSelected);
-    view->setMouseMode(static_cast<View::MouseMode>(m_savedMouseMode));
-    for (const auto& filter : m_savedFilters) {
-        view->updateSelectionFilter(filter.first, filter.second);
-    }
-    m_isPicking = false;
+    m_pickSession->stop();
 }

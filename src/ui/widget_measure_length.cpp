@@ -1,6 +1,7 @@
 #include "widget_measure_length.h"
 #include "ui_widget_measure_length.h"
 #include "ViewManager.h"
+#include "SelectionPickSession.h"
 #include "OCCView.h"
 #include "SelectedEntity.h"
 
@@ -12,7 +13,8 @@
 #include <QMessageBox>
 
 WidgetMeasureLength::WidgetMeasureLength(QWidget *parent)
-    : QWidget(parent), ui(new Ui::WidgetMeasureLength), m_isPicking(false), m_totalLength(0.0)
+    : QWidget(parent), ui(new Ui::WidgetMeasureLength),
+      m_pickSession(new SelectionPickSession(this)), m_totalLength(0.0)
 {
     ui->setupUi(this);
     setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint);
@@ -20,6 +22,8 @@ WidgetMeasureLength::WidgetMeasureLength(QWidget *parent)
     connect(ui->pushButtonPick, &QPushButton::clicked, this, &WidgetMeasureLength::onPickClicked);
     connect(ui->pushButtonClear, &QPushButton::clicked, this, &WidgetMeasureLength::onClearClicked);
     connect(ui->pushButtonClose, &QPushButton::clicked, this, &WidgetMeasureLength::onCloseClicked);
+    connect(m_pickSession, &SelectionPickSession::shapePicked,
+            this, &WidgetMeasureLength::onObjectSelected);
 }
 
 WidgetMeasureLength::~WidgetMeasureLength()
@@ -62,7 +66,7 @@ void WidgetMeasureLength::show()
 
 void WidgetMeasureLength::hide()
 {
-    if (m_isPicking) {
+    if (m_pickSession->isActive()) {
         restoreMouseState();
     }
     QWidget::hide();
@@ -70,7 +74,7 @@ void WidgetMeasureLength::hide()
 
 void WidgetMeasureLength::closeEvent(QCloseEvent *event)
 {
-    if (m_isPicking) {
+    if (m_pickSession->isActive()) {
         restoreMouseState();
     }
     QWidget::closeEvent(event);
@@ -82,19 +86,11 @@ void WidgetMeasureLength::onPickClicked()
     if (!view)
         return;
 
-    if (m_isPicking) {
+    if (m_pickSession->isActive()) {
         return;
     }
 
-    saveMouseState();
-    m_isPicking = true;
-
-    view->clearSelectedObjects();
-    view->updateSelectionFilter(TopAbs_EDGE, true);
-    //view->updateSelectionFilter(TopAbs_WIRE, true);
-    view->setMouseMode(View::MouseMode::SELECTION);
-
-    connect(view, &OCCView::signalSpaceSelected, this, &WidgetMeasureLength::onObjectSelected);
+    if (!m_pickSession->start({{TopAbs_EDGE, TopAbs_WIRE}})) return;
 
     ui->labelStatus->setText("Please select edges or wires.");
 }
@@ -106,14 +102,14 @@ void WidgetMeasureLength::onClearClicked()
     updateUI();
 
     auto view = ViewManager::getInstance().getActiveView();
-    if (view && m_isPicking) {
+    if (view && m_pickSession->isActive()) {
         view->clearSelectedObjects();
     }
 }
 
 void WidgetMeasureLength::onObjectSelected(const TopoDS_Shape &shape)
 {
-    if (!m_isPicking || shape.IsNull())
+    if (!m_pickSession->isActive() || shape.IsNull())
         return;
 
     if (shape.ShapeType() != TopAbs_EDGE && shape.ShapeType() != TopAbs_WIRE) {
@@ -152,28 +148,8 @@ void WidgetMeasureLength::onCloseClicked()
     close();
 }
 
-void WidgetMeasureLength::saveMouseState()
-{
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view)
-        return;
-    m_savedMouseMode = static_cast<int>(view->getMouseMode());
-    m_savedFilters = view->getSelectionFilters();
-}
-
 void WidgetMeasureLength::restoreMouseState()
 {
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view)
-        return;
-
-    disconnect(view, &OCCView::signalSpaceSelected, this, &WidgetMeasureLength::onObjectSelected);
-
-    view->setMouseMode(static_cast<View::MouseMode>(m_savedMouseMode));
-
-    for (const auto &filter : m_savedFilters) {
-        view->updateSelectionFilter(filter.first, filter.second);
-    }
-    m_isPicking = false;
+    m_pickSession->stop();
     ui->labelStatus->setText("Measurement complete.");
 }

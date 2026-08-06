@@ -8,10 +8,11 @@
 #include "ViewManager.h"
 #include "OCCView.h"
 #include "SelectedEntity.h"
+#include "SelectionPickSession.h"
 #include <BRep_Tool.hxx>
 
 WidgetFillet::WidgetFillet(QWidget* parent)
-    : QWidget(parent), m_isPicking(false)
+    : QWidget(parent), m_pickSession(new SelectionPickSession(this))
 {
     setWindowTitle("Fillet Feature");
     setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint);
@@ -37,6 +38,8 @@ WidgetFillet::WidgetFillet(QWidget* parent)
 
     connect(btnPick, &QPushButton::clicked, this, &WidgetFillet::onPickClicked);
     connect(btnApply, &QPushButton::clicked, this, &WidgetFillet::onApplyClicked);
+    connect(m_pickSession, &SelectionPickSession::shapePicked,
+            this, &WidgetFillet::onObjectSelected);
 }
 
 WidgetFillet::~WidgetFillet()
@@ -50,7 +53,7 @@ void WidgetFillet::show()
 
 void WidgetFillet::hide()
 {
-    if (m_isPicking) {
+    if (m_pickSession->isActive()) {
         restoreMouseState();
     }
     QWidget::hide();
@@ -58,7 +61,7 @@ void WidgetFillet::hide()
 
 void WidgetFillet::closeEvent(QCloseEvent* event)
 {
-    if (m_isPicking) {
+    if (m_pickSession->isActive()) {
         restoreMouseState();
     }
     QWidget::closeEvent(event);
@@ -66,24 +69,14 @@ void WidgetFillet::closeEvent(QCloseEvent* event)
 
 void WidgetFillet::onPickClicked()
 {
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view) return;
-    if (m_isPicking) return;
-
-    saveMouseState();
-    m_isPicking = true;
-
-    view->clearSelectedObjects();
-    view->updateSelectionFilter(TopAbs_EDGE, true);
-    view->setMouseMode(View::MouseMode::SELECTION);
-
-    connect(view, &OCCView::signalSpaceSelected, this, &WidgetFillet::onObjectSelected);
+    if (m_pickSession->isActive()) return;
+    if (!m_pickSession->start({{TopAbs_EDGE}})) return;
     lblStatus->setText("Please select an edge.");
 }
 
 void WidgetFillet::onObjectSelected(const TopoDS_Shape& shape)
 {
-    if (!m_isPicking || shape.IsNull()) return;
+    if (!m_pickSession->isActive() || shape.IsNull()) return;
     if (shape.ShapeType() != TopAbs_EDGE) return;
 
     m_selectedEdge = shape;
@@ -100,23 +93,7 @@ void WidgetFillet::onApplyClicked()
     emit signalFillet(m_selectedEdge, spinRadius->value());
 }
 
-void WidgetFillet::saveMouseState()
-{
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view) return;
-    m_savedMouseMode = static_cast<int>(view->getMouseMode());
-    m_savedFilters = view->getSelectionFilters();
-}
-
 void WidgetFillet::restoreMouseState()
 {
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view) return;
-
-    disconnect(view, &OCCView::signalSpaceSelected, this, &WidgetFillet::onObjectSelected);
-    view->setMouseMode(static_cast<View::MouseMode>(m_savedMouseMode));
-    for (const auto& filter : m_savedFilters) {
-        view->updateSelectionFilter(filter.first, filter.second);
-    }
-    m_isPicking = false;
+    m_pickSession->stop();
 }

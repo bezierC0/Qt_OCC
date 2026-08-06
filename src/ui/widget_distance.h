@@ -1,7 +1,4 @@
 #pragma once
-#include <map>
-
-#include <TopAbs_ShapeEnum.hxx>
 #include <TopoDS_Shape.hxx>
 #include <gp_Pnt.hxx>
 
@@ -9,6 +6,7 @@
 
 // Forward declaration 
 class QCloseEvent;
+class SelectionPickSession;
 
 namespace Ui {
 class WidgetDistance;
@@ -34,7 +32,6 @@ private slots:
     void onCloseClicked();
 
 private:
-    void saveMouseState();
     void restoreMouseState();
     void updateUI();
     void calculateDistance();
@@ -42,9 +39,7 @@ private:
 private:
     Ui::WidgetDistance* ui;
     
-    // State saving
-    int m_savedMouseMode;
-    std::map<TopAbs_ShapeEnum, bool> m_savedFilters;
+    SelectionPickSession* m_pickSession;
     
     enum PickingState {
         Idle,

@@ -22,7 +22,7 @@ ViewerPickHelper::~ViewerPickHelper()
 
 OCCView* ViewerPickHelper::getView() const
 {
-    return ViewManager::getInstance().getActiveView();
+    return m_view.data();
 }
 
 void ViewerPickHelper::start()
@@ -31,10 +31,11 @@ void ViewerPickHelper::start()
         return;
     }
 
-    auto* view = getView();
+    auto* view = ViewManager::getInstance().getActiveView();
     if (!view) {
         return;
     }
+    m_view = view;
     // Snapshot the view's current mouse mode and selection filters so they can be restored faithfully when the picking session ends.
     saveState();
 
@@ -71,6 +72,7 @@ void ViewerPickHelper::stop()
     restoreState();
 
     m_isActive = false;
+    m_view.clear();
 }
 
 bool ViewerPickHelper::isActive() const
