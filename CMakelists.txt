@@ -466,3 +466,22 @@ target_link_libraries(${PROJECT_NAME}
         CoreApi
         ${Boost_LIBRARIES}
 )
+
+include(CTest)
+if(BUILD_TESTING)
+    add_executable(AnimationSequenceTests
+        tests/AnimationSequenceTests.cpp
+        src/display/AnimationSequence.cpp
+        src/display/AnimationSequence.h
+    )
+    target_include_directories(AnimationSequenceTests PRIVATE
+        ${MANUAL_OCCT_INCLUDE_DIR}
+        src/display
+    )
+    target_link_libraries(AnimationSequenceTests PRIVATE
+        ${OCCT_LIBRARIES_TO_LINK}
+        ${MANUAL_3RDPARTY_LIBRARIES}
+        Qt5::Core
+    )
+    add_test(NAME AnimationSequenceModel COMMAND AnimationSequenceTests)
+endif()

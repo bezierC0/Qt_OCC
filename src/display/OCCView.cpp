@@ -588,6 +588,16 @@ void OCCView::updateView()
     if (window() != NULL) { window()->update(); }
 }
 
+void OCCView::requestSceneRedraw()
+{
+    const Handle(V3d_View) activeView = ActiveView();
+    if (!activeView.IsNull()) {
+        activeView->Invalidate();
+        activeView->InvalidateImmediate();
+    }
+    updateView();
+}
+
 void OCCView::paintGL()
 {
     if (m_view->Window().IsNull())

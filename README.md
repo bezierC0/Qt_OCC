@@ -46,6 +46,7 @@ Qt_OCC is a desktop CAD application developed using the power of the Qt framewor
 *   **Development and refactoring notes**: [`doc/development_refactoring.md`](doc/development_refactoring.md)
 *   **3D Busbar Routing feature**: [`doc/tool_busbar.md`](doc/tool_busbar.md)
 *   **3D PDF export feature**: [`doc/file_export_3dpdf.md`](doc/file_export_3dpdf.md)
+*   **Animation feature**: [`doc/animation.md`](doc/animation.md)
 *   **Localized READMEs**: [`doc/CN/README_CN.md`](doc/CN/README_CN.md), [`doc/JP/README_JP.md`](doc/JP/README_JP.md), [`doc/FR/README_FR.md`](doc/FR/README_FR.md), [`doc/RU/README_RU.md`](doc/RU/README_RU.md), [`doc/ES/README_ES.md`](doc/ES/README_ES.md)
 
 ## 🚀 Getting Started
