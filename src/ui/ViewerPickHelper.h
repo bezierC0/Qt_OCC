@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QPointer>
 #include <map>
 
 #include <AIS_Shape.hxx>
@@ -125,6 +126,7 @@ private:
     OCCView* getView() const;
 
     bool   m_isActive{false};// Whether a picking session is currently running.
+    QPointer<OCCView> m_view;// View captured at start; never follow a later active-tab switch.
     double m_lastX{0.0};// Last X coordinate 
     double m_lastY{0.0};// Last Y coordinate 
     double m_lastZ{0.0};// Last Z coordinate 

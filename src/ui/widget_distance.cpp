@@ -3,6 +3,7 @@
 #include "ViewManager.h"
 #include "OCCView.h"
 #include "SelectedEntity.h"
+#include "SelectionPickSession.h"
 
 #include <AIS_Shape.hxx>
 #include <BRep_Tool.hxx>
@@ -16,6 +17,7 @@
 WidgetDistance::WidgetDistance(QWidget *parent) :
     QWidget(parent),
     ui(new Ui::WidgetDistance),
+    m_pickSession(new SelectionPickSession(this)),
     m_pickingState(Idle),
     m_hasP1(false),
     m_hasP2(false)
@@ -25,6 +27,8 @@ WidgetDistance::WidgetDistance(QWidget *parent) :
 
     connect(ui->pushButtonPick, &QPushButton::clicked, this, &WidgetDistance::onPickClicked);
     connect(ui->pushButtonClose, &QPushButton::clicked, this, &WidgetDistance::onCloseClicked);
+    connect(m_pickSession, &SelectionPickSession::shapePicked,
+            this, &WidgetDistance::onObjectSelected);
 }
 
 WidgetDistance::~WidgetDistance()
@@ -92,16 +96,14 @@ void WidgetDistance::onPickClicked()
         restoreMouseState();
     }
 
-    saveMouseState();
     m_pickingState = PickFirst;
     m_hasP1 = false;
     m_hasP2 = false;
 
-    view->clearSelectedObjects();
-    view->updateSelectionFilter(TopAbs_VERTEX, true);
-    view->setMouseMode(View::MouseMode::SELECTION);
-    
-    connect(view, &OCCView::signalSpaceSelected, this, &WidgetDistance::onObjectSelected);
+    if (!m_pickSession->start({{TopAbs_VERTEX}})) {
+        m_pickingState = Idle;
+        return;
+    }
     
     updateUI();
 }
@@ -187,27 +189,8 @@ void WidgetDistance::onCloseClicked()
     close();
 }
 
-void WidgetDistance::saveMouseState()
-{
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view) return;
-    m_savedMouseMode = static_cast<int>(view->getMouseMode());
-    m_savedFilters = view->getSelectionFilters();
-}
-
 void WidgetDistance::restoreMouseState()
 {
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view) return;
-    
-    // Disconnect signals
-    disconnect(view, &OCCView::signalSpaceSelected, this, &WidgetDistance::onObjectSelected);
-
-    view->setMouseMode(static_cast<View::MouseMode>(m_savedMouseMode));
-    // view->clearSelectedObjects(); // Maybe keep selection so user can see what they picked?
-    
-    for(const auto& filter : m_savedFilters) {
-        view->updateSelectionFilter(filter.first, filter.second);
-    }
+    m_pickSession->stop();
     m_pickingState = Idle;
 }
