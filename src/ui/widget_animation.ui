@@ -21,7 +21,7 @@
      <item>
       <widget class="QLabel" name="labelPickTitle">
        <property name="text">
-        <string>Pick:</string>
+        <string>Target:</string>
        </property>
       </widget>
      </item>
@@ -72,11 +72,30 @@
 
    <!-- Move distance -->
    <item>
+    <layout class="QHBoxLayout" name="layoutStepType">
+     <item>
+      <widget class="QLabel" name="labelStepType">
+       <property name="text"><string>Step type:</string></property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBoxStepType">
+       <item><property name="text"><string>Translation</string></property></item>
+       <item><property name="text"><string>Rotation</string></property></item>
+       <item><property name="text"><string>Visibility</string></property></item>
+       <item><property name="text"><string>Camera</string></property></item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+   <!-- Step amount -->
+   <item>
     <layout class="QHBoxLayout" name="layoutDist">
      <item>
       <widget class="QLabel" name="labelMove">
        <property name="text">
-        <string>Move (mm):</string>
+        <string>Distance (mm):</string>
        </property>
       </widget>
      </item>
@@ -158,6 +177,115 @@
     </widget>
    </item>
 
+   <item>
+    <layout class="QHBoxLayout" name="layoutDuration">
+     <item><widget class="QLabel" name="labelDuration"><property name="text"><string>Duration (s):</string></property></widget></item>
+     <item>
+      <widget class="QDoubleSpinBox" name="spinBoxDuration">
+       <property name="minimum"><double>0.1</double></property>
+       <property name="maximum"><double>3600.0</double></property>
+       <property name="singleStep"><double>0.1</double></property>
+       <property name="value"><double>2.0</double></property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+   <item>
+    <layout class="QHBoxLayout" name="layoutVisibility">
+     <item><widget class="QLabel" name="labelVisibility"><property name="text"><string>Visibility:</string></property></widget></item>
+     <item>
+      <widget class="QComboBox" name="comboBoxVisibility">
+       <item><property name="text"><string>Show</string></property></item>
+       <item><property name="text"><string>Hide</string></property></item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+   <item>
+    <layout class="QHBoxLayout" name="layoutCameraCapture">
+     <item><widget class="QPushButton" name="pushButtonCameraStart"><property name="text"><string>Capture Camera Start</string></property></widget></item>
+     <item><widget class="QPushButton" name="pushButtonCameraEnd"><property name="text"><string>Capture Camera End</string></property></widget></item>
+     <item><widget class="QLabel" name="labelCameraCapture"><property name="text"><string>Start: No / End: No</string></property></widget></item>
+    </layout>
+   </item>
+
+   <!-- Per-step rate -->
+   <item>
+    <layout class="QHBoxLayout" name="layoutSpeed">
+     <item>
+      <widget class="QLabel" name="labelSpeed">
+       <property name="text">
+        <string>Rate (units/s):</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="sliderSpeed">
+       <property name="minimum">
+        <number>1</number>
+       </property>
+       <property name="maximum">
+        <number>10</number>
+       </property>
+       <property name="value">
+        <number>5</number>
+       </property>
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labelSpeedValue">
+       <property name="text">
+        <string>50</string>
+       </property>
+       <property name="minimumWidth">
+        <number>20</number>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+   <!-- Per-step easing -->
+   <item>
+    <layout class="QHBoxLayout" name="layoutEasing">
+     <item>
+      <widget class="QLabel" name="labelEasing">
+       <property name="text"><string>Easing:</string></property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBoxEasing">
+       <item><property name="text"><string>Linear</string></property></item>
+       <item><property name="text"><string>Ease In</string></property></item>
+       <item><property name="text"><string>Ease Out</string></property></item>
+       <item><property name="text"><string>Ease In/Out</string></property></item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
+   <!-- Add button -->
+   <item>
+    <layout class="QHBoxLayout" name="layoutTiming">
+     <item>
+      <widget class="QLabel" name="labelTiming">
+       <property name="text"><string>Timing:</string></property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBoxTiming">
+       <item><property name="text"><string>After Previous</string></property></item>
+       <item><property name="text"><string>With Previous (Parallel)</string></property></item>
+      </widget>
+     </item>
+    </layout>
+   </item>
+
    <!-- Add button -->
    <item>
     <layout class="QHBoxLayout" name="layoutAdd">
@@ -178,6 +306,13 @@
       <widget class="QPushButton" name="pushButtonAdd">
        <property name="text">
         <string>Add Step</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonUpdate">
+       <property name="text">
+        <string>Update</string>
        </property>
       </widget>
      </item>
@@ -219,48 +354,14 @@
     </widget>
    </item>
 
-   <!-- Speed control -->
-   <item>
-    <layout class="QHBoxLayout" name="layoutSpeed">
-     <item>
-      <widget class="QLabel" name="labelSpeed">
-       <property name="text">
-        <string>Speed:</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QSlider" name="sliderSpeed">
-       <property name="minimum">
-        <number>1</number>
-       </property>
-       <property name="maximum">
-        <number>10</number>
-       </property>
-       <property name="value">
-        <number>5</number>
-       </property>
-       <property name="orientation">
-        <enum>Qt::Horizontal</enum>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QLabel" name="labelSpeedValue">
-       <property name="text">
-        <string>5</string>
-       </property>
-       <property name="minimumWidth">
-        <number>20</number>
-       </property>
-      </widget>
-     </item>
-    </layout>
-   </item>
-
    <!-- Playback buttons -->
    <item>
     <layout class="QHBoxLayout" name="layoutPlayback">
+     <item>
+      <widget class="QCheckBox" name="checkBoxLoop">
+       <property name="text"><string>Loop</string></property>
+      </widget>
+     </item>
      <item>
       <widget class="QPushButton" name="pushButtonRewind">
        <property name="text">
@@ -289,6 +390,88 @@
    </item>
 
    <!-- Progress / status -->
+   <item>
+    <layout class="QHBoxLayout" name="layoutVideoExport">
+     <item><widget class="QLabel" name="labelVideoFps"><property name="text"><string>Video FPS:</string></property></widget></item>
+     <item>
+      <widget class="QSpinBox" name="spinBoxVideoFps">
+       <property name="minimum"><number>10</number></property>
+       <property name="maximum"><number>120</number></property>
+       <property name="value"><number>30</number></property>
+      </widget>
+     </item>
+     <item><widget class="QPushButton" name="pushButtonExportVideo"><property name="text"><string>Export Video...</string></property></widget></item>
+    </layout>
+   </item>
+
+   <!-- Progress / status -->
+   <item>
+    <layout class="QHBoxLayout" name="layoutTimeline">
+     <item>
+      <widget class="QLabel" name="labelTimeline">
+       <property name="text"><string>Timeline:</string></property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QSlider" name="sliderTimeline">
+       <property name="minimum"><number>0</number></property>
+       <property name="maximum"><number>1000</number></property>
+       <property name="value"><number>0</number></property>
+       <property name="orientation"><enum>Qt::Horizontal</enum></property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLabel" name="labelTimelineValue">
+       <property name="text"><string>0.0 / 0.0 s</string></property>
+       <property name="minimumWidth"><number>85</number></property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QProgressBar" name="progressBar">
+     <property name="value">
+      <number>0</number>
+     </property>
+     <property name="textVisible">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="layoutStepOrder">
+     <item>
+      <spacer name="spacerStepOrder">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size><width>40</width><height>20</height></size>
+       </property>
+      </spacer>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonUp">
+       <property name="text"><string>Move Up</string></property>
+      </widget>
+     </item>
+     <item>
+     <widget class="QPushButton" name="pushButtonDown">
+       <property name="text"><string>Move Down</string></property>
+     </widget>
+    </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonDuplicate">
+       <property name="text"><string>Duplicate</string></property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonPreview">
+       <property name="text"><string>Preview Step</string></property>
+      </widget>
+     </item>
+    </layout>
+   </item>
    <item>
     <widget class="QLabel" name="labelStatus">
      <property name="text">

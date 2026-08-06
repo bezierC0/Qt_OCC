@@ -583,6 +583,12 @@ void ViewerWidget::onUpdateSelectionInfo(const std::vector<std::shared_ptr<View:
 
 ViewerWidget::~ViewerWidget()
 {
+    // WidgetAnimation restores transforms through OCCView during teardown, so
+    // destroy the non-modal tool before its owning view.
+    if (m_widgetAnimation) {
+        delete m_widgetAnimation;
+        m_widgetAnimation = nullptr;
+    }
     if (m_occView) {
         delete m_occView;
         m_occView = nullptr;
@@ -1858,10 +1864,13 @@ void ViewerWidget::explosion()
 void ViewerWidget::animation()
 {
     if (!m_widgetAnimation) {
-        m_widgetAnimation = new WidgetAnimation(this);
-        m_widgetAnimation->setAttribute(Qt::WA_DeleteOnClose);
-        connect(m_widgetAnimation, &QWidget::destroyed, this,
-                [this]() { m_widgetAnimation = nullptr; });
+        m_widgetAnimation = WidgetAnimation::create(this);
+        connect(m_widgetAnimation, &WidgetAnimation::redrawRequested,
+                this, [this]() {
+                    if (m_occView) {
+                        m_occView->reDraw();
+                    }
+                }, Qt::QueuedConnection);
     }
     m_widgetAnimation->show();
     m_widgetAnimation->raise();

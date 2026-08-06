@@ -117,6 +117,11 @@ public:
 
     //! Return View.
     const Handle(V3d_View) & View() const { return m_view; }
+    Handle(V3d_View) ActiveView() const
+    {
+        return !myFocusView.IsNull() ? myFocusView : m_view;
+    }
+    void requestSceneRedraw();
 
     //! Return AIS context.
     const Handle(AIS_InteractiveContext) & Context() const { return m_context; }
