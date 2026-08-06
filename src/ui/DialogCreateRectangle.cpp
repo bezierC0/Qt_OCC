@@ -1,5 +1,6 @@
 #include "DialogCreateRectangle.h"
 #include "ShapePickSession.h"
+#include "command/CommandCommon.h"
 #include "command/ShapeCommandRegistry.h"
 
 #include <QIcon>
@@ -105,9 +106,11 @@ DialogCreateRectangle::DialogCreateRectangle(QWidget* parent)
             const gp_Pnt& p1 = confirmedPts[0];
             // Build via registry using origin + derived width/height
             CoreApi::ShapeParams p;
-            p["x"] = p1.X(); p["y"] = p1.Y(); p["z"] = p1.Z();
-            p["width"]  = mousePt.X() - p1.X();
-            p["height"] = mousePt.Y() - p1.Y();
+            p[CoreApi::Param::X] = p1.X();
+            p[CoreApi::Param::Y] = p1.Y();
+            p[CoreApi::Param::Z] = p1.Z();
+            p[CoreApi::Param::WIDTH] = mousePt.X() - p1.X();
+            p[CoreApi::Param::HEIGHT] = mousePt.Y() - p1.Y();
             return CoreApi::ShapeCommandRegistry::instance().execute("CreateRectangle", p);
         },
         this);
@@ -118,9 +121,9 @@ DialogCreateRectangle::DialogCreateRectangle(QWidget* parent)
     connect(m_session, &ShapePickSession::stateChanged,
             this, [this](ShapePickSession::State s) {
                 if (s == ShapePickSession::State::Preview) {
-                    m_statusLabel->setText("Step 2/2 : Click opposite corner in 3D view");
+                    m_statusLabel->setText(tr("Step 2/2 : Click opposite corner in 3D view"));
                 } else if (s == ShapePickSession::State::Idle) {
-                    m_statusLabel->setText("Step 1/2 : Click origin corner in 3D view");
+                    m_statusLabel->setText(tr("Step 1/2 : Click origin corner in 3D view"));
                 }
             });
 }
@@ -194,5 +197,5 @@ void DialogCreateRectangle::onSessionCompleted(QVector<gp_Pnt> points)
     m_spinBoxWidth->setValue(std::abs(p2.X() - p1.X()));
     m_spinBoxHeight->setValue(std::abs(p2.Y() - p1.Y()));
 
-    m_statusLabel->setText("Rectangle defined. Press [Create] to confirm.");
+    m_statusLabel->setText(tr("Rectangle defined. Press [Create] to confirm."));
 }

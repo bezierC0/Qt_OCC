@@ -1,12 +1,20 @@
 #pragma once
 
+#include <array>
+#include <map>
+
 #include <QWidget>
+#include <AIS_Point.hxx>
+#include <gp_Pnt.hxx>
 #include <TopoDS_Shape.hxx> 
 #include <TDocStd_Document.hxx>
 #include "OCCView.h" 
+#include "cae/CaeBoundaryVisualization.h"
+#include "cae/CaeNamedSelection.h"
 class AIS_InteractiveObject;
 class gp_Dir;
-class gp_Pnt;
+class QLabel;
+class QResizeEvent;
 
 class DialogCreateArc;
 class DialogCreateBox;
@@ -129,6 +137,25 @@ public:
     const std::map<TopAbs_ShapeEnum, bool>& getSelectionFilters() const ;
     void repairAndSave(const TopoDS_Shape& shape);
     void updateTree();
+    bool hasGeometry() const;
+    bool exportCaeGeometry(const QString& filePath, QString* errorMessage);
+    bool selectedCaePlanarFace(Cae::PlanarSelectionRegion* region, QString* errorMessage) const;
+    bool showCaeMesh(const QString& meshFilePath, QString* errorMessage = nullptr);
+    void clearCaeMesh();
+    void showCaeBoundaryMarkers(const Cae::BoundaryMarkers& markers);
+    void clearCaeBoundaryMarkers();
+    bool showCaeScalarField(
+        const QString& meshFilePath,
+        const QString& title,
+        const std::map<int, double>& nodalValues,
+        const std::map<int, std::array<double, 3>>& nodalDisplacements,
+        double deformationScale,
+        double minimum,
+        double maximum,
+        QString* errorMessage = nullptr);
+    bool showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage = nullptr);
+    void clearScalarField();
+    bool setCaeNodePickingEnabled(bool enabled, QString* errorMessage = nullptr);
 
     void onFunctionTest();
 signals:
@@ -137,13 +164,19 @@ signals:
  //   void signalSelectedObjects(const std::vector<opencascade::handle<AIS_InteractiveObject>>& objects);
     void signalSelectedObjects(const std::vector<std::shared_ptr<View::SelectedEntity>>& objects);
     void signalSelectionInfo(const QString& info);
+    void signalCaeNodePicked(int nodeId);
 
 private slots:
     void onUpdateSelectionInfo(const std::vector<std::shared_ptr<View::SelectedEntity>>& selectedObjects);
+    void onCaePickMouseMoved(int x, int y);
+    void onCaePickMousePressed(int x, int y);
 
 public slots:
     void highlightLabel(const TDF_Label& label);
     void removeLabelShape(const TDF_Label& label);
+
+protected:
+    void resizeEvent(QResizeEvent* event) override;
 
 private slots:
     void onCreateArc(double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, const QColor& color);
@@ -166,6 +199,11 @@ private slots:
 private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
     bool exportDxfToPath(const QString& savePath, QString* errorMessage);
+    void hideCadGeometryForCaeResult();
+    void updateCaeLegend(const QString& title, double minimum, double maximum);
+    int findCaeNodeAt(int x, int y) const;
+    void updateCaeNodeHover(int nodeId);
+    void clearCaeNodeHover();
 
 private:
     OCCView*                        m_occView{nullptr};
@@ -173,6 +211,11 @@ private:
     bool                            m_importWithHealing{false};
     Handle(AIS_InteractiveObject)   m_highlightedShape{nullptr};
     bool                            m_isShowBoundingBox{true};  
+    QLabel*                         m_caeLegendLabel{nullptr};
+    bool                            m_caeNodePickingEnabled{false};
+    std::map<int, gp_Pnt>           m_caePickNodes;
+    Handle(AIS_Point)               m_caeNodeHoverMarker;
+    int                             m_caeHoveredNodeId{-1};
 
     //TopoDS_Shape m_loadedShape;
 

@@ -183,7 +183,7 @@ DialogCreateArc::DialogCreateArc(QWidget* parent)
                         : "Step 3/3 : Click Point 3 in 3D view");
                 } else if (s == ShapePickSession::State::Idle) {
                     previewCount = 0;
-                    m_statusLabel->setText("Step 1/3 : Click Point 1 in 3D view");
+                    m_statusLabel->setText(tr("Step 1/3 : Click Point 1 in 3D view"));
                 }
             });
 }
@@ -254,5 +254,5 @@ void DialogCreateArc::onSessionCompleted(QVector<gp_Pnt> points)
     m_spinBoxY3->setValue(points[2].Y());
     m_spinBoxZ3->setValue(points[2].Z());
 
-    m_statusLabel->setText("Arc defined. Press [Create] to confirm.");
+    m_statusLabel->setText(tr("Arc defined. Press [Create] to confirm."));
 }

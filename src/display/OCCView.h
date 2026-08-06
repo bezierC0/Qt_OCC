@@ -13,6 +13,7 @@
 #include <V3d_View.hxx>
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopTools_ListOfShape.hxx>
+#include <TopoDS_Shape.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Pnt2d.hxx>
 #include <ProjLib.hxx>
@@ -102,6 +103,8 @@ signals:
     void signalSelectedObjects(const std::vector<std::shared_ptr<View::SelectedEntity>>& selectedObjects);
     void signalManipulatorChange(const gp_Trsf& trsf);
     void signalMouseMove(double x, double y, double z);
+    void signalViewportMouseMoved(int x, int y);
+    void signalViewportClicked(int x, int y);
 public:
     //! Main constructor.
     OCCView(QWidget *theParent = nullptr);
@@ -114,6 +117,11 @@ public:
 
     //! Return View.
     const Handle(V3d_View) & View() const { return m_view; }
+    Handle(V3d_View) ActiveView() const
+    {
+        return !myFocusView.IsNull() ? myFocusView : m_view;
+    }
+    void requestSceneRedraw();
 
     //! Return AIS context.
     const Handle(AIS_InteractiveContext) & Context() const { return m_context; }
@@ -293,6 +301,8 @@ private:
     //! Core profile flag.
 
     std::vector<Handle(AIS_InteractiveObject)> m_loadedObjects;
+    std::vector<TopoDS_Shape> m_explosionSourceShapes;
+    std::vector<gp_Trsf> m_explosionSourceTransforms;
     std::vector<std::shared_ptr<View::SelectedEntity>> m_selectedObjects;
     Handle(AIS_Shape) m_boundingBoxNode{nullptr};
     std::vector<std::shared_ptr<View::IInterferece>> m_interferenceObjects;

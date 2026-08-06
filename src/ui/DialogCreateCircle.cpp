@@ -1,5 +1,6 @@
 #include "DialogCreateCircle.h"
 #include "ShapePickSession.h"
+#include "command/CommandCommon.h"
 #include "command/ShapeCommandRegistry.h"
 
 #include <QIcon>
@@ -67,17 +68,19 @@ DialogCreateCircle::DialogCreateCircle(QWidget* parent)
     m_session = new ShapePickSession(2,
         [](const std::vector<gp_Pnt>& pts, const gp_Pnt& mouse) -> TopoDS_Shape {
             CoreApi::ShapeParams p;
-            p["x"] = pts[0].X(); p["y"] = pts[0].Y(); p["z"] = pts[0].Z();
-            p["radius"] = pts[0].Distance(mouse);
+            p[CoreApi::Param::X] = pts[0].X();
+            p[CoreApi::Param::Y] = pts[0].Y();
+            p[CoreApi::Param::Z] = pts[0].Z();
+            p[CoreApi::Param::RADIUS] = pts[0].Distance(mouse);
             return CoreApi::ShapeCommandRegistry::instance().execute("CreateCircle", p);
         }, this);
 
     connect(m_session, &ShapePickSession::sessionCompleted, this, &DialogCreateCircle::onSessionCompleted);
     connect(m_session, &ShapePickSession::stateChanged, this, [this](ShapePickSession::State s) {
         if (s == ShapePickSession::State::Preview)
-            m_statusLabel->setText("Step 2/2 : Drag to set radius, then click");
+            m_statusLabel->setText(tr("Step 2/2 : Drag to set radius, then click"));
         else if (s == ShapePickSession::State::Idle)
-            m_statusLabel->setText("Step 1/2 : Click centre point in 3D view");
+            m_statusLabel->setText(tr("Step 1/2 : Click centre point in 3D view"));
     });
 }
 
@@ -116,5 +119,5 @@ void DialogCreateCircle::onSessionCompleted(QVector<gp_Pnt> points)
     m_spinBoxY->setValue(points[0].Y());
     m_spinBoxZ->setValue(points[0].Z());
     if (r > 0.001) m_spinBoxRadius->setValue(r);
-    m_statusLabel->setText("Circle defined. Press [Create] to confirm.");
+    m_statusLabel->setText(tr("Circle defined. Press [Create] to confirm."));
 }

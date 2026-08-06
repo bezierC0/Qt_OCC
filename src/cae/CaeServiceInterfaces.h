@@ -1,0 +1,84 @@
+#pragma once
+
+#include "CaeNamedSelection.h"
+#include "CaeTypes.h"
+
+#include <QString>
+#include <array>
+#include <map>
+#include <optional>
+#include <vector>
+
+namespace Cae {
+
+struct MeshRequest {
+    double globalSize{1.0};
+    QString geometryFilePath;
+};
+
+struct SolverRequest {
+    QString meshFilePath;
+    QString workingDirectory;
+    double youngModulus{210000.0};
+    double poissonRatio{0.3};
+    std::array<double, 3> force{100.0, 0.0, 0.0};
+    std::optional<PlanarSelectionRegion> fixedRegion;
+    std::optional<PlanarSelectionRegion> loadRegion;
+    double pressure{0.0};
+    std::optional<PlanarSelectionRegion> pressureRegion;
+    StudyType studyType{StudyType::StaticStructural};
+};
+
+struct MeshResult {
+    QString meshFilePath;
+    int nodeCount{0};
+    int surfaceElementCount{0};
+    int volumeElementCount{0};
+};
+
+struct SolverResult {
+    QString resultFilePath;
+    QString logFilePath;
+};
+
+struct ResultField {
+    ResultFieldType type{ResultFieldType::Displacement};
+    std::vector<double> values;
+    std::map<int, double> nodalValues;
+    std::map<int, std::array<double, 3>> nodalDisplacements;
+};
+
+struct ResultRenderOptions {
+    ResultFieldType fieldType{ResultFieldType::Displacement};
+    double deformationScale{1.0};
+};
+
+class IMeshGenerator {
+public:
+    virtual ~IMeshGenerator() = default;
+    virtual QString name() const = 0;
+    virtual bool generate(const MeshRequest& request, MeshResult* result, QString* errorMessage) = 0;
+};
+
+class ISolver {
+public:
+    virtual ~ISolver() = default;
+    virtual QString name() const = 0;
+    virtual bool solve(const SolverRequest& request, SolverResult* result, QString* errorMessage) = 0;
+};
+
+class IResultReader {
+public:
+    virtual ~IResultReader() = default;
+    virtual QString name() const = 0;
+    virtual bool read(const SolverResult& solverResult, ResultField* field, QString* errorMessage) = 0;
+};
+
+class IResultRenderer {
+public:
+    virtual ~IResultRenderer() = default;
+    virtual QString name() const = 0;
+    virtual bool render(const ResultField& field, const ResultRenderOptions& options, QString* errorMessage) = 0;
+};
+
+} // namespace Cae

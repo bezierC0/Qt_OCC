@@ -1,11 +1,16 @@
 #pragma once
 
+#include <array>
+#include <optional>
+
 #include "SARibbon.h"
 
 #include <QMenu>
 #include <QAction>
 #include <QLabel>
 #include <QStatusBar>
+#include <QUuid>
+#include <memory>
 
 class QTranslator;
 
@@ -13,24 +18,22 @@ class TopoDS_Shape;
 
 class ViewerWidget;
 class ModelTreeWidget;
+class CaeTreeWidget;
 class WidgetSetCoordinateSystem;
 class WidgetExplodeAssembly;
 class WidgetClipping;
 class WidgetTransform;
 
-namespace{
-    // Status Bar
-    enum StatusType {
-        StatusCoord = 0,
-        StatusShapeInfo
-    };
-
+namespace Cae {
+class CaeController;
+enum class ResultFieldType;
 }
 
 class MainWindow : public SARibbonMainWindow {
     Q_OBJECT
 public:
     MainWindow(QWidget* parent = nullptr);
+    ~MainWindow() override;
     ViewerWidget* GetViewerWidget() const;
     ModelTreeWidget* GetModelTreeWidget() const;
 public slots:
@@ -102,6 +105,33 @@ private slots:
     void onShapeToolFillet();
     void onShapeToolHole();
 
+    /* CAE */
+    void onCaeNewStaticStudy();
+    void onCaeNewThermalStudy();
+    void onCaeUseCurrentGeometry();
+    void onCaeCreateNamedSelection();
+    void onCaeAssignMaterial();
+    void onCaeAddFixedSupport();
+    void onCaeAddForce();
+    void onCaeAddPressure();
+    void onCaeGenerateMesh();
+    void onCaeRunSolver();
+    void onCaeShowDisplacement();
+    void onCaeShowStress();
+    void onCaeShowTemperature();
+    void onCaeTreeMeshActivated(const QUuid& studyId);
+    void onCaeTreeResultActivated(const QUuid& studyId, Cae::ResultFieldType fieldType);
+    void onCaeMaterialActivated(const QUuid& studyId, const QString& name);
+    void onCaeBoundaryConditionActivated(const QUuid& studyId, const QString& name);
+    void onCaeRemoveNamedSelectionRequested(const QUuid& studyId, const QString& name);
+    void onCaeRemoveMaterialRequested(const QUuid& studyId, const QString& name);
+    void onCaeRemoveBoundaryConditionRequested(const QUuid& studyId, const QString& name);
+    void onCaeSetDeformationScale();
+    void onCaeProbeResult();
+    void onCaePickNodeToggled(bool enabled);
+    void onCaeNodePicked(int nodeId);
+    void onCaeSettings();
+
     /* help */
     void onSwitchLanguage();
     void onSwitchTheme();
@@ -114,6 +144,12 @@ private slots:
 
 private:
     void setupUi();
+    void refreshCaeTree();
+    void refreshCaeBoundaryVisualization();
+    void resetCaeResultPresentation(bool preserveMesh);
+    void presentCaeResult(Cae::ResultFieldType fieldType, bool reloadField = true);
+    void showCaeNodeProbe(int nodeId);
+    QString chooseCaeFaceTarget(const QString& title, bool* accepted);
     void createThemeActions();
 
     // Ribbon creation helper functions
@@ -122,13 +158,20 @@ private:
     void createViewGroup(); // Create view group
     void createToolGroup(); // Create tool group
     void createShapeGroup(); // Create shape group
+    void createCaeGroup(); // Create CAE workflow group
     void createHelpGroup(); // Create help group
+
+    enum StatusType {
+        StatusCoord = 0,
+        StatusShapeInfo
+    };
     
     void setStatusText(StatusType type, const QString& text);
 
 private:
     ViewerWidget* m_viewerWidget;
     ModelTreeWidget* m_modelTreeWidget;
+    CaeTreeWidget* m_caeTreeWidget{nullptr};
     QTranslator* m_translator;
     int m_currentLanguage;
 
@@ -220,6 +263,40 @@ private:
     QAction* m_shapeToolFilletAction{};
     QAction* m_shapeToolHoleAction{};
 
+    // ---- CAE Group ----
+    SARibbonCategory* m_caeCategory{};
+    SARibbonPannel* m_caeStudyPannel{};
+    SARibbonPannel* m_caeGeometryPannel{};
+    SARibbonPannel* m_caeMaterialPannel{};
+    SARibbonPannel* m_caeBoundaryPannel{};
+    SARibbonPannel* m_caeMeshPannel{};
+    SARibbonPannel* m_caeSolvePannel{};
+    SARibbonPannel* m_caeResultsPannel{};
+    SARibbonPannel* m_caeSettingsPannel{};
+    QAction* m_caeNewStaticAction{};
+    QAction* m_caeNewThermalAction{};
+    QAction* m_caeUseCurrentGeometryAction{};
+    QAction* m_caeNamedSelectionAction{};
+    QAction* m_caeAssignMaterialAction{};
+    QAction* m_caeFixedSupportAction{};
+    QAction* m_caeForceAction{};
+    QAction* m_caePressureAction{};
+    QAction* m_caeGenerateMeshAction{};
+    QAction* m_caeRunSolverAction{};
+    QAction* m_caeShowDisplacementAction{};
+    QAction* m_caeShowStressAction{};
+    QAction* m_caeShowTemperatureAction{};
+    QAction* m_caeDeformationScaleAction{};
+    QAction* m_caeProbeResultAction{};
+    QAction* m_caePickNodeAction{};
+    QAction* m_caeSettingsAction{};
+    double m_caeDeformationScale{0.0};
+    std::array<double, 3> m_caeForceComponents{100.0, 0.0, 0.0};
+    double m_caePressureValue{1.0};
+    double m_caeGlobalMeshSize{1.0};
+    int m_caeProbeNodeId{0};
+    std::optional<Cae::ResultFieldType> m_currentCaeResultField;
+
 
     // ---- help Group ----
     SARibbonCategory* m_helpCategory;
@@ -239,6 +316,7 @@ private:
     WidgetTransform*                m_widgetTransform { nullptr };
 
     QMap<StatusType, QLabel*> m_statusLabels;
+    std::unique_ptr<Cae::CaeController> m_caeController;
 
 
 

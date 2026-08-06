@@ -329,11 +329,13 @@ file(
 set(SOURCES)
 file(
     GLOB SOURCES
+    CONFIGURE_DEPENDS
     src/*.cpp
     src/ui/*.cpp
     src/display/*.cpp
     src/util/*.cpp
     src/command/*.cpp
+    src/cae/*.cpp
     src/common/*.cpp
     #src/core/*.cpp
     # ui
@@ -348,11 +350,13 @@ file(
 set(HEADERS)
 file(
     GLOB HEADERS
+    CONFIGURE_DEPENDS
     src/*.h
     src/ui/*.h
     src/display/*.h
     src/util/*.h
     src/command/*.h
+    src/cae/*.h
     src/common/*.h
     #src/core/*.h
 )
@@ -446,6 +450,7 @@ target_include_directories(${PROJECT_NAME}
         src/ui
         src/display
         src/util
+        src/cae
         src/common
         #src/core
 )
@@ -461,3 +466,26 @@ target_link_libraries(${PROJECT_NAME}
         CoreApi
         ${Boost_LIBRARIES}
 )
+
+include(CTest)
+# AnimationSequenceTests.cpp is currently not kept in the repository. Preserve
+# the target definition as a reference, but keep it disabled by default.
+option(BUILD_ANIMATION_SEQUENCE_TESTS
+       "Build the optional AnimationSequence model tests" OFF)
+if(BUILD_TESTING AND BUILD_ANIMATION_SEQUENCE_TESTS)
+    add_executable(AnimationSequenceTests
+        tests/AnimationSequenceTests.cpp
+        src/display/AnimationSequence.cpp
+        src/display/AnimationSequence.h
+    )
+    target_include_directories(AnimationSequenceTests PRIVATE
+        ${MANUAL_OCCT_INCLUDE_DIR}
+        src/display
+    )
+    target_link_libraries(AnimationSequenceTests PRIVATE
+        ${OCCT_LIBRARIES_TO_LINK}
+        ${MANUAL_3RDPARTY_LIBRARIES}
+        Qt5::Core
+    )
+    add_test(NAME AnimationSequenceModel COMMAND AnimationSequenceTests)
+endif()

@@ -41,6 +41,14 @@ Qt_OCC is a desktop CAD application developed using the power of the Qt framewor
 *   **OpenCASCADE Technology (OCCT)**: The powerful open-source 3D geometric modeling kernel that handles all CAD operations.
 *   **CMake**: The cross-platform build system used to configure and build the project.
 
+## 📚 Documentation
+
+*   **Development and refactoring notes**: [`doc/development_refactoring.md`](doc/development_refactoring.md)
+*   **3D Busbar Routing feature**: [`doc/tool_busbar.md`](doc/tool_busbar.md)
+*   **3D PDF export feature**: [`doc/file_export_3dpdf.md`](doc/file_export_3dpdf.md)
+*   **Animation feature**: [`doc/animation.md`](doc/animation.md)
+*   **Localized READMEs**: [`doc/CN/README_CN.md`](doc/CN/README_CN.md), [`doc/JP/README_JP.md`](doc/JP/README_JP.md), [`doc/FR/README_FR.md`](doc/FR/README_FR.md), [`doc/RU/README_RU.md`](doc/RU/README_RU.md), [`doc/ES/README_ES.md`](doc/ES/README_ES.md)
+
 ## 🚀 Getting Started
 
 Follow these instructions to get a copy of the project up and running on your local machine for development and testing purposes.

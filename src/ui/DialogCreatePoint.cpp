@@ -1,5 +1,6 @@
-﻿#include "DialogCreatePoint.h"
+#include "DialogCreatePoint.h"
 #include "ViewerPickHelper.h"
+#include "command/CommandCommon.h"
 #include "command/ShapeCommandRegistry.h"
 #include <QIcon>
 #include <QCloseEvent>
@@ -48,7 +49,7 @@ DialogCreatePoint::DialogCreatePoint(QWidget *parent) : QDialog(parent), m_color
     mainLayout->addLayout(formLayout);
 
     auto *buttonBox = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, this);
-    buttonBox->button(QDialogButtonBox::Ok)->setText("Create");
+    buttonBox->button(QDialogButtonBox::Ok)->setText(tr("Create"));
     connect(buttonBox, &QDialogButtonBox::accepted, this, &DialogCreatePoint::onBtnOkClicked);
     connect(buttonBox, &QDialogButtonBox::rejected, this, &QDialog::reject);
 
@@ -90,7 +91,7 @@ void DialogCreatePoint::onPointPicked(double x, double y, double z)
     m_spinBoxZ->setValue(z);
 
     CoreApi::ShapeParams p;
-    p["x"] = x; p["y"] = y; p["z"] = z;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreatePoint", p);
     if (!shape.IsNull() && m_pickHelper) {
         m_pickHelper->setPreviewShape(shape, m_color.redF(), m_color.greenF(), m_color.blueF());

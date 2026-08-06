@@ -94,7 +94,7 @@ void WidgetChamfer::onObjectSelected(const TopoDS_Shape& shape)
 void WidgetChamfer::onApplyClicked()
 {
     if (m_selectedEdge.IsNull()) {
-        QMessageBox::warning(this, "Warning", "Please pick an edge first.");
+        QMessageBox::warning(this, tr("Warning"), tr("Please pick an edge first."));
         return;
     }
     emit signalChamfer(m_selectedEdge, spinDistance->value());

@@ -50,6 +50,12 @@
 #include <QMessageBox>
 #include <QCoreApplication>
 #include <QDebug>
+#include <QLabel>
+#include <QResizeEvent>
+#include <algorithm>
+#include <array>
+#include <cmath>
+#include <utility>
 
 /* read */
 #include <STEPControl_Reader.hxx>
@@ -65,6 +71,7 @@
 #include <HLRBRep_HLRToShape.hxx>
 #include <HLRAlgo_Projector.hxx>
 #include <BRepAdaptor_Curve.hxx>
+#include <BRepAdaptor_Surface.hxx>
 #include <GCPnts_TangentialDeflection.hxx>
 
 /* Qt */
@@ -89,11 +96,8 @@
 #include <BRepPrimAPI_MakeCone.hxx>
 /* builder */
 #include <BRepBuilderAPI_MakeVertex.hxx>
-#include <BRepBuilderAPI_MakeEdge.hxx>
 #include <BRepBuilderAPI_MakeFace.hxx>
-#include <BRepBuilderAPI_MakePolygon.hxx>
 #include <BRepBuilderAPI_MakeWire.hxx>
-#include <GC_MakeArcOfCircle.hxx>
 #include <BRepFilletAPI_MakeFillet.hxx>
 #include <BRepFeat_MakeCylindricalHole.hxx>
 
@@ -114,17 +118,22 @@
 #include <BRep_Builder.hxx>
 #include <BRepBuilderAPI_Transform.hxx>
 #include <AIS_Shape.hxx>
+#include <AIS_Point.hxx>
+#include <AIS_TextLabel.hxx>
 #include <AIS_InteractiveObject.hxx>
 #include <Graphic3d_ClipPlane.hxx> // Added missing include for clipping
 #include <gp_Pln.hxx>              // Added missing include for clipping
 #include <Quantity_Color.hxx>      // Added missing include for colors
+#include <Precision.hxx>
+#include <gp_Ax2.hxx>
 #include <gp_Vec.hxx>
+#include <Geom_CartesianPoint.hxx>
+#include <Prs3d_PointAspect.hxx>
 #include <GProp_GProps.hxx>
 #include <TDF_ChildIterator.hxx>
+#include <TopLoc_Location.hxx>
 
 /* geomtry */
-#include <Geom_BezierCurve.hxx>
-#include <Geom_BSplineCurve.hxx>
 #include <Geom_Plane.hxx>
 #include <Geom_Surface.hxx>
 #include <Geom_Line.hxx>
@@ -152,11 +161,77 @@
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include "common/ShapeLabelManager.h"
+#include "command/CommandCommon.h"
+#include "command/ShapeCommands.h"
 #include "command/ShapeCommandRegistry.h"
 #include "core_api/ShapeFactory.h"
+#include "cae/CaeMsh2Reader.h"
+#include "cae/CaeOccMeshDataSource.h"
+
+#include <MeshVS_Drawer.hxx>
+#include <MeshVS_DrawerAttribute.hxx>
+#include <MeshVS_DeformedDataSource.hxx>
+#include <MeshVS_Mesh.hxx>
+#include <MeshVS_MeshPrsBuilder.hxx>
+#include <MeshVS_NodalColorPrsBuilder.hxx>
+#include <MeshVS_MeshSelectionMethod.hxx>
+#include <Aspect_SequenceOfColor.hxx>
 
 namespace
 {
+gp_Pnt markerCenter(const Cae::PlanarSelectionRegion& region)
+{
+    gp_Pnt center(
+        (region.minimum[0] + region.maximum[0]) * 0.5,
+        (region.minimum[1] + region.maximum[1]) * 0.5,
+        (region.minimum[2] + region.maximum[2]) * 0.5);
+    const gp_Vec normal(region.normal[0], region.normal[1], region.normal[2]);
+    if (normal.SquareMagnitude() <= Precision::SquareConfusion()) {
+        return center;
+    }
+
+    const gp_Vec fromOrigin(
+        gp_Pnt(region.origin[0], region.origin[1], region.origin[2]),
+        center);
+    const gp_Vec unitNormal = normal.Normalized();
+    center.Translate(-unitNormal * fromOrigin.Dot(unitNormal));
+    return center;
+}
+
+double markerScale(const Cae::PlanarSelectionRegion& region)
+{
+    const double dx = region.maximum[0] - region.minimum[0];
+    const double dy = region.maximum[1] - region.minimum[1];
+    const double dz = region.maximum[2] - region.minimum[2];
+    return std::max(std::sqrt(dx * dx + dy * dy + dz * dz) * 0.25, 1.0e-3);
+}
+
+TopoDS_Shape makeArrow(const gp_Pnt& origin, const gp_Dir& direction, double length)
+{
+    const double headLength = length * 0.3;
+    const double shaftLength = length - headLength;
+    const double shaftRadius = length * 0.035;
+    const double headRadius = length * 0.09;
+
+    const TopoDS_Shape shaft = BRepPrimAPI_MakeCylinder(
+        gp_Ax2(origin, direction),
+        shaftRadius,
+        shaftLength);
+    const gp_Pnt headOrigin = origin.Translated(gp_Vec(direction) * shaftLength);
+    const TopoDS_Shape head = BRepPrimAPI_MakeCone(
+        gp_Ax2(headOrigin, direction),
+        headRadius,
+        0.0,
+        headLength);
+
+    TopoDS_Compound arrow;
+    BRep_Builder builder;
+    builder.MakeCompound(arrow);
+    builder.Add(arrow, shaft);
+    builder.Add(arrow, head);
+    return arrow;
+}
+
 // TODO move to Util
 bool isShapeAssembly(const TDF_Label &lbl)
 {
@@ -204,6 +279,44 @@ TDF_Label shapeReferred(const TDF_Label &lbl)
     TDF_Label referred;
     XCAFDoc_ShapeTool::GetReferredShape(lbl, referred);
     return referred;
+}
+
+struct PartOccurrence {
+    TDF_Label label;
+    TopLoc_Location ancestorLocation;
+};
+
+void collectPartOccurrences(const TDF_Label& label,
+                            const TopLoc_Location& ancestorLocation,
+                            std::vector<PartOccurrence>& parts)
+{
+    if (isShapeAssembly(label)) {
+        for (const TDF_Label& component : shapeComponents(label)) {
+            collectPartOccurrences(component, ancestorLocation, parts);
+        }
+        return;
+    }
+
+    if (isShapeReference(label)) {
+        const TDF_Label referred = shapeReferred(label);
+        if (referred.IsNull()) {
+            return;
+        }
+
+        if (isShapeAssembly(referred)) {
+            const TopLoc_Location assemblyLocation =
+                ancestorLocation * XCAFDoc_ShapeTool::GetLocation(label);
+            collectPartOccurrences(referred, assemblyLocation, parts);
+            return;
+        }
+
+        parts.push_back({label, ancestorLocation});
+        return;
+    }
+
+    if (isShape(label)) {
+        parts.push_back({label, ancestorLocation});
+    }
 }
 
 #include <TDF_ChildIterator.hxx>
@@ -393,6 +506,10 @@ uint32_t deepBuildAssemblyTree(uint32_t parentNode, const TDF_Label &label,
 
 struct ViewerWidget::Document {
     std::vector<opencascade::handle<AIS_InteractiveObject>> m_list;
+    std::vector<opencascade::handle<AIS_InteractiveObject>> m_caeBoundaryMarkers;
+    std::vector<opencascade::handle<AIS_InteractiveObject>> m_scalarOverlays;
+    std::vector<opencascade::handle<AIS_InteractiveObject>> m_scalarHiddenObjects;
+    Handle(MeshVS_Mesh) m_caeMesh;
     Handle(TDocStd_Document) m_ocafDoc;
 };
 
@@ -406,11 +523,15 @@ ViewerWidget::ViewerWidget(QWidget *parent) : QWidget(parent)
     , m_dlgCone(nullptr)
     , m_dlgPolygon(nullptr)
 {
+    CoreApi::registerShapeCommands();
+
     m_occView = new OCCView(this);
     connect(m_occView, &OCCView::signalMouseMove, this, &ViewerWidget::signalMouseMove);
     connect(m_occView, &OCCView::signalSpaceSelected, this, &ViewerWidget::signalSpaceSelected);
     connect(m_occView, &OCCView::signalSelectedObjects, this, &ViewerWidget::signalSelectedObjects);
     connect(m_occView, &OCCView::signalSelectedObjects, this, &ViewerWidget::onUpdateSelectionInfo);
+    connect(m_occView, &OCCView::signalViewportMouseMoved, this, &ViewerWidget::onCaePickMouseMoved);
+    connect(m_occView, &OCCView::signalViewportClicked, this, &ViewerWidget::onCaePickMousePressed);
 
     connect(m_occView, &OCCView::selectionChanged, this, [this](){
         if (m_occView->Context()->NbSelected() == 0) {
@@ -462,6 +583,12 @@ void ViewerWidget::onUpdateSelectionInfo(const std::vector<std::shared_ptr<View:
 
 ViewerWidget::~ViewerWidget()
 {
+    // WidgetAnimation restores transforms through OCCView during teardown, so
+    // destroy the non-modal tool before its owning view.
+    if (m_widgetAnimation) {
+        delete m_widgetAnimation;
+        m_widgetAnimation = nullptr;
+    }
     if (m_occView) {
         delete m_occView;
         m_occView = nullptr;
@@ -470,6 +597,10 @@ ViewerWidget::~ViewerWidget()
 
 void ViewerWidget::clearAll()
 {
+    clearScalarField();
+    clearCaeMesh();
+    clearCaeBoundaryMarkers();
+
     if (m_doc) {
         m_doc->m_list.clear();
     }
@@ -493,6 +624,653 @@ void ViewerWidget::clearAll()
             Tree<TDF_Label> emptyTree;
             treeWidget->setModelTree(emptyTree);
         }
+    }
+}
+
+bool ViewerWidget::hasGeometry() const
+{
+    return m_doc && !m_doc->m_list.empty();
+}
+
+bool ViewerWidget::exportCaeGeometry(const QString& filePath, QString* errorMessage)
+{
+    if (!hasGeometry() || m_doc->m_ocafDoc.IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("No CAD geometry is available for CAE export.");
+        }
+        return false;
+    }
+
+    STEPCAFControl_Writer writer;
+    writer.SetNameMode(true);
+    if (!writer.Transfer(m_doc->m_ocafDoc, STEPControl_AsIs)) {
+        if (errorMessage) {
+            *errorMessage = tr("Failed to transfer CAD geometry to the STEP writer.");
+        }
+        return false;
+    }
+    if (writer.Write(filePath.toUtf8().constData()) != IFSelect_RetDone) {
+        if (errorMessage) {
+            *errorMessage = tr("Failed to write CAE geometry: %1").arg(filePath);
+        }
+        return false;
+    }
+    return true;
+}
+
+bool ViewerWidget::selectedCaePlanarFace(
+    Cae::PlanarSelectionRegion* region,
+    QString* errorMessage) const
+{
+    if (!region || !m_occView) {
+        if (errorMessage) {
+            *errorMessage = tr("CAE face selection output is not available.");
+        }
+        return false;
+    }
+
+    const auto& selectedObjects = m_occView->getSelectedObjects();
+    if (selectedObjects.size() != 1 || !selectedObjects.front() ||
+        selectedObjects.front()->GetSelectedShape().IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("Select exactly one planar CAD face.");
+        }
+        return false;
+    }
+
+    const TopoDS_Shape selectedShape = selectedObjects.front()->GetSelectedShape()->Shape();
+    if (selectedShape.ShapeType() != TopAbs_FACE) {
+        if (errorMessage) {
+            *errorMessage = tr("The named selection requires a CAD face, not the whole solid.");
+        }
+        return false;
+    }
+
+    const TopoDS_Face face = TopoDS::Face(selectedShape);
+    const BRepAdaptor_Surface surface(face, true);
+    if (surface.GetType() != GeomAbs_Plane) {
+        if (errorMessage) {
+            *errorMessage = tr("Phase 1 named selections currently support planar faces only.");
+        }
+        return false;
+    }
+
+    Bnd_Box bounds;
+    bounds.SetGap(0.0);
+    BRepBndLib::Add(face, bounds, false);
+    if (bounds.IsVoid()) {
+        if (errorMessage) {
+            *errorMessage = tr("Cannot calculate the selected face bounds.");
+        }
+        return false;
+    }
+
+    Standard_Real xMin = 0.0;
+    Standard_Real yMin = 0.0;
+    Standard_Real zMin = 0.0;
+    Standard_Real xMax = 0.0;
+    Standard_Real yMax = 0.0;
+    Standard_Real zMax = 0.0;
+    bounds.Get(xMin, yMin, zMin, xMax, yMax, zMax);
+    const gp_Pln plane = surface.Plane();
+    const gp_Pnt origin = plane.Location();
+    gp_Dir normal = plane.Axis().Direction();
+    if (face.Orientation() == TopAbs_REVERSED) {
+        normal.Reverse();
+    }
+    region->origin = {origin.X(), origin.Y(), origin.Z()};
+    region->normal = {normal.X(), normal.Y(), normal.Z()};
+    region->minimum = {xMin, yMin, zMin};
+    region->maximum = {xMax, yMax, zMax};
+    return true;
+}
+
+bool ViewerWidget::showCaeMesh(const QString& meshFilePath, QString* errorMessage)
+{
+    if (!m_occView || m_occView->Context().IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("OCCT viewer is not available for mesh display.");
+        }
+        return false;
+    }
+
+    Cae::Msh2MeshData meshData;
+    if (!Cae::Msh2Reader::read(meshFilePath, &meshData, errorMessage)) {
+        return false;
+    }
+    if (meshData.surfaceElements.empty()) {
+        if (errorMessage) {
+            *errorMessage = tr("The Gmsh mesh contains no displayable surface elements.");
+        }
+        return false;
+    }
+
+    clearScalarField();
+    clearCaeMesh();
+
+    std::map<int, gp_Pnt> pickNodes;
+    for (const auto& node : meshData.nodes) {
+        pickNodes.emplace(
+            node.first,
+            gp_Pnt(node.second[0], node.second[1], node.second[2]));
+    }
+
+    Handle(Cae::OccMeshDataSource) dataSource = new Cae::OccMeshDataSource(std::move(meshData));
+    Handle(MeshVS_Mesh) mesh = new MeshVS_Mesh();
+    mesh->SetDataSource(dataSource);
+    Handle(MeshVS_MeshPrsBuilder) builder = new MeshVS_MeshPrsBuilder(
+        mesh,
+        MeshVS_DMF_WireFrame,
+        dataSource);
+    mesh->AddBuilder(builder, true);
+    mesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor, Quantity_NOC_GREEN);
+    mesh->GetDrawer()->SetDouble(MeshVS_DA_EdgeWidth, 1.5);
+    mesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, false);
+
+    m_occView->Context()->Display(mesh, MeshVS_DMF_WireFrame, 0, false);
+    m_doc->m_caeMesh = mesh;
+    m_caePickNodes = std::move(pickNodes);
+    if (m_caeNodePickingEnabled) {
+        setCaeNodePickingEnabled(true);
+    }
+    m_occView->Context()->UpdateCurrentViewer();
+    return true;
+}
+
+void ViewerWidget::clearCaeMesh()
+{
+    clearCaeNodeHover();
+    m_caePickNodes.clear();
+    if (!m_doc || m_doc->m_caeMesh.IsNull()) {
+        return;
+    }
+    if (m_occView && !m_occView->Context().IsNull()) {
+        m_occView->Context()->Remove(m_doc->m_caeMesh, false);
+        m_occView->Context()->UpdateCurrentViewer();
+    }
+    m_doc->m_caeMesh.Nullify();
+}
+
+void ViewerWidget::showCaeBoundaryMarkers(const Cae::BoundaryMarkers& markers)
+{
+    clearCaeBoundaryMarkers();
+    if (!m_doc || !m_occView || m_occView->Context().IsNull()) {
+        return;
+    }
+
+    const Handle(AIS_InteractiveContext)& context = m_occView->Context();
+    for (const Cae::BoundaryMarker& marker : markers) {
+        const gp_Pnt center = markerCenter(marker.region);
+        const double scale = markerScale(marker.region);
+        Quantity_Color color(0.2, 0.6, 1.0, Quantity_TOC_RGB);
+        TopoDS_Shape markerShape;
+
+        if (marker.type == Cae::BoundaryMarkerType::FixedSupport) {
+            markerShape = BRepPrimAPI_MakeSphere(center, scale * 0.12);
+        } else {
+            gp_Vec direction(marker.direction[0], marker.direction[1], marker.direction[2]);
+            if (direction.SquareMagnitude() <= Precision::SquareConfusion()) {
+                continue;
+            }
+            direction.Normalize();
+            if (marker.type == Cae::BoundaryMarkerType::Pressure) {
+                color = Quantity_Color(1.0, 0.55, 0.1, Quantity_TOC_RGB);
+                markerShape = makeArrow(
+                    center.Translated(-direction * scale),
+                    gp_Dir(direction),
+                    scale);
+            } else {
+                color = Quantity_Color(0.95, 0.2, 0.2, Quantity_TOC_RGB);
+                markerShape = makeArrow(center, gp_Dir(direction), scale);
+            }
+        }
+
+        Handle(AIS_Shape) shape = new AIS_Shape(markerShape);
+        shape->SetColor(color);
+        context->Display(shape, false);
+        context->Deactivate(shape);
+        m_doc->m_caeBoundaryMarkers.push_back(shape);
+
+        Handle(AIS_TextLabel) label = new AIS_TextLabel();
+        label->SetText(marker.label.toStdString().c_str());
+        label->SetPosition(center.Translated(gp_Vec(0.0, 0.0, scale * 0.18)));
+        label->SetColor(color);
+        label->SetHeight(14.0);
+        context->Display(label, false);
+        context->Deactivate(label);
+        m_doc->m_caeBoundaryMarkers.push_back(label);
+    }
+    context->UpdateCurrentViewer();
+}
+
+void ViewerWidget::clearCaeBoundaryMarkers()
+{
+    if (!m_doc) {
+        return;
+    }
+    if (m_occView && !m_occView->Context().IsNull()) {
+        for (const auto& marker : m_doc->m_caeBoundaryMarkers) {
+            m_occView->Context()->Remove(marker, false);
+        }
+        m_occView->Context()->UpdateCurrentViewer();
+    }
+    m_doc->m_caeBoundaryMarkers.clear();
+}
+
+bool ViewerWidget::showCaeScalarField(
+    const QString& meshFilePath,
+    const QString& title,
+    const std::map<int, double>& nodalValues,
+    const std::map<int, std::array<double, 3>>& nodalDisplacements,
+    double deformationScale,
+    double minimum,
+    double maximum,
+    QString* errorMessage)
+{
+    if (!m_occView || m_occView->Context().IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("OCCT viewer is not available for result display.");
+        }
+        return false;
+    }
+    if (nodalValues.empty()) {
+        if (errorMessage) {
+            *errorMessage = tr("The result field contains no nodal values.");
+        }
+        return false;
+    }
+
+    Cae::Msh2MeshData meshData;
+    if (!Cae::Msh2Reader::read(meshFilePath, &meshData, errorMessage)) {
+        return false;
+    }
+    if (meshData.surfaceElements.empty()) {
+        if (errorMessage) {
+            *errorMessage = tr("The result mesh contains no displayable surface elements.");
+        }
+        return false;
+    }
+
+    double effectiveScale = deformationScale;
+    if (!nodalDisplacements.empty() && effectiveScale <= 0.0) {
+        auto coordinateMinimum = meshData.nodes.cbegin()->second;
+        auto coordinateMaximum = coordinateMinimum;
+        for (const auto& node : meshData.nodes) {
+            for (int coordinate = 0; coordinate < 3; ++coordinate) {
+                coordinateMinimum[coordinate] = std::min(coordinateMinimum[coordinate], node.second[coordinate]);
+                coordinateMaximum[coordinate] = std::max(coordinateMaximum[coordinate], node.second[coordinate]);
+            }
+        }
+        const double dx = coordinateMaximum[0] - coordinateMinimum[0];
+        const double dy = coordinateMaximum[1] - coordinateMinimum[1];
+        const double dz = coordinateMaximum[2] - coordinateMinimum[2];
+        const double modelDiagonal = std::sqrt(dx * dx + dy * dy + dz * dz);
+        double maximumDisplacement = 0.0;
+        for (const auto& displacement : nodalDisplacements) {
+            const auto& vector = displacement.second;
+            maximumDisplacement = std::max(
+                maximumDisplacement,
+                std::sqrt(vector[0] * vector[0] + vector[1] * vector[1] + vector[2] * vector[2]));
+        }
+        effectiveScale = maximumDisplacement > 0.0
+            ? std::clamp(modelDiagonal * 0.1 / maximumDisplacement, 0.01, 1.0e6)
+            : 1.0;
+    }
+
+    std::map<int, gp_Pnt> pickNodes;
+    for (const auto& node : meshData.nodes) {
+        gp_Pnt point(node.second[0], node.second[1], node.second[2]);
+        const auto displacement = nodalDisplacements.find(node.first);
+        if (displacement != nodalDisplacements.end()) {
+            const auto& vector = displacement->second;
+            point.Translate(gp_Vec(
+                vector[0] * effectiveScale,
+                vector[1] * effectiveScale,
+                vector[2] * effectiveScale));
+        }
+        pickNodes.emplace(node.first, point);
+    }
+
+    const double range = maximum - minimum;
+    Handle(Cae::OccMeshDataSource) dataSource = new Cae::OccMeshDataSource(std::move(meshData));
+    Handle(MeshVS_DataSource) displayDataSource = dataSource;
+    if (!nodalDisplacements.empty()) {
+        Handle(MeshVS_DeformedDataSource) deformedDataSource =
+            new MeshVS_DeformedDataSource(dataSource, effectiveScale);
+        for (const auto& displacement : nodalDisplacements) {
+            const auto& vector = displacement.second;
+            deformedDataSource->SetVector(
+                displacement.first,
+                gp_Vec(vector[0], vector[1], vector[2]));
+        }
+        displayDataSource = deformedDataSource;
+    }
+    Handle(MeshVS_Mesh) mesh = new MeshVS_Mesh();
+    mesh->SetDataSource(displayDataSource);
+
+    Handle(MeshVS_NodalColorPrsBuilder) colorBuilder = new MeshVS_NodalColorPrsBuilder(
+        mesh,
+        MeshVS_DMF_NodalColorDataPrs,
+        displayDataSource);
+    Aspect_SequenceOfColor colorMap;
+    colorMap.Append(Quantity_Color(0.0, 0.0, 1.0, Quantity_TOC_RGB));
+    colorMap.Append(Quantity_Color(0.0, 1.0, 1.0, Quantity_TOC_RGB));
+    colorMap.Append(Quantity_Color(0.0, 1.0, 0.0, Quantity_TOC_RGB));
+    colorMap.Append(Quantity_Color(1.0, 1.0, 0.0, Quantity_TOC_RGB));
+    colorMap.Append(Quantity_Color(1.0, 0.0, 0.0, Quantity_TOC_RGB));
+    colorBuilder->UseTexture(Standard_True);
+    colorBuilder->SetColorMap(colorMap);
+    colorBuilder->SetInvalidColor(Quantity_Color(0.5, 0.5, 0.5, Quantity_TOC_RGB));
+    for (const auto& value : nodalValues) {
+        const double normalized = range > 0.0 ? (value.second - minimum) / range : 0.5;
+        colorBuilder->SetTextureCoord(value.first, qBound(0.0, normalized, 1.0));
+    }
+    mesh->AddBuilder(colorBuilder, false);
+
+    Handle(MeshVS_MeshPrsBuilder) wireBuilder = new MeshVS_MeshPrsBuilder(
+        mesh,
+        MeshVS_DMF_WireFrame,
+        displayDataSource);
+    mesh->AddBuilder(wireBuilder, true);
+    mesh->GetDrawer()->SetColor(MeshVS_DA_EdgeColor, Quantity_NOC_BLACK);
+    mesh->GetDrawer()->SetDouble(MeshVS_DA_EdgeWidth, 1.0);
+    mesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, false);
+
+    clearScalarField();
+    clearCaeMesh();
+    hideCadGeometryForCaeResult();
+    const Standard_Integer displayMode = MeshVS_DMF_NodalColorDataPrs | MeshVS_DMF_WireFrame;
+    m_occView->Context()->Display(mesh, displayMode, 0, false);
+    m_doc->m_caeMesh = mesh;
+    m_caePickNodes = std::move(pickNodes);
+    if (m_caeNodePickingEnabled) {
+        setCaeNodePickingEnabled(true);
+    }
+    const QString legendTitle = nodalDisplacements.empty()
+        ? title
+        : QStringLiteral("%1 [Deformation x%2]")
+              .arg(title)
+              .arg(effectiveScale, 0, 'g', 5);
+    updateCaeLegend(legendTitle, minimum, maximum);
+    m_occView->Context()->UpdateCurrentViewer();
+    return true;
+}
+
+bool ViewerWidget::setCaeNodePickingEnabled(bool enabled, QString* errorMessage)
+{
+    if (!m_occView || m_occView->Context().IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("OCCT viewer is not available for node picking.");
+        }
+        return false;
+    }
+    if (!m_doc || m_doc->m_caeMesh.IsNull()) {
+        m_caeNodePickingEnabled = false;
+        if (enabled && errorMessage) {
+            *errorMessage = tr("Display a nodal CAE result before enabling node picking.");
+        }
+        return !enabled;
+    }
+
+    const Handle(MeshVS_Mesh) mesh = m_doc->m_caeMesh;
+    const auto& selectionFilters = m_occView->getSelectionFilters();
+    if (enabled) {
+        m_occView->clearSelectedObjects();
+        m_occView->Context()->ClearDetected(false);
+        for (const auto& object : m_doc->m_list) {
+            m_occView->Context()->Deactivate(object);
+        }
+    }
+
+    m_occView->Context()->Deactivate(mesh);
+    clearCaeNodeHover();
+    if (!enabled) {
+        mesh->SetMeshSelMethod(MeshVS_MSM_PRECISE);
+        mesh->UpdateSelection(0);
+        m_occView->Context()->Activate(mesh, 0, true);
+        for (const auto& object : m_doc->m_list) {
+            for (const auto& filter : selectionFilters) {
+                if (filter.second) {
+                    m_occView->Context()->Activate(
+                        object,
+                        AIS_Shape::SelectionMode(filter.first),
+                        true);
+                }
+            }
+        }
+    }
+    mesh->GetDrawer()->SetBoolean(MeshVS_DA_DisplayNodes, false);
+    m_occView->Context()->Redisplay(mesh, false);
+    m_caeNodePickingEnabled = enabled;
+
+    bool cadSelectionEnabled = false;
+    for (const auto& filter : selectionFilters) {
+        if (filter.second) {
+            cadSelectionEnabled = true;
+            break;
+        }
+    }
+    m_occView->setMouseMode(
+        enabled || cadSelectionEnabled ? View::MouseMode::SELECTION : View::MouseMode::NONE);
+    m_occView->Context()->UpdateCurrentViewer();
+    return true;
+}
+
+int ViewerWidget::findCaeNodeAt(int x, int y) const
+{
+    if (!m_caeNodePickingEnabled || !m_occView || m_occView->View().IsNull()) {
+        return -1;
+    }
+
+    constexpr int pickRadius = 10;
+    int nearestNodeId = -1;
+    int nearestDistanceSquared = pickRadius * pickRadius + 1;
+    for (const auto& node : m_caePickNodes) {
+        Standard_Integer projectedX = 0;
+        Standard_Integer projectedY = 0;
+        m_occView->View()->Convert(
+            node.second.X(), node.second.Y(), node.second.Z(), projectedX, projectedY);
+        const int dx = projectedX - x;
+        const int dy = projectedY - y;
+        const int distanceSquared = dx * dx + dy * dy;
+        if (distanceSquared < nearestDistanceSquared) {
+            nearestDistanceSquared = distanceSquared;
+            nearestNodeId = node.first;
+        }
+    }
+    return nearestNodeId;
+}
+
+void ViewerWidget::updateCaeNodeHover(int nodeId)
+{
+    if (nodeId == m_caeHoveredNodeId) {
+        return;
+    }
+    clearCaeNodeHover();
+
+    const auto node = m_caePickNodes.find(nodeId);
+    if (node == m_caePickNodes.end() || !m_occView || m_occView->Context().IsNull()) {
+        return;
+    }
+
+    m_caeNodeHoverMarker = new AIS_Point(new Geom_CartesianPoint(node->second));
+    m_caeNodeHoverMarker->SetMarker(Aspect_TOM_O_POINT);
+    m_caeNodeHoverMarker->SetColor(Quantity_NOC_YELLOW);
+    m_caeNodeHoverMarker->Attributes()->SetPointAspect(
+        new Prs3d_PointAspect(Aspect_TOM_O_POINT, Quantity_NOC_YELLOW, 3.0));
+    m_occView->Context()->Display(m_caeNodeHoverMarker, false);
+    m_occView->Context()->Deactivate(m_caeNodeHoverMarker);
+    m_caeHoveredNodeId = nodeId;
+    m_occView->Context()->UpdateCurrentViewer();
+}
+
+void ViewerWidget::clearCaeNodeHover()
+{
+    if (!m_caeNodeHoverMarker.IsNull() && m_occView && !m_occView->Context().IsNull()) {
+        m_occView->Context()->Remove(m_caeNodeHoverMarker, false);
+    }
+    m_caeNodeHoverMarker.Nullify();
+    m_caeHoveredNodeId = -1;
+}
+
+void ViewerWidget::onCaePickMouseMoved(int x, int y)
+{
+    if (m_caeNodePickingEnabled) {
+        updateCaeNodeHover(findCaeNodeAt(x, y));
+    }
+}
+
+void ViewerWidget::onCaePickMousePressed(int x, int y)
+{
+    if (!m_caeNodePickingEnabled) {
+        return;
+    }
+    const int nodeId = findCaeNodeAt(x, y);
+    if (nodeId >= 0) {
+        updateCaeNodeHover(nodeId);
+        emit signalCaeNodePicked(nodeId);
+    }
+}
+
+bool ViewerWidget::showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage)
+{
+    if (!hasGeometry() || !m_occView || m_occView->Context().IsNull()) {
+        if (errorMessage) {
+            *errorMessage = tr("No CAD geometry is available for result visualization.");
+        }
+        return false;
+    }
+
+    const auto scalarColor = [](double value) {
+        const double t = qBound(0.0, value, 1.0);
+        if (t < 0.25) {
+            return Quantity_Color(0.0, t * 4.0, 1.0, Quantity_TOC_RGB);
+        }
+        if (t < 0.5) {
+            return Quantity_Color(0.0, 1.0, 2.0 - t * 4.0, Quantity_TOC_RGB);
+        }
+        if (t < 0.75) {
+            return Quantity_Color(t * 4.0 - 2.0, 1.0, 0.0, Quantity_TOC_RGB);
+        }
+        return Quantity_Color(1.0, 4.0 - t * 4.0, 0.0, Quantity_TOC_RGB);
+    };
+
+    clearScalarField();
+    clearCaeMesh();
+
+    const std::size_t objectCount = m_doc->m_list.size();
+    for (std::size_t index = 0; index < objectCount; ++index) {
+        const double normalized = objectCount == 1
+            ? 0.65
+            : static_cast<double>(index) / static_cast<double>(objectCount - 1);
+
+        TopoDS_Shape shape;
+        const Handle(AIS_Shape) aisShape = Handle(AIS_Shape)::DownCast(m_doc->m_list[index]);
+        if (!aisShape.IsNull()) {
+            shape = aisShape->Shape();
+        } else {
+            const Handle(XCAFPrs_AISObject) xcafObject =
+                Handle(XCAFPrs_AISObject)::DownCast(m_doc->m_list[index]);
+            if (!xcafObject.IsNull()) {
+                XCAFDoc_ShapeTool::GetShape(xcafObject->GetLabel(), shape);
+            }
+        }
+
+        if (shape.IsNull()) {
+            continue;
+        }
+
+        Handle(AIS_Shape) overlay = new AIS_Shape(shape);
+        overlay->SetDisplayMode(AIS_Shaded);
+        overlay->SetColor(scalarColor(normalized));
+        overlay->Attributes()->SetFaceBoundaryDraw(true);
+        overlay->Attributes()->SetFaceBoundaryAspect(
+            new Prs3d_LineAspect(Quantity_NOC_BLACK, Aspect_TOL_SOLID, 1.0));
+
+        if (m_occView->Context()->IsDisplayed(m_doc->m_list[index])) {
+            m_occView->Context()->Erase(m_doc->m_list[index], false);
+            m_doc->m_scalarHiddenObjects.push_back(m_doc->m_list[index]);
+        }
+        m_occView->Context()->Display(overlay, AIS_Shaded, 0, false);
+        m_doc->m_scalarOverlays.push_back(overlay);
+    }
+
+    if (m_doc->m_scalarOverlays.empty()) {
+        if (errorMessage) {
+            *errorMessage = tr("The current CAD objects cannot be converted to result overlays.");
+        }
+        clearScalarField();
+        return false;
+    }
+
+    updateCaeLegend(title, minimum, maximum);
+    m_occView->Context()->UpdateCurrentViewer();
+    return true;
+}
+
+void ViewerWidget::hideCadGeometryForCaeResult()
+{
+    if (!m_doc || !m_occView || m_occView->Context().IsNull()) {
+        return;
+    }
+    for (const auto& object : m_doc->m_list) {
+        if (m_occView->Context()->IsDisplayed(object)) {
+            m_occView->Context()->Erase(object, false);
+            m_doc->m_scalarHiddenObjects.push_back(object);
+        }
+    }
+}
+
+void ViewerWidget::updateCaeLegend(const QString& title, double minimum, double maximum)
+{
+    if (!m_caeLegendLabel) {
+        m_caeLegendLabel = new QLabel(m_occView);
+        m_caeLegendLabel->setAttribute(Qt::WA_TransparentForMouseEvents);
+        m_caeLegendLabel->setTextFormat(Qt::RichText);
+        m_caeLegendLabel->setStyleSheet(QStringLiteral(
+            "QLabel { background: rgba(30, 30, 30, 220); color: white; "
+            "border: 1px solid #808080; border-radius: 3px; padding: 8px; }"));
+    }
+
+    m_caeLegendLabel->setText(QStringLiteral(
+        "<b>%1</b><br/>"
+        "<span style='color:#ff0000'>&#9632;</span> Max: %2<br/>"
+        "<span style='color:#00ff00'>&#9632;</span> Mid: %3<br/>"
+        "<span style='color:#0000ff'>&#9632;</span> Min: %4")
+        .arg(title.toHtmlEscaped())
+        .arg(maximum, 0, 'g', 6)
+        .arg((minimum + maximum) * 0.5, 0, 'g', 6)
+        .arg(minimum, 0, 'g', 6));
+    m_caeLegendLabel->adjustSize();
+    m_caeLegendLabel->move(qMax(8, m_occView->width() - m_caeLegendLabel->width() - 12), 12);
+    m_caeLegendLabel->show();
+    m_caeLegendLabel->raise();
+}
+
+void ViewerWidget::clearScalarField()
+{
+    if (m_doc && m_occView && !m_occView->Context().IsNull()) {
+        for (const auto& overlay : m_doc->m_scalarOverlays) {
+            m_occView->Context()->Remove(overlay, false);
+        }
+        for (const auto& object : m_doc->m_scalarHiddenObjects) {
+            m_occView->Context()->Display(object, object->DisplayMode(), 0, false);
+        }
+        m_doc->m_scalarOverlays.clear();
+        m_doc->m_scalarHiddenObjects.clear();
+        m_occView->Context()->UpdateCurrentViewer();
+    }
+
+    if (m_caeLegendLabel) {
+        m_caeLegendLabel->hide();
+    }
+}
+
+void ViewerWidget::resizeEvent(QResizeEvent* event)
+{
+    QWidget::resizeEvent(event);
+    if (m_caeLegendLabel && m_caeLegendLabel->isVisible() && m_occView) {
+        m_caeLegendLabel->move(qMax(8, m_occView->width() - m_caeLegendLabel->width() - 12), 12);
     }
 }
 
@@ -573,18 +1351,22 @@ void ViewerWidget::loadModel(const QString &filename)
             }
         }
 
-        // Display Shapes
+        // Display one interactive object per part occurrence. This keeps selection,
+        // interference input, and explosion ownership at the same semantic level.
         for (Standard_Integer i = 1; i <= labels.Length(); ++i) {
-            TDF_Label label = labels.Value(i);
-            
-            // Better to just create XCAFPrs object for top level shapes
-            Handle(XCAFPrs_AISObject) object = new XCAFPrs_AISObject(label);
-            object->SetDisplayMode(AIS_Shaded);
-            //object->SetMaterial(Graphic3d_NOM_PLASTER); // Set Material
-            object->Attributes()->SetFaceBoundaryDraw(true);
-            object->Attributes()->SetFaceBoundaryAspect(new Prs3d_LineAspect(Quantity_NOC_BLACK, Aspect_TOL_SOLID, 1.));
-
-            m_doc->m_list.emplace_back(object);
+            std::vector<PartOccurrence> parts;
+            collectPartOccurrences(labels.Value(i), TopLoc_Location(), parts);
+            for (const PartOccurrence& part : parts) {
+                Handle(XCAFPrs_AISObject) object = new XCAFPrs_AISObject(part.label);
+                object->SetDisplayMode(AIS_Shaded);
+                object->Attributes()->SetFaceBoundaryDraw(true);
+                object->Attributes()->SetFaceBoundaryAspect(
+                    new Prs3d_LineAspect(Quantity_NOC_BLACK, Aspect_TOL_SOLID, 1.));
+                if (!part.ancestorLocation.IsIdentity()) {
+                    object->SetLocalTransformation(part.ancestorLocation.Transformation());
+                }
+                m_doc->m_list.emplace_back(object);
+            }
         }
     } else if (filename.endsWith(".iges") || filename.endsWith(".igs")) {
         IGESControl_Reader reader;
@@ -615,7 +1397,7 @@ void ViewerWidget::loadModel(const QString &filename)
     
     updateTree();
 
-    for (const auto &aisObject : m_doc->m_list) {
+    for (const auto& aisObject : m_doc->m_list) {
         m_occView->setShape(aisObject);
     }
 
@@ -627,7 +1409,7 @@ void ViewerWidget::loadModel(const QString &filename)
 void ViewerWidget::exportModel(const QString &filename)
 {
     if (m_doc->m_ocafDoc.IsNull()) {
-        QMessageBox::warning(this, "Export", "No document to export.");
+        QMessageBox::warning(this, tr("Export"), tr("No document to export."));
         return;
     }
 
@@ -636,12 +1418,12 @@ void ViewerWidget::exportModel(const QString &filename)
         writer.SetNameMode(true);
         // Transfer the document to the writer
         if (!writer.Transfer(m_doc->m_ocafDoc, STEPControl_AsIs)) {
-            QMessageBox::critical(this, "Error", "Failed to transfer document to STEP writer.");
+            QMessageBox::critical(this, tr("Error"), tr("Failed to transfer document to STEP writer."));
             return;
         }
         // Write the file
         if (writer.Write(filename.toUtf8().constData()) != IFSelect_RetDone) {
-            QMessageBox::critical(this, "Error", "Failed to write STEP file.");
+            QMessageBox::critical(this, tr("Error"), tr("Failed to write STEP file."));
         }
     } 
     else if (filename.endsWith(".iges", Qt::CaseInsensitive) || filename.endsWith(".igs", Qt::CaseInsensitive)) {
@@ -662,11 +1444,11 @@ void ViewerWidget::exportModel(const QString &filename)
 
         writer.ComputeModel();
         if (!writer.Write(filename.toUtf8().constData())) {
-            QMessageBox::critical(this, "Error", "Failed to write IGES file.");
+            QMessageBox::critical(this, tr("Error"), tr("Failed to write IGES file."));
         }
     }
     else {
-        QMessageBox::warning(this, "Export", "Unsupported file format.");
+        QMessageBox::warning(this, tr("Export"), tr("Unsupported file format."));
     }
 }
 
@@ -1021,7 +1803,8 @@ void ViewerWidget::setFilters(const std::map<TopAbs_ShapeEnum, bool> &filters)
             break;
         }
     }
-    m_occView->setMouseMode(anyFilterActive ? View::MouseMode::SELECTION : View::MouseMode::NONE);
+    m_occView->setMouseMode(
+        anyFilterActive || m_caeNodePickingEnabled ? View::MouseMode::SELECTION : View::MouseMode::NONE);
 
     for (const auto &pair : filters) {
         m_occView->updateSelectionFilter(pair.first, pair.second);
@@ -1042,7 +1825,8 @@ void ViewerWidget::updateSelectionFilter(TopAbs_ShapeEnum filter, bool isActive)
             break;
         }
     }
-    m_occView->setMouseMode(anyFilterActive ? View::MouseMode::SELECTION : View::MouseMode::NONE);
+    m_occView->setMouseMode(
+        anyFilterActive || m_caeNodePickingEnabled ? View::MouseMode::SELECTION : View::MouseMode::NONE);
 }
 
 void ViewerWidget::createWorkPlane()
@@ -1080,10 +1864,13 @@ void ViewerWidget::explosion()
 void ViewerWidget::animation()
 {
     if (!m_widgetAnimation) {
-        m_widgetAnimation = new WidgetAnimation(this);
-        m_widgetAnimation->setAttribute(Qt::WA_DeleteOnClose);
-        connect(m_widgetAnimation, &QWidget::destroyed, this,
-                [this]() { m_widgetAnimation = nullptr; });
+        m_widgetAnimation = WidgetAnimation::create(this);
+        connect(m_widgetAnimation, &WidgetAnimation::redrawRequested,
+                this, [this]() {
+                    if (m_occView) {
+                        m_occView->reDraw();
+                    }
+                }, Qt::QueuedConnection);
     }
     m_widgetAnimation->show();
     m_widgetAnimation->raise();
@@ -1246,19 +2033,11 @@ void ViewerWidget::createPolygon()
 
 void ViewerWidget::onCreatePolygon(const QList<gp_Pnt>& points, bool isClosed, const QColor& color)
 {
-    if (points.size() < 2) return;
-
-    BRepBuilderAPI_MakePolygon poly;
-    for (const auto& p : points) {
-        poly.Add(p);
-    }
-    if (isClosed) {
-        poly.Close();
-    }
-
-    if (poly.IsDone()) {
-        displayShape(poly.Wire(), color.redF(), color.greenF(), color.blueF());
-    }
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::POINTS] = QVariant::fromValue(PointList(points));
+    p[CoreApi::Param::CLOSED] = isClosed;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreatePolygon", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
 }
 
 void ViewerWidget::createBezierCurve()
@@ -1275,23 +2054,13 @@ void ViewerWidget::createBezierCurve()
 
 void ViewerWidget::onCreateBezier(const QList<gp_Pnt>& points, const QColor& color)
 {
-    if (points.size() < 2) return;
-
-    TColgp_Array1OfPnt poles(1, points.size());
-    for (int i = 0; i < points.size(); ++i) {
-        poles.SetValue(i + 1, points[i]);
-    }
-
-    // Geom_BezierCurve limits: check max degree if necessary, but OCC usually handles reasonable counts.
-    // Try to catch construction errors
-    try {
-        Handle(Geom_BezierCurve) bezier = new Geom_BezierCurve(poles);
-        BRepBuilderAPI_MakeEdge edge(bezier);
-        if (edge.IsDone()) {
-            displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-        }
-    } catch (...) {
-        QMessageBox::warning(this, "Error", "Failed to create Bezier curve (possibly too many points).");
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::POINTS] = QVariant::fromValue(PointList(points));
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateBezier", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
+        QMessageBox::warning(this, tr("Error"), tr("Failed to create Bezier curve (possibly too many points)."));
     }
 }
 
@@ -1309,54 +2078,14 @@ void ViewerWidget::createNurbsCurve()
 
 void ViewerWidget::onCreateNurbs(const QList<gp_Pnt>& points, int degree, const QColor& color)
 {
-    Standard_Integer n = points.size();
-    if (n <= degree) {
-        return; // Should have been caught by dialog
-    }
-
-    TColgp_Array1OfPnt poles(1, n);
-    for (int i = 0; i < n; ++i) {
-        poles.SetValue(i + 1, points[i]);
-    }
-
-    // Construct Knots and Mults for a non-periodic BSpline
-    // Number of knots (distinct) = n - degree + 1
-    // Total knots including multiplicities = n + degree + 1 (classic definition)
-    
-    // Standard non-periodic configuration:
-    // Knots: 0, ..., 0 (degree+1 times), ..., 1, ..., 1 (degree+1 times)
-    // Internal knots are simple (mult=1).
-    // Number of internal intervals = n - degree
-    // Total distinct knots = 2 (endpoints) + (n - degree - 1) (internal) = n - degree + 1
-    
-    Standard_Integer nbKnots = n - degree + 1;
-    TColStd_Array1OfReal knots(1, nbKnots);
-    TColStd_Array1OfInteger mults(1, nbKnots);
-
-    // Endpoints multiplication
-    mults.SetValue(1, degree + 1);
-    mults.SetValue(nbKnots, degree + 1);
-
-    knots.SetValue(1, 0.0);
-    knots.SetValue(nbKnots, 1.0);
-
-    // Internal knots
-    if (nbKnots > 2) {
-        Standard_Real step = 1.0 / (Standard_Real)(nbKnots - 1);
-        for (Standard_Integer i = 2; i < nbKnots; ++i) {
-            mults.SetValue(i, 1);
-            knots.SetValue(i, (i - 1) * step);
-        }
-    }
-
-    try {
-        Handle(Geom_BSplineCurve) bspline = new Geom_BSplineCurve(poles, knots, mults, degree);
-        BRepBuilderAPI_MakeEdge edge(bspline);
-        if (edge.IsDone()) {
-            displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-        }
-    } catch (...) {
-         QMessageBox::warning(this, "Error", "Failed to create NURBS curve.");
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::POINTS] = QVariant::fromValue(PointList(points));
+    p[CoreApi::Param::DEGREE] = degree;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateNurbs", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
+         QMessageBox::warning(this, tr("Error"), tr("Failed to create NURBS curve."));
     }
 }
 
@@ -1547,10 +2276,10 @@ void ViewerWidget::repairAndSave(const TopoDS_Shape &shape)
     IFSelect_ReturnStatus status = writer.Write("fix.stp");
 
     if (status == IFSelect_RetDone) {
-        QMessageBox::information(this, "Success",
-                                 "Shape repaired and saved to fix.stp successfully!");
+        QMessageBox::information(this, tr("Success"),
+                                 tr("Shape repaired and saved to fix.stp successfully!"));
     } else {
-        QMessageBox::warning(this, "Error", "Failed to write fix.stp");
+        QMessageBox::warning(this, tr("Error"), tr("Failed to write fix.stp"));
     }
 }
 
@@ -1784,7 +2513,7 @@ void ViewerWidget::chamfer()
 void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance)
 {
     if (edgeShape.IsNull() || edgeShape.ShapeType() != TopAbs_EDGE || distance <= 0.0) {
-        QMessageBox::warning(this, "Chamfer Error", "Invalid edge or distance.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Invalid edge or distance."));
         return;
     }
     
@@ -1821,7 +2550,7 @@ void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance
         }
     }
     if (targetEdge.IsNull()) {
-        QMessageBox::warning(this, "Chamfer Error", "Selected edge does not belong to the target shape.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Selected edge does not belong to the target shape."));
         return;
     }
 
@@ -1829,13 +2558,13 @@ void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance
     TopExp::MapShapesAndAncestors(parentShape, TopAbs_EDGE, TopAbs_FACE, edgeFaceMap);
     
     if (!edgeFaceMap.Contains(targetEdge)) {
-        QMessageBox::warning(this, "Chamfer Error", "Cannot find adjacent faces for the edge.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Cannot find adjacent faces for the edge."));
         return;
     }
 
     const TopTools_ListOfShape& faceList = edgeFaceMap.FindFromKey(targetEdge);
     if (faceList.IsEmpty()) {
-        QMessageBox::warning(this, "Chamfer Error", "Cannot find adjacent faces for the edge.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Cannot find adjacent faces for the edge."));
         return;
     }
 
@@ -1851,7 +2580,7 @@ void ViewerWidget::onApplyChamfer(const TopoDS_Shape& edgeShape, double distance
         m_occView->clearSelectedObjects();
         displayShape(newShape, color.Red(), color.Green(), color.Blue());
     } else {
-        QMessageBox::warning(this, "Chamfer Error", "Failed to create chamfer. Distance might be too large.");
+        QMessageBox::warning(this, tr("Chamfer Error"), tr("Failed to create chamfer. Distance might be too large."));
     }
 }
 
@@ -1882,7 +2611,7 @@ void ViewerWidget::hole()
 void ViewerWidget::onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shape& faceShape, const TopoDS_Shape& pointShape, double radius, int holeType, double depth)
 {
     if (parentShape.IsNull() || faceShape.IsNull() || faceShape.ShapeType() != TopAbs_FACE || pointShape.IsNull() || pointShape.ShapeType() != TopAbs_VERTEX) {
-            QMessageBox::warning(this, "Hole Error", "Invalid shape or inputs.");
+            QMessageBox::warning(this, tr("Hole Error"), tr("Invalid shape or inputs."));
             return;
     }
     
@@ -1936,7 +2665,7 @@ void ViewerWidget::onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shap
         m_occView->clearSelectedObjects();
         displayShape(newShape);
     } else {
-        QMessageBox::warning(this, "Hole Error", QString("BRepFeat status: %1").arg(status));
+        QMessageBox::warning(this, tr("Hole Error"), tr("BRepFeat status: %1").arg(status));
     }
 #if 0 // BRepAlgoAPI_Cut
     if (parentShape.IsNull() || faceShape.IsNull() || faceShape.ShapeType() != TopAbs_FACE || pointShape.IsNull() || pointShape.ShapeType() != TopAbs_VERTEX) {
@@ -2001,7 +2730,7 @@ void ViewerWidget::onMakeHole(const TopoDS_Shape& parentShape, const TopoDS_Shap
 void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)
 {
     if (edgeShape.IsNull() || edgeShape.ShapeType() != TopAbs_EDGE || radius <= 0.0) {
-        QMessageBox::warning(this, "Fillet Error", "Invalid edge or radius.");
+        QMessageBox::warning(this, tr("Fillet Error"), tr("Invalid edge or radius."));
         return;
     }
     
@@ -2038,7 +2767,7 @@ void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)
         }
     }
     if (targetEdge.IsNull()) {
-        QMessageBox::warning(this, "Fillet Error", "Selected edge does not belong to the target shape.");
+        QMessageBox::warning(this, tr("Fillet Error"), tr("Selected edge does not belong to the target shape."));
         return;
     }
 
@@ -2052,7 +2781,7 @@ void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)
         m_occView->clearSelectedObjects();
         displayShape(newShape, color.Red(), color.Green(), color.Blue());
     } else {
-        QMessageBox::warning(this, "Fillet Error", "Failed to create fillet. Radius might be too large.");
+        QMessageBox::warning(this, tr("Fillet Error"), tr("Failed to create fillet. Radius might be too large."));
     }
 }
 
@@ -2245,8 +2974,8 @@ void ViewerWidget::highlightLabel(const TDF_Label& label)
 void ViewerWidget::onCreateLine(double x1, double y1, double z1, double x2, double y2, double z2, const QColor& color)
 {
     CoreApi::ShapeParams p;
-    p["x1"] = x1; p["y1"] = y1; p["z1"] = z1;
-    p["x2"] = x2; p["y2"] = y2; p["z2"] = z2;
+    p[CoreApi::Param::X1] = x1; p[CoreApi::Param::Y1] = y1; p[CoreApi::Param::Z1] = z1;
+    p[CoreApi::Param::X2] = x2; p[CoreApi::Param::Y2] = y2; p[CoreApi::Param::Z2] = z2;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateLine", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgLine) m_dlgLine->raise();
@@ -2255,7 +2984,8 @@ void ViewerWidget::onCreateLine(double x1, double y1, double z1, double x2, doub
 void ViewerWidget::onCreateCircle(double x, double y, double z, double radius, const QColor& color)
 {
     CoreApi::ShapeParams p;
-    p["x"] = x; p["y"] = y; p["z"] = z; p["radius"] = radius;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::RADIUS] = radius;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateCircle", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgCircle) m_dlgCircle->raise();
@@ -2263,34 +2993,31 @@ void ViewerWidget::onCreateCircle(double x, double y, double z, double radius, c
 
 void ViewerWidget::onCreateArc(double x1, double y1, double z1, double x2, double y2, double z2, double x3, double y3, double z3, const QColor& color)
 {
-    gp_Pnt p1(x1, y1, z1);
-    gp_Pnt p2(x2, y2, z2);
-    gp_Pnt p3(x3, y3, z3);
-    GC_MakeArcOfCircle arc(p1, p2, p3);
-    if (arc.IsDone()) {
-        BRepBuilderAPI_MakeEdge edge(arc.Value());
-        if (edge.IsDone()) {
-            displayShape(edge.Shape(), color.redF(), color.greenF(), color.blueF());
-        }
-    }
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X1] = x1; p[CoreApi::Param::Y1] = y1; p[CoreApi::Param::Z1] = z1;
+    p[CoreApi::Param::X2] = x2; p[CoreApi::Param::Y2] = y2; p[CoreApi::Param::Z2] = z2;
+    p[CoreApi::Param::X3] = x3; p[CoreApi::Param::Y3] = y3; p[CoreApi::Param::Z3] = z3;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateArc", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgArc) m_dlgArc->raise();
 }
 
 void ViewerWidget::onCreateBox(double x, double y, double z, double dx, double dy, double dz, const QColor& color)
 {
-    const gp_Pnt P1{x, y, z};
-    const gp_Pnt P2{x + dx, y + dy, z + dz};
-    BRepPrimAPI_MakeBox box(P1, P2);
-    displayShape(box.Shape(), color.redF(), color.greenF(), color.blueF());
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::DX] = dx; p[CoreApi::Param::DY] = dy; p[CoreApi::Param::DZ] = dz;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateBox", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgBox) m_dlgBox->raise();
 }
 
 void ViewerWidget::onCreateEllipse(double centerX, double centerY, double centerZ, double normalX, double normalY, double normalZ, double majorRadius, double minorRadius, const QColor& color)
 {
     CoreApi::ShapeParams p;
-    p["x"] = centerX; p["y"] = centerY; p["z"] = centerZ;
-    p["nx"] = normalX; p["ny"] = normalY; p["nz"] = normalZ;
-    p["majorRadius"] = majorRadius; p["minorRadius"] = minorRadius;
+    p[CoreApi::Param::X] = centerX; p[CoreApi::Param::Y] = centerY; p[CoreApi::Param::Z] = centerZ;
+    p[CoreApi::Param::NX] = normalX; p[CoreApi::Param::NY] = normalY; p[CoreApi::Param::NZ] = normalZ;
+    p[CoreApi::Param::MAJOR] = majorRadius; p[CoreApi::Param::MINOR] = minorRadius;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateEllipse", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgEllipse) m_dlgEllipse->raise();
@@ -2298,25 +3025,29 @@ void ViewerWidget::onCreateEllipse(double centerX, double centerY, double center
 
 void ViewerWidget::onCreateCylinder(double x, double y, double z, double radius, double height, const QColor& color)
 {
-    gp_Ax2 axis(gp_Pnt(x, y, z), gp_Dir(0,0,1));
-    BRepPrimAPI_MakeCylinder cylinder(axis, radius, height);
-    displayShape(cylinder.Shape(), color.redF(), color.greenF(), color.blueF());
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::RADIUS] = radius; p[CoreApi::Param::HEIGHT] = height;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateCylinder", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgCylinder) m_dlgCylinder->raise();
 }
 
 void ViewerWidget::onCreateCone(double x, double y, double z, double radius1, double radius2,
                                 double height, const QColor &color)
 {
-    gp_Ax2 axis(gp_Pnt(x, y, z), gp_Dir(0,0,1));
-    BRepPrimAPI_MakeCone cone(axis, radius1, radius2, height);
-    displayShape(cone.Shape(), color.redF(), color.greenF(), color.blueF());
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::RADIUS1] = radius1; p[CoreApi::Param::RADIUS2] = radius2; p[CoreApi::Param::HEIGHT] = height;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateCone", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgCone) m_dlgCone->raise();
 }
 
 void ViewerWidget::onCreatePoint(double x, double y, double z, const QColor& color)
 {
     CoreApi::ShapeParams p;
-    p["x"] = x; p["y"] = y; p["z"] = z;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreatePoint", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgPoint) m_dlgPoint->raise();
@@ -2325,8 +3056,8 @@ void ViewerWidget::onCreatePoint(double x, double y, double z, const QColor& col
 void ViewerWidget::onCreateRectangle(double x, double y, double z, double width, double height, const QColor& color)
 {
     CoreApi::ShapeParams p;
-    p["x"] = x; p["y"] = y; p["z"] = z;
-    p["width"] = width; p["height"] = height;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::WIDTH] = width; p[CoreApi::Param::HEIGHT] = height;
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateRectangle", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgRectangle) m_dlgRectangle->raise();
@@ -2334,9 +3065,11 @@ void ViewerWidget::onCreateRectangle(double x, double y, double z, double width,
 
 void ViewerWidget::onCreateSphere(double x, double y, double z, double radius, const QColor& color)
 {
-    gp_Pnt center(x, y, z);
-    BRepPrimAPI_MakeSphere sphere(center, radius);
-    displayShape(sphere.Shape(), color.redF(), color.greenF(), color.blueF());
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::RADIUS] = radius;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateSphere", p);
+    if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgSphere) m_dlgSphere->raise();
 }
 

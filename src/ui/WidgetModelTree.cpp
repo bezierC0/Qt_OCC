@@ -34,6 +34,10 @@ ModelTreeWidget::ModelTreeWidget(QWidget* widget)
             this, &ModelTreeWidget::onContextMenuPick);
     connect(m_contextMenu, &ModelTreeContextMenu::removeRequested,
             this, &ModelTreeWidget::onContextMenuRemove);
+
+    // Connect filter level change signal
+    connect(m_contextMenu, &ModelTreeContextMenu::filterLevelChanged,
+            this, &ModelTreeWidget::onFilterLevelChanged);
 }
 
 
@@ -86,4 +90,9 @@ void ModelTreeWidget::onContextMenuRemove()
 {
     if (m_pendingLabel && !m_pendingLabel->IsNull())
         emit labelRemoveRequested(*m_pendingLabel);
+}
+
+void ModelTreeWidget::onFilterLevelChanged(TreeFilterLevel level)
+{
+    m_treeWidget->setFilterLevel(level);
 }

@@ -123,8 +123,8 @@ void DialogCreateNurbs::onBtnOkClicked()
 {
     // Basic validation
     if (points().size() <= degree()) {
-        QMessageBox::warning(this, "Invalid Parameters", 
-            QString("Number of points (%1) must be greater than Degree (%2).")
+        QMessageBox::warning(this, tr("Invalid Parameters"), 
+            tr("Number of points (%1) must be greater than Degree (%2).")
             .arg(points().size()).arg(degree()));
         return;
     }

@@ -1,44 +1,61 @@
 #pragma once
 
-#include <QWidget>
+#include <QMenu>
 #include <QPoint>
 
-namespace Ui {
-class ModelTreeContextMenu;
-}
+/**
+ * @brief Filter level for assembly tree display depth.
+ */
+enum class TreeFilterLevel {
+    Vertex,  // Show all levels including vertices
+    Edge,    // Stop at edge level
+    Face     // Stop at face level
+};
 
 /**
- * @brief Context menu View layer for the Model Tree.
- *
- * A pure UI class that contains no business logic.
- * External callers control visibility and enabled state via popup().
- * User actions are reported outward through signals.
+ * @brief Context menu for the Model Tree.
  */
-class ModelTreeContextMenu : public QWidget
+class ModelTreeContextMenu : public QMenu
 {
     Q_OBJECT
 public:
     explicit ModelTreeContextMenu(QWidget* parent = nullptr);
-    ~ModelTreeContextMenu() override;
+    ~ModelTreeContextMenu() override = default;
 
     /**
      * @brief Display the menu at the given screen position.
-     * @param globalPos      Screen coordinates (typically from viewport()->mapToGlobal()).
-     * @param actionsEnabled Whether the Pick / Remove buttons should be enabled.
+     * @param globalPos      Screen coordinates.
+     * @param actionsEnabled Whether the Pick / Remove actions should be enabled.
      */
     void popup(const QPoint& globalPos, bool actionsEnabled);
+
+    /**
+     * @brief Set the current filter level (updates checkbox state).
+     */
+    void setFilterLevel(TreeFilterLevel level);
+
+    /**
+     * @brief Get the current filter level.
+     */
+    TreeFilterLevel filterLevel() const { return m_filterLevel; }
 
 signals:
     void pickRequested();
     void removeRequested();
-
-protected:
-    bool eventFilter(QObject* watched, QEvent* event) override;
+    void filterLevelChanged(TreeFilterLevel level);
 
 private slots:
-    void onPickClicked();
-    void onRemoveClicked();
+    void onPickTriggered();
+    void onRemoveTriggered();
+    void onFilterVertexTriggered();
+    void onFilterEdgeTriggered();
+    void onFilterFaceTriggered();
 
 private:
-    Ui::ModelTreeContextMenu* ui;
+    QAction* m_actionPick = nullptr;
+    QAction* m_actionRemove = nullptr;
+    QAction* m_actionFilterVertex = nullptr;
+    QAction* m_actionFilterEdge = nullptr;
+    QAction* m_actionFilterFace = nullptr;
+    TreeFilterLevel m_filterLevel = TreeFilterLevel::Vertex;
 };
