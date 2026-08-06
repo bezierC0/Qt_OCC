@@ -468,7 +468,11 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 include(CTest)
-if(BUILD_TESTING)
+# AnimationSequenceTests.cpp is currently not kept in the repository. Preserve
+# the target definition as a reference, but keep it disabled by default.
+option(BUILD_ANIMATION_SEQUENCE_TESTS
+       "Build the optional AnimationSequence model tests" OFF)
+if(BUILD_TESTING AND BUILD_ANIMATION_SEQUENCE_TESTS)
     add_executable(AnimationSequenceTests
         tests/AnimationSequenceTests.cpp
         src/display/AnimationSequence.cpp
