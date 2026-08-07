@@ -32,11 +32,6 @@ bool CalculixSolver::solve(const SolverRequest& request, SolverResult* result, Q
         if (errorMessage) *errorMessage = QStringLiteral("CalculiX mesh file does not exist: %1").arg(request.meshFilePath);
         return false;
     }
-    if (request.studyType != StudyType::StaticStructural) {
-        if (errorMessage) *errorMessage = QStringLiteral("Real CalculiX thermal input is not implemented yet.");
-        return false;
-    }
-
     QString workingDirectory = request.workingDirectory;
     if (workingDirectory.isEmpty()) workingDirectory = m_config.workingDirectory();
     if (workingDirectory.isEmpty()) workingDirectory = QFileInfo(request.meshFilePath).absolutePath();
@@ -52,7 +47,12 @@ bool CalculixSolver::solve(const SolverRequest& request, SolverResult* result, Q
     QFile::remove(resultFilePath);
     QFile::remove(logFilePath);
 
-    if (!CalculixInputWriter::writeStaticAnalysis(request, inputFilePath, errorMessage)) return false;
+    const bool inputWritten = request.studyType == StudyType::StaticStructural
+        ? CalculixInputWriter::writeStaticAnalysis(request, inputFilePath, errorMessage)
+        : CalculixInputWriter::writeSteadyThermalAnalysis(request, inputFilePath, errorMessage);
+    if (!inputWritten) {
+        return false;
+    }
 
     ExternalProcessRequest processRequest = m_config.createProcessRequest(
         ExternalTool::CalculiX, {QStringLiteral("-i"), jobName});

@@ -30,8 +30,10 @@
 #include "WidgetCaeTree.h"
 #include "DialogAbout.h"
 #include "DialogCaeForce.h"
+#include "DialogCaeConvection.h"
 #include "DialogCaeMaterial.h"
 #include "DialogCaeSettings.h"
+#include "DialogCaeThermalMaterial.h"
 #include "widget_explode_assembly.h"
 #include "widget_clipping.h"
 #include "widget_set_coordinate_system.h"
@@ -95,9 +97,9 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
         &MainWindow::onCaeRemoveBoundaryConditionRequested);
 
     setCentralWidget( splitter );
-    refreshCaeTree();
 
     setupUi();
+    refreshCaeTree();
 
     resize(1200, 800);
 }
@@ -109,6 +111,26 @@ void MainWindow::refreshCaeTree()
     if (m_caeTreeWidget && m_caeController) {
         m_caeTreeWidget->setProject(m_caeController->project());
     }
+    updateCaeActionAvailability();
+}
+
+void MainWindow::updateCaeActionAvailability()
+{
+    const Cae::CaeStudy* study = m_caeController
+        ? m_caeController->project().activeStudy()
+        : nullptr;
+    const bool structural = study && study->type() == Cae::StudyType::StaticStructural;
+    const bool thermal = study && study->type() == Cae::StudyType::SteadyThermal;
+    if (m_caeFixedSupportAction) m_caeFixedSupportAction->setEnabled(structural);
+    if (m_caeForceAction) m_caeForceAction->setEnabled(structural);
+    if (m_caePressureAction) m_caePressureAction->setEnabled(structural);
+    if (m_caeFixedTemperatureAction) m_caeFixedTemperatureAction->setEnabled(thermal);
+    if (m_caeHeatFluxAction) m_caeHeatFluxAction->setEnabled(thermal);
+    if (m_caeConvectionAction) m_caeConvectionAction->setEnabled(thermal);
+    if (m_caeShowDisplacementAction) m_caeShowDisplacementAction->setEnabled(structural);
+    if (m_caeShowStressAction) m_caeShowStressAction->setEnabled(structural);
+    if (m_caeShowTemperatureAction) m_caeShowTemperatureAction->setEnabled(thermal);
+    if (m_caeDeformationScaleAction) m_caeDeformationScaleAction->setEnabled(structural);
 }
 
 void MainWindow::refreshCaeBoundaryVisualization()
@@ -135,6 +157,23 @@ void MainWindow::refreshCaeBoundaryVisualization()
                 break;
             case Cae::BoundaryConditionType::Pressure:
                 marker.type = Cae::BoundaryMarkerType::Pressure;
+                marker.direction = {
+                    -marker.region.normal[0],
+                    -marker.region.normal[1],
+                    -marker.region.normal[2]};
+                break;
+            case Cae::BoundaryConditionType::FixedTemperature:
+                marker.type = Cae::BoundaryMarkerType::FixedTemperature;
+                break;
+            case Cae::BoundaryConditionType::HeatFlux:
+                marker.type = Cae::BoundaryMarkerType::HeatFlux;
+                marker.direction = {
+                    -marker.region.normal[0],
+                    -marker.region.normal[1],
+                    -marker.region.normal[2]};
+                break;
+            case Cae::BoundaryConditionType::Convection:
+                marker.type = Cae::BoundaryMarkerType::Convection;
                 marker.direction = {
                     -marker.region.normal[0],
                     -marker.region.normal[1],
@@ -688,6 +727,18 @@ void MainWindow::createCaeGroup()
     connect(m_caePressureAction, &QAction::triggered, this, &MainWindow::onCaeAddPressure);
     m_caeBoundaryPannel->addLargeAction(m_caePressureAction);
 
+    m_caeFixedTemperatureAction = new QAction(QIcon(":/icons/icon/cae_fixed_temperature.svg"), tr("Temperature"), this);
+    connect(m_caeFixedTemperatureAction, &QAction::triggered, this, &MainWindow::onCaeAddFixedTemperature);
+    m_caeBoundaryPannel->addLargeAction(m_caeFixedTemperatureAction);
+
+    m_caeHeatFluxAction = new QAction(QIcon(":/icons/icon/cae_heat_flux.svg"), tr("Heat Flux"), this);
+    connect(m_caeHeatFluxAction, &QAction::triggered, this, &MainWindow::onCaeAddHeatFlux);
+    m_caeBoundaryPannel->addLargeAction(m_caeHeatFluxAction);
+
+    m_caeConvectionAction = new QAction(QIcon(":/icons/icon/cae_convection.svg"), tr("Convection"), this);
+    connect(m_caeConvectionAction, &QAction::triggered, this, &MainWindow::onCaeAddConvection);
+    m_caeBoundaryPannel->addLargeAction(m_caeConvectionAction);
+
     m_caeMeshPannel = m_caeCategory->addPannel(tr("Mesh"));
     m_caeGenerateMeshAction = new QAction(QIcon(":/icons/icon/cae_generate_mesh.svg"), tr("Generate"), this);
     connect(m_caeGenerateMeshAction, &QAction::triggered, this, &MainWindow::onCaeGenerateMesh);
@@ -1164,6 +1215,22 @@ void MainWindow::onCaeCreateNamedSelection()
 
 void MainWindow::onCaeAssignMaterial()
 {
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    if (study && study->type() == Cae::StudyType::SteadyThermal) {
+        DialogCaeThermalMaterial dialog(this);
+        if (dialog.exec() != QDialog::Accepted) {
+            return;
+        }
+        updateStatusMessage(
+            m_caeController->assignThermalMaterial(
+                dialog.materialName(),
+                dialog.thermalConductivity()),
+            5000);
+        resetCaeResultPresentation(false);
+        refreshCaeTree();
+        return;
+    }
+
     DialogCaeMaterial dialog(this);
     if (dialog.exec() != QDialog::Accepted) {
         return;
@@ -1236,6 +1303,94 @@ void MainWindow::onCaeAddPressure()
     m_caePressureValue = pressure;
     updateStatusMessage(
         m_caeController->addPressure(pressure, targetName),
+        5000);
+    resetCaeResultPresentation(true);
+    refreshCaeBoundaryVisualization();
+    refreshCaeTree();
+}
+
+void MainWindow::onCaeAddFixedTemperature()
+{
+    bool targetAccepted = false;
+    const QString targetName = chooseCaeFaceTarget(tr("Fixed Temperature Target"), &targetAccepted);
+    if (!targetAccepted) {
+        return;
+    }
+
+    bool accepted = false;
+    const double temperature = QInputDialog::getDouble(
+        this,
+        tr("Add Fixed Temperature"),
+        tr("Temperature (C):"),
+        m_caeFixedTemperatureValue,
+        -273.15,
+        1.0e6,
+        6,
+        &accepted);
+    if (!accepted) {
+        return;
+    }
+    m_caeFixedTemperatureValue = temperature;
+    updateStatusMessage(
+        m_caeController->addFixedTemperature(temperature, targetName),
+        5000);
+    resetCaeResultPresentation(true);
+    refreshCaeBoundaryVisualization();
+    refreshCaeTree();
+}
+
+void MainWindow::onCaeAddHeatFlux()
+{
+    bool targetAccepted = false;
+    const QString targetName = chooseCaeFaceTarget(tr("Heat Flux Target"), &targetAccepted);
+    if (!targetAccepted) {
+        return;
+    }
+
+    bool accepted = false;
+    const double heatFlux = QInputDialog::getDouble(
+        this,
+        tr("Add Heat Flux"),
+        tr("Heat flux (W/mm^2):"),
+        m_caeHeatFluxValue,
+        1.0e-12,
+        1.0e12,
+        9,
+        &accepted);
+    if (!accepted) {
+        return;
+    }
+    m_caeHeatFluxValue = heatFlux;
+    updateStatusMessage(
+        m_caeController->addHeatFlux(heatFlux, targetName),
+        5000);
+    resetCaeResultPresentation(true);
+    refreshCaeBoundaryVisualization();
+    refreshCaeTree();
+}
+
+void MainWindow::onCaeAddConvection()
+{
+    bool targetAccepted = false;
+    const QString targetName = chooseCaeFaceTarget(tr("Convection Target"), &targetAccepted);
+    if (!targetAccepted) {
+        return;
+    }
+
+    DialogCaeConvection dialog(
+        m_caeFilmCoefficientValue,
+        m_caeAmbientTemperatureValue,
+        this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+    m_caeFilmCoefficientValue = dialog.filmCoefficient();
+    m_caeAmbientTemperatureValue = dialog.ambientTemperature();
+    updateStatusMessage(
+        m_caeController->addConvection(
+            m_caeFilmCoefficientValue,
+            m_caeAmbientTemperatureValue,
+            targetName),
         5000);
     resetCaeResultPresentation(true);
     refreshCaeBoundaryVisualization();
@@ -1435,21 +1590,35 @@ void MainWindow::onCaeMaterialActivated(
         return;
     }
 
-    DialogCaeMaterial dialog(
-        material->name(),
-        material->youngModulus(),
-        material->poissonRatio(),
-        this);
-    if (dialog.exec() != QDialog::Accepted) {
-        return;
+    if (study->type() == Cae::StudyType::SteadyThermal) {
+        DialogCaeThermalMaterial dialog(
+            material->name(),
+            material->thermalConductivity(),
+            this);
+        if (dialog.exec() != QDialog::Accepted) {
+            return;
+        }
+        updateStatusMessage(
+            m_caeController->assignThermalMaterial(
+                dialog.materialName(),
+                dialog.thermalConductivity()),
+            5000);
+    } else {
+        DialogCaeMaterial dialog(
+            material->name(),
+            material->youngModulus(),
+            material->poissonRatio(),
+            this);
+        if (dialog.exec() != QDialog::Accepted) {
+            return;
+        }
+        updateStatusMessage(
+            m_caeController->assignMaterial(
+                dialog.materialName(),
+                dialog.youngModulus(),
+                dialog.poissonRatio()),
+            5000);
     }
-
-    updateStatusMessage(
-        m_caeController->assignMaterial(
-            dialog.materialName(),
-            dialog.youngModulus(),
-            dialog.poissonRatio()),
-        5000);
     resetCaeResultPresentation(true);
     refreshCaeBoundaryVisualization();
     refreshCaeTree();
@@ -1491,7 +1660,7 @@ void MainWindow::onCaeBoundaryConditionActivated(
         }
         m_caeForceComponents = dialog.force();
         updateMessage = m_caeController->addForce(m_caeForceComponents, targetName);
-    } else {
+    } else if (type == Cae::BoundaryConditionType::Pressure) {
         bool accepted = false;
         const double pressure = QInputDialog::getDouble(
             this,
@@ -1507,6 +1676,52 @@ void MainWindow::onCaeBoundaryConditionActivated(
         }
         m_caePressureValue = pressure;
         updateMessage = m_caeController->addPressure(pressure, targetName);
+    } else if (type == Cae::BoundaryConditionType::FixedTemperature) {
+        bool accepted = false;
+        const double temperature = QInputDialog::getDouble(
+            this,
+            tr("Edit Fixed Temperature"),
+            tr("Temperature (C):"),
+            condition->value(),
+            -273.15,
+            1.0e6,
+            6,
+            &accepted);
+        if (!accepted) {
+            return;
+        }
+        m_caeFixedTemperatureValue = temperature;
+        updateMessage = m_caeController->addFixedTemperature(temperature, targetName);
+    } else if (type == Cae::BoundaryConditionType::HeatFlux) {
+        bool accepted = false;
+        const double heatFlux = QInputDialog::getDouble(
+            this,
+            tr("Edit Heat Flux"),
+            tr("Heat flux (W/mm^2):"),
+            condition->value(),
+            1.0e-12,
+            1.0e12,
+            9,
+            &accepted);
+        if (!accepted) {
+            return;
+        }
+        m_caeHeatFluxValue = heatFlux;
+        updateMessage = m_caeController->addHeatFlux(heatFlux, targetName);
+    } else {
+        DialogCaeConvection dialog(
+            condition->value(),
+            condition->referenceValue(),
+            this);
+        if (dialog.exec() != QDialog::Accepted) {
+            return;
+        }
+        m_caeFilmCoefficientValue = dialog.filmCoefficient();
+        m_caeAmbientTemperatureValue = dialog.ambientTemperature();
+        updateMessage = m_caeController->addConvection(
+            m_caeFilmCoefficientValue,
+            m_caeAmbientTemperatureValue,
+            targetName);
     }
 
     updateStatusMessage(updateMessage, 5000);

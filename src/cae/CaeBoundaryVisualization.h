@@ -11,7 +11,10 @@ namespace Cae {
 enum class BoundaryMarkerType {
     FixedSupport,
     Force,
-    Pressure
+    Pressure,
+    FixedTemperature,
+    HeatFlux,
+    Convection
 };
 
 struct BoundaryMarker {

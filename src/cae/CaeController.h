@@ -27,6 +27,7 @@ public:
     QString createNamedSelection(const QString& name, const PlanarSelectionRegion& region);
     QString removeNamedSelection(const QUuid& studyId, const QString& name);
     QString assignMaterial(const QString& name, double youngModulus, double poissonRatio);
+    QString assignThermalMaterial(const QString& name, double thermalConductivity);
     QString assignDefaultMaterial();
     QString removeMaterial(const QUuid& studyId, const QString& name);
     QString addFixedSupport(const QString& targetName = QString());
@@ -35,6 +36,12 @@ public:
         const std::array<double, 3>& force,
         const QString& targetName = QString());
     QString addPressure(double pressure, const QString& targetName = QString());
+    QString addFixedTemperature(double temperature, const QString& targetName = QString());
+    QString addHeatFlux(double heatFlux, const QString& targetName = QString());
+    QString addConvection(
+        double filmCoefficient,
+        double ambientTemperature,
+        const QString& targetName = QString());
     QString removeBoundaryCondition(const QUuid& studyId, const QString& name);
     QString addDefaultForce();
     QString generateMesh(const QString& geometryFilePath = QString(), double globalSize = 1.0);

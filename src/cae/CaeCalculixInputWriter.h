@@ -10,6 +10,10 @@ public:
         const SolverRequest& request,
         const QString& inputFilePath,
         QString* errorMessage);
+    static bool writeSteadyThermalAnalysis(
+        const SolverRequest& request,
+        const QString& inputFilePath,
+        QString* errorMessage);
 };
 
 } // namespace Cae
