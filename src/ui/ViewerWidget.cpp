@@ -805,7 +805,11 @@ void ViewerWidget::showCaeBoundaryMarkers(const Cae::BoundaryMarkers& markers)
         Quantity_Color color(0.2, 0.6, 1.0, Quantity_TOC_RGB);
         TopoDS_Shape markerShape;
 
-        if (marker.type == Cae::BoundaryMarkerType::FixedSupport) {
+        if (marker.type == Cae::BoundaryMarkerType::FixedSupport ||
+            marker.type == Cae::BoundaryMarkerType::FixedTemperature) {
+            if (marker.type == Cae::BoundaryMarkerType::FixedTemperature) {
+                color = Quantity_Color(0.2, 0.85, 0.9, Quantity_TOC_RGB);
+            }
             markerShape = BRepPrimAPI_MakeSphere(center, scale * 0.12);
         } else {
             gp_Vec direction(marker.direction[0], marker.direction[1], marker.direction[2]);
@@ -813,8 +817,16 @@ void ViewerWidget::showCaeBoundaryMarkers(const Cae::BoundaryMarkers& markers)
                 continue;
             }
             direction.Normalize();
-            if (marker.type == Cae::BoundaryMarkerType::Pressure) {
-                color = Quantity_Color(1.0, 0.55, 0.1, Quantity_TOC_RGB);
+            if (marker.type == Cae::BoundaryMarkerType::Pressure ||
+                marker.type == Cae::BoundaryMarkerType::HeatFlux ||
+                marker.type == Cae::BoundaryMarkerType::Convection) {
+                if (marker.type == Cae::BoundaryMarkerType::HeatFlux) {
+                    color = Quantity_Color(1.0, 0.85, 0.1, Quantity_TOC_RGB);
+                } else if (marker.type == Cae::BoundaryMarkerType::Convection) {
+                    color = Quantity_Color(0.65, 0.3, 0.95, Quantity_TOC_RGB);
+                } else {
+                    color = Quantity_Color(1.0, 0.55, 0.1, Quantity_TOC_RGB);
+                }
                 markerShape = makeArrow(
                     center.Translated(-direction * scale),
                     gp_Dir(direction),

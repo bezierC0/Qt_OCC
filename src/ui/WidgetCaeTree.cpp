@@ -196,8 +196,14 @@ void CaeTreeWidget::addStudyItem(
         setActionData(materialItem, CaeTreeItemKind::Material, study.id());
         materialItem->setData(0, ItemNameRole, material.name());
         materialItem->setToolTip(0, tr("Double-click to edit; right-click to delete."));
-        new QTreeWidgetItem(materialItem, {tr("Young's Modulus"), tr("%1 MPa").arg(material.youngModulus())});
-        new QTreeWidgetItem(materialItem, {tr("Poisson Ratio"), QString::number(material.poissonRatio())});
+        if (study.type() == Cae::StudyType::SteadyThermal) {
+            new QTreeWidgetItem(
+                materialItem,
+                {tr("Thermal Conductivity"), tr("%1 W/(m*K)").arg(material.thermalConductivity())});
+        } else {
+            new QTreeWidgetItem(materialItem, {tr("Young's Modulus"), tr("%1 MPa").arg(material.youngModulus())});
+            new QTreeWidgetItem(materialItem, {tr("Poisson Ratio"), QString::number(material.poissonRatio())});
+        }
     }
 
     auto* boundaryItem = new QTreeWidgetItem(

@@ -12,6 +12,13 @@ CaeMaterial::CaeMaterial(QString name, QString targetName, double youngModulus, 
 {
 }
 
+CaeMaterial::CaeMaterial(QString name, QString targetName, double thermalConductivity)
+    : m_name(std::move(name))
+    , m_targetName(std::move(targetName))
+    , m_thermalConductivity(thermalConductivity)
+{
+}
+
 QString CaeMaterial::name() const
 {
     return m_name;
@@ -30,6 +37,11 @@ double CaeMaterial::youngModulus() const
 double CaeMaterial::poissonRatio() const
 {
     return m_poissonRatio;
+}
+
+double CaeMaterial::thermalConductivity() const
+{
+    return m_thermalConductivity;
 }
 
 } // namespace Cae

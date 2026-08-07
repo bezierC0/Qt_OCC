@@ -114,6 +114,9 @@ private slots:
     void onCaeAddFixedSupport();
     void onCaeAddForce();
     void onCaeAddPressure();
+    void onCaeAddFixedTemperature();
+    void onCaeAddHeatFlux();
+    void onCaeAddConvection();
     void onCaeGenerateMesh();
     void onCaeRunSolver();
     void onCaeShowDisplacement();
@@ -145,6 +148,7 @@ private slots:
 private:
     void setupUi();
     void refreshCaeTree();
+    void updateCaeActionAvailability();
     void refreshCaeBoundaryVisualization();
     void resetCaeResultPresentation(bool preserveMesh);
     void presentCaeResult(Cae::ResultFieldType fieldType, bool reloadField = true);
@@ -281,6 +285,9 @@ private:
     QAction* m_caeFixedSupportAction{};
     QAction* m_caeForceAction{};
     QAction* m_caePressureAction{};
+    QAction* m_caeFixedTemperatureAction{};
+    QAction* m_caeHeatFluxAction{};
+    QAction* m_caeConvectionAction{};
     QAction* m_caeGenerateMeshAction{};
     QAction* m_caeRunSolverAction{};
     QAction* m_caeShowDisplacementAction{};
@@ -293,6 +300,10 @@ private:
     double m_caeDeformationScale{0.0};
     std::array<double, 3> m_caeForceComponents{100.0, 0.0, 0.0};
     double m_caePressureValue{1.0};
+    double m_caeFixedTemperatureValue{20.0};
+    double m_caeHeatFluxValue{0.01};
+    double m_caeFilmCoefficientValue{10.0};
+    double m_caeAmbientTemperatureValue{20.0};
     double m_caeGlobalMeshSize{1.0};
     int m_caeProbeNodeId{0};
     std::optional<Cae::ResultFieldType> m_currentCaeResultField;
