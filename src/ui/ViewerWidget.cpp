@@ -103,6 +103,7 @@
 
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Compound.hxx>
+#include <TopoDS_Iterator.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Vertex.hxx>
 #include <TopoDS_Edge.hxx>
@@ -604,6 +605,11 @@ void ViewerWidget::clearAll()
     if (m_doc) {
         m_doc->m_list.clear();
     }
+
+    // Clear labels and geometry owned by the previous OCAF document.
+    m_defaultAssemblyLabel.Nullify();
+    m_activePartLabel.Nullify();
+    m_activePartShape.Nullify();
 
     // Reset OCAF Document
     if (!m_doc->m_ocafDoc.IsNull()) {
@@ -1123,6 +1129,37 @@ void ViewerWidget::clearCaeNodeHover()
     }
     m_caeNodeHoverMarker.Nullify();
     m_caeHoveredNodeId = -1;
+}
+
+TDF_Label ViewerWidget::ensureActivePart()
+{
+    // Has Part(compound)
+    if (!m_activePartLabel.IsNull() && XCAFDoc_ShapeTool::IsSimpleShape(m_activePartLabel)) {
+        return m_activePartLabel;
+    }
+
+    // Create the initial empty compound representing Part 1.
+    BRep_Builder builder;
+    builder.MakeCompound(m_activePartShape);
+
+    Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(m_doc->m_ocafDoc->Main());
+
+    m_activePartLabel = shapeTool->AddShape(m_activePartShape, false);
+    TDataStd_Name::Set(m_activePartLabel, "Part 1");
+
+    TopoDS_Compound assemblyShape;
+    builder.MakeCompound(assemblyShape);
+
+    m_defaultAssemblyLabel = shapeTool->AddShape(assemblyShape, true);
+    TDataStd_Name::Set(m_defaultAssemblyLabel, "Assembly");
+
+    shapeTool->AddComponent(
+        m_defaultAssemblyLabel,
+        m_activePartLabel,
+        TopLoc_Location()
+    );
+
+    return m_activePartLabel;
 }
 
 void ViewerWidget::onCaePickMouseMoved(int x, int y)
@@ -2806,18 +2843,35 @@ void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const
         Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(m_doc->m_ocafDoc->Main());
         Handle(XCAFDoc_ColorTool) colorTool = XCAFDoc_DocumentTool::ColorTool(m_doc->m_ocafDoc->Main());
         
-        label = shapeTool->AddShape(shape, false); // Add as simple shape
-        
-        // Set a name
-        std::string typeName = Util::TopoShape::GetShapeTypeString(shape);
-        TDataStd_Name::Set(label, typeName.c_str());
+        // Check has active part
+        TDF_Label partLabel = ensureActivePart();
 
-        // Set Color
-        Quantity_Color color(r, g, b, Quantity_TOC_RGB);
-        colorTool->SetColor(label, color, XCAFDoc_ColorGen);
-        colorTool->SetColor(label, color, XCAFDoc_ColorSurf);
-        colorTool->SetColor(label, color, XCAFDoc_ColorCurv);
-        
+        BRep_Builder builder;
+        TopoDS_Compound updatedPartShape;
+        builder.MakeCompound(updatedPartShape);
+        for (TopoDS_Iterator it(m_activePartShape); it.More(); it.Next()) {
+            builder.Add(updatedPartShape, it.Value());
+        }
+        builder.Add(updatedPartShape, shape);
+
+        m_activePartShape = updatedPartShape;
+        shapeTool->SetShape(partLabel, m_activePartShape);
+        shapeTool->UpdateAssemblies();
+
+        TDF_Label shapeLabel = shapeTool->AddSubShape(partLabel, shape);
+
+        if (!shapeLabel.IsNull()) {
+            label = shapeLabel;
+            // name
+            const std::string typeName = Util::TopoShape::GetShapeTypeString(shape);
+            TDataStd_Name::Set(shapeLabel, typeName.c_str());
+            // Set Shape Color
+            const Quantity_Color color(r, g, b, Quantity_TOC_RGB);
+            colorTool->SetColor(shapeLabel, color, XCAFDoc_ColorGen);
+            colorTool->SetColor(shapeLabel, color, XCAFDoc_ColorSurf);
+            colorTool->SetColor(shapeLabel, color, XCAFDoc_ColorCurv);
+        }
+
         // Update the Tree View
         updateTree();
     }
@@ -2850,8 +2904,48 @@ void ViewerWidget::removeShape(const TopoDS_Shape &shape)
     TDF_Label label;
     if (!m_doc->m_ocafDoc.IsNull()) {
         Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(m_doc->m_ocafDoc->Main());
-        if (shapeTool->Search(shape, label) || shapeTool->FindShape(shape, label)) {
-            shapeTool->RemoveShape(label);
+
+        // Find the label before rebuilding the Part.
+        shapeTool->Search(shape, label);
+
+        bool removedFromActivePart = false;
+        if (!m_activePartLabel.IsNull()
+            && !m_activePartShape.IsNull()) {
+            BRep_Builder builder;
+            TopoDS_Compound rebuiltPart;
+            builder.MakeCompound(rebuiltPart);
+
+            for (TopoDS_Iterator it(m_activePartShape);
+                 it.More();
+                 it.Next()) {
+                const TopoDS_Shape& child = it.Value();
+
+                if (child.IsSame(shape)) {
+                    removedFromActivePart = true;
+                } else {
+                    builder.Add(rebuiltPart, child);
+                }
+            }
+
+            if (removedFromActivePart) {
+                m_activePartShape = rebuiltPart;
+
+                shapeTool->SetShape(
+                    m_activePartLabel,
+                    m_activePartShape);
+
+                shapeTool->UpdateAssemblies();
+            }
+        }
+
+        if (!label.IsNull()) {
+            if (removedFromActivePart) {
+                // Remove metadata attached to the obsolete subshape label.
+                label.ForgetAllAttributes(Standard_True);
+            } else {
+                // RemoveShape is valid only for free, top-level shapes.
+                shapeTool->RemoveShape(label);
+            }
         }
     }
 

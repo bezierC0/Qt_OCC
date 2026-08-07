@@ -11,6 +11,7 @@
 #include <TopoDS_Face.hxx>
 #include <TopoDS_Edge.hxx>
 #include <TopoDS_Vertex.hxx>
+#include <TopoDS_Iterator.hxx>
 #include <TopoDS.hxx>
 #include <TDF_Label.hxx>
 #include <BRep_Tool.hxx>
@@ -50,6 +51,31 @@ namespace
         XCAFDoc_ShapeTool::GetReferredShape(lbl, referred);
         return referred;
     }
+
+    QString labelNodeText(const TreeNodeId nodeId, const TDF_Label& label)
+    {
+        QString type = QStringLiteral("Shape");
+        QString name = Mayo::to_QString(labelAttrStdName(label));
+
+        if (XCAFDoc_ShapeTool::IsAssembly(label)) {
+            type = QStringLiteral("Assembly");
+        } else if (XCAFDoc_ShapeTool::IsComponent(label)) {
+            type = QStringLiteral("Component");
+            const TDF_Label referred = shapeReferred(label);
+            const QString productName = Mayo::to_QString(labelAttrStdName(referred));
+            if (name.isEmpty() || name.startsWith(QStringLiteral("=>")))
+                name = productName;
+        } else if (XCAFDoc_ShapeTool::IsSimpleShape(label)) {
+            type = QStringLiteral("Part");
+        } else if (XCAFDoc_ShapeTool::IsSubShape(label)) {
+            type = QStringLiteral("SubShape");
+        }
+
+        if (name.isEmpty())
+            name = QStringLiteral("Unnamed");
+
+        return QStringLiteral("%1 : %2 : %3").arg(nodeId).arg(type, name);
+    }
 }
 
 TreeWidget::TreeWidget( QWidget* parent )
@@ -86,11 +112,15 @@ void TreeWidget::rebuildData( const Tree<TDF_Label>& modelTree )
     for ( const auto& rootId : modelTree.m_vecRoot ) {
         const TDF_Label& label = modelTree.nodeData( rootId );
         QTreeWidgetItem* rootItem = new QTreeWidgetItem( this );
-        const QString instanceName = Mayo::to_QString( labelAttrStdName( label ) );
-        rootItem->setText( 0, QString::fromStdString( std::to_string( rootId ) + " : " + instanceName.toStdString() ) );
+        rootItem->setText(0, labelNodeText(rootId, label));
         rootItem->setData(0, Qt::UserRole, QVariant::fromValue(rootId)); // Store TreeNodeId
 
-        buildAssemblyTree( modelTree, rootId, rootItem );
+        if (XCAFDoc_ShapeTool::IsAssembly(label)) {
+            buildAssemblyTree(modelTree, rootId, rootItem);
+        } else if (XCAFDoc_ShapeTool::IsShape(label)) {
+            const TopoDS_Shape shape = XCAFDoc_ShapeTool::GetShape(label);
+            buildPartShapeTree(modelTree, shape, rootItem);
+        }
     }
 }
 
@@ -102,27 +132,25 @@ void TreeWidget::buildAssemblyTree( const Tree<TDF_Label>& modelTree, const Tree
         const TDF_Label& childLabel = modelTree.nodeData( childId );
         //const TDF_Label productLabel = shapeReferred( childLabel );
         auto* childItem = new QTreeWidgetItem( parentItem );
-        const auto instanceName = Mayo::to_QString( labelAttrStdName( childLabel ) );
-        //childItem->setText( 0, referenceItemText( childLabel , productLabel ) );
-        childItem->setText( 0, QString::fromStdString( std::to_string( childId ) + " : " + instanceName.toStdString() ) );
+        childItem->setText(0, labelNodeText(childId, childLabel));
         childItem->setData(0, Qt::UserRole, QVariant::fromValue(childId)); // Store TreeNodeId
         
         // Recurse to show children (Components/Sub-assemblies)
         if (XCAFDoc_ShapeTool::IsAssembly(childLabel)) {
             buildAssemblyTree( modelTree, childId, childItem );
         }
-        // else if (XCAFDoc_ShapeTool::IsComponent(childLabel)) {
-        //     buildAssemblyTree( modelTree, childId, childItem );
-        // }
+        else if (XCAFDoc_ShapeTool::IsComponent(childLabel)) {
+            buildAssemblyTree( modelTree, childId, childItem );
+        }
         // if (XCAFDoc_ShapeTool::IsCompound(childLabel)) {
         // }
         else if (XCAFDoc_ShapeTool::IsSubShape(childLabel)) {
             const TopoDS_Shape shape = XCAFDoc_ShapeTool::GetShape(childLabel);
-            buildShapeTree(modelTree, shape, childItem);
+            buildPartShapeTree(modelTree, shape, childItem);
         }
         else if (XCAFDoc_ShapeTool::IsShape(childLabel)) {
             const TopoDS_Shape shape = XCAFDoc_ShapeTool::GetShape(childLabel);
-            buildShapeTree(modelTree, shape, childItem);
+            buildPartShapeTree(modelTree, shape, childItem);
         }
         
         childId = modelTree.nodeSiblingNext( childId );
@@ -139,8 +167,40 @@ void TreeWidget::setFilterLevel(TreeFilterLevel level)
     }
 }
 
+void TreeWidget::buildPartShapeTree(const Tree<TDF_Label>& tree, const TopoDS_Shape& shape, QTreeWidgetItem* parentItem)
+{
+    if (shape.IsNull())
+        return;
+
+    if (shape.ShapeType() == TopAbs_SOLID) {
+        auto* solidItem = new QTreeWidgetItem(parentItem);
+        solidItem->setText(0, QString::fromStdString(Util::TopoShape::GetShapeTypeString(shape)));
+        buildShapeTree(tree, shape, solidItem);
+        return;
+    }
+
+    buildShapeTree(tree, shape, parentItem);
+}
+
 void TreeWidget::buildShapeTree(const Tree<TDF_Label>& tree, const TopoDS_Shape& shape, QTreeWidgetItem* parentItem)
 {
+    bool hasSolid = false;
+    for (TopoDS_Iterator childIt(shape); childIt.More(); childIt.Next())
+    {
+        const TopoDS_Shape solid = childIt.Value();
+        if (solid.ShapeType() != TopAbs_SOLID)
+            continue;
+
+        hasSolid = true;
+        auto* solidItem = new QTreeWidgetItem(parentItem);
+        solidItem->setText(0, QString::fromStdString(Util::TopoShape::GetShapeTypeString(solid)));
+
+        buildShapeTree(tree, solid, solidItem);
+    }
+
+    if (hasSolid)
+        return;
+
     // Shell
     for (TopExp_Explorer shellExp(shape, TopAbs_SHELL); shellExp.More(); shellExp.Next())
     {

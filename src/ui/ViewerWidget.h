@@ -7,6 +7,7 @@
 #include <AIS_Point.hxx>
 #include <gp_Pnt.hxx>
 #include <TopoDS_Shape.hxx> 
+#include <TopoDS_Compound.hxx>
 #include <TDocStd_Document.hxx>
 #include "OCCView.h" 
 #include "cae/CaeBoundaryVisualization.h"
@@ -204,6 +205,7 @@ private:
     int findCaeNodeAt(int x, int y) const;
     void updateCaeNodeHover(int nodeId);
     void clearCaeNodeHover();
+    TDF_Label ensureActivePart();
 
 private:
     OCCView*                        m_occView{nullptr};
@@ -216,6 +218,10 @@ private:
     std::map<int, gp_Pnt>           m_caePickNodes;
     Handle(AIS_Point)               m_caeNodeHoverMarker;
     int                             m_caeHoveredNodeId{-1};
+
+    TDF_Label                       m_defaultAssemblyLabel;
+    TDF_Label                       m_activePartLabel;
+    TopoDS_Compound                 m_activePartShape;
 
     //TopoDS_Shape m_loadedShape;
 
