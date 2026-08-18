@@ -81,13 +81,15 @@ QString CaeWorkflowValidator::requireMeshReady(const CaeStudy* study)
         const bool structuralConstraint =
             condition.type() == BoundaryConditionType::FixedSupport;
         const bool thermalConstraint =
-            condition.type() == BoundaryConditionType::FixedTemperature;
+            condition.type() == BoundaryConditionType::FixedTemperature ||
+            condition.type() == BoundaryConditionType::Convection;
         const bool structuralLoad =
             condition.type() == BoundaryConditionType::Force ||
             condition.type() == BoundaryConditionType::Pressure;
         const bool thermalLoad =
             condition.type() == BoundaryConditionType::HeatFlux ||
-            condition.type() == BoundaryConditionType::Convection;
+            condition.type() == BoundaryConditionType::Convection ||
+            condition.type() == BoundaryConditionType::HeatGeneration;
         hasConstraint = hasConstraint ||
             (study->type() == StudyType::StaticStructural && structuralConstraint) ||
             (study->type() == StudyType::SteadyThermal && thermalConstraint);
@@ -95,13 +97,18 @@ QString CaeWorkflowValidator::requireMeshReady(const CaeStudy* study)
             (study->type() == StudyType::StaticStructural && structuralLoad) ||
             (study->type() == StudyType::SteadyThermal && thermalLoad);
         const CaeNamedSelection* target = study->findNamedSelection(condition.targetName());
-        if (!target || !target->planarRegion()) {
+        const bool geometryLoad =
+            condition.type() == BoundaryConditionType::HeatGeneration &&
+            target && target->scope() == NamedSelectionScope::Geometry;
+        if (!target || (!geometryLoad && !target->planarRegion())) {
             return QStringLiteral("Boundary condition target is invalid: %1.")
                 .arg(condition.targetName());
         }
-        if (structuralConstraint || thermalConstraint) {
+        if (structuralConstraint ||
+            condition.type() == BoundaryConditionType::FixedTemperature) {
             fixedTarget = condition.targetName();
-        } else if (structuralLoad || thermalLoad) {
+        }
+        if (structuralLoad || thermalLoad) {
             loadTargets.push_back(condition.targetName());
         }
     }
@@ -109,13 +116,13 @@ QString CaeWorkflowValidator::requireMeshReady(const CaeStudy* study)
     if (!hasConstraint) {
         return study->type() == StudyType::StaticStructural
             ? QStringLiteral("Add a fixed support before running solver.")
-            : QStringLiteral("Add a fixed temperature before running solver.");
+            : QStringLiteral("Add a fixed temperature or convection before running solver.");
     }
 
     if (!hasLoad) {
         return study->type() == StudyType::StaticStructural
             ? QStringLiteral("Add a force or pressure before running a static structural analysis.")
-            : QStringLiteral("Add a heat flux or convection before running a steady thermal analysis.");
+            : QStringLiteral("Add a heat flux, convection or heat generation before running a steady thermal analysis.");
     }
     if (!fixedTarget.isEmpty() && loadTargets.contains(fixedTarget)) {
         return QStringLiteral("Constraint and surface load must target different named faces.");

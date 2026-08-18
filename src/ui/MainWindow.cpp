@@ -127,6 +127,7 @@ void MainWindow::updateCaeActionAvailability()
     if (m_caeFixedTemperatureAction) m_caeFixedTemperatureAction->setEnabled(thermal);
     if (m_caeHeatFluxAction) m_caeHeatFluxAction->setEnabled(thermal);
     if (m_caeConvectionAction) m_caeConvectionAction->setEnabled(thermal);
+    if (m_caeHeatGenerationAction) m_caeHeatGenerationAction->setEnabled(thermal);
     if (m_caeShowDisplacementAction) m_caeShowDisplacementAction->setEnabled(structural);
     if (m_caeShowStressAction) m_caeShowStressAction->setEnabled(structural);
     if (m_caeShowTemperatureAction) m_caeShowTemperatureAction->setEnabled(thermal);
@@ -178,6 +179,8 @@ void MainWindow::refreshCaeBoundaryVisualization()
                     -marker.region.normal[0],
                     -marker.region.normal[1],
                     -marker.region.normal[2]};
+                break;
+            case Cae::BoundaryConditionType::HeatGeneration:
                 break;
             }
             markers.push_back(std::move(marker));
@@ -738,6 +741,10 @@ void MainWindow::createCaeGroup()
     m_caeConvectionAction = new QAction(QIcon(":/icons/icon/cae_convection.svg"), tr("Convection"), this);
     connect(m_caeConvectionAction, &QAction::triggered, this, &MainWindow::onCaeAddConvection);
     m_caeBoundaryPannel->addLargeAction(m_caeConvectionAction);
+
+    m_caeHeatGenerationAction = new QAction(QIcon(":/icons/icon/cae_heat_generation.svg"), tr("Heat Generation"), this);
+    connect(m_caeHeatGenerationAction, &QAction::triggered, this, &MainWindow::onCaeAddHeatGeneration);
+    m_caeBoundaryPannel->addLargeAction(m_caeHeatGenerationAction);
 
     m_caeMeshPannel = m_caeCategory->addPannel(tr("Mesh"));
     m_caeGenerateMeshAction = new QAction(QIcon(":/icons/icon/cae_generate_mesh.svg"), tr("Generate"), this);
@@ -1397,6 +1404,30 @@ void MainWindow::onCaeAddConvection()
     refreshCaeTree();
 }
 
+void MainWindow::onCaeAddHeatGeneration()
+{
+    bool accepted = false;
+    const double heatGeneration = QInputDialog::getDouble(
+        this,
+        tr("Add Heat Generation"),
+        tr("Volumetric heat generation (W/mm^3):"),
+        m_caeHeatGenerationValue,
+        1.0e-12,
+        1.0e12,
+        9,
+        &accepted);
+    if (!accepted) {
+        return;
+    }
+    m_caeHeatGenerationValue = heatGeneration;
+    updateStatusMessage(
+        m_caeController->addHeatGeneration(heatGeneration),
+        5000);
+    resetCaeResultPresentation(true);
+    refreshCaeBoundaryVisualization();
+    refreshCaeTree();
+}
+
 QString MainWindow::chooseCaeFaceTarget(const QString& title, bool* accepted)
 {
     if (accepted) {
@@ -1708,7 +1739,7 @@ void MainWindow::onCaeBoundaryConditionActivated(
         }
         m_caeHeatFluxValue = heatFlux;
         updateMessage = m_caeController->addHeatFlux(heatFlux, targetName);
-    } else {
+    } else if (type == Cae::BoundaryConditionType::Convection) {
         DialogCaeConvection dialog(
             condition->value(),
             condition->referenceValue(),
@@ -1722,6 +1753,22 @@ void MainWindow::onCaeBoundaryConditionActivated(
             m_caeFilmCoefficientValue,
             m_caeAmbientTemperatureValue,
             targetName);
+    } else {
+        bool accepted = false;
+        const double heatGeneration = QInputDialog::getDouble(
+            this,
+            tr("Edit Heat Generation"),
+            tr("Volumetric heat generation (W/mm^3):"),
+            condition->value(),
+            1.0e-12,
+            1.0e12,
+            9,
+            &accepted);
+        if (!accepted) {
+            return;
+        }
+        m_caeHeatGenerationValue = heatGeneration;
+        updateMessage = m_caeController->addHeatGeneration(heatGeneration);
     }
 
     updateStatusMessage(updateMessage, 5000);

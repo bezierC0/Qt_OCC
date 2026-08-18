@@ -117,6 +117,7 @@ private slots:
     void onCaeAddFixedTemperature();
     void onCaeAddHeatFlux();
     void onCaeAddConvection();
+    void onCaeAddHeatGeneration();
     void onCaeGenerateMesh();
     void onCaeRunSolver();
     void onCaeShowDisplacement();
@@ -288,6 +289,7 @@ private:
     QAction* m_caeFixedTemperatureAction{};
     QAction* m_caeHeatFluxAction{};
     QAction* m_caeConvectionAction{};
+    QAction* m_caeHeatGenerationAction{};
     QAction* m_caeGenerateMeshAction{};
     QAction* m_caeRunSolverAction{};
     QAction* m_caeShowDisplacementAction{};
@@ -304,6 +306,7 @@ private:
     double m_caeHeatFluxValue{0.01};
     double m_caeFilmCoefficientValue{10.0};
     double m_caeAmbientTemperatureValue{20.0};
+    double m_caeHeatGenerationValue{0.001};
     double m_caeGlobalMeshSize{1.0};
     int m_caeProbeNodeId{0};
     std::optional<Cae::ResultFieldType> m_currentCaeResultField;

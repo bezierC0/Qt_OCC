@@ -74,6 +74,7 @@
         <file>icon/cae_pick_node.svg</file>
         <file>icon/cae_pressure.svg</file>
         <file>icon/cae_heat_flux.svg</file>
+        <file>icon/cae_heat_generation.svg</file>
         <file>icon/cae_result_displacement.svg</file>
         <file>icon/cae_result_probe.svg</file>
         <file>icon/cae_result_stress.svg</file>

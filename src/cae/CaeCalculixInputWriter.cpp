@@ -421,19 +421,23 @@ bool CalculixInputWriter::writeSteadyThermalAnalysis(
         }
         return false;
     }
+    const bool hasFixedTemperature = request.fixedTemperatureRegion.has_value();
     const bool hasHeatFlux = request.heatFluxRegion && request.heatFlux > 0.0;
     const bool hasConvection = request.convectionRegion && request.filmCoefficient > 0.0;
-    if (!request.fixedTemperatureRegion || request.thermalConductivity <= 0.0 ||
-        (!hasHeatFlux && !hasConvection)) {
+    const bool hasHeatGeneration = request.volumetricHeatGeneration > 0.0;
+    if (request.thermalConductivity <= 0.0 ||
+        (!hasFixedTemperature && !hasConvection) ||
+        (!hasHeatFlux && !hasConvection && !hasHeatGeneration)) {
         if (errorMessage) {
             *errorMessage = QStringLiteral(
-                "Steady thermal analysis requires conductivity, a fixed temperature and a thermal load.");
+                "Steady thermal analysis requires conductivity, a temperature reference and a thermal load.");
         }
         return false;
     }
 
-    const std::vector<int> fixedNodes =
-        nodesInRegion(meshData, *request.fixedTemperatureRegion);
+    const std::vector<int> fixedNodes = hasFixedTemperature
+        ? nodesInRegion(meshData, *request.fixedTemperatureRegion)
+        : std::vector<int>{};
     double loadedArea = 0.0;
     const std::map<int, double> nodalHeatLoads = hasHeatFlux
         ? heatFluxNodalLoads(
@@ -445,7 +449,7 @@ bool CalculixInputWriter::writeSteadyThermalAnalysis(
     const std::vector<CalculixElementFace> convectionFaces = hasConvection
         ? elementFacesInRegion(meshData, *request.convectionRegion)
         : std::vector<CalculixElementFace>{};
-    if (fixedNodes.empty() ||
+    if ((hasFixedTemperature && fixedNodes.empty()) ||
         (hasHeatFlux && (nodalHeatLoads.empty() || loadedArea <= 0.0)) ||
         (hasConvection && convectionFaces.empty())) {
         if (errorMessage) {
@@ -503,14 +507,18 @@ bool CalculixInputWriter::writeSteadyThermalAnalysis(
 
     stream << "*ELSET, ELSET=EALL\n";
     writeIdList(stream, allElements);
-    stream << "*NSET, NSET=FIXED_TEMP\n";
-    writeIdList(stream, fixedNodes);
+    if (hasFixedTemperature) {
+        stream << "*NSET, NSET=FIXED_TEMP\n";
+        writeIdList(stream, fixedNodes);
+    }
     stream << "*MATERIAL, NAME=THERMAL_MATERIAL\n*CONDUCTIVITY\n"
            << QString::number(request.thermalConductivity / 1000.0, 'g', 16) << "\n";
     stream << "*SOLID SECTION, ELSET=EALL, MATERIAL=THERMAL_MATERIAL\n\n";
     stream << "*STEP\n*HEAT TRANSFER, STEADY STATE\n1., 1.\n";
-    stream << "*BOUNDARY\nFIXED_TEMP, 11, 11, "
-           << QString::number(request.fixedTemperature, 'g', 16) << "\n";
+    if (hasFixedTemperature) {
+        stream << "*BOUNDARY\nFIXED_TEMP, 11, 11, "
+               << QString::number(request.fixedTemperature, 'g', 16) << "\n";
+    }
     if (hasHeatFlux) {
         stream << "*CFLUX\n";
         for (const auto& nodeLoad : nodalHeatLoads) {
@@ -525,6 +533,10 @@ bool CalculixInputWriter::writeSteadyThermalAnalysis(
                    << QString::number(request.ambientTemperature, 'g', 16) << ", "
                    << QString::number(request.filmCoefficient / 1.0e6, 'g', 16) << "\n";
         }
+    }
+    if (hasHeatGeneration) {
+        stream << "*DFLUX\nEALL, BF, "
+               << QString::number(request.volumetricHeatGeneration, 'g', 16) << "\n";
     }
     stream << "*NODE FILE\nNT\n*END STEP\n";
     return true;

@@ -132,6 +132,8 @@ QString toDisplayString(BoundaryConditionType type)
         return QStringLiteral("Heat Flux");
     case BoundaryConditionType::Convection:
         return QStringLiteral("Convection");
+    case BoundaryConditionType::HeatGeneration:
+        return QStringLiteral("Heat Generation");
     }
     return QStringLiteral("Unknown Boundary Condition");
 }
