@@ -442,6 +442,42 @@ QString CaeController::addConvection(
         .arg(target->name());
 }
 
+QString CaeController::addHeatGeneration(double volumetricHeatGeneration)
+{
+    CaeStudy* study = m_project->activeStudy();
+    const QString validationError = CaeWorkflowValidator::requireNamedSelection(study);
+    if (!validationError.isEmpty()) {
+        return validationError;
+    }
+    if (study->type() != StudyType::SteadyThermal) {
+        return QStringLiteral("Heat Generation is only available for steady thermal studies.");
+    }
+    if (volumetricHeatGeneration <= 0.0) {
+        return QStringLiteral("Volumetric heat generation must be greater than zero.");
+    }
+
+    const auto geometrySelection = std::find_if(
+        study->namedSelections().cbegin(),
+        study->namedSelections().cend(),
+        [](const CaeNamedSelection& selection) {
+            return selection.scope() == NamedSelectionScope::Geometry;
+        });
+    if (geometrySelection == study->namedSelections().cend()) {
+        return QStringLiteral("Heat Generation requires the current study geometry.");
+    }
+
+    study->addBoundaryCondition(CaeBoundaryCondition(
+        QStringLiteral("Heat Generation"),
+        geometrySelection->name(),
+        BoundaryConditionType::HeatGeneration,
+        volumetricHeatGeneration,
+        QStringLiteral("W/mm^3")));
+    return QStringLiteral("Added volumetric heat generation to %1: %2 W/mm^3 -> %3.")
+        .arg(study->name())
+        .arg(volumetricHeatGeneration)
+        .arg(geometrySelection->name());
+}
+
 QString CaeController::removeBoundaryCondition(
     const QUuid& studyId,
     const QString& name)
@@ -516,11 +552,21 @@ QString CaeController::runSolver()
     double filmCoefficient = 0.0;
     double ambientTemperature = 20.0;
     std::optional<PlanarSelectionRegion> convectionRegion;
+    double volumetricHeatGeneration = 0.0;
     for (const CaeBoundaryCondition& condition : study->boundaryConditions()) {
         const CaeNamedSelection* target = study->findNamedSelection(condition.targetName());
-        if (!target || !target->planarRegion()) {
+        if (!target) {
             study->setState(StudyState::Failed);
             return QStringLiteral("Boundary condition target is no longer available: %1.")
+                .arg(condition.targetName());
+        }
+        if (condition.type() == BoundaryConditionType::HeatGeneration) {
+            volumetricHeatGeneration = condition.value();
+            continue;
+        }
+        if (!target->planarRegion()) {
+            study->setState(StudyState::Failed);
+            return QStringLiteral("Boundary condition requires a planar face target: %1.")
                 .arg(condition.targetName());
         }
         switch (condition.type()) {
@@ -550,6 +596,8 @@ QString CaeController::runSolver()
             ambientTemperature = condition.referenceValue();
             convectionRegion = target->planarRegion();
             break;
+        case BoundaryConditionType::HeatGeneration:
+            break;
         }
     }
     const CaeMaterial& material = study->materials().front();
@@ -571,6 +619,7 @@ QString CaeController::runSolver()
     solverRequest.filmCoefficient = filmCoefficient;
     solverRequest.ambientTemperature = ambientTemperature;
     solverRequest.convectionRegion = convectionRegion;
+    solverRequest.volumetricHeatGeneration = volumetricHeatGeneration;
     solverRequest.studyType = study->type();
     if (!m_services.solver->solve(solverRequest, &solverResult, &errorMessage)) {
         study->setSolution(CaeSolution(setup, SolutionStatus::Failed, errorMessage));

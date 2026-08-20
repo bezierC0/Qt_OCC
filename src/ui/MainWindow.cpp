@@ -31,6 +31,7 @@
 #include "DialogAbout.h"
 #include "DialogCaeForce.h"
 #include "DialogCaeConvection.h"
+#include "DialogCaeColorRange.h"
 #include "DialogCaeMaterial.h"
 #include "DialogCaeSettings.h"
 #include "DialogCaeThermalMaterial.h"
@@ -127,10 +128,12 @@ void MainWindow::updateCaeActionAvailability()
     if (m_caeFixedTemperatureAction) m_caeFixedTemperatureAction->setEnabled(thermal);
     if (m_caeHeatFluxAction) m_caeHeatFluxAction->setEnabled(thermal);
     if (m_caeConvectionAction) m_caeConvectionAction->setEnabled(thermal);
+    if (m_caeHeatGenerationAction) m_caeHeatGenerationAction->setEnabled(thermal);
     if (m_caeShowDisplacementAction) m_caeShowDisplacementAction->setEnabled(structural);
     if (m_caeShowStressAction) m_caeShowStressAction->setEnabled(structural);
     if (m_caeShowTemperatureAction) m_caeShowTemperatureAction->setEnabled(thermal);
     if (m_caeDeformationScaleAction) m_caeDeformationScaleAction->setEnabled(structural);
+    if (m_caeColorRangeAction) m_caeColorRangeAction->setEnabled(m_currentCaeResultField.has_value());
 }
 
 void MainWindow::refreshCaeBoundaryVisualization()
@@ -178,6 +181,8 @@ void MainWindow::refreshCaeBoundaryVisualization()
                     -marker.region.normal[0],
                     -marker.region.normal[1],
                     -marker.region.normal[2]};
+                break;
+            case Cae::BoundaryConditionType::HeatGeneration:
                 break;
             }
             markers.push_back(std::move(marker));
@@ -739,6 +744,10 @@ void MainWindow::createCaeGroup()
     connect(m_caeConvectionAction, &QAction::triggered, this, &MainWindow::onCaeAddConvection);
     m_caeBoundaryPannel->addLargeAction(m_caeConvectionAction);
 
+    m_caeHeatGenerationAction = new QAction(QIcon(":/icons/icon/cae_heat_generation.svg"), tr("Heat Generation"), this);
+    connect(m_caeHeatGenerationAction, &QAction::triggered, this, &MainWindow::onCaeAddHeatGeneration);
+    m_caeBoundaryPannel->addLargeAction(m_caeHeatGenerationAction);
+
     m_caeMeshPannel = m_caeCategory->addPannel(tr("Mesh"));
     m_caeGenerateMeshAction = new QAction(QIcon(":/icons/icon/cae_generate_mesh.svg"), tr("Generate"), this);
     connect(m_caeGenerateMeshAction, &QAction::triggered, this, &MainWindow::onCaeGenerateMesh);
@@ -765,6 +774,10 @@ void MainWindow::createCaeGroup()
     m_caeDeformationScaleAction = new QAction(QIcon(":/icons/icon/cae_deformation_scale.svg"), tr("Deformation Scale"), this);
     connect(m_caeDeformationScaleAction, &QAction::triggered, this, &MainWindow::onCaeSetDeformationScale);
     m_caeResultsPannel->addSmallAction(m_caeDeformationScaleAction);
+
+    m_caeColorRangeAction = new QAction(QIcon(":/icons/icon/cae_color_range.svg"), tr("Color Map"), this);
+    connect(m_caeColorRangeAction, &QAction::triggered, this, &MainWindow::onCaeSetColorRange);
+    m_caeResultsPannel->addSmallAction(m_caeColorRangeAction);
 
     m_caeProbeResultAction = new QAction(QIcon(":/icons/icon/cae_result_probe.svg"), tr("Probe"), this);
     connect(m_caeProbeResultAction, &QAction::triggered, this, &MainWindow::onCaeProbeResult);
@@ -1397,6 +1410,30 @@ void MainWindow::onCaeAddConvection()
     refreshCaeTree();
 }
 
+void MainWindow::onCaeAddHeatGeneration()
+{
+    bool accepted = false;
+    const double heatGeneration = QInputDialog::getDouble(
+        this,
+        tr("Add Heat Generation"),
+        tr("Volumetric heat generation (W/mm^3):"),
+        m_caeHeatGenerationValue,
+        1.0e-12,
+        1.0e12,
+        9,
+        &accepted);
+    if (!accepted) {
+        return;
+    }
+    m_caeHeatGenerationValue = heatGeneration;
+    updateStatusMessage(
+        m_caeController->addHeatGeneration(heatGeneration),
+        5000);
+    resetCaeResultPresentation(true);
+    refreshCaeBoundaryVisualization();
+    refreshCaeTree();
+}
+
 QString MainWindow::chooseCaeFaceTarget(const QString& title, bool* accepted)
 {
     if (accepted) {
@@ -1447,6 +1484,9 @@ void MainWindow::resetCaeResultPresentation(bool preserveMesh)
         m_caePickNodeAction->setChecked(false);
     }
     m_currentCaeResultField.reset();
+    if (m_caeColorRangeAction) {
+        m_caeColorRangeAction->setEnabled(false);
+    }
     m_viewerWidget->clearScalarField();
 
     const Cae::CaeStudy* study = m_caeController->project().activeStudy();
@@ -1708,7 +1748,7 @@ void MainWindow::onCaeBoundaryConditionActivated(
         }
         m_caeHeatFluxValue = heatFlux;
         updateMessage = m_caeController->addHeatFlux(heatFlux, targetName);
-    } else {
+    } else if (type == Cae::BoundaryConditionType::Convection) {
         DialogCaeConvection dialog(
             condition->value(),
             condition->referenceValue(),
@@ -1722,6 +1762,22 @@ void MainWindow::onCaeBoundaryConditionActivated(
             m_caeFilmCoefficientValue,
             m_caeAmbientTemperatureValue,
             targetName);
+    } else {
+        bool accepted = false;
+        const double heatGeneration = QInputDialog::getDouble(
+            this,
+            tr("Edit Heat Generation"),
+            tr("Volumetric heat generation (W/mm^3):"),
+            condition->value(),
+            1.0e-12,
+            1.0e12,
+            9,
+            &accepted);
+        if (!accepted) {
+            return;
+        }
+        m_caeHeatGenerationValue = heatGeneration;
+        updateMessage = m_caeController->addHeatGeneration(heatGeneration);
     }
 
     updateStatusMessage(updateMessage, 5000);
@@ -1821,6 +1877,57 @@ void MainWindow::onCaeSetDeformationScale()
     } else {
         updateStatusMessage(tr("Select a CAE result field before setting deformation scale."), 5000);
     }
+}
+
+void MainWindow::onCaeSetColorRange()
+{
+    if (!m_currentCaeResultField) {
+        updateStatusMessage(tr("Display a CAE result field before setting its color range."), 5000);
+        return;
+    }
+
+    const Cae::CaeStudy* study = m_caeController->project().activeStudy();
+    if (!study || !study->result()) {
+        updateStatusMessage(tr("No CAE result is available for color range settings."), 5000);
+        return;
+    }
+    const Cae::CaeResultField* field = study->result()->field(*m_currentCaeResultField);
+    if (!field) {
+        updateStatusMessage(tr("The current CAE result field is unavailable."), 5000);
+        return;
+    }
+
+    const QString key = caeColorRangeKey(study->id(), *m_currentCaeResultField);
+    CaeColorRangeSetting& setting = m_caeColorRanges[key];
+    const double initialMinimum = setting.automatic ? field->minValue() : setting.minimum;
+    const double initialMaximum = setting.automatic ? field->maxValue() : setting.maximum;
+    DialogCaeColorRange dialog(
+        setting.automatic,
+        initialMinimum,
+        initialMaximum,
+        field->minValue(),
+        field->maxValue(),
+        setting.bandCount,
+        field->unit(),
+        this);
+    if (dialog.exec() != QDialog::Accepted) {
+        return;
+    }
+
+    setting.automatic = dialog.isAutomatic();
+    setting.minimum = setting.automatic ? field->minValue() : dialog.minimum();
+    setting.maximum = setting.automatic ? field->maxValue() : dialog.maximum();
+    setting.bandCount = dialog.bandCount();
+    presentCaeResult(*m_currentCaeResultField, false);
+    updateStatusMessage(
+        setting.automatic
+            ? tr("Color map applied with %1 bands over the result range.").arg(setting.bandCount)
+            : tr("Color map applied: %1 to %2 %3 in %4 bands.")
+                  .arg(QString::number(setting.minimum, 'g', 12))
+                  .arg(QString::number(setting.maximum, 'g', 12))
+                  .arg(field->unit())
+                  .arg(setting.bandCount),
+        5000);
 }
 
 void MainWindow::onCaeProbeResult()
@@ -1953,10 +2060,29 @@ void MainWindow::presentCaeResult(Cae::ResultFieldType fieldType, bool reloadFie
         return;
     }
     m_currentCaeResultField = fieldType;
+    if (m_caeColorRangeAction) {
+        m_caeColorRangeAction->setEnabled(true);
+    }
     m_viewerWidget->clearCaeBoundaryMarkers();
 
     QString errorMessage;
-    const QString title = QStringLiteral("%1 (%2)").arg(Cae::toDisplayString(fieldType), field->unit());
+    const QString rangeKey = caeColorRangeKey(study->id(), fieldType);
+    const auto rangeSetting = m_caeColorRanges.find(rangeKey);
+    const bool customRange =
+        rangeSetting != m_caeColorRanges.end() && !rangeSetting->second.automatic;
+    const double displayMinimum = customRange
+        ? rangeSetting->second.minimum
+        : field->minValue();
+    const double displayMaximum = customRange
+        ? rangeSetting->second.maximum
+        : field->maxValue();
+    const int colorBandCount = rangeSetting != m_caeColorRanges.end()
+        ? rangeSetting->second.bandCount
+        : 10;
+    const QString baseTitle = QStringLiteral("%1 (%2)").arg(Cae::toDisplayString(fieldType), field->unit());
+    const QString title = customRange
+        ? tr("%1 [Custom, %2 Bands]").arg(baseTitle).arg(colorBandCount)
+        : tr("%1 [%2 Bands]").arg(baseTitle).arg(colorBandCount);
     bool displayed = false;
     if (!field->nodalValues().empty() && study->mesh() && QFileInfo::exists(study->mesh()->source())) {
         displayed = m_viewerWidget->showCaeScalarField(
@@ -1965,19 +2091,30 @@ void MainWindow::presentCaeResult(Cae::ResultFieldType fieldType, bool reloadFie
             field->nodalValues(),
             field->nodalDisplacements(),
             m_caeDeformationScale,
-            field->minValue(),
-            field->maxValue(),
+            displayMinimum,
+            displayMaximum,
+            colorBandCount,
             &errorMessage);
     } else {
         displayed = m_viewerWidget->showScalarField(
             title,
-            field->minValue(),
-            field->maxValue(),
+            displayMinimum,
+            displayMaximum,
+            colorBandCount,
             &errorMessage);
     }
     if (!displayed) {
         updateStatusMessage(errorMessage, 5000);
     }
+}
+
+QString MainWindow::caeColorRangeKey(
+    const QUuid& studyId,
+    Cae::ResultFieldType fieldType) const
+{
+    return QStringLiteral("%1:%2")
+        .arg(studyId.toString(QUuid::WithoutBraces))
+        .arg(static_cast<int>(fieldType));
 }
 
 void MainWindow::onCaeSettings()

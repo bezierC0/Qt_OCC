@@ -11,7 +11,8 @@ enum class BoundaryConditionType {
     Pressure,
     FixedTemperature,
     HeatFlux,
-    Convection
+    Convection,
+    HeatGeneration
 };
 
 class CaeBoundaryCondition {

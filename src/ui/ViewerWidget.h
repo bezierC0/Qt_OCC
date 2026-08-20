@@ -153,8 +153,14 @@ public:
         double deformationScale,
         double minimum,
         double maximum,
+        int colorBandCount,
         QString* errorMessage = nullptr);
-    bool showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage = nullptr);
+    bool showScalarField(
+        const QString& title,
+        double minimum,
+        double maximum,
+        int colorBandCount,
+        QString* errorMessage = nullptr);
     void clearScalarField();
     bool setCaeNodePickingEnabled(bool enabled, QString* errorMessage = nullptr);
 
@@ -201,7 +207,7 @@ private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
     bool exportDxfToPath(const QString& savePath, QString* errorMessage);
     void hideCadGeometryForCaeResult();
-    void updateCaeLegend(const QString& title, double minimum, double maximum);
+    void updateCaeLegend(const QString& title, double minimum, double maximum, int colorBandCount);
     int findCaeNodeAt(int x, int y) const;
     void updateCaeNodeHover(int nodeId);
     void clearCaeNodeHover();

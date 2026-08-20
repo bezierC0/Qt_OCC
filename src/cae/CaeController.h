@@ -42,6 +42,7 @@ public:
         double filmCoefficient,
         double ambientTemperature,
         const QString& targetName = QString());
+    QString addHeatGeneration(double volumetricHeatGeneration);
     QString removeBoundaryCondition(const QUuid& studyId, const QString& name);
     QString addDefaultForce();
     QString generateMesh(const QString& geometryFilePath = QString(), double globalSize = 1.0);

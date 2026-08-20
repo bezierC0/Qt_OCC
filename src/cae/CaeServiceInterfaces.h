@@ -34,6 +34,7 @@ struct SolverRequest {
     double filmCoefficient{0.0};
     double ambientTemperature{20.0};
     std::optional<PlanarSelectionRegion> convectionRegion;
+    double volumetricHeatGeneration{0.0};
     StudyType studyType{StudyType::StaticStructural};
 };
 
