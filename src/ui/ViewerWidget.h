@@ -7,6 +7,7 @@
 #include <AIS_Point.hxx>
 #include <gp_Pnt.hxx>
 #include <TopoDS_Shape.hxx> 
+#include <TopoDS_Compound.hxx>
 #include <TDocStd_Document.hxx>
 #include "OCCView.h" 
 #include "cae/CaeBoundaryVisualization.h"
@@ -152,8 +153,14 @@ public:
         double deformationScale,
         double minimum,
         double maximum,
+        int colorBandCount,
         QString* errorMessage = nullptr);
-    bool showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage = nullptr);
+    bool showScalarField(
+        const QString& title,
+        double minimum,
+        double maximum,
+        int colorBandCount,
+        QString* errorMessage = nullptr);
     void clearScalarField();
     bool setCaeNodePickingEnabled(bool enabled, QString* errorMessage = nullptr);
 
@@ -200,10 +207,11 @@ private:
     bool getBooleanTargets(TopoDS_Shape& target1, TopoDS_Shape& target2);
     bool exportDxfToPath(const QString& savePath, QString* errorMessage);
     void hideCadGeometryForCaeResult();
-    void updateCaeLegend(const QString& title, double minimum, double maximum);
+    void updateCaeLegend(const QString& title, double minimum, double maximum, int colorBandCount);
     int findCaeNodeAt(int x, int y) const;
     void updateCaeNodeHover(int nodeId);
     void clearCaeNodeHover();
+    TDF_Label ensureActivePart();
 
 private:
     OCCView*                        m_occView{nullptr};
@@ -216,6 +224,10 @@ private:
     std::map<int, gp_Pnt>           m_caePickNodes;
     Handle(AIS_Point)               m_caeNodeHoverMarker;
     int                             m_caeHoveredNodeId{-1};
+
+    TDF_Label                       m_defaultAssemblyLabel;
+    TDF_Label                       m_activePartLabel;
+    TopoDS_Compound                 m_activePartShape;
 
     //TopoDS_Shape m_loadedShape;
 

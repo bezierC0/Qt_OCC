@@ -64,13 +64,18 @@
         <file>icon/animation.svg</file>
         <file>icon/busbar.svg</file>
         <file>icon/cae_assign_material.svg</file>
+        <file>icon/cae_convection.svg</file>
+        <file>icon/cae_color_range.svg</file>
         <file>icon/cae_deformation_scale.svg</file>
         <file>icon/cae_fixed_support.svg</file>
+        <file>icon/cae_fixed_temperature.svg</file>
         <file>icon/cae_force.svg</file>
         <file>icon/cae_generate_mesh.svg</file>
         <file>icon/cae_named_selection.svg</file>
         <file>icon/cae_pick_node.svg</file>
         <file>icon/cae_pressure.svg</file>
+        <file>icon/cae_heat_flux.svg</file>
+        <file>icon/cae_heat_generation.svg</file>
         <file>icon/cae_result_displacement.svg</file>
         <file>icon/cae_result_probe.svg</file>
         <file>icon/cae_result_stress.svg</file>

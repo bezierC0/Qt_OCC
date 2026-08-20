@@ -8,13 +8,25 @@ namespace Cae {
 enum class BoundaryConditionType {
     FixedSupport,
     Force,
-    Pressure
+    Pressure,
+    FixedTemperature,
+    HeatFlux,
+    Convection,
+    HeatGeneration
 };
 
 class CaeBoundaryCondition {
 public:
     CaeBoundaryCondition(QString name, QString targetName, BoundaryConditionType type);
     CaeBoundaryCondition(QString name, QString targetName, BoundaryConditionType type, double value, QString unit);
+    CaeBoundaryCondition(
+        QString name,
+        QString targetName,
+        BoundaryConditionType type,
+        double value,
+        QString unit,
+        double referenceValue,
+        QString referenceUnit);
     CaeBoundaryCondition(
         QString name,
         QString targetName,
@@ -28,6 +40,8 @@ public:
     double value() const;
     const std::array<double, 3>& components() const;
     QString unit() const;
+    double referenceValue() const;
+    QString referenceUnit() const;
     QString summary() const;
 
 private:
@@ -37,6 +51,8 @@ private:
     double m_value{0.0};
     std::array<double, 3> m_components{};
     QString m_unit;
+    double m_referenceValue{0.0};
+    QString m_referenceUnit;
 };
 
 QString toDisplayString(BoundaryConditionType type);

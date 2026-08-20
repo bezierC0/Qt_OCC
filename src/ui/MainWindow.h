@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <map>
 #include <optional>
 
 #include "SARibbon.h"
@@ -13,6 +14,7 @@
 #include <memory>
 
 class QTranslator;
+class QCloseEvent;
 
 class TopoDS_Shape;
 
@@ -38,6 +40,8 @@ public:
     ModelTreeWidget* GetModelTreeWidget() const;
 public slots:
     void updateStatusMessage(const QString& msg, int timeout = 0);
+protected:
+    void closeEvent(QCloseEvent* event) override;
 private slots:
     /* file */
     void onNewFile();
@@ -114,6 +118,10 @@ private slots:
     void onCaeAddFixedSupport();
     void onCaeAddForce();
     void onCaeAddPressure();
+    void onCaeAddFixedTemperature();
+    void onCaeAddHeatFlux();
+    void onCaeAddConvection();
+    void onCaeAddHeatGeneration();
     void onCaeGenerateMesh();
     void onCaeRunSolver();
     void onCaeShowDisplacement();
@@ -127,6 +135,7 @@ private slots:
     void onCaeRemoveMaterialRequested(const QUuid& studyId, const QString& name);
     void onCaeRemoveBoundaryConditionRequested(const QUuid& studyId, const QString& name);
     void onCaeSetDeformationScale();
+    void onCaeSetColorRange();
     void onCaeProbeResult();
     void onCaePickNodeToggled(bool enabled);
     void onCaeNodePicked(int nodeId);
@@ -145,11 +154,13 @@ private slots:
 private:
     void setupUi();
     void refreshCaeTree();
+    void updateCaeActionAvailability();
     void refreshCaeBoundaryVisualization();
     void resetCaeResultPresentation(bool preserveMesh);
     void presentCaeResult(Cae::ResultFieldType fieldType, bool reloadField = true);
     void showCaeNodeProbe(int nodeId);
     QString chooseCaeFaceTarget(const QString& title, bool* accepted);
+    QString caeColorRangeKey(const QUuid& studyId, Cae::ResultFieldType fieldType) const;
     void createThemeActions();
 
     // Ribbon creation helper functions
@@ -281,21 +292,38 @@ private:
     QAction* m_caeFixedSupportAction{};
     QAction* m_caeForceAction{};
     QAction* m_caePressureAction{};
+    QAction* m_caeFixedTemperatureAction{};
+    QAction* m_caeHeatFluxAction{};
+    QAction* m_caeConvectionAction{};
+    QAction* m_caeHeatGenerationAction{};
     QAction* m_caeGenerateMeshAction{};
     QAction* m_caeRunSolverAction{};
     QAction* m_caeShowDisplacementAction{};
     QAction* m_caeShowStressAction{};
     QAction* m_caeShowTemperatureAction{};
     QAction* m_caeDeformationScaleAction{};
+    QAction* m_caeColorRangeAction{};
     QAction* m_caeProbeResultAction{};
     QAction* m_caePickNodeAction{};
     QAction* m_caeSettingsAction{};
     double m_caeDeformationScale{0.0};
     std::array<double, 3> m_caeForceComponents{100.0, 0.0, 0.0};
     double m_caePressureValue{1.0};
+    double m_caeFixedTemperatureValue{20.0};
+    double m_caeHeatFluxValue{0.01};
+    double m_caeFilmCoefficientValue{10.0};
+    double m_caeAmbientTemperatureValue{20.0};
+    double m_caeHeatGenerationValue{0.001};
     double m_caeGlobalMeshSize{1.0};
     int m_caeProbeNodeId{0};
     std::optional<Cae::ResultFieldType> m_currentCaeResultField;
+    struct CaeColorRangeSetting {
+        bool automatic{true};
+        double minimum{0.0};
+        double maximum{1.0};
+        int bandCount{10};
+    };
+    std::map<QString, CaeColorRangeSetting> m_caeColorRanges;
 
 
     // ---- help Group ----

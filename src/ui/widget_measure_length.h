@@ -1,14 +1,12 @@
 #pragma once
 
-#include <map>
 #include <vector>
-
-#include <TopAbs_ShapeEnum.hxx>
 #include <TopoDS_Shape.hxx>
 
 #include <QWidget>
 
 class QCloseEvent;
+class SelectionPickSession;
 
 namespace Ui
 {
@@ -36,7 +34,6 @@ private slots:
     void onObjectSelected(const TopoDS_Shape &shape);
 
 private:
-    void saveMouseState();
     void restoreMouseState();
     void updateUI();
     void calculateAndAddLength(const TopoDS_Shape &shape);
@@ -44,11 +41,7 @@ private:
 private:
     Ui::WidgetMeasureLength *ui;
 
-    // State saving
-    int m_savedMouseMode;
-    std::map<TopAbs_ShapeEnum, bool> m_savedFilters;
-
-    bool m_isPicking;
+    SelectionPickSession* m_pickSession;
     std::vector<TopoDS_Shape> m_selectedShapes;
     double m_totalLength;
 };

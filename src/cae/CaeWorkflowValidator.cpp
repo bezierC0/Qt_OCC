@@ -51,15 +51,22 @@ QString CaeWorkflowValidator::requireMeshInputs(const CaeStudy* study)
     if (study->materials().empty()) {
         return QStringLiteral("Assign a material before generating the mesh.");
     }
+    const CaeMaterial& material = study->materials().front();
+    if (study->type() == StudyType::StaticStructural && material.youngModulus() <= 0.0) {
+        return QStringLiteral("Assign an elastic material before generating the mesh.");
+    }
+    if (study->type() == StudyType::SteadyThermal && material.thermalConductivity() <= 0.0) {
+        return QStringLiteral("Assign a thermal material before generating the mesh.");
+    }
 
     return QString();
 }
 
 QString CaeWorkflowValidator::requireMeshReady(const CaeStudy* study)
 {
-    const QString activeStudyError = requireActiveStudy(study);
-    if (!activeStudyError.isEmpty()) {
-        return activeStudyError;
+    const QString meshInputError = requireMeshInputs(study);
+    if (!meshInputError.isEmpty()) {
+        return meshInputError;
     }
 
     if (study->state() != StudyState::Meshed && study->state() != StudyState::Solved) {
@@ -71,31 +78,54 @@ QString CaeWorkflowValidator::requireMeshReady(const CaeStudy* study)
     QString fixedTarget;
     QStringList loadTargets;
     for (const CaeBoundaryCondition& condition : study->boundaryConditions()) {
-        hasConstraint = hasConstraint || condition.type() == BoundaryConditionType::FixedSupport;
-        hasLoad = hasLoad ||
+        const bool structuralConstraint =
+            condition.type() == BoundaryConditionType::FixedSupport;
+        const bool thermalConstraint =
+            condition.type() == BoundaryConditionType::FixedTemperature ||
+            condition.type() == BoundaryConditionType::Convection;
+        const bool structuralLoad =
             condition.type() == BoundaryConditionType::Force ||
             condition.type() == BoundaryConditionType::Pressure;
+        const bool thermalLoad =
+            condition.type() == BoundaryConditionType::HeatFlux ||
+            condition.type() == BoundaryConditionType::Convection ||
+            condition.type() == BoundaryConditionType::HeatGeneration;
+        hasConstraint = hasConstraint ||
+            (study->type() == StudyType::StaticStructural && structuralConstraint) ||
+            (study->type() == StudyType::SteadyThermal && thermalConstraint);
+        hasLoad = hasLoad ||
+            (study->type() == StudyType::StaticStructural && structuralLoad) ||
+            (study->type() == StudyType::SteadyThermal && thermalLoad);
         const CaeNamedSelection* target = study->findNamedSelection(condition.targetName());
-        if (!target || !target->planarRegion()) {
+        const bool geometryLoad =
+            condition.type() == BoundaryConditionType::HeatGeneration &&
+            target && target->scope() == NamedSelectionScope::Geometry;
+        if (!target || (!geometryLoad && !target->planarRegion())) {
             return QStringLiteral("Boundary condition target is invalid: %1.")
                 .arg(condition.targetName());
         }
-        if (condition.type() == BoundaryConditionType::FixedSupport) {
+        if (structuralConstraint ||
+            condition.type() == BoundaryConditionType::FixedTemperature) {
             fixedTarget = condition.targetName();
-        } else {
+        }
+        if (structuralLoad || thermalLoad) {
             loadTargets.push_back(condition.targetName());
         }
     }
 
     if (!hasConstraint) {
-        return QStringLiteral("Add a fixed support before running solver.");
+        return study->type() == StudyType::StaticStructural
+            ? QStringLiteral("Add a fixed support before running solver.")
+            : QStringLiteral("Add a fixed temperature or convection before running solver.");
     }
 
-    if (study->type() == StudyType::StaticStructural && !hasLoad) {
-        return QStringLiteral("Add a force before running a static structural analysis.");
+    if (!hasLoad) {
+        return study->type() == StudyType::StaticStructural
+            ? QStringLiteral("Add a force or pressure before running a static structural analysis.")
+            : QStringLiteral("Add a heat flux, convection or heat generation before running a steady thermal analysis.");
     }
     if (!fixedTarget.isEmpty() && loadTargets.contains(fixedTarget)) {
-        return QStringLiteral("Fixed Support and surface loads must target different named faces.");
+        return QStringLiteral("Constraint and surface load must target different named faces.");
     }
 
     return QString();

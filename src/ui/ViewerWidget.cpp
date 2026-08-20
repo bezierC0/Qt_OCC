@@ -49,6 +49,7 @@
 #include <QtWidgets/QVBoxLayout> // Corrected path
 #include <QMessageBox>
 #include <QCoreApplication>
+#include <QColor>
 #include <QDebug>
 #include <QLabel>
 #include <QResizeEvent>
@@ -103,6 +104,7 @@
 
 #include <TopoDS_Shape.hxx>
 #include <TopoDS_Compound.hxx>
+#include <TopoDS_Iterator.hxx>
 #include <TopoDS.hxx>
 #include <TopoDS_Vertex.hxx>
 #include <TopoDS_Edge.hxx>
@@ -179,6 +181,34 @@
 
 namespace
 {
+Quantity_Color caeSpectrumColor(double normalized)
+{
+    const double value = std::clamp(normalized, 0.0, 1.0);
+    if (value < 0.25) {
+        return Quantity_Color(0.0, value * 4.0, 1.0, Quantity_TOC_RGB);
+    }
+    if (value < 0.5) {
+        return Quantity_Color(0.0, 1.0, 2.0 - value * 4.0, Quantity_TOC_RGB);
+    }
+    if (value < 0.75) {
+        return Quantity_Color(value * 4.0 - 2.0, 1.0, 0.0, Quantity_TOC_RGB);
+    }
+    return Quantity_Color(1.0, 4.0 - value * 4.0, 0.0, Quantity_TOC_RGB);
+}
+
+Quantity_Color caeBandColor(int bandIndex, int bandCount)
+{
+    const int effectiveBandCount = std::max(2, bandCount);
+    const int effectiveIndex = std::clamp(bandIndex, 0, effectiveBandCount - 1);
+    return caeSpectrumColor(
+        (static_cast<double>(effectiveIndex) + 0.5) / static_cast<double>(effectiveBandCount));
+}
+
+QString caeColorHtml(const Quantity_Color& color)
+{
+    return QColor::fromRgbF(color.Red(), color.Green(), color.Blue()).name();
+}
+
 gp_Pnt markerCenter(const Cae::PlanarSelectionRegion& region)
 {
     gp_Pnt center(
@@ -605,6 +635,11 @@ void ViewerWidget::clearAll()
         m_doc->m_list.clear();
     }
 
+    // Clear labels and geometry owned by the previous OCAF document.
+    m_defaultAssemblyLabel.Nullify();
+    m_activePartLabel.Nullify();
+    m_activePartShape.Nullify();
+
     // Reset OCAF Document
     if (!m_doc->m_ocafDoc.IsNull()) {
         Handle(XCAFApp_Application) app = Handle(XCAFApp_Application)::DownCast(XCAFApp_Application::GetApplication());
@@ -805,7 +840,11 @@ void ViewerWidget::showCaeBoundaryMarkers(const Cae::BoundaryMarkers& markers)
         Quantity_Color color(0.2, 0.6, 1.0, Quantity_TOC_RGB);
         TopoDS_Shape markerShape;
 
-        if (marker.type == Cae::BoundaryMarkerType::FixedSupport) {
+        if (marker.type == Cae::BoundaryMarkerType::FixedSupport ||
+            marker.type == Cae::BoundaryMarkerType::FixedTemperature) {
+            if (marker.type == Cae::BoundaryMarkerType::FixedTemperature) {
+                color = Quantity_Color(0.2, 0.85, 0.9, Quantity_TOC_RGB);
+            }
             markerShape = BRepPrimAPI_MakeSphere(center, scale * 0.12);
         } else {
             gp_Vec direction(marker.direction[0], marker.direction[1], marker.direction[2]);
@@ -813,8 +852,16 @@ void ViewerWidget::showCaeBoundaryMarkers(const Cae::BoundaryMarkers& markers)
                 continue;
             }
             direction.Normalize();
-            if (marker.type == Cae::BoundaryMarkerType::Pressure) {
-                color = Quantity_Color(1.0, 0.55, 0.1, Quantity_TOC_RGB);
+            if (marker.type == Cae::BoundaryMarkerType::Pressure ||
+                marker.type == Cae::BoundaryMarkerType::HeatFlux ||
+                marker.type == Cae::BoundaryMarkerType::Convection) {
+                if (marker.type == Cae::BoundaryMarkerType::HeatFlux) {
+                    color = Quantity_Color(1.0, 0.85, 0.1, Quantity_TOC_RGB);
+                } else if (marker.type == Cae::BoundaryMarkerType::Convection) {
+                    color = Quantity_Color(0.65, 0.3, 0.95, Quantity_TOC_RGB);
+                } else {
+                    color = Quantity_Color(1.0, 0.55, 0.1, Quantity_TOC_RGB);
+                }
                 markerShape = makeArrow(
                     center.Translated(-direction * scale),
                     gp_Dir(direction),
@@ -865,6 +912,7 @@ bool ViewerWidget::showCaeScalarField(
     double deformationScale,
     double minimum,
     double maximum,
+    int colorBandCount,
     QString* errorMessage)
 {
     if (!m_occView || m_occView->Context().IsNull()) {
@@ -952,12 +1000,17 @@ bool ViewerWidget::showCaeScalarField(
         mesh,
         MeshVS_DMF_NodalColorDataPrs,
         displayDataSource);
+    const int effectiveBandCount = std::max(2, colorBandCount);
+    constexpr int textureSampleCount = 256;
     Aspect_SequenceOfColor colorMap;
-    colorMap.Append(Quantity_Color(0.0, 0.0, 1.0, Quantity_TOC_RGB));
-    colorMap.Append(Quantity_Color(0.0, 1.0, 1.0, Quantity_TOC_RGB));
-    colorMap.Append(Quantity_Color(0.0, 1.0, 0.0, Quantity_TOC_RGB));
-    colorMap.Append(Quantity_Color(1.0, 1.0, 0.0, Quantity_TOC_RGB));
-    colorMap.Append(Quantity_Color(1.0, 0.0, 0.0, Quantity_TOC_RGB));
+    for (int sampleIndex = 0; sampleIndex < textureSampleCount; ++sampleIndex) {
+        const double normalized = static_cast<double>(sampleIndex)
+            / static_cast<double>(textureSampleCount - 1);
+        const int bandIndex = std::min(
+            static_cast<int>(normalized * effectiveBandCount),
+            effectiveBandCount - 1);
+        colorMap.Append(caeBandColor(bandIndex, effectiveBandCount));
+    }
     colorBuilder->UseTexture(Standard_True);
     colorBuilder->SetColorMap(colorMap);
     colorBuilder->SetInvalidColor(Quantity_Color(0.5, 0.5, 0.5, Quantity_TOC_RGB));
@@ -991,7 +1044,7 @@ bool ViewerWidget::showCaeScalarField(
         : QStringLiteral("%1 [Deformation x%2]")
               .arg(title)
               .arg(effectiveScale, 0, 'g', 5);
-    updateCaeLegend(legendTitle, minimum, maximum);
+    updateCaeLegend(legendTitle, minimum, maximum, effectiveBandCount);
     m_occView->Context()->UpdateCurrentViewer();
     return true;
 }
@@ -1113,6 +1166,37 @@ void ViewerWidget::clearCaeNodeHover()
     m_caeHoveredNodeId = -1;
 }
 
+TDF_Label ViewerWidget::ensureActivePart()
+{
+    // Has Part(compound)
+    if (!m_activePartLabel.IsNull() && XCAFDoc_ShapeTool::IsSimpleShape(m_activePartLabel)) {
+        return m_activePartLabel;
+    }
+
+    // Create the initial empty compound representing Part 1.
+    BRep_Builder builder;
+    builder.MakeCompound(m_activePartShape);
+
+    Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(m_doc->m_ocafDoc->Main());
+
+    m_activePartLabel = shapeTool->AddShape(m_activePartShape, false);
+    TDataStd_Name::Set(m_activePartLabel, "Part 1");
+
+    TopoDS_Compound assemblyShape;
+    builder.MakeCompound(assemblyShape);
+
+    m_defaultAssemblyLabel = shapeTool->AddShape(assemblyShape, true);
+    TDataStd_Name::Set(m_defaultAssemblyLabel, "Assembly");
+
+    shapeTool->AddComponent(
+        m_defaultAssemblyLabel,
+        m_activePartLabel,
+        TopLoc_Location()
+    );
+
+    return m_activePartLabel;
+}
+
 void ViewerWidget::onCaePickMouseMoved(int x, int y)
 {
     if (m_caeNodePickingEnabled) {
@@ -1132,7 +1216,12 @@ void ViewerWidget::onCaePickMousePressed(int x, int y)
     }
 }
 
-bool ViewerWidget::showScalarField(const QString& title, double minimum, double maximum, QString* errorMessage)
+bool ViewerWidget::showScalarField(
+    const QString& title,
+    double minimum,
+    double maximum,
+    int colorBandCount,
+    QString* errorMessage)
 {
     if (!hasGeometry() || !m_occView || m_occView->Context().IsNull()) {
         if (errorMessage) {
@@ -1141,23 +1230,10 @@ bool ViewerWidget::showScalarField(const QString& title, double minimum, double 
         return false;
     }
 
-    const auto scalarColor = [](double value) {
-        const double t = qBound(0.0, value, 1.0);
-        if (t < 0.25) {
-            return Quantity_Color(0.0, t * 4.0, 1.0, Quantity_TOC_RGB);
-        }
-        if (t < 0.5) {
-            return Quantity_Color(0.0, 1.0, 2.0 - t * 4.0, Quantity_TOC_RGB);
-        }
-        if (t < 0.75) {
-            return Quantity_Color(t * 4.0 - 2.0, 1.0, 0.0, Quantity_TOC_RGB);
-        }
-        return Quantity_Color(1.0, 4.0 - t * 4.0, 0.0, Quantity_TOC_RGB);
-    };
-
     clearScalarField();
     clearCaeMesh();
 
+    const int effectiveBandCount = std::max(2, colorBandCount);
     const std::size_t objectCount = m_doc->m_list.size();
     for (std::size_t index = 0; index < objectCount; ++index) {
         const double normalized = objectCount == 1
@@ -1182,7 +1258,10 @@ bool ViewerWidget::showScalarField(const QString& title, double minimum, double 
 
         Handle(AIS_Shape) overlay = new AIS_Shape(shape);
         overlay->SetDisplayMode(AIS_Shaded);
-        overlay->SetColor(scalarColor(normalized));
+        const int bandIndex = std::min(
+            static_cast<int>(normalized * effectiveBandCount),
+            effectiveBandCount - 1);
+        overlay->SetColor(caeBandColor(bandIndex, effectiveBandCount));
         overlay->Attributes()->SetFaceBoundaryDraw(true);
         overlay->Attributes()->SetFaceBoundaryAspect(
             new Prs3d_LineAspect(Quantity_NOC_BLACK, Aspect_TOL_SOLID, 1.0));
@@ -1203,7 +1282,7 @@ bool ViewerWidget::showScalarField(const QString& title, double minimum, double 
         return false;
     }
 
-    updateCaeLegend(title, minimum, maximum);
+    updateCaeLegend(title, minimum, maximum, effectiveBandCount);
     m_occView->Context()->UpdateCurrentViewer();
     return true;
 }
@@ -1221,7 +1300,11 @@ void ViewerWidget::hideCadGeometryForCaeResult()
     }
 }
 
-void ViewerWidget::updateCaeLegend(const QString& title, double minimum, double maximum)
+void ViewerWidget::updateCaeLegend(
+    const QString& title,
+    double minimum,
+    double maximum,
+    int colorBandCount)
 {
     if (!m_caeLegendLabel) {
         m_caeLegendLabel = new QLabel(m_occView);
@@ -1232,15 +1315,23 @@ void ViewerWidget::updateCaeLegend(const QString& title, double minimum, double 
             "border: 1px solid #808080; border-radius: 3px; padding: 8px; }"));
     }
 
-    m_caeLegendLabel->setText(QStringLiteral(
-        "<b>%1</b><br/>"
-        "<span style='color:#ff0000'>&#9632;</span> Max: %2<br/>"
-        "<span style='color:#00ff00'>&#9632;</span> Mid: %3<br/>"
-        "<span style='color:#0000ff'>&#9632;</span> Min: %4")
-        .arg(title.toHtmlEscaped())
-        .arg(maximum, 0, 'g', 6)
-        .arg((minimum + maximum) * 0.5, 0, 'g', 6)
-        .arg(minimum, 0, 'g', 6));
+    const int effectiveBandCount = std::max(2, colorBandCount);
+    const double interval = (maximum - minimum) / static_cast<double>(effectiveBandCount);
+    QString legend = QStringLiteral("<b>%1</b><br/><table cellspacing='1'>")
+        .arg(title.toHtmlEscaped());
+    for (int bandIndex = effectiveBandCount - 1; bandIndex >= 0; --bandIndex) {
+        const double lower = minimum + interval * static_cast<double>(bandIndex);
+        const double upper = bandIndex == effectiveBandCount - 1
+            ? maximum
+            : minimum + interval * static_cast<double>(bandIndex + 1);
+        legend += QStringLiteral(
+            "<tr><td><span style='color:%1'>&#9632;</span></td><td>%2 - %3</td></tr>")
+            .arg(caeColorHtml(caeBandColor(bandIndex, effectiveBandCount)))
+            .arg(lower, 0, 'g', 6)
+            .arg(upper, 0, 'g', 6);
+    }
+    legend += QStringLiteral("</table>");
+    m_caeLegendLabel->setText(legend);
     m_caeLegendLabel->adjustSize();
     m_caeLegendLabel->move(qMax(8, m_occView->width() - m_caeLegendLabel->width() - 12), 12);
     m_caeLegendLabel->show();
@@ -2794,18 +2885,35 @@ void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const
         Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(m_doc->m_ocafDoc->Main());
         Handle(XCAFDoc_ColorTool) colorTool = XCAFDoc_DocumentTool::ColorTool(m_doc->m_ocafDoc->Main());
         
-        label = shapeTool->AddShape(shape, false); // Add as simple shape
-        
-        // Set a name
-        std::string typeName = Util::TopoShape::GetShapeTypeString(shape);
-        TDataStd_Name::Set(label, typeName.c_str());
+        // Check has active part
+        TDF_Label partLabel = ensureActivePart();
 
-        // Set Color
-        Quantity_Color color(r, g, b, Quantity_TOC_RGB);
-        colorTool->SetColor(label, color, XCAFDoc_ColorGen);
-        colorTool->SetColor(label, color, XCAFDoc_ColorSurf);
-        colorTool->SetColor(label, color, XCAFDoc_ColorCurv);
-        
+        BRep_Builder builder;
+        TopoDS_Compound updatedPartShape;
+        builder.MakeCompound(updatedPartShape);
+        for (TopoDS_Iterator it(m_activePartShape); it.More(); it.Next()) {
+            builder.Add(updatedPartShape, it.Value());
+        }
+        builder.Add(updatedPartShape, shape);
+
+        m_activePartShape = updatedPartShape;
+        shapeTool->SetShape(partLabel, m_activePartShape);
+        shapeTool->UpdateAssemblies();
+
+        TDF_Label shapeLabel = shapeTool->AddSubShape(partLabel, shape);
+
+        if (!shapeLabel.IsNull()) {
+            label = shapeLabel;
+            // name
+            const std::string typeName = Util::TopoShape::GetShapeTypeString(shape);
+            TDataStd_Name::Set(shapeLabel, typeName.c_str());
+            // Set Shape Color
+            const Quantity_Color color(r, g, b, Quantity_TOC_RGB);
+            colorTool->SetColor(shapeLabel, color, XCAFDoc_ColorGen);
+            colorTool->SetColor(shapeLabel, color, XCAFDoc_ColorSurf);
+            colorTool->SetColor(shapeLabel, color, XCAFDoc_ColorCurv);
+        }
+
         // Update the Tree View
         updateTree();
     }
@@ -2838,8 +2946,48 @@ void ViewerWidget::removeShape(const TopoDS_Shape &shape)
     TDF_Label label;
     if (!m_doc->m_ocafDoc.IsNull()) {
         Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(m_doc->m_ocafDoc->Main());
-        if (shapeTool->Search(shape, label) || shapeTool->FindShape(shape, label)) {
-            shapeTool->RemoveShape(label);
+
+        // Find the label before rebuilding the Part.
+        shapeTool->Search(shape, label);
+
+        bool removedFromActivePart = false;
+        if (!m_activePartLabel.IsNull()
+            && !m_activePartShape.IsNull()) {
+            BRep_Builder builder;
+            TopoDS_Compound rebuiltPart;
+            builder.MakeCompound(rebuiltPart);
+
+            for (TopoDS_Iterator it(m_activePartShape);
+                 it.More();
+                 it.Next()) {
+                const TopoDS_Shape& child = it.Value();
+
+                if (child.IsSame(shape)) {
+                    removedFromActivePart = true;
+                } else {
+                    builder.Add(rebuiltPart, child);
+                }
+            }
+
+            if (removedFromActivePart) {
+                m_activePartShape = rebuiltPart;
+
+                shapeTool->SetShape(
+                    m_activePartLabel,
+                    m_activePartShape);
+
+                shapeTool->UpdateAssemblies();
+            }
+        }
+
+        if (!label.IsNull()) {
+            if (removedFromActivePart) {
+                // Remove metadata attached to the obsolete subshape label.
+                label.ForgetAllAttributes(Standard_True);
+            } else {
+                // RemoveShape is valid only for free, top-level shapes.
+                shapeTool->RemoveShape(label);
+            }
         }
     }
 

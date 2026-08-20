@@ -1,12 +1,11 @@
 #pragma once
 #include <QWidget>
 #include <TopoDS_Shape.hxx>
-#include <map>
-#include <TopAbs_ShapeEnum.hxx>
 
 class QDoubleSpinBox;
 class QPushButton;
 class QLabel;
+class SelectionPickSession;
 
 class WidgetChamfer : public QWidget {
     Q_OBJECT
@@ -29,12 +28,9 @@ signals:
     void signalChamfer(const TopoDS_Shape& edge, double distance);
 
 private:
-    void saveMouseState();
     void restoreMouseState();
 
-    int m_savedMouseMode;
-    std::map<TopAbs_ShapeEnum, bool> m_savedFilters;
-    bool m_isPicking;
+    SelectionPickSession* m_pickSession;
     TopoDS_Shape m_selectedEdge;
 
     QPushButton* btnPick;

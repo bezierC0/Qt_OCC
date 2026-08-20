@@ -26,6 +26,15 @@ struct SolverRequest {
     std::optional<PlanarSelectionRegion> loadRegion;
     double pressure{0.0};
     std::optional<PlanarSelectionRegion> pressureRegion;
+    double thermalConductivity{0.0};
+    double fixedTemperature{20.0};
+    std::optional<PlanarSelectionRegion> fixedTemperatureRegion;
+    double heatFlux{0.0};
+    std::optional<PlanarSelectionRegion> heatFluxRegion;
+    double filmCoefficient{0.0};
+    double ambientTemperature{20.0};
+    std::optional<PlanarSelectionRegion> convectionRegion;
+    double volumetricHeatGeneration{0.0};
     StudyType studyType{StudyType::StaticStructural};
 };
 

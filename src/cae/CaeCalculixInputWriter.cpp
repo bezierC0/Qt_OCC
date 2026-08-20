@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <cmath>
 #include <map>
+#include <set>
 
 #include <QFile>
 #include <QTextStream>
@@ -30,6 +31,18 @@ QString calculixElementType(int gmshType)
         return QStringLiteral("C3D4");
     case 5:
         return QStringLiteral("C3D8");
+    default:
+        return QString();
+    }
+}
+
+QString calculixThermalElementType(int gmshType)
+{
+    switch (gmshType) {
+    case 4:
+        return QStringLiteral("DC3D4");
+    case 5:
+        return QStringLiteral("DC3D8");
     default:
         return QString();
     }
@@ -161,6 +174,106 @@ std::map<int, std::array<double, 3>> pressureNodalLoads(
     return nodalLoads;
 }
 
+std::map<int, double> heatFluxNodalLoads(
+    const Msh2MeshData& meshData,
+    const PlanarSelectionRegion& region,
+    double heatFlux,
+    double* loadedArea)
+{
+    const double tolerance = meshTolerance(meshData);
+    std::map<int, double> nodalLoads;
+    double areaSum = 0.0;
+    for (const Msh2Element& element : meshData.surfaceElements) {
+        bool isOnSelectedFace = !element.nodeIds.empty();
+        for (int nodeId : element.nodeIds) {
+            const auto node = meshData.nodes.find(nodeId);
+            isOnSelectedFace = isOnSelectedFace &&
+                node != meshData.nodes.end() &&
+                pointInRegion(node->second, region, tolerance);
+        }
+        if (!isOnSelectedFace) {
+            continue;
+        }
+
+        const double area = surfaceElementArea(element, meshData);
+        areaSum += area;
+        const double nodalLoad =
+            heatFlux * area / static_cast<double>(element.nodeIds.size());
+        for (int nodeId : element.nodeIds) {
+            nodalLoads[nodeId] += nodalLoad;
+        }
+    }
+    if (loadedArea) {
+        *loadedArea = areaSum;
+    }
+    return nodalLoads;
+}
+
+struct CalculixElementFace {
+    int elementId{0};
+    int faceNumber{0};
+};
+
+std::vector<std::vector<int>> localFaces(int gmshType)
+{
+    if (gmshType == 4) {
+        return {{0, 1, 2}, {0, 3, 1}, {1, 3, 2}, {2, 3, 0}};
+    }
+    if (gmshType == 5) {
+        return {
+            {0, 1, 2, 3},
+            {4, 7, 6, 5},
+            {0, 4, 5, 1},
+            {1, 5, 6, 2},
+            {2, 6, 7, 3},
+            {3, 7, 4, 0}};
+    }
+    return {};
+}
+
+std::vector<int> sortedNodeIds(const std::vector<int>& nodeIds)
+{
+    std::vector<int> sorted = nodeIds;
+    std::sort(sorted.begin(), sorted.end());
+    return sorted;
+}
+
+std::vector<CalculixElementFace> elementFacesInRegion(
+    const Msh2MeshData& meshData,
+    const PlanarSelectionRegion& region)
+{
+    const double tolerance = meshTolerance(meshData);
+    std::set<std::vector<int>> selectedSurfaceFaces;
+    for (const Msh2Element& surfaceElement : meshData.surfaceElements) {
+        bool isOnSelectedFace = !surfaceElement.nodeIds.empty();
+        for (int nodeId : surfaceElement.nodeIds) {
+            const auto node = meshData.nodes.find(nodeId);
+            isOnSelectedFace = isOnSelectedFace &&
+                node != meshData.nodes.end() &&
+                pointInRegion(node->second, region, tolerance);
+        }
+        if (isOnSelectedFace) {
+            selectedSurfaceFaces.insert(sortedNodeIds(surfaceElement.nodeIds));
+        }
+    }
+
+    std::vector<CalculixElementFace> elementFaces;
+    for (const Msh2Element& volumeElement : meshData.volumeElements) {
+        const auto faceDefinitions = localFaces(volumeElement.gmshType);
+        for (std::size_t faceIndex = 0; faceIndex < faceDefinitions.size(); ++faceIndex) {
+            std::vector<int> faceNodeIds;
+            faceNodeIds.reserve(faceDefinitions[faceIndex].size());
+            for (int localNodeIndex : faceDefinitions[faceIndex]) {
+                faceNodeIds.push_back(volumeElement.nodeIds[localNodeIndex]);
+            }
+            if (selectedSurfaceFaces.count(sortedNodeIds(faceNodeIds)) > 0) {
+                elementFaces.push_back({volumeElement.id, static_cast<int>(faceIndex + 1)});
+            }
+        }
+    }
+    return elementFaces;
+}
+
 } // namespace
 
 bool CalculixInputWriter::writeStaticAnalysis(
@@ -290,6 +403,142 @@ bool CalculixInputWriter::writeStaticAnalysis(
         }
     }
     stream << "*NODE FILE\nU\n*EL FILE\nS\n*END STEP\n";
+    return true;
+}
+
+bool CalculixInputWriter::writeSteadyThermalAnalysis(
+    const SolverRequest& request,
+    const QString& inputFilePath,
+    QString* errorMessage)
+{
+    Msh2MeshData meshData;
+    if (!Msh2Reader::read(request.meshFilePath, &meshData, errorMessage)) {
+        return false;
+    }
+    if (meshData.volumeElements.empty()) {
+        if (errorMessage) {
+            *errorMessage = QStringLiteral("CalculiX requires tetrahedral or hexahedral volume elements.");
+        }
+        return false;
+    }
+    const bool hasFixedTemperature = request.fixedTemperatureRegion.has_value();
+    const bool hasHeatFlux = request.heatFluxRegion && request.heatFlux > 0.0;
+    const bool hasConvection = request.convectionRegion && request.filmCoefficient > 0.0;
+    const bool hasHeatGeneration = request.volumetricHeatGeneration > 0.0;
+    if (request.thermalConductivity <= 0.0 ||
+        (!hasFixedTemperature && !hasConvection) ||
+        (!hasHeatFlux && !hasConvection && !hasHeatGeneration)) {
+        if (errorMessage) {
+            *errorMessage = QStringLiteral(
+                "Steady thermal analysis requires conductivity, a temperature reference and a thermal load.");
+        }
+        return false;
+    }
+
+    const std::vector<int> fixedNodes = hasFixedTemperature
+        ? nodesInRegion(meshData, *request.fixedTemperatureRegion)
+        : std::vector<int>{};
+    double loadedArea = 0.0;
+    const std::map<int, double> nodalHeatLoads = hasHeatFlux
+        ? heatFluxNodalLoads(
+              meshData,
+              *request.heatFluxRegion,
+              request.heatFlux,
+              &loadedArea)
+        : std::map<int, double>{};
+    const std::vector<CalculixElementFace> convectionFaces = hasConvection
+        ? elementFacesInRegion(meshData, *request.convectionRegion)
+        : std::vector<CalculixElementFace>{};
+    if ((hasFixedTemperature && fixedNodes.empty()) ||
+        (hasHeatFlux && (nodalHeatLoads.empty() || loadedArea <= 0.0)) ||
+        (hasConvection && convectionFaces.empty())) {
+        if (errorMessage) {
+            *errorMessage = QStringLiteral(
+                "Failed to map thermal faces (fixed=%1, heat-flux nodes=%2, convection faces=%3).")
+                .arg(fixedNodes.size())
+                .arg(nodalHeatLoads.size())
+                .arg(convectionFaces.size());
+        }
+        return false;
+    }
+
+    QFile inputFile(inputFilePath);
+    if (!inputFile.open(QIODevice::WriteOnly | QIODevice::Text)) {
+        if (errorMessage) {
+            *errorMessage = QStringLiteral("Cannot write CalculiX input file: %1").arg(inputFilePath);
+        }
+        return false;
+    }
+
+    QTextStream stream(&inputFile);
+    stream << "*HEADING\nQt_OCC planar-face steady thermal analysis\n*NODE\n";
+    for (const auto& node : meshData.nodes) {
+        stream << node.first << ", " << QString::number(node.second[0], 'g', 16) << ", "
+               << QString::number(node.second[1], 'g', 16) << ", "
+               << QString::number(node.second[2], 'g', 16) << "\n";
+    }
+
+    std::vector<int> allElements;
+    for (int gmshType : {4, 5}) {
+        bool headerWritten = false;
+        for (const Msh2Element& element : meshData.volumeElements) {
+            if (element.gmshType != gmshType) {
+                continue;
+            }
+            if (!headerWritten) {
+                stream << "*ELEMENT, TYPE=" << calculixThermalElementType(gmshType)
+                       << ", ELSET=EALL_" << gmshType << "\n";
+                headerWritten = true;
+            }
+            stream << element.id;
+            for (int nodeId : element.nodeIds) {
+                stream << ", " << nodeId;
+            }
+            stream << "\n";
+            allElements.push_back(element.id);
+        }
+    }
+    if (allElements.empty()) {
+        if (errorMessage) {
+            *errorMessage = QStringLiteral("No supported CalculiX thermal volume elements were found.");
+        }
+        return false;
+    }
+
+    stream << "*ELSET, ELSET=EALL\n";
+    writeIdList(stream, allElements);
+    if (hasFixedTemperature) {
+        stream << "*NSET, NSET=FIXED_TEMP\n";
+        writeIdList(stream, fixedNodes);
+    }
+    stream << "*MATERIAL, NAME=THERMAL_MATERIAL\n*CONDUCTIVITY\n"
+           << QString::number(request.thermalConductivity / 1000.0, 'g', 16) << "\n";
+    stream << "*SOLID SECTION, ELSET=EALL, MATERIAL=THERMAL_MATERIAL\n\n";
+    stream << "*STEP\n*HEAT TRANSFER, STEADY STATE\n1., 1.\n";
+    if (hasFixedTemperature) {
+        stream << "*BOUNDARY\nFIXED_TEMP, 11, 11, "
+               << QString::number(request.fixedTemperature, 'g', 16) << "\n";
+    }
+    if (hasHeatFlux) {
+        stream << "*CFLUX\n";
+        for (const auto& nodeLoad : nodalHeatLoads) {
+            stream << nodeLoad.first << ", 11, "
+                   << QString::number(nodeLoad.second, 'g', 16) << "\n";
+        }
+    }
+    if (hasConvection) {
+        stream << "*FILM\n";
+        for (const CalculixElementFace& face : convectionFaces) {
+            stream << face.elementId << ", F" << face.faceNumber << ", "
+                   << QString::number(request.ambientTemperature, 'g', 16) << ", "
+                   << QString::number(request.filmCoefficient / 1.0e6, 'g', 16) << "\n";
+        }
+    }
+    if (hasHeatGeneration) {
+        stream << "*DFLUX\nEALL, BF, "
+               << QString::number(request.volumetricHeatGeneration, 'g', 16) << "\n";
+    }
+    stream << "*NODE FILE\nNT\n*END STEP\n";
     return true;
 }
 

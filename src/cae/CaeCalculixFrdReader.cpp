@@ -13,7 +13,8 @@ namespace {
 enum class FrdDataset {
     None,
     Displacement,
-    Stress
+    Stress,
+    Temperature
 };
 
 std::vector<double> numbers(const QString& line)
@@ -101,11 +102,6 @@ bool CalculixFrdReader::read(
         if (errorMessage) *errorMessage = QStringLiteral("FRD result field output is null.");
         return false;
     }
-    if (field->type == ResultFieldType::Temperature) {
-        if (errorMessage) *errorMessage = QStringLiteral("FRD temperature reading is not implemented yet.");
-        return false;
-    }
-
     QFile file(solverResult.resultFilePath);
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
         if (errorMessage) *errorMessage = QStringLiteral("Cannot open CalculiX FRD file: %1").arg(solverResult.resultFilePath);
@@ -121,7 +117,10 @@ bool CalculixFrdReader::read(
         const QString line = stream.readLine();
         const QString trimmedLine = line.trimmed();
         if (trimmedLine.startsWith(QStringLiteral("-4"))) {
-            if (line.contains(QStringLiteral("DISP"), Qt::CaseInsensitive)) {
+            if (line.contains(QStringLiteral("NDTEMP"), Qt::CaseInsensitive) ||
+                line.contains(QStringLiteral("TEMP"), Qt::CaseInsensitive)) {
+                dataset = FrdDataset::Temperature;
+            } else if (line.contains(QStringLiteral("DISP"), Qt::CaseInsensitive)) {
                 dataset = FrdDataset::Displacement;
             } else if (line.contains(QStringLiteral("STRESS"), Qt::CaseInsensitive)) {
                 dataset = FrdDataset::Stress;
@@ -132,8 +131,11 @@ bool CalculixFrdReader::read(
                 field->nodalDisplacements.clear();
             }
             const bool wantsDisplacement = field->type == ResultFieldType::Displacement;
+            const bool wantsStress = field->type == ResultFieldType::VonMisesStress;
+            const bool wantsTemperature = field->type == ResultFieldType::Temperature;
             if ((wantsDisplacement && dataset == FrdDataset::Displacement) ||
-                (!wantsDisplacement && dataset == FrdDataset::Stress)) {
+                (wantsStress && dataset == FrdDataset::Stress) ||
+                (wantsTemperature && dataset == FrdDataset::Temperature)) {
                 field->values.clear();
                 field->nodalValues.clear();
             }
@@ -147,7 +149,9 @@ bool CalculixFrdReader::read(
             continue;
         }
 
-        if (dataset != FrdDataset::Displacement && dataset != FrdDataset::Stress) {
+        if (dataset != FrdDataset::Displacement &&
+            dataset != FrdDataset::Stress &&
+            dataset != FrdDataset::Temperature) {
             continue;
         }
 
@@ -157,6 +161,8 @@ bool CalculixFrdReader::read(
             continue;
         }
         const bool wantsDisplacement = field->type == ResultFieldType::Displacement;
+        const bool wantsStress = field->type == ResultFieldType::VonMisesStress;
+        const bool wantsTemperature = field->type == ResultFieldType::Temperature;
         if (dataset == FrdDataset::Displacement && components.size() >= 3) {
             const double x = components[0];
             const double y = components[1];
@@ -167,12 +173,15 @@ bool CalculixFrdReader::read(
                 field->values.push_back(magnitude);
                 field->nodalValues[nodeId] = magnitude;
             }
-        } else if (dataset == FrdDataset::Stress && !wantsDisplacement && components.size() >= 6) {
+        } else if (dataset == FrdDataset::Stress && wantsStress && components.size() >= 6) {
             const double stress = vonMises({
                 components[0], components[1], components[2],
                 components[3], components[4], components[5]});
             field->values.push_back(stress);
             field->nodalValues[nodeId] = stress;
+        } else if (dataset == FrdDataset::Temperature && wantsTemperature && !components.empty()) {
+            field->values.push_back(components.front());
+            field->nodalValues[nodeId] = components.front();
         }
     }
 
