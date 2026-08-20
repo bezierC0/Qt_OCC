@@ -14,6 +14,7 @@
 #include <memory>
 
 class QTranslator;
+class QCloseEvent;
 
 class TopoDS_Shape;
 
@@ -39,6 +40,8 @@ public:
     ModelTreeWidget* GetModelTreeWidget() const;
 public slots:
     void updateStatusMessage(const QString& msg, int timeout = 0);
+protected:
+    void closeEvent(QCloseEvent* event) override;
 private slots:
     /* file */
     void onNewFile();

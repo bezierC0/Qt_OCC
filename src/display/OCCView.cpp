@@ -316,11 +316,6 @@ void OCCView::keyPressEvent(QKeyEvent *theEvent)
     Aspect_VKey aKey = OcctInputMapper::qtKey2VKey(theEvent->key());
     switch (aKey)
     {
-    case Aspect_VKey_Escape:
-    {
-        QApplication::exit();
-        return;
-    }
     case Aspect_VKey_F:
     {
         m_view->FitAll(0.01, false);
