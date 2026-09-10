@@ -41,7 +41,10 @@ TopoDS_Shape ShapeFactory::makeLine(const gp_Pnt& p1, const gp_Pnt& p2)
 {
     if (p1.IsEqual(p2, Precision::Confusion())) return {};
     BRepBuilderAPI_MakeEdge e(p1, p2);
-    return e.IsDone() ? e.Shape() : TopoDS_Shape{};
+    if (!e.IsDone()) return {};
+
+    BRepBuilderAPI_MakeWire wire(e.Edge());
+    return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
 }
 
 TopoDS_Shape ShapeFactory::makeRectangleWire(const gp_Pnt& origin, double width, double height)
@@ -88,7 +91,10 @@ TopoDS_Shape ShapeFactory::makeCircle(const gp_Pnt& center, double radius)
     if (radius < Precision::Confusion()) return {};
     gp_Circ circ(gp_Ax2(center, gp_Dir(0, 0, 1)), radius);
     BRepBuilderAPI_MakeEdge e(circ);
-    return e.IsDone() ? e.Shape() : TopoDS_Shape{};
+    if (!e.IsDone()) return {};
+
+    BRepBuilderAPI_MakeWire wire(e.Edge());
+    return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
 }
 
 TopoDS_Shape ShapeFactory::makeArc(const gp_Pnt& p1, const gp_Pnt& p2, const gp_Pnt& p3)
@@ -101,7 +107,10 @@ TopoDS_Shape ShapeFactory::makeArc(const gp_Pnt& p1, const gp_Pnt& p2, const gp_
     if (!arc.IsDone()) return {};
 
     BRepBuilderAPI_MakeEdge edge(arc.Value());
-    return edge.IsDone() ? edge.Shape() : TopoDS_Shape{};
+    if (!edge.IsDone()) return {};
+
+    BRepBuilderAPI_MakeWire wire(edge.Edge());
+    return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
 }
 
 TopoDS_Shape ShapeFactory::makePolygonWire(const std::vector<gp_Pnt>& points, bool closed)
@@ -131,7 +140,10 @@ TopoDS_Shape ShapeFactory::makeBezierCurve(const std::vector<gp_Pnt>& points)
     try {
         Handle(Geom_BezierCurve) bezier = new Geom_BezierCurve(poles);
         BRepBuilderAPI_MakeEdge edge(bezier);
-        return edge.IsDone() ? edge.Shape() : TopoDS_Shape{};
+        if (!edge.IsDone()) return {};
+
+        BRepBuilderAPI_MakeWire wire(edge.Edge());
+        return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
     } catch (...) {
         return {};
     }
@@ -167,7 +179,10 @@ TopoDS_Shape ShapeFactory::makeNurbsCurve(const std::vector<gp_Pnt>& points, int
     try {
         Handle(Geom_BSplineCurve) bspline = new Geom_BSplineCurve(poles, knots, mults, degree);
         BRepBuilderAPI_MakeEdge edge(bspline);
-        return edge.IsDone() ? edge.Shape() : TopoDS_Shape{};
+        if (!edge.IsDone()) return {};
+
+        BRepBuilderAPI_MakeWire wire(edge.Edge());
+        return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
     } catch (...) {
         return {};
     }
@@ -186,7 +201,10 @@ TopoDS_Shape ShapeFactory::makeEllipse(const gp_Pnt& center,
 
     gp_Elips elips(gp_Ax2(center, normal), majorRadius, minorRadius);
     BRepBuilderAPI_MakeEdge e(elips);
-    return e.IsDone() ? e.Shape() : TopoDS_Shape{};
+    if (!e.IsDone()) return {};
+
+    BRepBuilderAPI_MakeWire wire(e.Edge());
+    return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
 }
 
 TopoDS_Shape ShapeFactory::makeBox(const gp_Pnt& corner, double dx, double dy, double dz)
