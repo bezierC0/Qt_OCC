@@ -3,9 +3,11 @@
 #include <QList>
 #include <QMetaType>
 #include <gp_Pnt.hxx>
+#include <TopoDS_Shape.hxx>
 
 using PointList = QList<gp_Pnt>;
 Q_DECLARE_METATYPE(PointList)
+Q_DECLARE_METATYPE(TopoDS_Shape)
 
 namespace CoreApi {
 
@@ -31,6 +33,11 @@ namespace Param {
     static const QString RADIUS  = "radius";
     static const QString RADIUS1 = "radius1";
     static const QString RADIUS2 = "radius2";
+    static const QString BASIS   = "basis";
+    static const QString DISTANCE = "distance";
+    static const QString FOCAL   = "focalLength";
+    static const QString FIRST_PARAMETER = "firstParameter";
+    static const QString LAST_PARAMETER  = "lastParameter";
     static const QString MAJOR   = "majorRadius";
     static const QString MINOR   = "minorRadius";
     static const QString WIDTH   = "width";

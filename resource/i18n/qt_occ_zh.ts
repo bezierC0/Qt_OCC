@@ -28,6 +28,30 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Offset Curve</source>
+        <translation>偏移曲线</translation>
+    </message>
+    <message>
+        <source>Parabola</source>
+        <translation>抛物线</translation>
+    </message>
+    <message>
+        <source>Hyperbola</source>
+        <translation>双曲线</translation>
+    </message>
+    <message>
+        <source>Point</source>
+        <translation>点</translation>
+    </message>
+    <message>
+        <source>Curve</source>
+        <translation>曲线</translation>
+    </message>
+    <message>
+        <source>Solid</source>
+        <translation>实体</translation>
+    </message>
+    <message>
         <location filename="../../src/MainWindow.ui" line="46"/>
         <location filename="../../src/MainWindow.cpp" line="72"/>
         <source>File</source>
@@ -498,6 +522,18 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to create offset curve. Check the curve, distance and reference direction.</source>
+        <translation>创建偏移曲线失败，请检查曲线、距离和参考方向。</translation>
+    </message>
+    <message>
+        <source>Failed to create parabola. Check the focal length, normal and parameter range.</source>
+        <translation>创建抛物线失败，请检查焦距、法向和参数范围。</translation>
+    </message>
+    <message>
+        <source>Failed to create hyperbola. Check the radii, normal and parameter range.</source>
+        <translation>创建双曲线失败，请检查半轴、法向和参数范围。</translation>
+    </message>
+    <message>
         <location filename="../../src/ViewerWidget.cpp" line="153"/>
         <location filename="../../src/ViewerWidget.cpp" line="163"/>
         <source>Error</source>
@@ -544,6 +580,219 @@
         <location filename="../../src/ViewerWidget.cpp" line="399"/>
         <source>Distance between the two vertices: %1</source>
         <translation>两个顶点之间的距离: %1</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateHyperbola</name>
+    <message>
+        <source>Create Hyperbola</source>
+        <translation>创建双曲线</translation>
+    </message>
+    <message>
+        <source>Step 1/2 : Click centre point in 3D view</source>
+        <translation>步骤 1/2：在三维视图中点击中心点</translation>
+    </message>
+    <message>
+        <source>Center</source>
+        <translation>中心</translation>
+    </message>
+    <message>
+        <source>Normal Direction</source>
+        <translation>法向方向</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>尺寸</translation>
+    </message>
+    <message>
+        <source>Semi-axis a:</source>
+        <translation>实半轴 a：</translation>
+    </message>
+    <message>
+        <source>Semi-axis b:</source>
+        <translation>虚半轴 b：</translation>
+    </message>
+    <message>
+        <source>Start parameter u:</source>
+        <translation>起始参数 u：</translation>
+    </message>
+    <message>
+        <source>End parameter u:</source>
+        <translation>终止参数 u：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>选择颜色</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>颜色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>创建</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>Step 2/2 : Drag to set semi-axis a, then click</source>
+        <translation>步骤 2/2：移动鼠标设置实半轴 a，然后点击</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>参数无效</translation>
+    </message>
+    <message>
+        <source>The normal must be nonzero and the start parameter must be less than the end parameter.</source>
+        <translation>法向不能为零，且起始参数必须小于终止参数。</translation>
+    </message>
+    <message>
+        <source>Hyperbola defined. Press [Create] to confirm.</source>
+        <translation>双曲线已定义，点击“创建”确认。</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateParabola</name>
+    <message>
+        <source>Create Parabola</source>
+        <translation>创建抛物线</translation>
+    </message>
+    <message>
+        <source>Step 1/2 : Click vertex point in 3D view</source>
+        <translation>步骤 1/2：在三维视图中点击顶点</translation>
+    </message>
+    <message>
+        <source>Vertex</source>
+        <translation>顶点</translation>
+    </message>
+    <message>
+        <source>Normal Direction</source>
+        <translation>法向方向</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>尺寸</translation>
+    </message>
+    <message>
+        <source>Focal length:</source>
+        <translation>焦距：</translation>
+    </message>
+    <message>
+        <source>Start parameter u:</source>
+        <translation>起始参数 u：</translation>
+    </message>
+    <message>
+        <source>End parameter u:</source>
+        <translation>终止参数 u：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>选择颜色</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>颜色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>创建</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>Step 2/2 : Drag to set focal length, then click</source>
+        <translation>步骤 2/2：移动鼠标设置焦距，然后点击</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>参数无效</translation>
+    </message>
+    <message>
+        <source>The normal must be nonzero and the start parameter must be less than the end parameter.</source>
+        <translation>法向不能为零，且起始参数必须小于终止参数。</translation>
+    </message>
+    <message>
+        <source>Parabola defined. Press [Create] to confirm.</source>
+        <translation>抛物线已定义，点击“创建”确认。</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateOffsetCurve</name>
+    <message>
+        <source>Create Offset Curve</source>
+        <translation>创建偏移曲线</translation>
+    </message>
+    <message>
+        <source>Select one edge or a single-edge wire.</source>
+        <translation>请选择一条边或仅含一条边的线框。</translation>
+    </message>
+    <message>
+        <source>Pick Curve</source>
+        <translation>选择曲线</translation>
+    </message>
+    <message>
+        <source>Signed distance:</source>
+        <translation>有符号距离：</translation>
+    </message>
+    <message>
+        <source>Reference X:</source>
+        <translation>参考方向 X：</translation>
+    </message>
+    <message>
+        <source>Reference Y:</source>
+        <translation>参考方向 Y：</translation>
+    </message>
+    <message>
+        <source>Reference Z:</source>
+        <translation>参考方向 Z：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>选择颜色</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>颜色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>创建</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>No active view is available.</source>
+        <translation>当前没有可用视图。</translation>
+    </message>
+    <message>
+        <source>This wire has multiple edges. Select one edge.</source>
+        <translation>该线框包含多条边，请选择其中一条边。</translation>
+    </message>
+    <message>
+        <source>Curve selected.</source>
+        <translation>已选择曲线。</translation>
+    </message>
+    <message>
+        <source>Cannot offset this curve with the current values.</source>
+        <translation>当前参数无法偏移该曲线。</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>参数无效</translation>
+    </message>
+    <message>
+        <source>Select a curve first.</source>
+        <translation>请先选择曲线。</translation>
+    </message>
+    <message>
+        <source>Distance and reference direction must be nonzero.</source>
+        <translation>距离和参考方向不能为零。</translation>
     </message>
 </context>
 </TS>

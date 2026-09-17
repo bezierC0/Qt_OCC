@@ -180,9 +180,11 @@ if(EXPORT_3DPDF_USE_LIBPRC)
     # --- Library root directories (user configures these) ---
     set(DEFAULT_LIBPRC_DIR  "${CMAKE_SOURCE_DIR}/3rdparty/libPRC")
     set(DEFAULT_LIBHARU_DIR "${CMAKE_SOURCE_DIR}/3rdparty/libharu-2.3.0")
+    set(DEFAULT_ZLIB_DIR    "${CMAKE_SOURCE_DIR}/3rdparty/zlib1.3.1")
     set(OSG_DIR        CACHE PATH "Path to OpenSceneGraph root (for osgdb_prc plugin only)")
     set(LIBPRC_DIR     "${DEFAULT_LIBPRC_DIR}"  CACHE PATH "Path to libPRC root")
     set(LIBHARU_DIR    "${DEFAULT_LIBHARU_DIR}" CACHE PATH "Path to libharu root")
+    set(ZLIB_DIR       "${DEFAULT_ZLIB_DIR}"    CACHE PATH "Path to zlib root")
 
     # --- Includes ---
     set(LIBPRC_INCLUDE_DIRS
@@ -190,6 +192,7 @@ if(EXPORT_3DPDF_USE_LIBPRC)
         "${LIBPRC_DIR}/include/asymptote"
         "${LIBPRC_DIR}/include/libPRC"
         "${LIBHARU_DIR}/include"
+        "${ZLIB_DIR}/include"
     )
 
     # --- Libraries ---
@@ -205,18 +208,17 @@ if(EXPORT_3DPDF_USE_LIBPRC)
     endif()
     message(STATUS "  libharu: ${HPDF_LIB}")
 
-    # asymptote depends on zlib (deflate* symbols). Use the one from OCCT 3rdparty.
-    find_library(ZLIB_LIB
+    # asymptote depends on zlib (deflate* symbols).
+    find_library(THIRDPARTY_ZLIB_LIB
         NAMES zlib
-        PATHS "${OpenCASCADE_3RDPARTY_DIR}/zlib-1.2.8-vc14-64/lib"
+        PATHS "${ZLIB_DIR}/lib"
         NO_DEFAULT_PATH
     )
-    if(NOT ZLIB_LIB)
-        # fallback: search common locations
-        find_library(ZLIB_LIB NAMES zlib zdll)
-    endif()
-    if(NOT ZLIB_LIB)
-        message(WARNING "zlib not found; asymptote.lib may have unresolved deflate* symbols.")
+    if(NOT THIRDPARTY_ZLIB_LIB)
+        message(FATAL_ERROR
+            "zlib was not found at ${ZLIB_DIR}/lib.\n"
+            "Please set ZLIB_DIR correctly, or turn off EXPORT_3DPDF_USE_LIBPRC."
+        )
     endif()
 
     # Require at least the Release variants
@@ -236,7 +238,7 @@ if(EXPORT_3DPDF_USE_LIBPRC)
     message(STATUS "  PRC Debug:         ${PRC_LIB_DEBUG}")
     message(STATUS "  asymptote Release: ${ASYMPTOTE_LIB_RELEASE}")
     message(STATUS "  asymptote Debug:   ${ASYMPTOTE_LIB_DEBUG}")
-    message(STATUS "  zlib:              ${ZLIB_LIB}")
+    message(STATUS "  zlib:              ${THIRDPARTY_ZLIB_LIB}")
 
     # Use optimized/debug keywords so the linker picks the correct CRT variant.
     # If a debug variant is missing, fall back to the release variant.
@@ -251,7 +253,7 @@ if(EXPORT_3DPDF_USE_LIBPRC)
         optimized ${PRC_LIB_RELEASE}       debug ${PRC_LIB_DEBUG}
         optimized ${ASYMPTOTE_LIB_RELEASE} debug ${ASYMPTOTE_LIB_DEBUG}
         ${HPDF_LIB}
-        ${ZLIB_LIB}
+        ${THIRDPARTY_ZLIB_LIB}
     )
 endif()
 
@@ -420,8 +422,13 @@ endif()
 if(EXPORT_3DPDF_USE_LIBPRC)
     file(GLOB 3DPDF_USE_LIBPRC_DLLS "${LIBPRC_DIR}/bin/*.dll")
     file(GLOB 3DPDF_USE_LIBHARU_DLLS "${LIBHARU_DIR}/bin/*.dll")
+    file(GLOB 3DPDF_USE_ZLIB_DLLS "${ZLIB_DIR}/bin/*.dll")
     if(WIN32)
-        set(ALL_DLLS_TO_COPY ${3DPDF_USE_LIBPRC_DLLS} ${3DPDF_USE_LIBHARU_DLLS})
+        set(ALL_DLLS_TO_COPY
+            ${3DPDF_USE_LIBPRC_DLLS}
+            ${3DPDF_USE_LIBHARU_DLLS}
+            ${3DPDF_USE_ZLIB_DLLS}
+        )
         if(ALL_DLLS_TO_COPY)
             foreach(dll ${ALL_DLLS_TO_COPY})
                 message(STATUS "COPY DLL : ${dll}")
@@ -432,7 +439,7 @@ if(EXPORT_3DPDF_USE_LIBPRC)
                         ${ALL_DLLS_TO_COPY}
                         $<TARGET_FILE_DIR:${PROJECT_NAME}>
                 COMMAND_EXPAND_LISTS
-                COMMENT "Copying LIBPRC runtime DLLs"
+                COMMENT "Copying LIBPRC, libharu and zlib runtime DLLs"
             )
         endif()
     endif()

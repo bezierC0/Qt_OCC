@@ -28,6 +28,30 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Offset Curve</source>
+        <translation>オフセット曲線</translation>
+    </message>
+    <message>
+        <source>Parabola</source>
+        <translation>放物線</translation>
+    </message>
+    <message>
+        <source>Hyperbola</source>
+        <translation>双曲線</translation>
+    </message>
+    <message>
+        <source>Point</source>
+        <translation>点</translation>
+    </message>
+    <message>
+        <source>Curve</source>
+        <translation>曲線</translation>
+    </message>
+    <message>
+        <source>Solid</source>
+        <translation>ソリッド</translation>
+    </message>
+    <message>
         <location filename="../../src/MainWindow.ui" line="46"/>
         <location filename="../../src/MainWindow.cpp" line="72"/>
         <source>File</source>
@@ -498,6 +522,18 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to create offset curve. Check the curve, distance and reference direction.</source>
+        <translation>オフセット曲線を作成できません。曲線、距離、参照方向を確認してください。</translation>
+    </message>
+    <message>
+        <source>Failed to create parabola. Check the focal length, normal and parameter range.</source>
+        <translation>放物線を作成できません。焦点距離、法線、パラメータ範囲を確認してください。</translation>
+    </message>
+    <message>
+        <source>Failed to create hyperbola. Check the radii, normal and parameter range.</source>
+        <translation>双曲線を作成できません。半軸、法線、パラメータ範囲を確認してください。</translation>
+    </message>
+    <message>
         <location filename="../../src/ViewerWidget.cpp" line="153"/>
         <location filename="../../src/ViewerWidget.cpp" line="163"/>
         <source>Error</source>
@@ -544,6 +580,219 @@
         <location filename="../../src/ViewerWidget.cpp" line="399"/>
         <source>Distance between the two vertices: %1</source>
         <translation>2つの頂点間の距離: %1</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateHyperbola</name>
+    <message>
+        <source>Create Hyperbola</source>
+        <translation>双曲線を作成</translation>
+    </message>
+    <message>
+        <source>Step 1/2 : Click centre point in 3D view</source>
+        <translation>手順 1/2：3D ビューで中心点をクリック</translation>
+    </message>
+    <message>
+        <source>Center</source>
+        <translation>中心</translation>
+    </message>
+    <message>
+        <source>Normal Direction</source>
+        <translation>法線方向</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>寸法</translation>
+    </message>
+    <message>
+        <source>Semi-axis a:</source>
+        <translation>実半軸 a：</translation>
+    </message>
+    <message>
+        <source>Semi-axis b:</source>
+        <translation>虚半軸 b：</translation>
+    </message>
+    <message>
+        <source>Start parameter u:</source>
+        <translation>開始パラメータ u：</translation>
+    </message>
+    <message>
+        <source>End parameter u:</source>
+        <translation>終了パラメータ u：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>色を選択</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>作成</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+    <message>
+        <source>Step 2/2 : Drag to set semi-axis a, then click</source>
+        <translation>手順 2/2：マウスを動かして実半軸 a を設定し、クリック</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>無効なパラメータ</translation>
+    </message>
+    <message>
+        <source>The normal must be nonzero and the start parameter must be less than the end parameter.</source>
+        <translation>法線はゼロ以外とし、開始パラメータは終了パラメータより小さくしてください。</translation>
+    </message>
+    <message>
+        <source>Hyperbola defined. Press [Create] to confirm.</source>
+        <translation>双曲線を定義しました。「作成」で確定してください。</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateParabola</name>
+    <message>
+        <source>Create Parabola</source>
+        <translation>放物線を作成</translation>
+    </message>
+    <message>
+        <source>Step 1/2 : Click vertex point in 3D view</source>
+        <translation>手順 1/2：3D ビューで頂点をクリック</translation>
+    </message>
+    <message>
+        <source>Vertex</source>
+        <translation>頂点</translation>
+    </message>
+    <message>
+        <source>Normal Direction</source>
+        <translation>法線方向</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>寸法</translation>
+    </message>
+    <message>
+        <source>Focal length:</source>
+        <translation>焦点距離：</translation>
+    </message>
+    <message>
+        <source>Start parameter u:</source>
+        <translation>開始パラメータ u：</translation>
+    </message>
+    <message>
+        <source>End parameter u:</source>
+        <translation>終了パラメータ u：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>色を選択</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>作成</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+    <message>
+        <source>Step 2/2 : Drag to set focal length, then click</source>
+        <translation>手順 2/2：マウスを動かして焦点距離を設定し、クリック</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>無効なパラメータ</translation>
+    </message>
+    <message>
+        <source>The normal must be nonzero and the start parameter must be less than the end parameter.</source>
+        <translation>法線はゼロ以外とし、開始パラメータは終了パラメータより小さくしてください。</translation>
+    </message>
+    <message>
+        <source>Parabola defined. Press [Create] to confirm.</source>
+        <translation>放物線を定義しました。「作成」で確定してください。</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateOffsetCurve</name>
+    <message>
+        <source>Create Offset Curve</source>
+        <translation>オフセット曲線を作成</translation>
+    </message>
+    <message>
+        <source>Select one edge or a single-edge wire.</source>
+        <translation>エッジまたはエッジが1本のワイヤを選択してください。</translation>
+    </message>
+    <message>
+        <source>Pick Curve</source>
+        <translation>曲線を選択</translation>
+    </message>
+    <message>
+        <source>Signed distance:</source>
+        <translation>符号付き距離：</translation>
+    </message>
+    <message>
+        <source>Reference X:</source>
+        <translation>参照方向 X：</translation>
+    </message>
+    <message>
+        <source>Reference Y:</source>
+        <translation>参照方向 Y：</translation>
+    </message>
+    <message>
+        <source>Reference Z:</source>
+        <translation>参照方向 Z：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>色を選択</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>作成</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+    <message>
+        <source>No active view is available.</source>
+        <translation>使用できるビューがありません。</translation>
+    </message>
+    <message>
+        <source>This wire has multiple edges. Select one edge.</source>
+        <translation>このワイヤには複数のエッジがあります。1本のエッジを選択してください。</translation>
+    </message>
+    <message>
+        <source>Curve selected.</source>
+        <translation>曲線を選択しました。</translation>
+    </message>
+    <message>
+        <source>Cannot offset this curve with the current values.</source>
+        <translation>現在の値ではこの曲線をオフセットできません。</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>無効なパラメータ</translation>
+    </message>
+    <message>
+        <source>Select a curve first.</source>
+        <translation>先に曲線を選択してください。</translation>
+    </message>
+    <message>
+        <source>Distance and reference direction must be nonzero.</source>
+        <translation>距離と参照方向はゼロ以外にしてください。</translation>
     </message>
 </context>
 </TS>

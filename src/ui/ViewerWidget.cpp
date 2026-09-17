@@ -18,6 +18,9 @@
 #include "ui/DialogCreateCircle.h"
 #include "ui/DialogCreateArc.h"
 #include "ui/DialogCreateEllipse.h"
+#include "ui/DialogCreateHyperbola.h"
+#include "ui/DialogCreateParabola.h"
+#include "ui/DialogCreateOffsetCurve.h"
 #include "ui/DialogCreateSphere.h"
 #include "ui/DialogCreateCylinder.h"
 #include "ui/DialogCreateCone.h"
@@ -603,6 +606,59 @@ void ViewerWidget::onUpdateSelectionInfo(const std::vector<std::shared_ptr<View:
                       TCollection_ExtendedString extStr = name->Get();
                       displayName = QString::fromUtf16(reinterpret_cast<const ushort*>(extStr.ToExtString()));
                  }
+             }
+             if (!shape.IsNull() && (shape.ShapeType() == TopAbs_EDGE
+                                     || shape.ShapeType() == TopAbs_WIRE
+                                     || shape.ShapeType() == TopAbs_FACE)) {
+                 QString geometryType = "Unknown";
+                 try {
+                     if (shape.ShapeType() == TopAbs_EDGE || shape.ShapeType() == TopAbs_WIRE) {
+                         TopoDS_Edge edge;
+                         if (shape.ShapeType() == TopAbs_EDGE) {
+                             edge = TopoDS::Edge(shape);
+                         } else {
+                             TopExp_Explorer explorer(shape, TopAbs_EDGE);
+                             if (explorer.More()) {
+                                 edge = TopoDS::Edge(explorer.Current());
+                             }
+                         }
+
+                         if (!edge.IsNull()) {
+                             const BRepAdaptor_Curve curve(edge);
+                             switch (curve.GetType()) {
+                                 case GeomAbs_Line: geometryType = "Line"; break;
+                                 case GeomAbs_Circle: geometryType = "Circle"; break;
+                                 case GeomAbs_Ellipse: geometryType = "Ellipse"; break;
+                                 case GeomAbs_Hyperbola: geometryType = "Hyperbola"; break;
+                                 case GeomAbs_Parabola: geometryType = "Parabola"; break;
+                                 case GeomAbs_BezierCurve: geometryType = "BezierCurve"; break;
+                                 case GeomAbs_BSplineCurve: geometryType = "BSplineCurve"; break;
+                                 case GeomAbs_OffsetCurve: geometryType = "OffsetCurve"; break;
+                                 case GeomAbs_OtherCurve: geometryType = "OtherCurve"; break;
+                             }
+                         }
+                     } else {
+                         const BRepAdaptor_Surface surface(TopoDS::Face(shape));
+                         switch (surface.GetType()) {
+                             case GeomAbs_Plane: geometryType = "Plane"; break;
+                             case GeomAbs_Cylinder: geometryType = "Cylinder"; break;
+                             case GeomAbs_Cone: geometryType = "Cone"; break;
+                             case GeomAbs_Sphere: geometryType = "Sphere"; break;
+                             case GeomAbs_Torus: geometryType = "Torus"; break;
+                             case GeomAbs_BezierSurface: geometryType = "BezierSurface"; break;
+                             case GeomAbs_BSplineSurface: geometryType = "BSplineSurface"; break;
+                             case GeomAbs_SurfaceOfRevolution: geometryType = "SurfaceOfRevolution"; break;
+                             case GeomAbs_SurfaceOfExtrusion: geometryType = "SurfaceOfExtrusion"; break;
+                             case GeomAbs_OffsetSurface: geometryType = "OffsetSurface"; break;
+                             case GeomAbs_OtherSurface: geometryType = "OtherSurface"; break;
+                         }
+                     }
+                 } catch (const Standard_Failure&) {
+                     // Keep selection info available for invalid geometry.
+                 }
+                 const QString shapeType = QString::fromStdString(typeStr);
+                 const QString typeInfo = QString("%1 / %2").arg(shapeType, geometryType);
+                 displayName = displayName == shapeType ? typeInfo : QString("%1 [%2]").arg(displayName, typeInfo);
              }
              infoText = QString("%1 (%2)").arg(displayName).arg(selectedObjects.size());
         }
@@ -2110,6 +2166,43 @@ void ViewerWidget::createEllipse()
     m_dlgEllipse->raise();
 }
 
+void ViewerWidget::createHyperbola()
+{
+    if (!m_dlgHyperbola) {
+        m_dlgHyperbola = new DialogCreateHyperbola(this);
+        m_dlgHyperbola->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgHyperbola, &DialogCreateHyperbola::signalCreateHyperbola, this, &ViewerWidget::onCreateHyperbola);
+        connect(m_dlgHyperbola, &QDialog::destroyed, this, [this]() { m_dlgHyperbola = nullptr; });
+    }
+    m_dlgHyperbola->show();
+    m_dlgHyperbola->raise();
+}
+
+void ViewerWidget::createParabola()
+{
+    if (!m_dlgParabola) {
+        m_dlgParabola = new DialogCreateParabola(this);
+        m_dlgParabola->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgParabola, &DialogCreateParabola::signalCreateParabola, this, &ViewerWidget::onCreateParabola);
+        connect(m_dlgParabola, &QDialog::destroyed, this, [this]() { m_dlgParabola = nullptr; });
+    }
+    m_dlgParabola->show();
+    m_dlgParabola->raise();
+}
+
+void ViewerWidget::createOffsetCurve()
+{
+    if (!m_dlgOffsetCurve) {
+        m_dlgOffsetCurve = new DialogCreateOffsetCurve(this);
+        m_dlgOffsetCurve->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgOffsetCurve, &DialogCreateOffsetCurve::signalCreateOffsetCurve,
+                this, &ViewerWidget::onCreateOffsetCurve);
+        connect(m_dlgOffsetCurve, &QDialog::destroyed, this, [this]() { m_dlgOffsetCurve = nullptr; });
+    }
+    m_dlgOffsetCurve->show();
+    m_dlgOffsetCurve->raise();
+}
+
 void ViewerWidget::createPolygon()
 {
     if (!m_dlgPolygon) {
@@ -3169,6 +3262,57 @@ void ViewerWidget::onCreateEllipse(double centerX, double centerY, double center
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateEllipse", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgEllipse) m_dlgEllipse->raise();
+}
+
+void ViewerWidget::onCreateHyperbola(double centerX, double centerY, double centerZ, double normalX, double normalY, double normalZ, double majorRadius, double minorRadius, double firstParameter, double lastParameter, const QColor& color)
+{
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = centerX; p[CoreApi::Param::Y] = centerY; p[CoreApi::Param::Z] = centerZ;
+    p[CoreApi::Param::NX] = normalX; p[CoreApi::Param::NY] = normalY; p[CoreApi::Param::NZ] = normalZ;
+    p[CoreApi::Param::MAJOR] = majorRadius; p[CoreApi::Param::MINOR] = minorRadius;
+    p[CoreApi::Param::FIRST_PARAMETER] = firstParameter;
+    p[CoreApi::Param::LAST_PARAMETER] = lastParameter;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateHyperbola", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
+        QMessageBox::warning(this, tr("Error"), tr("Failed to create hyperbola. Check the radii, normal and parameter range."));
+    }
+    if(m_dlgHyperbola) m_dlgHyperbola->raise();
+}
+
+void ViewerWidget::onCreateParabola(double vertexX, double vertexY, double vertexZ, double normalX, double normalY, double normalZ, double focalLength, double firstParameter, double lastParameter, const QColor& color)
+{
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = vertexX; p[CoreApi::Param::Y] = vertexY; p[CoreApi::Param::Z] = vertexZ;
+    p[CoreApi::Param::NX] = normalX; p[CoreApi::Param::NY] = normalY; p[CoreApi::Param::NZ] = normalZ;
+    p[CoreApi::Param::FOCAL] = focalLength;
+    p[CoreApi::Param::FIRST_PARAMETER] = firstParameter;
+    p[CoreApi::Param::LAST_PARAMETER] = lastParameter;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateParabola", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
+        QMessageBox::warning(this, tr("Error"), tr("Failed to create parabola. Check the focal length, normal and parameter range."));
+    }
+    if(m_dlgParabola) m_dlgParabola->raise();
+}
+
+void ViewerWidget::onCreateOffsetCurve(const TopoDS_Shape& basis, double distance,
+                                       double nx, double ny, double nz, const QColor& color)
+{
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::BASIS] = QVariant::fromValue(basis);
+    p[CoreApi::Param::DISTANCE] = distance;
+    p[CoreApi::Param::NX] = nx; p[CoreApi::Param::NY] = ny; p[CoreApi::Param::NZ] = nz;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateOffsetCurve", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
+        QMessageBox::warning(this, tr("Error"),
+                             tr("Failed to create offset curve. Check the curve, distance and reference direction."));
+    }
+    if (m_dlgOffsetCurve) m_dlgOffsetCurve->raise();
 }
 
 void ViewerWidget::onCreateCylinder(double x, double y, double z, double radius, double height, const QColor& color)

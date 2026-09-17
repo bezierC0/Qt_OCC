@@ -28,6 +28,30 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Offset Curve</source>
+        <translation>Offset Curve</translation>
+    </message>
+    <message>
+        <source>Parabola</source>
+        <translation>Parabola</translation>
+    </message>
+    <message>
+        <source>Hyperbola</source>
+        <translation>Hyperbola</translation>
+    </message>
+    <message>
+        <source>Point</source>
+        <translation>Point</translation>
+    </message>
+    <message>
+        <source>Curve</source>
+        <translation>Curve</translation>
+    </message>
+    <message>
+        <source>Solid</source>
+        <translation>Solid</translation>
+    </message>
+    <message>
         <location filename="../../src/MainWindow.ui" line="46"/>
         <location filename="../../src/MainWindow.cpp" line="72"/>
         <source>File</source>
@@ -494,6 +518,18 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to create offset curve. Check the curve, distance and reference direction.</source>
+        <translation>Failed to create offset curve. Check the curve, distance and reference direction.</translation>
+    </message>
+    <message>
+        <source>Failed to create parabola. Check the focal length, normal and parameter range.</source>
+        <translation>Failed to create parabola. Check the focal length, normal and parameter range.</translation>
+    </message>
+    <message>
+        <source>Failed to create hyperbola. Check the radii, normal and parameter range.</source>
+        <translation>Failed to create hyperbola. Check the radii, normal and parameter range.</translation>
+    </message>
+    <message>
         <location filename="../../src/ViewerWidget.cpp" line="153"/>
         <location filename="../../src/ViewerWidget.cpp" line="163"/>
         <source>Error</source>
@@ -909,6 +945,219 @@
         <location filename="../../src/ui/widget_minimum_distance.cpp" line="237"/>
         <source>Measurement ready. Click Apply.</source>
         <translation>Measurement ready. Click Apply.</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateHyperbola</name>
+    <message>
+        <source>Create Hyperbola</source>
+        <translation>Create Hyperbola</translation>
+    </message>
+    <message>
+        <source>Step 1/2 : Click centre point in 3D view</source>
+        <translation>Step 1/2 : Click centre point in 3D view</translation>
+    </message>
+    <message>
+        <source>Center</source>
+        <translation>Center</translation>
+    </message>
+    <message>
+        <source>Normal Direction</source>
+        <translation>Normal Direction</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>Dimensions</translation>
+    </message>
+    <message>
+        <source>Semi-axis a:</source>
+        <translation>Semi-axis a:</translation>
+    </message>
+    <message>
+        <source>Semi-axis b:</source>
+        <translation>Semi-axis b:</translation>
+    </message>
+    <message>
+        <source>Start parameter u:</source>
+        <translation>Start parameter u:</translation>
+    </message>
+    <message>
+        <source>End parameter u:</source>
+        <translation>End parameter u:</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>Select Color</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>Color:</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Create</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <source>Step 2/2 : Drag to set semi-axis a, then click</source>
+        <translation>Step 2/2 : Drag to set semi-axis a, then click</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>Invalid Parameters</translation>
+    </message>
+    <message>
+        <source>The normal must be nonzero and the start parameter must be less than the end parameter.</source>
+        <translation>The normal must be nonzero and the start parameter must be less than the end parameter.</translation>
+    </message>
+    <message>
+        <source>Hyperbola defined. Press [Create] to confirm.</source>
+        <translation>Hyperbola defined. Press [Create] to confirm.</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateParabola</name>
+    <message>
+        <source>Create Parabola</source>
+        <translation>Create Parabola</translation>
+    </message>
+    <message>
+        <source>Step 1/2 : Click vertex point in 3D view</source>
+        <translation>Step 1/2 : Click vertex point in 3D view</translation>
+    </message>
+    <message>
+        <source>Vertex</source>
+        <translation>Vertex</translation>
+    </message>
+    <message>
+        <source>Normal Direction</source>
+        <translation>Normal Direction</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>Dimensions</translation>
+    </message>
+    <message>
+        <source>Focal length:</source>
+        <translation>Focal length:</translation>
+    </message>
+    <message>
+        <source>Start parameter u:</source>
+        <translation>Start parameter u:</translation>
+    </message>
+    <message>
+        <source>End parameter u:</source>
+        <translation>End parameter u:</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>Select Color</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>Color:</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Create</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <source>Step 2/2 : Drag to set focal length, then click</source>
+        <translation>Step 2/2 : Drag to set focal length, then click</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>Invalid Parameters</translation>
+    </message>
+    <message>
+        <source>The normal must be nonzero and the start parameter must be less than the end parameter.</source>
+        <translation>The normal must be nonzero and the start parameter must be less than the end parameter.</translation>
+    </message>
+    <message>
+        <source>Parabola defined. Press [Create] to confirm.</source>
+        <translation>Parabola defined. Press [Create] to confirm.</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateOffsetCurve</name>
+    <message>
+        <source>Create Offset Curve</source>
+        <translation>Create Offset Curve</translation>
+    </message>
+    <message>
+        <source>Select one edge or a single-edge wire.</source>
+        <translation>Select one edge or a single-edge wire.</translation>
+    </message>
+    <message>
+        <source>Pick Curve</source>
+        <translation>Pick Curve</translation>
+    </message>
+    <message>
+        <source>Signed distance:</source>
+        <translation>Signed distance:</translation>
+    </message>
+    <message>
+        <source>Reference X:</source>
+        <translation>Reference X:</translation>
+    </message>
+    <message>
+        <source>Reference Y:</source>
+        <translation>Reference Y:</translation>
+    </message>
+    <message>
+        <source>Reference Z:</source>
+        <translation>Reference Z:</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>Select Color</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>Color:</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Create</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <source>No active view is available.</source>
+        <translation>No active view is available.</translation>
+    </message>
+    <message>
+        <source>This wire has multiple edges. Select one edge.</source>
+        <translation>This wire has multiple edges. Select one edge.</translation>
+    </message>
+    <message>
+        <source>Curve selected.</source>
+        <translation>Curve selected.</translation>
+    </message>
+    <message>
+        <source>Cannot offset this curve with the current values.</source>
+        <translation>Cannot offset this curve with the current values.</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>Invalid Parameters</translation>
+    </message>
+    <message>
+        <source>Select a curve first.</source>
+        <translation>Select a curve first.</translation>
+    </message>
+    <message>
+        <source>Distance and reference direction must be nonzero.</source>
+        <translation>Distance and reference direction must be nonzero.</translation>
     </message>
 </context>
 </TS>

@@ -21,6 +21,14 @@
 #include <gp_Dir.hxx>
 #include <gp_Circ.hxx>
 #include <gp_Elips.hxx>
+#include <gp_Hypr.hxx>
+#include <gp_Parab.hxx>
+#include <Geom_OffsetCurve.hxx>
+#include <BRep_Tool.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
+#include <BRepAdaptor_Curve.hxx>
+#include <Standard_Failure.hxx>
 #include <gp_Pnt.hxx>
 #include <cmath>
 
@@ -41,7 +49,10 @@ TopoDS_Shape ShapeFactory::makeLine(const gp_Pnt& p1, const gp_Pnt& p2)
 {
     if (p1.IsEqual(p2, Precision::Confusion())) return {};
     BRepBuilderAPI_MakeEdge e(p1, p2);
-    return e.IsDone() ? e.Shape() : TopoDS_Shape{};
+    if (!e.IsDone()) return {};
+
+    BRepBuilderAPI_MakeWire wire(e.Edge());
+    return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
 }
 
 TopoDS_Shape ShapeFactory::makeRectangleWire(const gp_Pnt& origin, double width, double height)
@@ -88,7 +99,10 @@ TopoDS_Shape ShapeFactory::makeCircle(const gp_Pnt& center, double radius)
     if (radius < Precision::Confusion()) return {};
     gp_Circ circ(gp_Ax2(center, gp_Dir(0, 0, 1)), radius);
     BRepBuilderAPI_MakeEdge e(circ);
-    return e.IsDone() ? e.Shape() : TopoDS_Shape{};
+    if (!e.IsDone()) return {};
+
+    BRepBuilderAPI_MakeWire wire(e.Edge());
+    return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
 }
 
 TopoDS_Shape ShapeFactory::makeArc(const gp_Pnt& p1, const gp_Pnt& p2, const gp_Pnt& p3)
@@ -101,7 +115,10 @@ TopoDS_Shape ShapeFactory::makeArc(const gp_Pnt& p1, const gp_Pnt& p2, const gp_
     if (!arc.IsDone()) return {};
 
     BRepBuilderAPI_MakeEdge edge(arc.Value());
-    return edge.IsDone() ? edge.Shape() : TopoDS_Shape{};
+    if (!edge.IsDone()) return {};
+
+    BRepBuilderAPI_MakeWire wire(edge.Edge());
+    return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
 }
 
 TopoDS_Shape ShapeFactory::makePolygonWire(const std::vector<gp_Pnt>& points, bool closed)
@@ -131,7 +148,10 @@ TopoDS_Shape ShapeFactory::makeBezierCurve(const std::vector<gp_Pnt>& points)
     try {
         Handle(Geom_BezierCurve) bezier = new Geom_BezierCurve(poles);
         BRepBuilderAPI_MakeEdge edge(bezier);
-        return edge.IsDone() ? edge.Shape() : TopoDS_Shape{};
+        if (!edge.IsDone()) return {};
+
+        BRepBuilderAPI_MakeWire wire(edge.Edge());
+        return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
     } catch (...) {
         return {};
     }
@@ -167,7 +187,10 @@ TopoDS_Shape ShapeFactory::makeNurbsCurve(const std::vector<gp_Pnt>& points, int
     try {
         Handle(Geom_BSplineCurve) bspline = new Geom_BSplineCurve(poles, knots, mults, degree);
         BRepBuilderAPI_MakeEdge edge(bspline);
-        return edge.IsDone() ? edge.Shape() : TopoDS_Shape{};
+        if (!edge.IsDone()) return {};
+
+        BRepBuilderAPI_MakeWire wire(edge.Edge());
+        return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
     } catch (...) {
         return {};
     }
@@ -186,7 +209,100 @@ TopoDS_Shape ShapeFactory::makeEllipse(const gp_Pnt& center,
 
     gp_Elips elips(gp_Ax2(center, normal), majorRadius, minorRadius);
     BRepBuilderAPI_MakeEdge e(elips);
-    return e.IsDone() ? e.Shape() : TopoDS_Shape{};
+    if (!e.IsDone()) return {};
+
+    BRepBuilderAPI_MakeWire wire(e.Edge());
+    return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
+}
+
+TopoDS_Shape ShapeFactory::makeHyperbola(const gp_Pnt& center,
+                                       double nx, double ny, double nz,
+                                       double majorRadius, double minorRadius,
+                                       double firstParameter, double lastParameter)
+{
+    if (!std::isfinite(center.X()) || !std::isfinite(center.Y()) || !std::isfinite(center.Z())
+        || !std::isfinite(nx) || !std::isfinite(ny) || !std::isfinite(nz)
+        || !std::isfinite(majorRadius) || !std::isfinite(minorRadius)
+        || !std::isfinite(firstParameter) || !std::isfinite(lastParameter)
+        || majorRadius < Precision::Confusion() || minorRadius < Precision::Confusion()
+        || lastParameter - firstParameter <= Precision::PConfusion()
+        || firstParameter < -10.0 || lastParameter > 10.0) return {};
+
+    try {
+        const gp_Hypr hyperbola(gp_Ax2(center, gp_Dir(nx, ny, nz)), majorRadius, minorRadius);
+        BRepBuilderAPI_MakeEdge edge(hyperbola, firstParameter, lastParameter);
+        if (!edge.IsDone()) return {};
+
+        BRepBuilderAPI_MakeWire wire(edge.Edge());
+        return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
+    } catch (const Standard_Failure&) {
+        return {};
+    }
+}
+
+TopoDS_Shape ShapeFactory::makeParabola(const gp_Pnt& vertex,
+                                       double nx, double ny, double nz,
+                                       double focalLength,
+                                       double firstParameter, double lastParameter)
+{
+    if (!std::isfinite(vertex.X()) || !std::isfinite(vertex.Y()) || !std::isfinite(vertex.Z())
+        || !std::isfinite(nx) || !std::isfinite(ny) || !std::isfinite(nz)
+        || !std::isfinite(focalLength)
+        || !std::isfinite(firstParameter) || !std::isfinite(lastParameter)
+        || focalLength < Precision::Confusion()
+        || lastParameter - firstParameter <= Precision::PConfusion()
+        || firstParameter < -10000.0 || lastParameter > 10000.0) return {};
+
+    try {
+        const gp_Parab parabola(gp_Ax2(vertex, gp_Dir(nx, ny, nz)), focalLength);
+        BRepBuilderAPI_MakeEdge edge(parabola, firstParameter, lastParameter);
+        if (!edge.IsDone()) return {};
+
+        BRepBuilderAPI_MakeWire wire(edge.Edge());
+        return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
+    } catch (const Standard_Failure&) {
+        return {};
+    }
+}
+
+TopoDS_Shape ShapeFactory::makeOffsetCurve(const TopoDS_Shape& basis, double distance,
+                                          double nx, double ny, double nz)
+{
+    if (basis.IsNull() || !std::isfinite(distance) || std::abs(distance) < Precision::Confusion()
+        || !std::isfinite(nx) || !std::isfinite(ny) || !std::isfinite(nz)
+        || (basis.ShapeType() != TopAbs_EDGE && basis.ShapeType() != TopAbs_WIRE)) return {};
+
+    try {
+        TopExp_Explorer explorer(basis, TopAbs_EDGE);
+        if (!explorer.More()) return {};
+        const TopoDS_Edge edge = TopoDS::Edge(explorer.Current());
+        explorer.Next();
+        if (explorer.More()) return {};
+
+        Standard_Real first, last;
+        const Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, first, last);
+        if (curve.IsNull() || !std::isfinite(first) || !std::isfinite(last)
+            || last - first <= Precision::PConfusion()) return {};
+
+        const gp_Dir direction(nx, ny, nz);
+        const BRepAdaptor_Curve adaptor(edge);
+        for (int i = 0; i <= 8; ++i) {
+            const double parameter = first + (last - first) * i / 8.0;
+            gp_Pnt point;
+            gp_Vec tangent;
+            adaptor.D1(parameter, point, tangent);
+            if (tangent.Crossed(gp_Vec(direction)).Magnitude() < Precision::Confusion()) return {};
+        }
+
+        const Handle(Geom_OffsetCurve) offset = new Geom_OffsetCurve(curve, distance, direction);
+        BRepBuilderAPI_MakeEdge resultEdge(offset, first, last);
+        if (!resultEdge.IsDone()) return {};
+
+        BRepBuilderAPI_MakeWire wire(resultEdge.Edge());
+        return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
+    } catch (const Standard_Failure&) {
+        return {};
+    }
 }
 
 TopoDS_Shape ShapeFactory::makeBox(const gp_Pnt& corner, double dx, double dy, double dz)
