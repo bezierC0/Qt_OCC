@@ -604,6 +604,59 @@ void ViewerWidget::onUpdateSelectionInfo(const std::vector<std::shared_ptr<View:
                       displayName = QString::fromUtf16(reinterpret_cast<const ushort*>(extStr.ToExtString()));
                  }
              }
+             if (!shape.IsNull() && (shape.ShapeType() == TopAbs_EDGE
+                                     || shape.ShapeType() == TopAbs_WIRE
+                                     || shape.ShapeType() == TopAbs_FACE)) {
+                 QString geometryType = "Unknown";
+                 try {
+                     if (shape.ShapeType() == TopAbs_EDGE || shape.ShapeType() == TopAbs_WIRE) {
+                         TopoDS_Edge edge;
+                         if (shape.ShapeType() == TopAbs_EDGE) {
+                             edge = TopoDS::Edge(shape);
+                         } else {
+                             TopExp_Explorer explorer(shape, TopAbs_EDGE);
+                             if (explorer.More()) {
+                                 edge = TopoDS::Edge(explorer.Current());
+                             }
+                         }
+
+                         if (!edge.IsNull()) {
+                             const BRepAdaptor_Curve curve(edge);
+                             switch (curve.GetType()) {
+                                 case GeomAbs_Line: geometryType = "Line"; break;
+                                 case GeomAbs_Circle: geometryType = "Circle"; break;
+                                 case GeomAbs_Ellipse: geometryType = "Ellipse"; break;
+                                 case GeomAbs_Hyperbola: geometryType = "Hyperbola"; break;
+                                 case GeomAbs_Parabola: geometryType = "Parabola"; break;
+                                 case GeomAbs_BezierCurve: geometryType = "BezierCurve"; break;
+                                 case GeomAbs_BSplineCurve: geometryType = "BSplineCurve"; break;
+                                 case GeomAbs_OffsetCurve: geometryType = "OffsetCurve"; break;
+                                 case GeomAbs_OtherCurve: geometryType = "OtherCurve"; break;
+                             }
+                         }
+                     } else {
+                         const BRepAdaptor_Surface surface(TopoDS::Face(shape));
+                         switch (surface.GetType()) {
+                             case GeomAbs_Plane: geometryType = "Plane"; break;
+                             case GeomAbs_Cylinder: geometryType = "Cylinder"; break;
+                             case GeomAbs_Cone: geometryType = "Cone"; break;
+                             case GeomAbs_Sphere: geometryType = "Sphere"; break;
+                             case GeomAbs_Torus: geometryType = "Torus"; break;
+                             case GeomAbs_BezierSurface: geometryType = "BezierSurface"; break;
+                             case GeomAbs_BSplineSurface: geometryType = "BSplineSurface"; break;
+                             case GeomAbs_SurfaceOfRevolution: geometryType = "SurfaceOfRevolution"; break;
+                             case GeomAbs_SurfaceOfExtrusion: geometryType = "SurfaceOfExtrusion"; break;
+                             case GeomAbs_OffsetSurface: geometryType = "OffsetSurface"; break;
+                             case GeomAbs_OtherSurface: geometryType = "OtherSurface"; break;
+                         }
+                     }
+                 } catch (const Standard_Failure&) {
+                     // Keep selection info available for invalid geometry.
+                 }
+                 const QString shapeType = QString::fromStdString(typeStr);
+                 const QString typeInfo = QString("%1 / %2").arg(shapeType, geometryType);
+                 displayName = displayName == shapeType ? typeInfo : QString("%1 [%2]").arg(displayName, typeInfo);
+             }
              infoText = QString("%1 (%2)").arg(displayName).arg(selectedObjects.size());
         }
     }
