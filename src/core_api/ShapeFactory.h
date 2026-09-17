@@ -45,6 +45,9 @@ public:
                               double majorRadius, double minorRadius,
                               double firstParameter, double lastParameter);
 
+    TopoDS_Shape makeParabola(const gp_Pnt &vertex, double nx, double ny, double nz,
+                             double focalLength, double firstParameter, double lastParameter);
+
     TopoDS_Shape makeBox(const gp_Pnt &corner, double dx, double dy, double dz);
 
     TopoDS_Shape makeSphere(const gp_Pnt &center, double radius);

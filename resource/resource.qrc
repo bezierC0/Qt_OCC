@@ -48,6 +48,7 @@
         <file>icon/shape_point.svg</file>
         <file>icon/shape_ellipse.svg</file>
         <file>icon/shape_hyperbola.svg</file>
+        <file>icon/shape_parabola.svg</file>
         <file>icon/shape_line.svg</file>
         <file>icon/shape_polyline.svg</file>
         <file>icon/shape_rectangle.svg</file>

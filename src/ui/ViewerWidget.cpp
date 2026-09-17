@@ -19,6 +19,7 @@
 #include "ui/DialogCreateArc.h"
 #include "ui/DialogCreateEllipse.h"
 #include "ui/DialogCreateHyperbola.h"
+#include "ui/DialogCreateParabola.h"
 #include "ui/DialogCreateSphere.h"
 #include "ui/DialogCreateCylinder.h"
 #include "ui/DialogCreateCone.h"
@@ -2176,6 +2177,18 @@ void ViewerWidget::createHyperbola()
     m_dlgHyperbola->raise();
 }
 
+void ViewerWidget::createParabola()
+{
+    if (!m_dlgParabola) {
+        m_dlgParabola = new DialogCreateParabola(this);
+        m_dlgParabola->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgParabola, &DialogCreateParabola::signalCreateParabola, this, &ViewerWidget::onCreateParabola);
+        connect(m_dlgParabola, &QDialog::destroyed, this, [this]() { m_dlgParabola = nullptr; });
+    }
+    m_dlgParabola->show();
+    m_dlgParabola->raise();
+}
+
 void ViewerWidget::createPolygon()
 {
     if (!m_dlgPolygon) {
@@ -3252,6 +3265,23 @@ void ViewerWidget::onCreateHyperbola(double centerX, double centerY, double cent
         QMessageBox::warning(this, tr("Error"), tr("Failed to create hyperbola. Check the radii, normal and parameter range."));
     }
     if(m_dlgHyperbola) m_dlgHyperbola->raise();
+}
+
+void ViewerWidget::onCreateParabola(double vertexX, double vertexY, double vertexZ, double normalX, double normalY, double normalZ, double focalLength, double firstParameter, double lastParameter, const QColor& color)
+{
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = vertexX; p[CoreApi::Param::Y] = vertexY; p[CoreApi::Param::Z] = vertexZ;
+    p[CoreApi::Param::NX] = normalX; p[CoreApi::Param::NY] = normalY; p[CoreApi::Param::NZ] = normalZ;
+    p[CoreApi::Param::FOCAL] = focalLength;
+    p[CoreApi::Param::FIRST_PARAMETER] = firstParameter;
+    p[CoreApi::Param::LAST_PARAMETER] = lastParameter;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateParabola", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
+        QMessageBox::warning(this, tr("Error"), tr("Failed to create parabola. Check the focal length, normal and parameter range."));
+    }
+    if(m_dlgParabola) m_dlgParabola->raise();
 }
 
 void ViewerWidget::onCreateCylinder(double x, double y, double z, double radius, double height, const QColor& color)

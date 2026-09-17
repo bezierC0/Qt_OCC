@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="200" height="200">
+  <!-- 辅助坐标轴 (浅灰色) -->
+  <path d="M 10 70 H 90 M 50 10 V 90" stroke="#E2E8F0" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- 抛物线 (纯黑) - 开口向上 -->
+  <path d="M 15 20 C 35 70, 65 70, 85 20" stroke="#000000" stroke-width="5" fill="none" stroke-linecap="round"/>
+  
+  <!-- 顶点标记 (纯黑点) -->
+  <circle cx="50" cy="60" r="3" fill="#000000" />
+</svg>

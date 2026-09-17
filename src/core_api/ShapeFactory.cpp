@@ -22,6 +22,7 @@
 #include <gp_Circ.hxx>
 #include <gp_Elips.hxx>
 #include <gp_Hypr.hxx>
+#include <gp_Parab.hxx>
 #include <Standard_Failure.hxx>
 #include <gp_Pnt.hxx>
 #include <cmath>
@@ -225,6 +226,31 @@ TopoDS_Shape ShapeFactory::makeHyperbola(const gp_Pnt& center,
     try {
         const gp_Hypr hyperbola(gp_Ax2(center, gp_Dir(nx, ny, nz)), majorRadius, minorRadius);
         BRepBuilderAPI_MakeEdge edge(hyperbola, firstParameter, lastParameter);
+        if (!edge.IsDone()) return {};
+
+        BRepBuilderAPI_MakeWire wire(edge.Edge());
+        return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
+    } catch (const Standard_Failure&) {
+        return {};
+    }
+}
+
+TopoDS_Shape ShapeFactory::makeParabola(const gp_Pnt& vertex,
+                                       double nx, double ny, double nz,
+                                       double focalLength,
+                                       double firstParameter, double lastParameter)
+{
+    if (!std::isfinite(vertex.X()) || !std::isfinite(vertex.Y()) || !std::isfinite(vertex.Z())
+        || !std::isfinite(nx) || !std::isfinite(ny) || !std::isfinite(nz)
+        || !std::isfinite(focalLength)
+        || !std::isfinite(firstParameter) || !std::isfinite(lastParameter)
+        || focalLength < Precision::Confusion()
+        || lastParameter - firstParameter <= Precision::PConfusion()
+        || firstParameter < -10000.0 || lastParameter > 10000.0) return {};
+
+    try {
+        const gp_Parab parabola(gp_Ax2(vertex, gp_Dir(nx, ny, nz)), focalLength);
+        BRepBuilderAPI_MakeEdge edge(parabola, firstParameter, lastParameter);
         if (!edge.IsDone()) return {};
 
         BRepBuilderAPI_MakeWire wire(edge.Edge());
