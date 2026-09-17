@@ -1160,4 +1160,75 @@
         <translation>Distance and reference direction must be nonzero.</translation>
     </message>
 </context>
+<context>
+    <name>WidgetDistance</name>
+    <message>
+        <source>0.00</source>
+        <translation>0.00</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>Clear</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Close</translation>
+    </message>
+    <message>
+        <source>Delta X:</source>
+        <translation>Delta X:</translation>
+    </message>
+    <message>
+        <source>Delta Y:</source>
+        <translation>Delta Y:</translation>
+    </message>
+    <message>
+        <source>Delta Z:</source>
+        <translation>Delta Z:</translation>
+    </message>
+    <message>
+        <source>Measure Distance</source>
+        <translation>Measure Distance</translation>
+    </message>
+    <message>
+        <source>Measurement complete.</source>
+        <translation>Measurement complete.</translation>
+    </message>
+    <message>
+        <source>Not Selected</source>
+        <translation>Not Selected</translation>
+    </message>
+    <message>
+        <source>Pick</source>
+        <translation>Pick</translation>
+    </message>
+    <message>
+        <source>Pick a point to measure distance.</source>
+        <translation>Pick a point to measure distance.</translation>
+    </message>
+    <message>
+        <source>Pick two points to measure distance.</source>
+        <translation>Pick two points to measure distance.</translation>
+    </message>
+    <message>
+        <source>Please select the first vertex.</source>
+        <translation>Please select the first vertex.</translation>
+    </message>
+    <message>
+        <source>Please select the second vertex.</source>
+        <translation>Please select the second vertex.</translation>
+    </message>
+    <message>
+        <source>Point 1:</source>
+        <translation>Point 1:</translation>
+    </message>
+    <message>
+        <source>Point 2:</source>
+        <translation>Point 2:</translation>
+    </message>
+    <message>
+        <source>Result:</source>
+        <translation>Result:</translation>
+    </message>
+</context>
 </TS>

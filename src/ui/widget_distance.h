@@ -27,11 +27,21 @@ protected:
     void closeEvent(QCloseEvent *event) override;
 
 private slots:
-    void onPickClicked();
+    void onPickFirstClicked();
+    void onPickSecondClicked();
+    void onClearFirstClicked();
+    void onClearSecondClicked();
     void onObjectSelected(const TopoDS_Shape& shape);
     void onCloseClicked();
 
 private:
+    enum PickingState {
+        Idle,
+        PickFirst,
+        PickSecond
+    };
+
+    void startPicking(PickingState target);
     void restoreMouseState();
     void updateUI();
     void calculateDistance();
@@ -41,11 +51,6 @@ private:
     
     SelectionPickSession* m_pickSession;
     
-    enum PickingState {
-        Idle,
-        PickFirst,
-        PickSecond
-    };
     PickingState m_pickingState;
 
     gp_Pnt m_pnt1;

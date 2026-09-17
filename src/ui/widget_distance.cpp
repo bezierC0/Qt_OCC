@@ -25,7 +25,10 @@ WidgetDistance::WidgetDistance(QWidget *parent) :
     ui->setupUi(this);
     setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint);
 
-    connect(ui->pushButtonPick, &QPushButton::clicked, this, &WidgetDistance::onPickClicked);
+    connect(ui->pushButtonPick1, &QPushButton::clicked, this, &WidgetDistance::onPickFirstClicked);
+    connect(ui->pushButtonPick2, &QPushButton::clicked, this, &WidgetDistance::onPickSecondClicked);
+    connect(ui->pushButtonClear1, &QPushButton::clicked, this, &WidgetDistance::onClearFirstClicked);
+    connect(ui->pushButtonClear2, &QPushButton::clicked, this, &WidgetDistance::onClearSecondClicked);
     connect(ui->pushButtonClose, &QPushButton::clicked, this, &WidgetDistance::onCloseClicked);
     connect(m_pickSession, &SelectionPickSession::shapePicked,
             this, &WidgetDistance::onObjectSelected);
@@ -68,7 +71,9 @@ void WidgetDistance::show()
     }
 
     // Default: Start picking if not enough valid selection
-    onPickClicked();
+    m_hasP1 = false;
+    m_hasP2 = false;
+    startPicking(PickFirst);
 }
 
 void WidgetDistance::hide()
@@ -87,24 +92,39 @@ void WidgetDistance::closeEvent(QCloseEvent *event)
     QWidget::closeEvent(event);
 }
 
-void WidgetDistance::onPickClicked()
+void WidgetDistance::onPickFirstClicked()
 {
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view) return;
+    startPicking(PickFirst);
+}
 
-    if (m_pickingState != Idle) {
-        restoreMouseState();
-    }
+void WidgetDistance::onPickSecondClicked()
+{
+    startPicking(PickSecond);
+}
 
-    m_pickingState = PickFirst;
+void WidgetDistance::onClearFirstClicked()
+{
+    if (m_pickingState == PickFirst) restoreMouseState();
     m_hasP1 = false;
-    m_hasP2 = false;
+    updateUI();
+}
 
-    if (!m_pickSession->start({{TopAbs_VERTEX}})) {
-        m_pickingState = Idle;
-        return;
-    }
-    
+void WidgetDistance::onClearSecondClicked()
+{
+    if (m_pickingState == PickSecond) restoreMouseState();
+    m_hasP2 = false;
+    updateUI();
+}
+
+void WidgetDistance::startPicking(PickingState target)
+{
+    if (m_pickingState != Idle) restoreMouseState();
+    if (!ViewManager::getInstance().getActiveView()) return;
+
+    if (!m_pickSession->start({{TopAbs_VERTEX}})) return;
+    m_pickingState = target;
+    if (target == PickFirst) m_hasP1 = false;
+    else m_hasP2 = false;
     updateUI();
 }
 
@@ -117,18 +137,14 @@ void WidgetDistance::onObjectSelected(const TopoDS_Shape& shape)
     if (m_pickingState == PickFirst) {
         m_pnt1 = p;
         m_hasP1 = true;
-        m_pickingState = PickSecond;
-        updateUI();
-    }
-    else if (m_pickingState == PickSecond) {
+    } else {
         m_pnt2 = p;
         m_hasP2 = true;
-        m_pickingState = Idle; // Done picking
-        updateUI();
-        calculateDistance();
-        
-        restoreMouseState();
     }
+
+    restoreMouseState();
+    updateUI();
+    calculateDistance();
 }
 
 void WidgetDistance::calculateDistance()
@@ -156,7 +172,7 @@ void WidgetDistance::updateUI()
             .arg(m_pnt1.Y(), 0, 'f', 2)
             .arg(m_pnt1.Z(), 0, 'f', 2));
     } else {
-        ui->labelPoint1Value->setText("Not Selected");
+        ui->labelPoint1Value->setText(tr("Not Selected"));
     }
 
     if (m_hasP2) {
@@ -165,15 +181,17 @@ void WidgetDistance::updateUI()
             .arg(m_pnt2.Y(), 0, 'f', 2)
             .arg(m_pnt2.Z(), 0, 'f', 2));
     } else {
-        ui->labelPoint2Value->setText("Not Selected");
+        ui->labelPoint2Value->setText(tr("Not Selected"));
     }
 
     if (m_pickingState == PickFirst) {
-        ui->labelStatus->setText("Please select the first vertex.");
+        ui->labelStatus->setText(tr("Please select the first vertex."));
     } else if (m_pickingState == PickSecond) {
-        ui->labelStatus->setText("Please select the second vertex.");
+        ui->labelStatus->setText(tr("Please select the second vertex."));
+    } else if (m_hasP1 && m_hasP2) {
+        ui->labelStatus->setText(tr("Measurement complete."));
     } else {
-        ui->labelStatus->setText("Measurement complete.");
+        ui->labelStatus->setText(tr("Pick a point to measure distance."));
     }
     
     if (!m_hasP1 || !m_hasP2) {

@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>400</width>
+    <width>560</width>
     <height>300</height>
    </rect>
   </property>
@@ -30,6 +30,20 @@
        </property>
       </widget>
      </item>
+     <item row="0" column="2">
+      <widget class="QPushButton" name="pushButtonPick1">
+       <property name="text">
+        <string>Pick</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="3">
+      <widget class="QPushButton" name="pushButtonClear1">
+       <property name="text">
+        <string>Clear</string>
+       </property>
+      </widget>
+     </item>
      <item row="1" column="0">
       <widget class="QLabel" name="labelPoint2">
        <property name="text">
@@ -41,6 +55,20 @@
       <widget class="QLabel" name="labelPoint2Value">
        <property name="text">
         <string>Not Selected</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="2">
+      <widget class="QPushButton" name="pushButtonPick2">
+       <property name="text">
+        <string>Pick</string>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="3">
+      <widget class="QPushButton" name="pushButtonClear2">
+       <property name="text">
+        <string>Clear</string>
        </property>
       </widget>
      </item>
@@ -115,13 +143,6 @@
      </property>
      <property name="alignment">
       <set>Qt::AlignCenter</set>
-     </property>
-    </widget>
-   </item>
-   <item>
-    <widget class="QPushButton" name="pushButtonPick">
-     <property name="text">
-      <string>Pick</string>
      </property>
     </widget>
    </item>
