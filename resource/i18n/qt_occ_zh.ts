@@ -28,6 +28,10 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Offset Curve</source>
+        <translation>偏移曲线</translation>
+    </message>
+    <message>
         <source>Parabola</source>
         <translation>抛物线</translation>
     </message>
@@ -518,6 +522,10 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to create offset curve. Check the curve, distance and reference direction.</source>
+        <translation>创建偏移曲线失败，请检查曲线、距离和参考方向。</translation>
+    </message>
+    <message>
         <source>Failed to create parabola. Check the focal length, normal and parameter range.</source>
         <translation>创建抛物线失败，请检查焦距、法向和参数范围。</translation>
     </message>
@@ -710,6 +718,81 @@
     <message>
         <source>Parabola defined. Press [Create] to confirm.</source>
         <translation>抛物线已定义，点击“创建”确认。</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateOffsetCurve</name>
+    <message>
+        <source>Create Offset Curve</source>
+        <translation>创建偏移曲线</translation>
+    </message>
+    <message>
+        <source>Select one edge or a single-edge wire.</source>
+        <translation>请选择一条边或仅含一条边的线框。</translation>
+    </message>
+    <message>
+        <source>Pick Curve</source>
+        <translation>选择曲线</translation>
+    </message>
+    <message>
+        <source>Signed distance:</source>
+        <translation>有符号距离：</translation>
+    </message>
+    <message>
+        <source>Reference X:</source>
+        <translation>参考方向 X：</translation>
+    </message>
+    <message>
+        <source>Reference Y:</source>
+        <translation>参考方向 Y：</translation>
+    </message>
+    <message>
+        <source>Reference Z:</source>
+        <translation>参考方向 Z：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>选择颜色</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>颜色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>创建</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>No active view is available.</source>
+        <translation>当前没有可用视图。</translation>
+    </message>
+    <message>
+        <source>This wire has multiple edges. Select one edge.</source>
+        <translation>该线框包含多条边，请选择其中一条边。</translation>
+    </message>
+    <message>
+        <source>Curve selected.</source>
+        <translation>已选择曲线。</translation>
+    </message>
+    <message>
+        <source>Cannot offset this curve with the current values.</source>
+        <translation>当前参数无法偏移该曲线。</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>参数无效</translation>
+    </message>
+    <message>
+        <source>Select a curve first.</source>
+        <translation>请先选择曲线。</translation>
+    </message>
+    <message>
+        <source>Distance and reference direction must be nonzero.</source>
+        <translation>距离和参考方向不能为零。</translation>
     </message>
 </context>
 </TS>

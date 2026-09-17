@@ -312,7 +312,7 @@ private:
 
     //! Active selection filters map.
     std::map<TopAbs_ShapeEnum, bool> m_selectionFilters{
-        {TopAbs_VERTEX, false}, {TopAbs_EDGE, false}, {TopAbs_FACE, false}, {TopAbs_SOLID, true}};
+        {TopAbs_VERTEX, false}, {TopAbs_EDGE, false}, {TopAbs_WIRE, false}, {TopAbs_FACE, false}, {TopAbs_SOLID, true}};
 
     Standard_Real                                                       m_animationDuration{1}; // animation duration in seconds
     int                                                                 m_mouseMode{0};                   // 0 normal 1 select + normal

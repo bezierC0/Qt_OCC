@@ -20,6 +20,7 @@
 #include "ui/DialogCreateEllipse.h"
 #include "ui/DialogCreateHyperbola.h"
 #include "ui/DialogCreateParabola.h"
+#include "ui/DialogCreateOffsetCurve.h"
 #include "ui/DialogCreateSphere.h"
 #include "ui/DialogCreateCylinder.h"
 #include "ui/DialogCreateCone.h"
@@ -2189,6 +2190,19 @@ void ViewerWidget::createParabola()
     m_dlgParabola->raise();
 }
 
+void ViewerWidget::createOffsetCurve()
+{
+    if (!m_dlgOffsetCurve) {
+        m_dlgOffsetCurve = new DialogCreateOffsetCurve(this);
+        m_dlgOffsetCurve->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgOffsetCurve, &DialogCreateOffsetCurve::signalCreateOffsetCurve,
+                this, &ViewerWidget::onCreateOffsetCurve);
+        connect(m_dlgOffsetCurve, &QDialog::destroyed, this, [this]() { m_dlgOffsetCurve = nullptr; });
+    }
+    m_dlgOffsetCurve->show();
+    m_dlgOffsetCurve->raise();
+}
+
 void ViewerWidget::createPolygon()
 {
     if (!m_dlgPolygon) {
@@ -3282,6 +3296,23 @@ void ViewerWidget::onCreateParabola(double vertexX, double vertexY, double verte
         QMessageBox::warning(this, tr("Error"), tr("Failed to create parabola. Check the focal length, normal and parameter range."));
     }
     if(m_dlgParabola) m_dlgParabola->raise();
+}
+
+void ViewerWidget::onCreateOffsetCurve(const TopoDS_Shape& basis, double distance,
+                                       double nx, double ny, double nz, const QColor& color)
+{
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::BASIS] = QVariant::fromValue(basis);
+    p[CoreApi::Param::DISTANCE] = distance;
+    p[CoreApi::Param::NX] = nx; p[CoreApi::Param::NY] = ny; p[CoreApi::Param::NZ] = nz;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateOffsetCurve", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
+        QMessageBox::warning(this, tr("Error"),
+                             tr("Failed to create offset curve. Check the curve, distance and reference direction."));
+    }
+    if (m_dlgOffsetCurve) m_dlgOffsetCurve->raise();
 }
 
 void ViewerWidget::onCreateCylinder(double x, double y, double z, double radius, double height, const QColor& color)

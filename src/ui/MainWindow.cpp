@@ -619,6 +619,11 @@ void MainWindow::createShapeGroup()
         connect(m_parabolaAction, &QAction::triggered, this, &MainWindow::onCreateParabola);
         m_curvePannel->addSmallAction(m_parabolaAction);
 
+        // offset curve
+        m_offsetCurveAction = new QAction(QIcon(":/icons/icon/shape_offset_curve.svg"), tr("Offset Curve"), this);
+        connect(m_offsetCurveAction, &QAction::triggered, this, &MainWindow::onCreateOffsetCurve);
+        m_curvePannel->addSmallAction(m_offsetCurveAction);
+
         // polygon
         m_polygonAction = new QAction(QIcon(":/icons/icon/shape_polyline.svg"),tr("Polygon"), this);
         connect(m_polygonAction, &QAction::triggered, this, &MainWindow::onCreatePolygon);
@@ -1084,6 +1089,11 @@ void MainWindow::onCreateHyperbola()
 void MainWindow::onCreateParabola()
 {
     m_viewerWidget->createParabola();
+}
+
+void MainWindow::onCreateOffsetCurve()
+{
+    m_viewerWidget->createOffsetCurve();
 }
 
 void MainWindow::onCreatePolygon()

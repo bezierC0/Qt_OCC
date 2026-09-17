@@ -93,6 +93,7 @@ private slots:
     void onCreateEllipse();
     void onCreateHyperbola();
     void onCreateParabola();
+    void onCreateOffsetCurve();
     void onCreatePolygon();
     void onCreateBezierCurve();
     void onCreateNurbsCurve();
@@ -265,6 +266,7 @@ private:
     QAction* m_ellipseAction;
     QAction* m_hyperbolaAction;
     QAction* m_parabolaAction;
+    QAction* m_offsetCurveAction;
     QAction* m_polygonAction;
     QAction* m_bezierCurveAction;
     QAction* m_nurbsCurveAction;
