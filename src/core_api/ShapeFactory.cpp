@@ -21,6 +21,8 @@
 #include <gp_Dir.hxx>
 #include <gp_Circ.hxx>
 #include <gp_Elips.hxx>
+#include <gp_Hypr.hxx>
+#include <Standard_Failure.hxx>
 #include <gp_Pnt.hxx>
 #include <cmath>
 
@@ -205,6 +207,31 @@ TopoDS_Shape ShapeFactory::makeEllipse(const gp_Pnt& center,
 
     BRepBuilderAPI_MakeWire wire(e.Edge());
     return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
+}
+
+TopoDS_Shape ShapeFactory::makeHyperbola(const gp_Pnt& center,
+                                       double nx, double ny, double nz,
+                                       double majorRadius, double minorRadius,
+                                       double firstParameter, double lastParameter)
+{
+    if (!std::isfinite(center.X()) || !std::isfinite(center.Y()) || !std::isfinite(center.Z())
+        || !std::isfinite(nx) || !std::isfinite(ny) || !std::isfinite(nz)
+        || !std::isfinite(majorRadius) || !std::isfinite(minorRadius)
+        || !std::isfinite(firstParameter) || !std::isfinite(lastParameter)
+        || majorRadius < Precision::Confusion() || minorRadius < Precision::Confusion()
+        || lastParameter - firstParameter <= Precision::PConfusion()
+        || firstParameter < -10.0 || lastParameter > 10.0) return {};
+
+    try {
+        const gp_Hypr hyperbola(gp_Ax2(center, gp_Dir(nx, ny, nz)), majorRadius, minorRadius);
+        BRepBuilderAPI_MakeEdge edge(hyperbola, firstParameter, lastParameter);
+        if (!edge.IsDone()) return {};
+
+        BRepBuilderAPI_MakeWire wire(edge.Edge());
+        return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
+    } catch (const Standard_Failure&) {
+        return {};
+    }
 }
 
 TopoDS_Shape ShapeFactory::makeBox(const gp_Pnt& corner, double dx, double dy, double dz)

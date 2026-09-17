@@ -569,82 +569,93 @@ void MainWindow::createShapeGroup()
     // ---- Shape Group ----
     m_shapeCategory = m_ribbon->addCategoryPage(tr("Shape"));
     
-    // ---- 2d Shape Pannel ----
-    auto createShape2dPannel = [&](){
-        m_shape2dPannel = m_shapeCategory->addPannel(tr("2D"));
+    // ---- Point Pannel ----
+    auto createPointPannel = [&](){
+        auto pointPannel = m_shapeCategory->addPannel(tr("Point"));
 
         // point
         m_pointAction = new QAction(QIcon(":/icons/icon/shape_point.svg"),tr("Point"), this);
         connect(m_pointAction, &QAction::triggered, this, &MainWindow::onCreatePoint);
-        m_shape2dPannel->addSmallAction(m_pointAction);
+        pointPannel->addLargeAction(m_pointAction);
+    };
+    createPointPannel();
+
+    // ---- Curve Pannel ----
+    auto createCurvePannel = [&](){
+        m_curvePannel = m_shapeCategory->addPannel(tr("Curve"));
 
         // line
         m_lineAction = new QAction(QIcon(":/icons/icon/shape_line.svg"),tr("Line"), this);
         connect(m_lineAction, &QAction::triggered, this, &MainWindow::onCreateLine);
-        m_shape2dPannel->addSmallAction(m_lineAction);
+        m_curvePannel->addSmallAction(m_lineAction);
 
         // rectangle
         m_rectangleAction = new QAction(QIcon(":/icons/icon/shape_rectangle.svg"),tr("Rectangle"), this);
         connect(m_rectangleAction, &QAction::triggered, this, &MainWindow::onCreateRectangle);
-        m_shape2dPannel->addSmallAction(m_rectangleAction);
+        m_curvePannel->addSmallAction(m_rectangleAction);
 
         // circle
         m_circleAction = new QAction(QIcon(":/icons/icon/shape_circle.svg"),tr("Circle"), this);
         connect(m_circleAction, &QAction::triggered, this, &MainWindow::onCreateCircle);
-        m_shape2dPannel->addSmallAction(m_circleAction);
+        m_curvePannel->addSmallAction(m_circleAction);
 
         // arc
         m_arcAction = new QAction(QIcon(":/icons/icon/shape_arc.svg"),tr("Arc"), this);
         connect(m_arcAction, &QAction::triggered, this, &MainWindow::onCreateArc);
-        m_shape2dPannel->addSmallAction(m_arcAction);
+        m_curvePannel->addSmallAction(m_arcAction);
 
         // ellipse
         m_ellipseAction = new QAction(QIcon(":/icons/icon/shape_ellipse.svg"),tr("Ellipse"), this);
         connect(m_ellipseAction, &QAction::triggered, this, &MainWindow::onCreateEllipse);
-        m_shape2dPannel->addSmallAction(m_ellipseAction);
+        m_curvePannel->addSmallAction(m_ellipseAction);
+
+        // hyperbola
+        m_hyperbolaAction = new QAction(QIcon(":/icons/icon/shape_hyperbola.svg"), tr("Hyperbola"), this);
+        connect(m_hyperbolaAction, &QAction::triggered, this, &MainWindow::onCreateHyperbola);
+        m_curvePannel->addSmallAction(m_hyperbolaAction);
 
         // polygon
         m_polygonAction = new QAction(QIcon(":/icons/icon/shape_polyline.svg"),tr("Polygon"), this);
         connect(m_polygonAction, &QAction::triggered, this, &MainWindow::onCreatePolygon);
-        m_shape2dPannel->addSmallAction(m_polygonAction);
+        m_curvePannel->addSmallAction(m_polygonAction);
 
         // bezier
         m_bezierCurveAction = new QAction(QIcon(":/icons/icon/shape_bezier.svg"),tr("Bezier"), this);
         connect(m_bezierCurveAction, &QAction::triggered, this, &MainWindow::onCreateBezierCurve);
-        m_shape2dPannel->addSmallAction(m_bezierCurveAction);
+        m_curvePannel->addSmallAction(m_bezierCurveAction);
 
         // nurbs
-        m_nurbsCurveAction = new QAction(QIcon(":/icons/icon/shape_nurbs.svg"),tr("Nurbs"), this);
+        m_nurbsCurveAction = new QAction(QIcon(":/icons/icon/shape_nurbs.svg"),tr("NURBS"), this);
         connect(m_nurbsCurveAction, &QAction::triggered, this, &MainWindow::onCreateNurbsCurve);
-        m_shape2dPannel->addSmallAction(m_nurbsCurveAction);
+        m_curvePannel->addSmallAction(m_nurbsCurveAction);
     };
-    createShape2dPannel();
+    createCurvePannel();
 
-    auto createShape3dPannel = [&](){
-        // ---- 3D Shape Pannel ----
-        m_shape3dPannel = m_shapeCategory->addPannel(tr("3D"));
+    auto createSolidPannel = [&](){
+        // ---- Solid Pannel ----
+        m_solidPannel = m_shapeCategory->addPannel(tr("Solid"));
 
         // box
         m_boxAction = new QAction(QIcon(":/icons/icon/box.png"), tr("Box"), this);
         connect(m_boxAction, &QAction::triggered, this, &MainWindow::onCreateBox);
-        m_shape3dPannel->addLargeAction(m_boxAction);
+        m_solidPannel->addLargeAction(m_boxAction);
 
         // sphere
         m_sphereAction = new QAction(QIcon(":/icons/icon/sphere.png"), tr("Sphere"), this);
         connect(m_sphereAction, &QAction::triggered, this, &MainWindow::onCreateSphere);
-        m_shape3dPannel->addLargeAction(m_sphereAction);
+        m_solidPannel->addLargeAction(m_sphereAction);
 
         // cylinder
         m_cylinderAction = new QAction(QIcon(":/icons/icon/cylinder.png"), tr("Cylinder"), this);
         connect(m_cylinderAction, &QAction::triggered, this, &MainWindow::onCreateCylinder);
-        m_shape3dPannel->addLargeAction(m_cylinderAction);
+        m_solidPannel->addLargeAction(m_cylinderAction);
 
         // cone
         m_coneAction = new QAction(QIcon(":/icons/icon/cone.png"), tr("Cone"), this);
         connect(m_coneAction, &QAction::triggered, this, &MainWindow::onCreateCone);
-        m_shape3dPannel->addLargeAction(m_coneAction);
+        m_solidPannel->addLargeAction(m_coneAction);
     };
-    createShape3dPannel();
+    createSolidPannel();
 
     /* shape Boolean Pannel Pannel  */
     auto createShapeBooleanPannel = [&](){
@@ -1058,6 +1069,11 @@ void MainWindow::onCreateArc()
 void MainWindow::onCreateEllipse()
 {
     m_viewerWidget->createEllipse();
+}
+
+void MainWindow::onCreateHyperbola()
+{
+    m_viewerWidget->createHyperbola();
 }
 
 void MainWindow::onCreatePolygon()
