@@ -795,4 +795,75 @@
         <translation>距離と参照方向はゼロ以外にしてください。</translation>
     </message>
 </context>
+<context>
+    <name>WidgetDistance</name>
+    <message>
+        <source>0.00</source>
+        <translation>0.00</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>クリア</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>閉じる</translation>
+    </message>
+    <message>
+        <source>Delta X:</source>
+        <translation>ΔX：</translation>
+    </message>
+    <message>
+        <source>Delta Y:</source>
+        <translation>ΔY：</translation>
+    </message>
+    <message>
+        <source>Delta Z:</source>
+        <translation>ΔZ：</translation>
+    </message>
+    <message>
+        <source>Measure Distance</source>
+        <translation>距離を測定</translation>
+    </message>
+    <message>
+        <source>Measurement complete.</source>
+        <translation>測定が完了しました。</translation>
+    </message>
+    <message>
+        <source>Not Selected</source>
+        <translation>未選択</translation>
+    </message>
+    <message>
+        <source>Pick</source>
+        <translation>選択</translation>
+    </message>
+    <message>
+        <source>Pick a point to measure distance.</source>
+        <translation>距離を測定する点を選択してください。</translation>
+    </message>
+    <message>
+        <source>Pick two points to measure distance.</source>
+        <translation>距離を測定する2点を選択してください。</translation>
+    </message>
+    <message>
+        <source>Please select the first vertex.</source>
+        <translation>1つ目の頂点を選択してください。</translation>
+    </message>
+    <message>
+        <source>Please select the second vertex.</source>
+        <translation>2つ目の頂点を選択してください。</translation>
+    </message>
+    <message>
+        <source>Point 1:</source>
+        <translation>点 1：</translation>
+    </message>
+    <message>
+        <source>Point 2:</source>
+        <translation>点 2：</translation>
+    </message>
+    <message>
+        <source>Result:</source>
+        <translation>結果：</translation>
+    </message>
+</context>
 </TS>

@@ -795,4 +795,75 @@
         <translation>距离和参考方向不能为零。</translation>
     </message>
 </context>
+<context>
+    <name>WidgetDistance</name>
+    <message>
+        <source>0.00</source>
+        <translation>0.00</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>清除</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
+    <message>
+        <source>Delta X:</source>
+        <translation>ΔX：</translation>
+    </message>
+    <message>
+        <source>Delta Y:</source>
+        <translation>ΔY：</translation>
+    </message>
+    <message>
+        <source>Delta Z:</source>
+        <translation>ΔZ：</translation>
+    </message>
+    <message>
+        <source>Measure Distance</source>
+        <translation>测量距离</translation>
+    </message>
+    <message>
+        <source>Measurement complete.</source>
+        <translation>测量完成。</translation>
+    </message>
+    <message>
+        <source>Not Selected</source>
+        <translation>未选择</translation>
+    </message>
+    <message>
+        <source>Pick</source>
+        <translation>拾取</translation>
+    </message>
+    <message>
+        <source>Pick a point to measure distance.</source>
+        <translation>拾取一个点以测量距离。</translation>
+    </message>
+    <message>
+        <source>Pick two points to measure distance.</source>
+        <translation>拾取两个点以测量距离。</translation>
+    </message>
+    <message>
+        <source>Please select the first vertex.</source>
+        <translation>请选择第一个顶点。</translation>
+    </message>
+    <message>
+        <source>Please select the second vertex.</source>
+        <translation>请选择第二个顶点。</translation>
+    </message>
+    <message>
+        <source>Point 1:</source>
+        <translation>点 1：</translation>
+    </message>
+    <message>
+        <source>Point 2:</source>
+        <translation>点 2：</translation>
+    </message>
+    <message>
+        <source>Result:</source>
+        <translation>结果：</translation>
+    </message>
+</context>
 </TS>
