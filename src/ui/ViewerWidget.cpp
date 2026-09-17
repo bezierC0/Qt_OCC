@@ -18,6 +18,7 @@
 #include "ui/DialogCreateCircle.h"
 #include "ui/DialogCreateArc.h"
 #include "ui/DialogCreateEllipse.h"
+#include "ui/DialogCreateHyperbola.h"
 #include "ui/DialogCreateSphere.h"
 #include "ui/DialogCreateCylinder.h"
 #include "ui/DialogCreateCone.h"
@@ -2163,6 +2164,18 @@ void ViewerWidget::createEllipse()
     m_dlgEllipse->raise();
 }
 
+void ViewerWidget::createHyperbola()
+{
+    if (!m_dlgHyperbola) {
+        m_dlgHyperbola = new DialogCreateHyperbola(this);
+        m_dlgHyperbola->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgHyperbola, &DialogCreateHyperbola::signalCreateHyperbola, this, &ViewerWidget::onCreateHyperbola);
+        connect(m_dlgHyperbola, &QDialog::destroyed, this, [this]() { m_dlgHyperbola = nullptr; });
+    }
+    m_dlgHyperbola->show();
+    m_dlgHyperbola->raise();
+}
+
 void ViewerWidget::createPolygon()
 {
     if (!m_dlgPolygon) {
@@ -3222,6 +3235,23 @@ void ViewerWidget::onCreateEllipse(double centerX, double centerY, double center
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateEllipse", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if(m_dlgEllipse) m_dlgEllipse->raise();
+}
+
+void ViewerWidget::onCreateHyperbola(double centerX, double centerY, double centerZ, double normalX, double normalY, double normalZ, double majorRadius, double minorRadius, double firstParameter, double lastParameter, const QColor& color)
+{
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = centerX; p[CoreApi::Param::Y] = centerY; p[CoreApi::Param::Z] = centerZ;
+    p[CoreApi::Param::NX] = normalX; p[CoreApi::Param::NY] = normalY; p[CoreApi::Param::NZ] = normalZ;
+    p[CoreApi::Param::MAJOR] = majorRadius; p[CoreApi::Param::MINOR] = minorRadius;
+    p[CoreApi::Param::FIRST_PARAMETER] = firstParameter;
+    p[CoreApi::Param::LAST_PARAMETER] = lastParameter;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateHyperbola", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
+        QMessageBox::warning(this, tr("Error"), tr("Failed to create hyperbola. Check the radii, normal and parameter range."));
+    }
+    if(m_dlgHyperbola) m_dlgHyperbola->raise();
 }
 
 void ViewerWidget::onCreateCylinder(double x, double y, double z, double radius, double height, const QColor& color)

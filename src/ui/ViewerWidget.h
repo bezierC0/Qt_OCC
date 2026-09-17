@@ -23,6 +23,7 @@ class DialogCreateCircle;
 class DialogCreateCone;
 class DialogCreateCylinder;
 class DialogCreateEllipse;
+class DialogCreateHyperbola;
 class DialogCreateLine;
 class DialogCreatePoint;
 class DialogCreateRectangle;
@@ -115,6 +116,7 @@ public:
     void createCircle();
     void createArc();
     void createEllipse();
+    void createHyperbola();
     void createPolygon();
     void createBezierCurve();
     void createNurbsCurve();
@@ -192,6 +194,7 @@ private slots:
     void onCreateCone(double x, double y, double z, double r1, double r2, double h, const QColor& color);
     void onCreateCylinder(double x, double y, double z, double r, double h, const QColor& color);
     void onCreateEllipse(double cx, double cy, double cz, double nx, double ny, double nz, double major, double minor, const QColor& color);
+    void onCreateHyperbola(double cx, double cy, double cz, double nx, double ny, double nz, double major, double minor, double firstParameter, double lastParameter, const QColor& color);
     void onCreateLine(double x1, double y1, double z1, double x2, double y2, double z2, const QColor& color);
     void onCreatePoint(double x, double y, double z, const QColor& color);
     void onCreateRectangle(double x, double y, double z, double width, double height, const QColor& color);
@@ -237,6 +240,7 @@ private:
     DialogCreateCone*     m_dlgCone{nullptr};
     DialogCreateCylinder* m_dlgCylinder{nullptr};
     DialogCreateEllipse*  m_dlgEllipse{nullptr};
+    DialogCreateHyperbola* m_dlgHyperbola{nullptr};
     DialogCreateLine*     m_dlgLine{nullptr};
     DialogCreatePoint*    m_dlgPoint{nullptr};
     DialogCreateRectangle* m_dlgRectangle{nullptr};

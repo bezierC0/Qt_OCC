@@ -41,6 +41,10 @@ public:
     TopoDS_Shape makeEllipse(const gp_Pnt &center, double nx, double ny, double nz,
                              double majorRadius, double minorRadius);
 
+    TopoDS_Shape makeHyperbola(const gp_Pnt &center, double nx, double ny, double nz,
+                              double majorRadius, double minorRadius,
+                              double firstParameter, double lastParameter);
+
     TopoDS_Shape makeBox(const gp_Pnt &corner, double dx, double dy, double dz);
 
     TopoDS_Shape makeSphere(const gp_Pnt &center, double radius);

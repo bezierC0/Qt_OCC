@@ -28,6 +28,22 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Hyperbola</source>
+        <translation>双曲線</translation>
+    </message>
+    <message>
+        <source>Point</source>
+        <translation>点</translation>
+    </message>
+    <message>
+        <source>Curve</source>
+        <translation>曲線</translation>
+    </message>
+    <message>
+        <source>Solid</source>
+        <translation>ソリッド</translation>
+    </message>
+    <message>
         <location filename="../../src/MainWindow.ui" line="46"/>
         <location filename="../../src/MainWindow.cpp" line="72"/>
         <source>File</source>
@@ -498,6 +514,10 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to create hyperbola. Check the radii, normal and parameter range.</source>
+        <translation>双曲線を作成できません。半軸、法線、パラメータ範囲を確認してください。</translation>
+    </message>
+    <message>
         <location filename="../../src/ViewerWidget.cpp" line="153"/>
         <location filename="../../src/ViewerWidget.cpp" line="163"/>
         <source>Error</source>
@@ -544,6 +564,77 @@
         <location filename="../../src/ViewerWidget.cpp" line="399"/>
         <source>Distance between the two vertices: %1</source>
         <translation>2つの頂点間の距離: %1</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateHyperbola</name>
+    <message>
+        <source>Create Hyperbola</source>
+        <translation>双曲線を作成</translation>
+    </message>
+    <message>
+        <source>Step 1/2 : Click centre point in 3D view</source>
+        <translation>手順 1/2：3D ビューで中心点をクリック</translation>
+    </message>
+    <message>
+        <source>Center</source>
+        <translation>中心</translation>
+    </message>
+    <message>
+        <source>Normal Direction</source>
+        <translation>法線方向</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>寸法</translation>
+    </message>
+    <message>
+        <source>Semi-axis a:</source>
+        <translation>実半軸 a：</translation>
+    </message>
+    <message>
+        <source>Semi-axis b:</source>
+        <translation>虚半軸 b：</translation>
+    </message>
+    <message>
+        <source>Start parameter u:</source>
+        <translation>開始パラメータ u：</translation>
+    </message>
+    <message>
+        <source>End parameter u:</source>
+        <translation>終了パラメータ u：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>色を選択</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>作成</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+    <message>
+        <source>Step 2/2 : Drag to set semi-axis a, then click</source>
+        <translation>手順 2/2：マウスを動かして実半軸 a を設定し、クリック</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>無効なパラメータ</translation>
+    </message>
+    <message>
+        <source>The normal must be nonzero and the start parameter must be less than the end parameter.</source>
+        <translation>法線はゼロ以外とし、開始パラメータは終了パラメータより小さくしてください。</translation>
+    </message>
+    <message>
+        <source>Hyperbola defined. Press [Create] to confirm.</source>
+        <translation>双曲線を定義しました。「作成」で確定してください。</translation>
     </message>
 </context>
 </TS>

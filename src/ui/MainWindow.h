@@ -91,6 +91,7 @@ private slots:
     void onCreateCircle();
     void onCreateArc();
     void onCreateEllipse();
+    void onCreateHyperbola();
     void onCreatePolygon();
     void onCreateBezierCurve();
     void onCreateNurbsCurve();
@@ -244,8 +245,8 @@ private:
 
     // ---- Shape Group ----
     SARibbonCategory* m_shapeCategory;
-    SARibbonPannel* m_shape3dPannel;
-    SARibbonPannel* m_shape2dPannel;
+    SARibbonPannel* m_solidPannel;
+    SARibbonPannel* m_curvePannel;
     SARibbonPannel* m_shapeBooleanPannel;
     SARibbonPannel* m_mirrorPannel;
     SARibbonPannel* m_patternPannel;
@@ -261,6 +262,7 @@ private:
     QAction* m_circleAction;
     QAction* m_arcAction;
     QAction* m_ellipseAction;
+    QAction* m_hyperbolaAction;
     QAction* m_polygonAction;
     QAction* m_bezierCurveAction;
     QAction* m_nurbsCurveAction;
