@@ -28,6 +28,10 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Offset Curve</source>
+        <translation>オフセット曲線</translation>
+    </message>
+    <message>
         <source>Parabola</source>
         <translation>放物線</translation>
     </message>
@@ -518,6 +522,10 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to create offset curve. Check the curve, distance and reference direction.</source>
+        <translation>オフセット曲線を作成できません。曲線、距離、参照方向を確認してください。</translation>
+    </message>
+    <message>
         <source>Failed to create parabola. Check the focal length, normal and parameter range.</source>
         <translation>放物線を作成できません。焦点距離、法線、パラメータ範囲を確認してください。</translation>
     </message>
@@ -710,6 +718,81 @@
     <message>
         <source>Parabola defined. Press [Create] to confirm.</source>
         <translation>放物線を定義しました。「作成」で確定してください。</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateOffsetCurve</name>
+    <message>
+        <source>Create Offset Curve</source>
+        <translation>オフセット曲線を作成</translation>
+    </message>
+    <message>
+        <source>Select one edge or a single-edge wire.</source>
+        <translation>エッジまたはエッジが1本のワイヤを選択してください。</translation>
+    </message>
+    <message>
+        <source>Pick Curve</source>
+        <translation>曲線を選択</translation>
+    </message>
+    <message>
+        <source>Signed distance:</source>
+        <translation>符号付き距離：</translation>
+    </message>
+    <message>
+        <source>Reference X:</source>
+        <translation>参照方向 X：</translation>
+    </message>
+    <message>
+        <source>Reference Y:</source>
+        <translation>参照方向 Y：</translation>
+    </message>
+    <message>
+        <source>Reference Z:</source>
+        <translation>参照方向 Z：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>色を選択</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>作成</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+    <message>
+        <source>No active view is available.</source>
+        <translation>使用できるビューがありません。</translation>
+    </message>
+    <message>
+        <source>This wire has multiple edges. Select one edge.</source>
+        <translation>このワイヤには複数のエッジがあります。1本のエッジを選択してください。</translation>
+    </message>
+    <message>
+        <source>Curve selected.</source>
+        <translation>曲線を選択しました。</translation>
+    </message>
+    <message>
+        <source>Cannot offset this curve with the current values.</source>
+        <translation>現在の値ではこの曲線をオフセットできません。</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>無効なパラメータ</translation>
+    </message>
+    <message>
+        <source>Select a curve first.</source>
+        <translation>先に曲線を選択してください。</translation>
+    </message>
+    <message>
+        <source>Distance and reference direction must be nonzero.</source>
+        <translation>距離と参照方向はゼロ以外にしてください。</translation>
     </message>
 </context>
 </TS>

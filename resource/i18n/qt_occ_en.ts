@@ -28,6 +28,10 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Offset Curve</source>
+        <translation>Offset Curve</translation>
+    </message>
+    <message>
         <source>Parabola</source>
         <translation>Parabola</translation>
     </message>
@@ -513,6 +517,10 @@
 </context>
 <context>
     <name>ViewerWidget</name>
+    <message>
+        <source>Failed to create offset curve. Check the curve, distance and reference direction.</source>
+        <translation>Failed to create offset curve. Check the curve, distance and reference direction.</translation>
+    </message>
     <message>
         <source>Failed to create parabola. Check the focal length, normal and parameter range.</source>
         <translation>Failed to create parabola. Check the focal length, normal and parameter range.</translation>
@@ -1075,6 +1083,81 @@
     <message>
         <source>Parabola defined. Press [Create] to confirm.</source>
         <translation>Parabola defined. Press [Create] to confirm.</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateOffsetCurve</name>
+    <message>
+        <source>Create Offset Curve</source>
+        <translation>Create Offset Curve</translation>
+    </message>
+    <message>
+        <source>Select one edge or a single-edge wire.</source>
+        <translation>Select one edge or a single-edge wire.</translation>
+    </message>
+    <message>
+        <source>Pick Curve</source>
+        <translation>Pick Curve</translation>
+    </message>
+    <message>
+        <source>Signed distance:</source>
+        <translation>Signed distance:</translation>
+    </message>
+    <message>
+        <source>Reference X:</source>
+        <translation>Reference X:</translation>
+    </message>
+    <message>
+        <source>Reference Y:</source>
+        <translation>Reference Y:</translation>
+    </message>
+    <message>
+        <source>Reference Z:</source>
+        <translation>Reference Z:</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>Select Color</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>Color:</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Create</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <source>No active view is available.</source>
+        <translation>No active view is available.</translation>
+    </message>
+    <message>
+        <source>This wire has multiple edges. Select one edge.</source>
+        <translation>This wire has multiple edges. Select one edge.</translation>
+    </message>
+    <message>
+        <source>Curve selected.</source>
+        <translation>Curve selected.</translation>
+    </message>
+    <message>
+        <source>Cannot offset this curve with the current values.</source>
+        <translation>Cannot offset this curve with the current values.</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>Invalid Parameters</translation>
+    </message>
+    <message>
+        <source>Select a curve first.</source>
+        <translation>Select a curve first.</translation>
+    </message>
+    <message>
+        <source>Distance and reference direction must be nonzero.</source>
+        <translation>Distance and reference direction must be nonzero.</translation>
     </message>
 </context>
 </TS>

@@ -23,6 +23,11 @@
 #include <gp_Elips.hxx>
 #include <gp_Hypr.hxx>
 #include <gp_Parab.hxx>
+#include <Geom_OffsetCurve.hxx>
+#include <BRep_Tool.hxx>
+#include <TopExp_Explorer.hxx>
+#include <TopoDS.hxx>
+#include <BRepAdaptor_Curve.hxx>
 #include <Standard_Failure.hxx>
 #include <gp_Pnt.hxx>
 #include <cmath>
@@ -254,6 +259,46 @@ TopoDS_Shape ShapeFactory::makeParabola(const gp_Pnt& vertex,
         if (!edge.IsDone()) return {};
 
         BRepBuilderAPI_MakeWire wire(edge.Edge());
+        return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
+    } catch (const Standard_Failure&) {
+        return {};
+    }
+}
+
+TopoDS_Shape ShapeFactory::makeOffsetCurve(const TopoDS_Shape& basis, double distance,
+                                          double nx, double ny, double nz)
+{
+    if (basis.IsNull() || !std::isfinite(distance) || std::abs(distance) < Precision::Confusion()
+        || !std::isfinite(nx) || !std::isfinite(ny) || !std::isfinite(nz)
+        || (basis.ShapeType() != TopAbs_EDGE && basis.ShapeType() != TopAbs_WIRE)) return {};
+
+    try {
+        TopExp_Explorer explorer(basis, TopAbs_EDGE);
+        if (!explorer.More()) return {};
+        const TopoDS_Edge edge = TopoDS::Edge(explorer.Current());
+        explorer.Next();
+        if (explorer.More()) return {};
+
+        Standard_Real first, last;
+        const Handle(Geom_Curve) curve = BRep_Tool::Curve(edge, first, last);
+        if (curve.IsNull() || !std::isfinite(first) || !std::isfinite(last)
+            || last - first <= Precision::PConfusion()) return {};
+
+        const gp_Dir direction(nx, ny, nz);
+        const BRepAdaptor_Curve adaptor(edge);
+        for (int i = 0; i <= 8; ++i) {
+            const double parameter = first + (last - first) * i / 8.0;
+            gp_Pnt point;
+            gp_Vec tangent;
+            adaptor.D1(parameter, point, tangent);
+            if (tangent.Crossed(gp_Vec(direction)).Magnitude() < Precision::Confusion()) return {};
+        }
+
+        const Handle(Geom_OffsetCurve) offset = new Geom_OffsetCurve(curve, distance, direction);
+        BRepBuilderAPI_MakeEdge resultEdge(offset, first, last);
+        if (!resultEdge.IsDone()) return {};
+
+        BRepBuilderAPI_MakeWire wire(resultEdge.Edge());
         return wire.IsDone() ? wire.Shape() : TopoDS_Shape{};
     } catch (const Standard_Failure&) {
         return {};

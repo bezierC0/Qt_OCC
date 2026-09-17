@@ -11,6 +11,7 @@
 #include "command/CreateEllipseCommand.h"
 #include "command/CreateHyperbolaCommand.h"
 #include "command/CreateParabolaCommand.h"
+#include "command/CreateOffsetCurveCommand.h"
 #include "command/CreateLineCommand.h"
 #include "command/CreateNurbsCommand.h"
 #include "command/CreatePointCommand.h"
@@ -39,6 +40,7 @@ void registerShapeCommands()
     reg.registerCommand("CreateEllipse",   []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateEllipseCommand>(); });
     reg.registerCommand("CreateHyperbola",   []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateHyperbolaCommand>(); });
     reg.registerCommand("CreateParabola",   []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateParabolaCommand>(); });
+    reg.registerCommand("CreateOffsetCurve", []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateOffsetCurveCommand>(); });
     reg.registerCommand("CreatePolygon",   []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreatePolygonCommand>(); });
     reg.registerCommand("CreateBezier",    []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateBezierCommand>(); });
     reg.registerCommand("CreateNurbs",     []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateNurbsCommand>(); });
