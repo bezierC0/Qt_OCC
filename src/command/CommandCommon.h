@@ -31,6 +31,7 @@ namespace Param {
     static const QString RADIUS  = "radius";
     static const QString RADIUS1 = "radius1";
     static const QString RADIUS2 = "radius2";
+    static const QString FOCAL   = "focalLength";
     static const QString FIRST_PARAMETER = "firstParameter";
     static const QString LAST_PARAMETER  = "lastParameter";
     static const QString MAJOR   = "majorRadius";

@@ -28,6 +28,10 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Parabola</source>
+        <translation>抛物线</translation>
+    </message>
+    <message>
         <source>Hyperbola</source>
         <translation>双曲线</translation>
     </message>
@@ -514,6 +518,10 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to create parabola. Check the focal length, normal and parameter range.</source>
+        <translation>创建抛物线失败，请检查焦距、法向和参数范围。</translation>
+    </message>
+    <message>
         <source>Failed to create hyperbola. Check the radii, normal and parameter range.</source>
         <translation>创建双曲线失败，请检查半轴、法向和参数范围。</translation>
     </message>
@@ -635,6 +643,73 @@
     <message>
         <source>Hyperbola defined. Press [Create] to confirm.</source>
         <translation>双曲线已定义，点击“创建”确认。</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateParabola</name>
+    <message>
+        <source>Create Parabola</source>
+        <translation>创建抛物线</translation>
+    </message>
+    <message>
+        <source>Step 1/2 : Click vertex point in 3D view</source>
+        <translation>步骤 1/2：在三维视图中点击顶点</translation>
+    </message>
+    <message>
+        <source>Vertex</source>
+        <translation>顶点</translation>
+    </message>
+    <message>
+        <source>Normal Direction</source>
+        <translation>法向方向</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>尺寸</translation>
+    </message>
+    <message>
+        <source>Focal length:</source>
+        <translation>焦距：</translation>
+    </message>
+    <message>
+        <source>Start parameter u:</source>
+        <translation>起始参数 u：</translation>
+    </message>
+    <message>
+        <source>End parameter u:</source>
+        <translation>终止参数 u：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>选择颜色</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>颜色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>创建</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>Step 2/2 : Drag to set focal length, then click</source>
+        <translation>步骤 2/2：移动鼠标设置焦距，然后点击</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>参数无效</translation>
+    </message>
+    <message>
+        <source>The normal must be nonzero and the start parameter must be less than the end parameter.</source>
+        <translation>法向不能为零，且起始参数必须小于终止参数。</translation>
+    </message>
+    <message>
+        <source>Parabola defined. Press [Create] to confirm.</source>
+        <translation>抛物线已定义，点击“创建”确认。</translation>
     </message>
 </context>
 </TS>

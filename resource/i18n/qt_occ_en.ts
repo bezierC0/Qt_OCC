@@ -28,6 +28,10 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Parabola</source>
+        <translation>Parabola</translation>
+    </message>
+    <message>
         <source>Hyperbola</source>
         <translation>Hyperbola</translation>
     </message>
@@ -509,6 +513,10 @@
 </context>
 <context>
     <name>ViewerWidget</name>
+    <message>
+        <source>Failed to create parabola. Check the focal length, normal and parameter range.</source>
+        <translation>Failed to create parabola. Check the focal length, normal and parameter range.</translation>
+    </message>
     <message>
         <source>Failed to create hyperbola. Check the radii, normal and parameter range.</source>
         <translation>Failed to create hyperbola. Check the radii, normal and parameter range.</translation>
@@ -1000,6 +1008,73 @@
     <message>
         <source>Hyperbola defined. Press [Create] to confirm.</source>
         <translation>Hyperbola defined. Press [Create] to confirm.</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateParabola</name>
+    <message>
+        <source>Create Parabola</source>
+        <translation>Create Parabola</translation>
+    </message>
+    <message>
+        <source>Step 1/2 : Click vertex point in 3D view</source>
+        <translation>Step 1/2 : Click vertex point in 3D view</translation>
+    </message>
+    <message>
+        <source>Vertex</source>
+        <translation>Vertex</translation>
+    </message>
+    <message>
+        <source>Normal Direction</source>
+        <translation>Normal Direction</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>Dimensions</translation>
+    </message>
+    <message>
+        <source>Focal length:</source>
+        <translation>Focal length:</translation>
+    </message>
+    <message>
+        <source>Start parameter u:</source>
+        <translation>Start parameter u:</translation>
+    </message>
+    <message>
+        <source>End parameter u:</source>
+        <translation>End parameter u:</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>Select Color</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>Color:</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Create</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <source>Step 2/2 : Drag to set focal length, then click</source>
+        <translation>Step 2/2 : Drag to set focal length, then click</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>Invalid Parameters</translation>
+    </message>
+    <message>
+        <source>The normal must be nonzero and the start parameter must be less than the end parameter.</source>
+        <translation>The normal must be nonzero and the start parameter must be less than the end parameter.</translation>
+    </message>
+    <message>
+        <source>Parabola defined. Press [Create] to confirm.</source>
+        <translation>Parabola defined. Press [Create] to confirm.</translation>
     </message>
 </context>
 </TS>

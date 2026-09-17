@@ -28,6 +28,10 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Parabola</source>
+        <translation>放物線</translation>
+    </message>
+    <message>
         <source>Hyperbola</source>
         <translation>双曲線</translation>
     </message>
@@ -514,6 +518,10 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to create parabola. Check the focal length, normal and parameter range.</source>
+        <translation>放物線を作成できません。焦点距離、法線、パラメータ範囲を確認してください。</translation>
+    </message>
+    <message>
         <source>Failed to create hyperbola. Check the radii, normal and parameter range.</source>
         <translation>双曲線を作成できません。半軸、法線、パラメータ範囲を確認してください。</translation>
     </message>
@@ -635,6 +643,73 @@
     <message>
         <source>Hyperbola defined. Press [Create] to confirm.</source>
         <translation>双曲線を定義しました。「作成」で確定してください。</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateParabola</name>
+    <message>
+        <source>Create Parabola</source>
+        <translation>放物線を作成</translation>
+    </message>
+    <message>
+        <source>Step 1/2 : Click vertex point in 3D view</source>
+        <translation>手順 1/2：3D ビューで頂点をクリック</translation>
+    </message>
+    <message>
+        <source>Vertex</source>
+        <translation>頂点</translation>
+    </message>
+    <message>
+        <source>Normal Direction</source>
+        <translation>法線方向</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>寸法</translation>
+    </message>
+    <message>
+        <source>Focal length:</source>
+        <translation>焦点距離：</translation>
+    </message>
+    <message>
+        <source>Start parameter u:</source>
+        <translation>開始パラメータ u：</translation>
+    </message>
+    <message>
+        <source>End parameter u:</source>
+        <translation>終了パラメータ u：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>色を選択</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>作成</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+    <message>
+        <source>Step 2/2 : Drag to set focal length, then click</source>
+        <translation>手順 2/2：マウスを動かして焦点距離を設定し、クリック</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>無効なパラメータ</translation>
+    </message>
+    <message>
+        <source>The normal must be nonzero and the start parameter must be less than the end parameter.</source>
+        <translation>法線はゼロ以外とし、開始パラメータは終了パラメータより小さくしてください。</translation>
+    </message>
+    <message>
+        <source>Parabola defined. Press [Create] to confirm.</source>
+        <translation>放物線を定義しました。「作成」で確定してください。</translation>
     </message>
 </context>
 </TS>

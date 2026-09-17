@@ -614,6 +614,11 @@ void MainWindow::createShapeGroup()
         connect(m_hyperbolaAction, &QAction::triggered, this, &MainWindow::onCreateHyperbola);
         m_curvePannel->addSmallAction(m_hyperbolaAction);
 
+        // parabola
+        m_parabolaAction = new QAction(QIcon(":/icons/icon/shape_parabola.svg"), tr("Parabola"), this);
+        connect(m_parabolaAction, &QAction::triggered, this, &MainWindow::onCreateParabola);
+        m_curvePannel->addSmallAction(m_parabolaAction);
+
         // polygon
         m_polygonAction = new QAction(QIcon(":/icons/icon/shape_polyline.svg"),tr("Polygon"), this);
         connect(m_polygonAction, &QAction::triggered, this, &MainWindow::onCreatePolygon);
@@ -1074,6 +1079,11 @@ void MainWindow::onCreateEllipse()
 void MainWindow::onCreateHyperbola()
 {
     m_viewerWidget->createHyperbola();
+}
+
+void MainWindow::onCreateParabola()
+{
+    m_viewerWidget->createParabola();
 }
 
 void MainWindow::onCreatePolygon()
