@@ -8,6 +8,7 @@
 #include <BRepPrimAPI_MakeCone.hxx>
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
+#include <BRepPrimAPI_MakeTorus.hxx>
 #include <GC_MakeArcOfCircle.hxx>
 #include <GC_MakeCircle.hxx>
 #include <GC_MakeEllipse.hxx>
@@ -321,6 +322,18 @@ TopoDS_Shape ShapeFactory::makeSphere(const gp_Pnt& center, double radius)
     if (radius < Precision::Confusion()) return {};
     BRepPrimAPI_MakeSphere sphere(center, radius);
     const TopoDS_Shape shape = sphere.Shape();
+    return shape.IsNull() ? TopoDS_Shape{} : shape;
+}
+
+TopoDS_Shape ShapeFactory::makeTorus(const gp_Pnt& center,
+                                     double majorRadius, double minorRadius)
+{
+    if (!std::isfinite(center.X()) || !std::isfinite(center.Y()) || !std::isfinite(center.Z())
+        || !std::isfinite(majorRadius) || !std::isfinite(minorRadius)
+        || minorRadius < Precision::Confusion() || majorRadius <= minorRadius) return {};
+
+    BRepPrimAPI_MakeTorus torus(gp_Ax2(center, gp_Dir(0, 0, 1)), majorRadius, minorRadius);
+    const TopoDS_Shape shape = torus.Shape();
     return shape.IsNull() ? TopoDS_Shape{} : shape;
 }
 
