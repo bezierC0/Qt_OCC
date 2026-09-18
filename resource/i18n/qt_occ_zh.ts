@@ -28,6 +28,10 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Revolve</source>
+        <translation>旋转体</translation>
+    </message>
+    <message>
         <source>Torus</source>
         <translation>环面</translation>
     </message>
@@ -526,6 +530,10 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to revolve the face. Check the axis and angle.</source>
+        <translation>旋转面失败，请检查旋转轴和角度。</translation>
+    </message>
+    <message>
         <source>Failed to create torus. Check the radii.</source>
         <translation>创建环面失败，请检查半径。</translation>
     </message>
@@ -915,6 +923,85 @@
     <message>
         <source>Major radius must be greater than tube radius.</source>
         <translation>大半径必须大于管半径。</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateRevol</name>
+    <message>
+        <source>Create Revolved Solid</source>
+        <translation>创建旋转体</translation>
+    </message>
+    <message>
+        <source>Select a face to revolve.</source>
+        <translation>选择要旋转的面。</translation>
+    </message>
+    <message>
+        <source>Pick Face</source>
+        <translation>选取面</translation>
+    </message>
+    <message>
+        <source>Axis point X:</source>
+        <translation>轴上一点 X：</translation>
+    </message>
+    <message>
+        <source>Axis point Y:</source>
+        <translation>轴上一点 Y：</translation>
+    </message>
+    <message>
+        <source>Axis point Z:</source>
+        <translation>轴上一点 Z：</translation>
+    </message>
+    <message>
+        <source>Axis direction X:</source>
+        <translation>轴方向 X：</translation>
+    </message>
+    <message>
+        <source>Axis direction Y:</source>
+        <translation>轴方向 Y：</translation>
+    </message>
+    <message>
+        <source>Axis direction Z:</source>
+        <translation>轴方向 Z：</translation>
+    </message>
+    <message>
+        <source>Angle (degrees):</source>
+        <translation>角度（度）：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>选择颜色</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>颜色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>创建</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>No active view is available.</source>
+        <translation>没有可用的活动视图。</translation>
+    </message>
+    <message>
+        <source>Face selected.</source>
+        <translation>已选择面。</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>参数无效</translation>
+    </message>
+    <message>
+        <source>Select a face first.</source>
+        <translation>请先选择一个面。</translation>
+    </message>
+    <message>
+        <source>Axis direction must be nonzero.</source>
+        <translation>轴方向不能为零。</translation>
     </message>
 </context>
 </TS>

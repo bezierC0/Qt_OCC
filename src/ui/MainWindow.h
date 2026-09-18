@@ -101,6 +101,7 @@ private slots:
     void onCreatePyramid();
     void onCreateSphere();
     void onCreateTorus();
+    void onCreateRevol();
     void onCreateCylinder();
     void onCreateCone();
     void onBooleanOperationAction();
@@ -257,6 +258,7 @@ private:
     QAction* m_boxAction;
     QAction* m_sphereAction;
     QAction* m_torusAction;
+    QAction* m_revolAction;
     QAction* m_cylinderAction;
     QAction* m_coneAction;
 

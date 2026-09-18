@@ -19,6 +19,7 @@
 #include "command/CreateRectangleCommand.h"
 #include "command/CreateSphereCommand.h"
 #include "command/CreateTorusCommand.h"
+#include "command/CreateRevolCommand.h"
 
 #include <gp_Pnt.hxx>
 
@@ -48,6 +49,7 @@ void registerShapeCommands()
     reg.registerCommand("CreateBox",       []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateBoxCommand>(); });
     reg.registerCommand("CreateSphere",    []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateSphereCommand>(); });
     reg.registerCommand("CreateTorus",    []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateTorusCommand>(); });
+    reg.registerCommand("CreateRevol",    []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateRevolCommand>(); });
     reg.registerCommand("CreateCylinder",  []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateCylinderCommand>(); });
     reg.registerCommand("CreateCone",      []() -> std::unique_ptr<IShapeCommand> { return std::make_unique<CreateConeCommand>(); });
 }
