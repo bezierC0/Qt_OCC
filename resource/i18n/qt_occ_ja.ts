@@ -28,6 +28,10 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Revolve</source>
+        <translation>回転体</translation>
+    </message>
+    <message>
         <source>Torus</source>
         <translation>トーラス</translation>
     </message>
@@ -526,6 +530,10 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to revolve the face. Check the axis and angle.</source>
+        <translation>面を回転できません。軸と角度を確認してください。</translation>
+    </message>
+    <message>
         <source>Failed to create torus. Check the radii.</source>
         <translation>トーラスを作成できません。半径を確認してください。</translation>
     </message>
@@ -915,6 +923,85 @@
     <message>
         <source>Major radius must be greater than tube radius.</source>
         <translation>主半径は管半径より大きくしてください。</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateRevol</name>
+    <message>
+        <source>Create Revolved Solid</source>
+        <translation>回転体を作成</translation>
+    </message>
+    <message>
+        <source>Select a face to revolve.</source>
+        <translation>回転する面を選択してください。</translation>
+    </message>
+    <message>
+        <source>Pick Face</source>
+        <translation>面を選択</translation>
+    </message>
+    <message>
+        <source>Axis point X:</source>
+        <translation>軸上の点 X：</translation>
+    </message>
+    <message>
+        <source>Axis point Y:</source>
+        <translation>軸上の点 Y：</translation>
+    </message>
+    <message>
+        <source>Axis point Z:</source>
+        <translation>軸上の点 Z：</translation>
+    </message>
+    <message>
+        <source>Axis direction X:</source>
+        <translation>軸方向 X：</translation>
+    </message>
+    <message>
+        <source>Axis direction Y:</source>
+        <translation>軸方向 Y：</translation>
+    </message>
+    <message>
+        <source>Axis direction Z:</source>
+        <translation>軸方向 Z：</translation>
+    </message>
+    <message>
+        <source>Angle (degrees):</source>
+        <translation>角度（度）：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>色を選択</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>作成</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+    <message>
+        <source>No active view is available.</source>
+        <translation>アクティブなビューがありません。</translation>
+    </message>
+    <message>
+        <source>Face selected.</source>
+        <translation>面を選択しました。</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>無効なパラメータ</translation>
+    </message>
+    <message>
+        <source>Select a face first.</source>
+        <translation>先に面を選択してください。</translation>
+    </message>
+    <message>
+        <source>Axis direction must be nonzero.</source>
+        <translation>軸方向をゼロにすることはできません。</translation>
     </message>
 </context>
 </TS>

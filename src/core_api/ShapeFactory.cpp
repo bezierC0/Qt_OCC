@@ -9,6 +9,7 @@
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepPrimAPI_MakeSphere.hxx>
 #include <BRepPrimAPI_MakeTorus.hxx>
+#include <BRepPrimAPI_MakeRevol.hxx>
 #include <GC_MakeArcOfCircle.hxx>
 #include <GC_MakeCircle.hxx>
 #include <GC_MakeEllipse.hxx>
@@ -19,6 +20,7 @@
 #include <TColStd_Array1OfReal.hxx>
 #include <TColgp_Array1OfPnt.hxx>
 #include <gp_Ax2.hxx>
+#include <gp_Ax1.hxx>
 #include <gp_Dir.hxx>
 #include <gp_Circ.hxx>
 #include <gp_Elips.hxx>
@@ -335,6 +337,26 @@ TopoDS_Shape ShapeFactory::makeTorus(const gp_Pnt& center,
     BRepPrimAPI_MakeTorus torus(gp_Ax2(center, gp_Dir(0, 0, 1)), majorRadius, minorRadius);
     const TopoDS_Shape shape = torus.Shape();
     return shape.IsNull() ? TopoDS_Shape{} : shape;
+}
+
+TopoDS_Shape ShapeFactory::makeRevol(const TopoDS_Shape& face, const gp_Pnt& axisPoint,
+                                    double nx, double ny, double nz, double angleDegrees)
+{
+    if (face.IsNull() || face.ShapeType() != TopAbs_FACE
+        || !std::isfinite(axisPoint.X()) || !std::isfinite(axisPoint.Y()) || !std::isfinite(axisPoint.Z())
+        || !std::isfinite(nx) || !std::isfinite(ny) || !std::isfinite(nz)
+        || nx * nx + ny * ny + nz * nz < Precision::SquareConfusion()
+        || !std::isfinite(angleDegrees) || angleDegrees <= 0.0 || angleDegrees > 360.0) return {};
+
+    try {
+        const gp_Ax1 axis(axisPoint, gp_Dir(nx, ny, nz));
+        BRepPrimAPI_MakeRevol revol(face, axis, angleDegrees * std::acos(-1.0) / 180.0);
+        if (!revol.IsDone()) return {};
+        const TopoDS_Shape shape = revol.Shape();
+        return shape.IsNull() || shape.ShapeType() != TopAbs_SOLID ? TopoDS_Shape{} : shape;
+    } catch (const Standard_Failure&) {
+        return {};
+    }
 }
 
 TopoDS_Shape ShapeFactory::makeCylinder(const gp_Pnt& baseCenter, double radius, double height)
