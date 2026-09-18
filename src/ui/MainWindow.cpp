@@ -655,6 +655,11 @@ void MainWindow::createShapeGroup()
         connect(m_sphereAction, &QAction::triggered, this, &MainWindow::onCreateSphere);
         m_solidPannel->addLargeAction(m_sphereAction);
 
+        // torus
+        m_torusAction = new QAction(QIcon(":/icons/icon/torus.svg"), tr("Torus"), this);
+        connect(m_torusAction, &QAction::triggered, this, &MainWindow::onCreateTorus);
+        m_solidPannel->addLargeAction(m_torusAction);
+
         // cylinder
         m_cylinderAction = new QAction(QIcon(":/icons/icon/cylinder.png"), tr("Cylinder"), this);
         connect(m_cylinderAction, &QAction::triggered, this, &MainWindow::onCreateCylinder);
@@ -1124,6 +1129,11 @@ void MainWindow::onCreatePyramid()
 void MainWindow::onCreateSphere()
 {
     m_viewerWidget->createSphere();
+}
+
+void MainWindow::onCreateTorus()
+{
+    m_viewerWidget->createTorus();
 }
 
 void MainWindow::onCreateCylinder()

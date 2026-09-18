@@ -55,6 +55,8 @@ public:
 
     TopoDS_Shape makeSphere(const gp_Pnt &center, double radius);
 
+    TopoDS_Shape makeTorus(const gp_Pnt &center, double majorRadius, double minorRadius);
+
     TopoDS_Shape makeCylinder(const gp_Pnt &baseCenter, double radius, double height);
 
     TopoDS_Shape makeCone(const gp_Pnt &baseCenter, double radius1, double radius2, double height);

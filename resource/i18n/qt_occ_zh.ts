@@ -28,6 +28,10 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Torus</source>
+        <translation>环面</translation>
+    </message>
+    <message>
         <source>Offset Curve</source>
         <translation>偏移曲线</translation>
     </message>
@@ -522,6 +526,10 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to create torus. Check the radii.</source>
+        <translation>创建环面失败，请检查半径。</translation>
+    </message>
+    <message>
         <source>Failed to create offset curve. Check the curve, distance and reference direction.</source>
         <translation>创建偏移曲线失败，请检查曲线、距离和参考方向。</translation>
     </message>
@@ -864,6 +872,49 @@
     <message>
         <source>Result:</source>
         <translation>结果：</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateTorus</name>
+    <message>
+        <source>Create Torus</source>
+        <translation>创建环面</translation>
+    </message>
+    <message>
+        <source>Position (Center)</source>
+        <translation>位置（中心）</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>尺寸</translation>
+    </message>
+    <message>
+        <source>Major Radius:</source>
+        <translation>大半径：</translation>
+    </message>
+    <message>
+        <source>Tube Radius:</source>
+        <translation>管半径：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>选择颜色</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>颜色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>创建</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>参数无效</translation>
+    </message>
+    <message>
+        <source>Major radius must be greater than tube radius.</source>
+        <translation>大半径必须大于管半径。</translation>
     </message>
 </context>
 </TS>

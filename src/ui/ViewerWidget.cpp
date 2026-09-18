@@ -22,6 +22,7 @@
 #include "ui/DialogCreateParabola.h"
 #include "ui/DialogCreateOffsetCurve.h"
 #include "ui/DialogCreateSphere.h"
+#include "ui/DialogCreateTorus.h"
 #include "ui/DialogCreateCylinder.h"
 #include "ui/DialogCreateCone.h"
 #include "ui/DialogCreatePolygon.h"
@@ -2301,6 +2302,18 @@ void ViewerWidget::createSphere()
     m_dlgSphere->raise();
 }
 
+void ViewerWidget::createTorus()
+{
+    if (!m_dlgTorus) {
+        m_dlgTorus = new DialogCreateTorus(this);
+        m_dlgTorus->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgTorus, &DialogCreateTorus::signalCreateTorus, this, &ViewerWidget::onCreateTorus);
+        connect(m_dlgTorus, &QDialog::destroyed, this, [this]() { m_dlgTorus = nullptr; });
+    }
+    m_dlgTorus->show();
+    m_dlgTorus->raise();
+}
+
 void ViewerWidget::createCylinder()
 {
     if (!m_dlgCylinder) {
@@ -3363,5 +3376,19 @@ void ViewerWidget::onCreateSphere(double x, double y, double z, double radius, c
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateSphere", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgSphere) m_dlgSphere->raise();
+}
+
+void ViewerWidget::onCreateTorus(double x, double y, double z, double majorRadius, double minorRadius, const QColor& color)
+{
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::MAJOR] = majorRadius; p[CoreApi::Param::MINOR] = minorRadius;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateTorus", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
+        QMessageBox::warning(this, tr("Error"), tr("Failed to create torus. Check the radii."));
+    }
+    if (m_dlgTorus) m_dlgTorus->raise();
 }
 

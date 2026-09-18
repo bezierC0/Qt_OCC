@@ -28,6 +28,10 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Torus</source>
+        <translation>Torus</translation>
+    </message>
+    <message>
         <source>Offset Curve</source>
         <translation>Offset Curve</translation>
     </message>
@@ -517,6 +521,10 @@
 </context>
 <context>
     <name>ViewerWidget</name>
+    <message>
+        <source>Failed to create torus. Check the radii.</source>
+        <translation>Failed to create torus. Check the radii.</translation>
+    </message>
     <message>
         <source>Failed to create offset curve. Check the curve, distance and reference direction.</source>
         <translation>Failed to create offset curve. Check the curve, distance and reference direction.</translation>
@@ -1229,6 +1237,49 @@
     <message>
         <source>Result:</source>
         <translation>Result:</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateTorus</name>
+    <message>
+        <source>Create Torus</source>
+        <translation>Create Torus</translation>
+    </message>
+    <message>
+        <source>Position (Center)</source>
+        <translation>Position (Center)</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>Dimensions</translation>
+    </message>
+    <message>
+        <source>Major Radius:</source>
+        <translation>Major Radius:</translation>
+    </message>
+    <message>
+        <source>Tube Radius:</source>
+        <translation>Tube Radius:</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>Select Color</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>Color:</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Create</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>Invalid Parameters</translation>
+    </message>
+    <message>
+        <source>Major radius must be greater than tube radius.</source>
+        <translation>Major radius must be greater than tube radius.</translation>
     </message>
 </context>
 </TS>

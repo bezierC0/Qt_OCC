@@ -100,6 +100,7 @@ private slots:
     void onCreateBox();
     void onCreatePyramid();
     void onCreateSphere();
+    void onCreateTorus();
     void onCreateCylinder();
     void onCreateCone();
     void onBooleanOperationAction();
@@ -255,6 +256,7 @@ private:
     SARibbonPannel* m_shapeToolPannel{};
     QAction* m_boxAction;
     QAction* m_sphereAction;
+    QAction* m_torusAction;
     QAction* m_cylinderAction;
     QAction* m_coneAction;
 

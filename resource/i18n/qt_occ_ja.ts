@@ -28,6 +28,10 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Torus</source>
+        <translation>トーラス</translation>
+    </message>
+    <message>
         <source>Offset Curve</source>
         <translation>オフセット曲線</translation>
     </message>
@@ -522,6 +526,10 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to create torus. Check the radii.</source>
+        <translation>トーラスを作成できません。半径を確認してください。</translation>
+    </message>
+    <message>
         <source>Failed to create offset curve. Check the curve, distance and reference direction.</source>
         <translation>オフセット曲線を作成できません。曲線、距離、参照方向を確認してください。</translation>
     </message>
@@ -864,6 +872,49 @@
     <message>
         <source>Result:</source>
         <translation>結果：</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateTorus</name>
+    <message>
+        <source>Create Torus</source>
+        <translation>トーラスを作成</translation>
+    </message>
+    <message>
+        <source>Position (Center)</source>
+        <translation>位置（中心）</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>寸法</translation>
+    </message>
+    <message>
+        <source>Major Radius:</source>
+        <translation>主半径：</translation>
+    </message>
+    <message>
+        <source>Tube Radius:</source>
+        <translation>管半径：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>色を選択</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>作成</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>無効なパラメータ</translation>
+    </message>
+    <message>
+        <source>Major radius must be greater than tube radius.</source>
+        <translation>主半径は管半径より大きくしてください。</translation>
     </message>
 </context>
 </TS>
