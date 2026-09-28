@@ -28,6 +28,14 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Revolve</source>
+        <translation>回転体</translation>
+    </message>
+    <message>
+        <source>Torus</source>
+        <translation>トーラス</translation>
+    </message>
+    <message>
         <source>Offset Curve</source>
         <translation>オフセット曲線</translation>
     </message>
@@ -522,6 +530,14 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to revolve the face. Check the axis and angle.</source>
+        <translation>面を回転できません。軸と角度を確認してください。</translation>
+    </message>
+    <message>
+        <source>Failed to create torus. Check the radii.</source>
+        <translation>トーラスを作成できません。半径を確認してください。</translation>
+    </message>
+    <message>
         <source>Failed to create offset curve. Check the curve, distance and reference direction.</source>
         <translation>オフセット曲線を作成できません。曲線、距離、参照方向を確認してください。</translation>
     </message>
@@ -793,6 +809,262 @@
     <message>
         <source>Distance and reference direction must be nonzero.</source>
         <translation>距離と参照方向はゼロ以外にしてください。</translation>
+    </message>
+</context>
+<context>
+    <name>WidgetDistance</name>
+    <message>
+        <source>0.00</source>
+        <translation>0.00</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>クリア</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>閉じる</translation>
+    </message>
+    <message>
+        <source>Delta X:</source>
+        <translation>ΔX：</translation>
+    </message>
+    <message>
+        <source>Delta Y:</source>
+        <translation>ΔY：</translation>
+    </message>
+    <message>
+        <source>Delta Z:</source>
+        <translation>ΔZ：</translation>
+    </message>
+    <message>
+        <source>Measure Distance</source>
+        <translation>距離を測定</translation>
+    </message>
+    <message>
+        <source>Measurement complete.</source>
+        <translation>測定が完了しました。</translation>
+    </message>
+    <message>
+        <source>Not Selected</source>
+        <translation>未選択</translation>
+    </message>
+    <message>
+        <source>Pick</source>
+        <translation>選択</translation>
+    </message>
+    <message>
+        <source>Pick a point to measure distance.</source>
+        <translation>距離を測定する点を選択してください。</translation>
+    </message>
+    <message>
+        <source>Pick two points to measure distance.</source>
+        <translation>距離を測定する2点を選択してください。</translation>
+    </message>
+    <message>
+        <source>Please select the first vertex.</source>
+        <translation>1つ目の頂点を選択してください。</translation>
+    </message>
+    <message>
+        <source>Please select the second vertex.</source>
+        <translation>2つ目の頂点を選択してください。</translation>
+    </message>
+    <message>
+        <source>Point 1:</source>
+        <translation>点 1：</translation>
+    </message>
+    <message>
+        <source>Point 2:</source>
+        <translation>点 2：</translation>
+    </message>
+    <message>
+        <source>Result:</source>
+        <translation>結果：</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateTorus</name>
+    <message>
+        <source>Create Torus</source>
+        <translation>トーラスを作成</translation>
+    </message>
+    <message>
+        <source>Position (Center)</source>
+        <translation>位置（中心）</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>寸法</translation>
+    </message>
+    <message>
+        <source>Major Radius:</source>
+        <translation>主半径：</translation>
+    </message>
+    <message>
+        <source>Tube Radius:</source>
+        <translation>管半径：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>色を選択</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>作成</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>無効なパラメータ</translation>
+    </message>
+    <message>
+        <source>Major radius must be greater than tube radius.</source>
+        <translation>主半径は管半径より大きくしてください。</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateRevol</name>
+    <message>
+        <source>Create Revolved Solid</source>
+        <translation>回転体を作成</translation>
+    </message>
+    <message>
+        <source>Select a face to revolve.</source>
+        <translation>回転する面を選択してください。</translation>
+    </message>
+    <message>
+        <source>Pick Face</source>
+        <translation>面を選択</translation>
+    </message>
+    <message>
+        <source>Axis point X:</source>
+        <translation>軸上の点 X：</translation>
+    </message>
+    <message>
+        <source>Axis point Y:</source>
+        <translation>軸上の点 Y：</translation>
+    </message>
+    <message>
+        <source>Axis point Z:</source>
+        <translation>軸上の点 Z：</translation>
+    </message>
+    <message>
+        <source>Axis direction X:</source>
+        <translation>軸方向 X：</translation>
+    </message>
+    <message>
+        <source>Axis direction Y:</source>
+        <translation>軸方向 Y：</translation>
+    </message>
+    <message>
+        <source>Axis direction Z:</source>
+        <translation>軸方向 Z：</translation>
+    </message>
+    <message>
+        <source>Angle (degrees):</source>
+        <translation>角度（度）：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>色を選択</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>作成</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>キャンセル</translation>
+    </message>
+    <message>
+        <source>No active view is available.</source>
+        <translation>アクティブなビューがありません。</translation>
+    </message>
+    <message>
+        <source>Face selected.</source>
+        <translation>面を選択しました。</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>無効なパラメータ</translation>
+    </message>
+    <message>
+        <source>Select a face first.</source>
+        <translation>先に面を選択してください。</translation>
+    </message>
+    <message>
+        <source>Axis direction must be nonzero.</source>
+        <translation>軸方向をゼロにすることはできません。</translation>
+    </message>
+</context>
+<context>
+    <name>WidgetInterference</name>
+    <message>
+        <source>Show collision pair only</source>
+        <translation>衝突オブジェクトのみ表示</translation>
+    </message>
+    <message>
+        <source>Result Display</source>
+        <translation>結果表示</translation>
+    </message>
+    <message>
+        <source>Render result on top</source>
+        <translation>結果を最前面に表示</translation>
+    </message>
+    <message>
+        <source>Solid</source>
+        <translation>ソリッド</translation>
+    </message>
+    <message>
+        <source>Transparent (30%)</source>
+        <translation>半透明（30%）</translation>
+    </message>
+    <message>
+        <source>Hidden</source>
+        <translation>非表示</translation>
+    </message>
+    <message>
+        <source>Object A</source>
+        <translation>オブジェクト A</translation>
+    </message>
+    <message>
+        <source>Object B</source>
+        <translation>オブジェクト B</translation>
+    </message>
+    <message>
+        <source>Details</source>
+        <translation>詳細</translation>
+    </message>
+    <message>
+        <source>Bounding Box</source>
+        <translation>バウンディングボックス</translation>
+    </message>
+    <message>
+        <source>Object A:</source>
+        <translation>衝突オブジェクト A：</translation>
+    </message>
+    <message>
+        <source>Object B:</source>
+        <translation>衝突オブジェクト B：</translation>
+    </message>
+    <message>
+        <source>Checking: %v / %m</source>
+        <translation>チェック中：%v / %m</translation>
+    </message>
+    <message>
+        <source>Completed: %v / %m</source>
+        <translation>完了：%v / %m</translation>
+    </message>
+    <message>
+        <source>Add All</source>
+        <translation>すべて追加</translation>
     </message>
 </context>
 </TS>

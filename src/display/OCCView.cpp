@@ -28,6 +28,7 @@
 #include <Aspect_DisplayConnection.hxx>
 #include <Aspect_NeutralWindow.hxx>
 #include <TopoDS_Shape.hxx>
+#include <TopLoc_Location.hxx>
 
 #include <BRepBndLib.hxx>
 #include <BRep_Builder.hxx>
@@ -82,7 +83,7 @@
 #include "OcctQtFrameBuffer.h"
 
 
-View::InterfereceSetting OCCView::m_interfereceSetting{ 1.0, 0.0, 0.0, 0.0, 10, true };
+View::InterfereceSetting OCCView::m_interfereceSetting{ 1.0, 0.0, 0.0, 0.4, 10, true };
 
 
 
@@ -692,6 +693,9 @@ void OCCView::clearShape()
         }
     }
     m_interferenceObjects.clear();
+    m_interferenceObjectA.Nullify();
+    m_interferenceObjectB.Nullify();
+    m_showOnlyInterferencePair = false;
     if (!m_boundingBoxNode.IsNull()) {
         m_context->Erase(m_boundingBoxNode, false);
         m_boundingBoxNode.Nullify();
@@ -945,7 +949,9 @@ void OCCView::checkInterference()
     checkInterference(objects);
 }
 
-std::vector<View::InterferenceResult> OCCView::checkInterference(const std::vector<Handle(AIS_InteractiveObject)>& objects)
+std::vector<View::InterferenceResult> OCCView::checkInterference(
+    const std::vector<Handle(AIS_InteractiveObject)>& objects,
+    const std::function<void(std::size_t, std::size_t)>& progress)
 {
     std::vector<View::InterferenceResult> interferenceResults;
 
@@ -955,16 +961,28 @@ std::vector<View::InterferenceResult> OCCView::checkInterference(const std::vect
         {
             return {};
         }
+        TopoDS_Shape shape;
         if (object->IsKind(STANDARD_TYPE(AIS_Shape)))
         {
-            return Handle(AIS_Shape)::DownCast(object)->Shape();
+            shape = Handle(AIS_Shape)::DownCast(object)->Shape();
         }
-        if (object->IsKind(STANDARD_TYPE(XCAFPrs_AISObject)))
+        else if (object->IsKind(STANDARD_TYPE(XCAFPrs_AISObject)))
         {
-            // auto xcafObj = Handle(XCAFPrs_AISObject)::DownCast(object);
-            return {}; // Returning empty shape for now.
+            const Handle(XCAFPrs_AISObject) xcafObject =
+                Handle(XCAFPrs_AISObject)::DownCast(object);
+            XCAFDoc_ShapeTool::GetShape(xcafObject->GetLabel(), shape);
         }
-        return {};
+        if (shape.IsNull())
+        {
+            return {};
+        }
+
+        const gp_Trsf transform = object->LocalTransformation();
+        if (transform.Form() != gp_Identity)
+        {
+            shape.Location(TopLoc_Location(transform) * shape.Location());
+        }
+        return shape;
     };
 
     CollisionDetector collsion { m_context };
@@ -974,9 +992,15 @@ std::vector<View::InterferenceResult> OCCView::checkInterference(const std::vect
 
     std::vector<Handle(AIS_InteractiveObject)> results; 
 
-    for (size_t i = 0; i < objects.size(); ++i)
+    const std::size_t totalPairs = objects.size() < 2
+        ? 0
+        : objects.size() * (objects.size() - 1) / 2;
+    std::size_t completedPairs = 0;
+    if (progress) progress(completedPairs, totalPairs);
+
+    for (std::size_t i = 0; i < objects.size(); ++i)
     {
-        for (size_t j = i + 1; j < objects.size(); ++j)
+        for (std::size_t j = i + 1; j < objects.size(); ++j)
         {
             Handle(AIS_InteractiveObject) objA = objects.at(i);
             Handle(AIS_InteractiveObject) objB = objects.at(j);
@@ -984,28 +1008,24 @@ std::vector<View::InterferenceResult> OCCView::checkInterference(const std::vect
             const auto shapeA = getShape(objA);
             const auto shapeB = getShape(objB);
 
-            if (shapeA.IsNull() || shapeB.IsNull())
-                continue;
-
-            if (!collsion.DetectAndHighlightCollision(shapeA, shapeB))
-                continue;
-
-            const auto &result = collsion.GetResult();
-            if (result.IsNull())
+            if (!shapeA.IsNull() && !shapeB.IsNull()
+                && collsion.DetectAndHighlightCollision(shapeA, shapeB))
             {
-                continue;
+                const auto& result = collsion.GetResult();
+                if (!result.IsNull())
+                {
+                    results.emplace_back(result);
+
+                    View::InterferenceResult res;
+                    res.objA = objA;
+                    res.objB = objB;
+                    res.intersection = Handle(AIS_Shape)::DownCast(result)->Shape();
+                    interferenceResults.push_back(res);
+                }
             }
 
-            // objA->SetTransparency(0.5); 
-            // objB->SetTransparency(0.5);
-            
-            results.emplace_back(result);
-            
-            View::InterferenceResult res;
-            res.objA = objA;
-            res.objB = objB;
-            res.intersection = Handle(AIS_Shape)::DownCast(result)->Shape();
-            interferenceResults.push_back(res);
+            ++completedPairs;
+            if (progress) progress(completedPairs, totalPairs);
         }
     }
     
@@ -1013,12 +1033,25 @@ std::vector<View::InterferenceResult> OCCView::checkInterference(const std::vect
     {
         std::shared_ptr<View::InterfereceImpl> resultImpl = std::make_shared<View::InterfereceImpl>();
         resultImpl->m_object = result;
+        const Quantity_Color resultColor(
+            m_interfereceSetting.m_colorR, m_interfereceSetting.m_colorG,
+            m_interfereceSetting.m_colorB, Quantity_TOC_RGB);
+        resultImpl->m_object->SetColor(resultColor);
+        resultImpl->m_object->SetTransparency(m_interfereceSetting.m_colorA);
+        resultImpl->m_object->SetWidth(4.0);
+        resultImpl->m_object->Attributes()->SetFaceBoundaryDraw(true);
+        resultImpl->m_object->Attributes()->SetFaceBoundaryAspect(
+            new Prs3d_LineAspect(resultColor, Aspect_TOL_SOLID, 4.0));
+        resultImpl->m_object->SetZLayer(
+            m_interferenceResultOnTop ? Graphic3d_ZLayerId_Topmost : Graphic3d_ZLayerId_Default);
 
         resultImpl->m_boundingBox = new AIS_Shape(Util::TopoShape::CreateBoundingBox(Handle(AIS_Shape)::DownCast(result)->Shape()));
 
         resultImpl->m_boundingBox->SetDisplayMode(AIS_WireFrame);
         resultImpl->m_boundingBox->SetColor(Quantity_Color(m_interfereceSetting.m_colorR, m_interfereceSetting.m_colorG, m_interfereceSetting.m_colorB, Quantity_TOC_RGB));
         resultImpl->m_boundingBox->SetWidth(m_interfereceSetting.m_width);
+        resultImpl->m_boundingBox->SetZLayer(
+            m_interferenceResultOnTop ? Graphic3d_ZLayerId_Topmost : Graphic3d_ZLayerId_Default);
         
         m_interferenceObjects.emplace_back(resultImpl);
     }
@@ -1038,7 +1071,80 @@ void OCCView::clearInterference()
         }
     }
     m_interferenceObjects.clear();
+    resetInterferenceObjectDisplay();
     reDraw();
+}
+
+void OCCView::setInterferenceResultOnTop(bool onTop)
+{
+    m_interferenceResultOnTop = onTop;
+    const Graphic3d_ZLayerId layer =
+        onTop ? Graphic3d_ZLayerId_Topmost : Graphic3d_ZLayerId_Default;
+    for (const auto& object : m_interferenceObjects) {
+        const auto result = std::reinterpret_pointer_cast<View::InterfereceImpl>(object);
+        if (!result || result->m_object.IsNull()) continue;
+        result->m_object->SetZLayer(layer);
+        if (!result->m_boundingBox.IsNull()) result->m_boundingBox->SetZLayer(layer);
+    }
+    m_context->UpdateCurrentViewer();
+}
+
+void OCCView::setInterferenceObjectDisplay(
+    const Handle(AIS_InteractiveObject)& objectA,
+    const Handle(AIS_InteractiveObject)& objectB,
+    View::InterferenceObjectStyle styleA,
+    View::InterferenceObjectStyle styleB,
+    bool showOnlyPair)
+{
+    m_interferenceObjectA = objectA;
+    m_interferenceObjectB = objectB;
+    m_interferenceStyleA = styleA;
+    m_interferenceStyleB = styleB;
+    m_showOnlyInterferencePair = showOnlyPair;
+    applyInterferenceObjectDisplay();
+    m_context->UpdateCurrentViewer();
+    updateView();
+}
+
+void OCCView::resetInterferenceObjectDisplay()
+{
+    m_interferenceObjectA.Nullify();
+    m_interferenceObjectB.Nullify();
+    m_showOnlyInterferencePair = false;
+    applyInterferenceObjectDisplay();
+    m_context->UpdateCurrentViewer();
+}
+
+void OCCView::applyInterferenceObjectDisplay()
+{
+    auto applyStyle = [this](const Handle(AIS_InteractiveObject)& object,
+                             View::InterferenceObjectStyle style) {
+        if (style == View::InterferenceObjectStyle::Hidden) {
+            m_context->Erase(object, false);
+            return;
+        }
+        if (!m_context->IsDisplayed(object)) {
+            m_context->Display(object, object->DisplayMode(), 0, false);
+        }
+        object->SetTransparency(
+            style == View::InterferenceObjectStyle::Transparent ? 0.3 : 0.0);
+        m_context->Redisplay(object, false);
+    };
+
+    for (const Handle(AIS_InteractiveObject)& object : m_loadedObjects) {
+        if (object.IsNull()) continue;
+        const bool isA = !m_interferenceObjectA.IsNull() && object == m_interferenceObjectA;
+        const bool isB = !m_interferenceObjectB.IsNull() && object == m_interferenceObjectB;
+        if (m_showOnlyInterferencePair && !isA && !isB) {
+            m_context->Erase(object, false);
+        } else if (isA) {
+            applyStyle(object, m_interferenceStyleA);
+        } else if (isB) {
+            applyStyle(object, m_interferenceStyleB);
+        } else {
+            applyStyle(object, View::InterferenceObjectStyle::Solid);
+        }
+    }
 }
 
 void OCCView::reDraw()
@@ -1094,6 +1200,8 @@ void OCCView::reDraw()
         }
         reDisplayMode(object);
     }
+
+    applyInterferenceObjectDisplay();
 
     auto reDisplayInterference = [&](const Handle(AIS_InteractiveObject)& object, AIS_DisplayMode displayMode = AIS_DisplayMode::AIS_Shaded){
         const bool onEntry_AutoActivateSelection = m_context->GetAutoActivateSelection();
@@ -1158,6 +1266,25 @@ void OCCView::viewfit()
     // Start the animation from the start state to the end state.
     animateCamera(aCamStart, aCamEnd);
 
+    updateView();
+}
+
+void OCCView::fitShape(const TopoDS_Shape& shape)
+{
+    if (shape.IsNull() || m_view.IsNull()) return;
+
+    Bnd_Box box;
+    BRepBndLib::Add(shape, box);
+    if (box.IsVoid()) return;
+
+    Handle(Graphic3d_Camera) cameraStart = new Graphic3d_Camera();
+    cameraStart->Copy(m_view->Camera());
+    m_view->FitAll(box, 0.1, false);
+
+    Handle(Graphic3d_Camera) cameraEnd = new Graphic3d_Camera();
+    cameraEnd->Copy(m_view->Camera());
+    m_view->SetCamera(cameraStart);
+    animateCamera(cameraStart, cameraEnd);
     updateView();
 }
 

@@ -28,6 +28,14 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Revolve</source>
+        <translation>Revolve</translation>
+    </message>
+    <message>
+        <source>Torus</source>
+        <translation>Torus</translation>
+    </message>
+    <message>
         <source>Offset Curve</source>
         <translation>Offset Curve</translation>
     </message>
@@ -517,6 +525,14 @@
 </context>
 <context>
     <name>ViewerWidget</name>
+    <message>
+        <source>Failed to revolve the face. Check the axis and angle.</source>
+        <translation>Failed to revolve the face. Check the axis and angle.</translation>
+    </message>
+    <message>
+        <source>Failed to create torus. Check the radii.</source>
+        <translation>Failed to create torus. Check the radii.</translation>
+    </message>
     <message>
         <source>Failed to create offset curve. Check the curve, distance and reference direction.</source>
         <translation>Failed to create offset curve. Check the curve, distance and reference direction.</translation>
@@ -1158,6 +1174,262 @@
     <message>
         <source>Distance and reference direction must be nonzero.</source>
         <translation>Distance and reference direction must be nonzero.</translation>
+    </message>
+</context>
+<context>
+    <name>WidgetDistance</name>
+    <message>
+        <source>0.00</source>
+        <translation>0.00</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>Clear</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Close</translation>
+    </message>
+    <message>
+        <source>Delta X:</source>
+        <translation>Delta X:</translation>
+    </message>
+    <message>
+        <source>Delta Y:</source>
+        <translation>Delta Y:</translation>
+    </message>
+    <message>
+        <source>Delta Z:</source>
+        <translation>Delta Z:</translation>
+    </message>
+    <message>
+        <source>Measure Distance</source>
+        <translation>Measure Distance</translation>
+    </message>
+    <message>
+        <source>Measurement complete.</source>
+        <translation>Measurement complete.</translation>
+    </message>
+    <message>
+        <source>Not Selected</source>
+        <translation>Not Selected</translation>
+    </message>
+    <message>
+        <source>Pick</source>
+        <translation>Pick</translation>
+    </message>
+    <message>
+        <source>Pick a point to measure distance.</source>
+        <translation>Pick a point to measure distance.</translation>
+    </message>
+    <message>
+        <source>Pick two points to measure distance.</source>
+        <translation>Pick two points to measure distance.</translation>
+    </message>
+    <message>
+        <source>Please select the first vertex.</source>
+        <translation>Please select the first vertex.</translation>
+    </message>
+    <message>
+        <source>Please select the second vertex.</source>
+        <translation>Please select the second vertex.</translation>
+    </message>
+    <message>
+        <source>Point 1:</source>
+        <translation>Point 1:</translation>
+    </message>
+    <message>
+        <source>Point 2:</source>
+        <translation>Point 2:</translation>
+    </message>
+    <message>
+        <source>Result:</source>
+        <translation>Result:</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateTorus</name>
+    <message>
+        <source>Create Torus</source>
+        <translation>Create Torus</translation>
+    </message>
+    <message>
+        <source>Position (Center)</source>
+        <translation>Position (Center)</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>Dimensions</translation>
+    </message>
+    <message>
+        <source>Major Radius:</source>
+        <translation>Major Radius:</translation>
+    </message>
+    <message>
+        <source>Tube Radius:</source>
+        <translation>Tube Radius:</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>Select Color</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>Color:</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Create</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>Invalid Parameters</translation>
+    </message>
+    <message>
+        <source>Major radius must be greater than tube radius.</source>
+        <translation>Major radius must be greater than tube radius.</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateRevol</name>
+    <message>
+        <source>Create Revolved Solid</source>
+        <translation>Create Revolved Solid</translation>
+    </message>
+    <message>
+        <source>Select a face to revolve.</source>
+        <translation>Select a face to revolve.</translation>
+    </message>
+    <message>
+        <source>Pick Face</source>
+        <translation>Pick Face</translation>
+    </message>
+    <message>
+        <source>Axis point X:</source>
+        <translation>Axis point X:</translation>
+    </message>
+    <message>
+        <source>Axis point Y:</source>
+        <translation>Axis point Y:</translation>
+    </message>
+    <message>
+        <source>Axis point Z:</source>
+        <translation>Axis point Z:</translation>
+    </message>
+    <message>
+        <source>Axis direction X:</source>
+        <translation>Axis direction X:</translation>
+    </message>
+    <message>
+        <source>Axis direction Y:</source>
+        <translation>Axis direction Y:</translation>
+    </message>
+    <message>
+        <source>Axis direction Z:</source>
+        <translation>Axis direction Z:</translation>
+    </message>
+    <message>
+        <source>Angle (degrees):</source>
+        <translation>Angle (degrees):</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>Select Color</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>Color:</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>Create</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>Cancel</translation>
+    </message>
+    <message>
+        <source>No active view is available.</source>
+        <translation>No active view is available.</translation>
+    </message>
+    <message>
+        <source>Face selected.</source>
+        <translation>Face selected.</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>Invalid Parameters</translation>
+    </message>
+    <message>
+        <source>Select a face first.</source>
+        <translation>Select a face first.</translation>
+    </message>
+    <message>
+        <source>Axis direction must be nonzero.</source>
+        <translation>Axis direction must be nonzero.</translation>
+    </message>
+</context>
+<context>
+    <name>WidgetInterference</name>
+    <message>
+        <source>Show collision pair only</source>
+        <translation>Show collision pair only</translation>
+    </message>
+    <message>
+        <source>Result Display</source>
+        <translation>Result Display</translation>
+    </message>
+    <message>
+        <source>Render result on top</source>
+        <translation>Render result on top</translation>
+    </message>
+    <message>
+        <source>Solid</source>
+        <translation>Solid</translation>
+    </message>
+    <message>
+        <source>Transparent (30%)</source>
+        <translation>Transparent (30%)</translation>
+    </message>
+    <message>
+        <source>Hidden</source>
+        <translation>Hidden</translation>
+    </message>
+    <message>
+        <source>Object A</source>
+        <translation>Object A</translation>
+    </message>
+    <message>
+        <source>Object B</source>
+        <translation>Object B</translation>
+    </message>
+    <message>
+        <source>Details</source>
+        <translation>Details</translation>
+    </message>
+    <message>
+        <source>Bounding Box</source>
+        <translation>Bounding Box</translation>
+    </message>
+    <message>
+        <source>Object A:</source>
+        <translation>Object A:</translation>
+    </message>
+    <message>
+        <source>Object B:</source>
+        <translation>Object B:</translation>
+    </message>
+    <message>
+        <source>Checking: %v / %m</source>
+        <translation>Checking: %v / %m</translation>
+    </message>
+    <message>
+        <source>Completed: %v / %m</source>
+        <translation>Completed: %v / %m</translation>
+    </message>
+    <message>
+        <source>Add All</source>
+        <translation>Add All</translation>
     </message>
 </context>
 </TS>

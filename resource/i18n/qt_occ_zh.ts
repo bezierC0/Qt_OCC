@@ -28,6 +28,14 @@
 <context>
     <name>MainWindow</name>
     <message>
+        <source>Revolve</source>
+        <translation>旋转体</translation>
+    </message>
+    <message>
+        <source>Torus</source>
+        <translation>环面</translation>
+    </message>
+    <message>
         <source>Offset Curve</source>
         <translation>偏移曲线</translation>
     </message>
@@ -522,6 +530,14 @@
 <context>
     <name>ViewerWidget</name>
     <message>
+        <source>Failed to revolve the face. Check the axis and angle.</source>
+        <translation>旋转面失败，请检查旋转轴和角度。</translation>
+    </message>
+    <message>
+        <source>Failed to create torus. Check the radii.</source>
+        <translation>创建环面失败，请检查半径。</translation>
+    </message>
+    <message>
         <source>Failed to create offset curve. Check the curve, distance and reference direction.</source>
         <translation>创建偏移曲线失败，请检查曲线、距离和参考方向。</translation>
     </message>
@@ -793,6 +809,262 @@
     <message>
         <source>Distance and reference direction must be nonzero.</source>
         <translation>距离和参考方向不能为零。</translation>
+    </message>
+</context>
+<context>
+    <name>WidgetDistance</name>
+    <message>
+        <source>0.00</source>
+        <translation>0.00</translation>
+    </message>
+    <message>
+        <source>Clear</source>
+        <translation>清除</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
+    <message>
+        <source>Delta X:</source>
+        <translation>ΔX：</translation>
+    </message>
+    <message>
+        <source>Delta Y:</source>
+        <translation>ΔY：</translation>
+    </message>
+    <message>
+        <source>Delta Z:</source>
+        <translation>ΔZ：</translation>
+    </message>
+    <message>
+        <source>Measure Distance</source>
+        <translation>测量距离</translation>
+    </message>
+    <message>
+        <source>Measurement complete.</source>
+        <translation>测量完成。</translation>
+    </message>
+    <message>
+        <source>Not Selected</source>
+        <translation>未选择</translation>
+    </message>
+    <message>
+        <source>Pick</source>
+        <translation>拾取</translation>
+    </message>
+    <message>
+        <source>Pick a point to measure distance.</source>
+        <translation>拾取一个点以测量距离。</translation>
+    </message>
+    <message>
+        <source>Pick two points to measure distance.</source>
+        <translation>拾取两个点以测量距离。</translation>
+    </message>
+    <message>
+        <source>Please select the first vertex.</source>
+        <translation>请选择第一个顶点。</translation>
+    </message>
+    <message>
+        <source>Please select the second vertex.</source>
+        <translation>请选择第二个顶点。</translation>
+    </message>
+    <message>
+        <source>Point 1:</source>
+        <translation>点 1：</translation>
+    </message>
+    <message>
+        <source>Point 2:</source>
+        <translation>点 2：</translation>
+    </message>
+    <message>
+        <source>Result:</source>
+        <translation>结果：</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateTorus</name>
+    <message>
+        <source>Create Torus</source>
+        <translation>创建环面</translation>
+    </message>
+    <message>
+        <source>Position (Center)</source>
+        <translation>位置（中心）</translation>
+    </message>
+    <message>
+        <source>Dimensions</source>
+        <translation>尺寸</translation>
+    </message>
+    <message>
+        <source>Major Radius:</source>
+        <translation>大半径：</translation>
+    </message>
+    <message>
+        <source>Tube Radius:</source>
+        <translation>管半径：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>选择颜色</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>颜色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>创建</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>参数无效</translation>
+    </message>
+    <message>
+        <source>Major radius must be greater than tube radius.</source>
+        <translation>大半径必须大于管半径。</translation>
+    </message>
+</context>
+<context>
+    <name>DialogCreateRevol</name>
+    <message>
+        <source>Create Revolved Solid</source>
+        <translation>创建旋转体</translation>
+    </message>
+    <message>
+        <source>Select a face to revolve.</source>
+        <translation>选择要旋转的面。</translation>
+    </message>
+    <message>
+        <source>Pick Face</source>
+        <translation>选取面</translation>
+    </message>
+    <message>
+        <source>Axis point X:</source>
+        <translation>轴上一点 X：</translation>
+    </message>
+    <message>
+        <source>Axis point Y:</source>
+        <translation>轴上一点 Y：</translation>
+    </message>
+    <message>
+        <source>Axis point Z:</source>
+        <translation>轴上一点 Z：</translation>
+    </message>
+    <message>
+        <source>Axis direction X:</source>
+        <translation>轴方向 X：</translation>
+    </message>
+    <message>
+        <source>Axis direction Y:</source>
+        <translation>轴方向 Y：</translation>
+    </message>
+    <message>
+        <source>Axis direction Z:</source>
+        <translation>轴方向 Z：</translation>
+    </message>
+    <message>
+        <source>Angle (degrees):</source>
+        <translation>角度（度）：</translation>
+    </message>
+    <message>
+        <source>Select Color</source>
+        <translation>选择颜色</translation>
+    </message>
+    <message>
+        <source>Color:</source>
+        <translation>颜色：</translation>
+    </message>
+    <message>
+        <source>Create</source>
+        <translation>创建</translation>
+    </message>
+    <message>
+        <source>Cancel</source>
+        <translation>取消</translation>
+    </message>
+    <message>
+        <source>No active view is available.</source>
+        <translation>没有可用的活动视图。</translation>
+    </message>
+    <message>
+        <source>Face selected.</source>
+        <translation>已选择面。</translation>
+    </message>
+    <message>
+        <source>Invalid Parameters</source>
+        <translation>参数无效</translation>
+    </message>
+    <message>
+        <source>Select a face first.</source>
+        <translation>请先选择一个面。</translation>
+    </message>
+    <message>
+        <source>Axis direction must be nonzero.</source>
+        <translation>轴方向不能为零。</translation>
+    </message>
+</context>
+<context>
+    <name>WidgetInterference</name>
+    <message>
+        <source>Show collision pair only</source>
+        <translation>仅显示碰撞对象</translation>
+    </message>
+    <message>
+        <source>Result Display</source>
+        <translation>结果显示</translation>
+    </message>
+    <message>
+        <source>Render result on top</source>
+        <translation>结果置顶渲染</translation>
+    </message>
+    <message>
+        <source>Solid</source>
+        <translation>实体</translation>
+    </message>
+    <message>
+        <source>Transparent (30%)</source>
+        <translation>半透明（30%）</translation>
+    </message>
+    <message>
+        <source>Hidden</source>
+        <translation>不显示</translation>
+    </message>
+    <message>
+        <source>Object A</source>
+        <translation>对象 A</translation>
+    </message>
+    <message>
+        <source>Object B</source>
+        <translation>对象 B</translation>
+    </message>
+    <message>
+        <source>Details</source>
+        <translation>详情</translation>
+    </message>
+    <message>
+        <source>Bounding Box</source>
+        <translation>包围盒</translation>
+    </message>
+    <message>
+        <source>Object A:</source>
+        <translation>碰撞对象 A：</translation>
+    </message>
+    <message>
+        <source>Object B:</source>
+        <translation>碰撞对象 B：</translation>
+    </message>
+    <message>
+        <source>Checking: %v / %m</source>
+        <translation>检测中：%v / %m</translation>
+    </message>
+    <message>
+        <source>Completed: %v / %m</source>
+        <translation>已完成：%v / %m</translation>
+    </message>
+    <message>
+        <source>Add All</source>
+        <translation>全部添加</translation>
     </message>
 </context>
 </TS>

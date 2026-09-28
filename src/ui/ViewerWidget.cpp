@@ -22,6 +22,8 @@
 #include "ui/DialogCreateParabola.h"
 #include "ui/DialogCreateOffsetCurve.h"
 #include "ui/DialogCreateSphere.h"
+#include "ui/DialogCreateTorus.h"
+#include "ui/DialogCreateRevol.h"
 #include "ui/DialogCreateCylinder.h"
 #include "ui/DialogCreateCone.h"
 #include "ui/DialogCreatePolygon.h"
@@ -2301,6 +2303,30 @@ void ViewerWidget::createSphere()
     m_dlgSphere->raise();
 }
 
+void ViewerWidget::createTorus()
+{
+    if (!m_dlgTorus) {
+        m_dlgTorus = new DialogCreateTorus(this);
+        m_dlgTorus->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgTorus, &DialogCreateTorus::signalCreateTorus, this, &ViewerWidget::onCreateTorus);
+        connect(m_dlgTorus, &QDialog::destroyed, this, [this]() { m_dlgTorus = nullptr; });
+    }
+    m_dlgTorus->show();
+    m_dlgTorus->raise();
+}
+
+void ViewerWidget::createRevol()
+{
+    if (!m_dlgRevol) {
+        m_dlgRevol = new DialogCreateRevol(this);
+        m_dlgRevol->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_dlgRevol, &DialogCreateRevol::signalCreateRevol, this, &ViewerWidget::onCreateRevol);
+        connect(m_dlgRevol, &QDialog::destroyed, this, [this]() { m_dlgRevol = nullptr; });
+    }
+    m_dlgRevol->show();
+    m_dlgRevol->raise();
+}
+
 void ViewerWidget::createCylinder()
 {
     if (!m_dlgCylinder) {
@@ -3363,5 +3389,36 @@ void ViewerWidget::onCreateSphere(double x, double y, double z, double radius, c
     const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateSphere", p);
     if (!shape.IsNull()) displayShape(shape, color.redF(), color.greenF(), color.blueF());
     if (m_dlgSphere) m_dlgSphere->raise();
+}
+
+void ViewerWidget::onCreateRevol(const TopoDS_Shape& face, double x, double y, double z,
+                                 double nx, double ny, double nz, double angle, const QColor& color)
+{
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::BASIS] = QVariant::fromValue(face);
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::NX] = nx; p[CoreApi::Param::NY] = ny; p[CoreApi::Param::NZ] = nz;
+    p[CoreApi::Param::ANGLE] = angle;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateRevol", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
+        QMessageBox::warning(this, tr("Error"), tr("Failed to revolve the face. Check the axis and angle."));
+    }
+    if (m_dlgRevol) m_dlgRevol->raise();
+}
+
+void ViewerWidget::onCreateTorus(double x, double y, double z, double majorRadius, double minorRadius, const QColor& color)
+{
+    CoreApi::ShapeParams p;
+    p[CoreApi::Param::X] = x; p[CoreApi::Param::Y] = y; p[CoreApi::Param::Z] = z;
+    p[CoreApi::Param::MAJOR] = majorRadius; p[CoreApi::Param::MINOR] = minorRadius;
+    const auto shape = CoreApi::ShapeCommandRegistry::instance().execute("CreateTorus", p);
+    if (!shape.IsNull()) {
+        displayShape(shape, color.redF(), color.greenF(), color.blueF());
+    } else {
+        QMessageBox::warning(this, tr("Error"), tr("Failed to create torus. Check the radii."));
+    }
+    if (m_dlgTorus) m_dlgTorus->raise();
 }
 
