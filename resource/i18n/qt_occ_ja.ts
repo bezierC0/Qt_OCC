@@ -1004,4 +1004,67 @@
         <translation>軸方向をゼロにすることはできません。</translation>
     </message>
 </context>
+<context>
+    <name>WidgetInterference</name>
+    <message>
+        <source>Show collision pair only</source>
+        <translation>衝突オブジェクトのみ表示</translation>
+    </message>
+    <message>
+        <source>Result Display</source>
+        <translation>結果表示</translation>
+    </message>
+    <message>
+        <source>Render result on top</source>
+        <translation>結果を最前面に表示</translation>
+    </message>
+    <message>
+        <source>Solid</source>
+        <translation>ソリッド</translation>
+    </message>
+    <message>
+        <source>Transparent (30%)</source>
+        <translation>半透明（30%）</translation>
+    </message>
+    <message>
+        <source>Hidden</source>
+        <translation>非表示</translation>
+    </message>
+    <message>
+        <source>Object A</source>
+        <translation>オブジェクト A</translation>
+    </message>
+    <message>
+        <source>Object B</source>
+        <translation>オブジェクト B</translation>
+    </message>
+    <message>
+        <source>Details</source>
+        <translation>詳細</translation>
+    </message>
+    <message>
+        <source>Bounding Box</source>
+        <translation>バウンディングボックス</translation>
+    </message>
+    <message>
+        <source>Object A:</source>
+        <translation>衝突オブジェクト A：</translation>
+    </message>
+    <message>
+        <source>Object B:</source>
+        <translation>衝突オブジェクト B：</translation>
+    </message>
+    <message>
+        <source>Checking: %v / %m</source>
+        <translation>チェック中：%v / %m</translation>
+    </message>
+    <message>
+        <source>Completed: %v / %m</source>
+        <translation>完了：%v / %m</translation>
+    </message>
+    <message>
+        <source>Add All</source>
+        <translation>すべて追加</translation>
+    </message>
+</context>
 </TS>

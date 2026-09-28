@@ -1004,4 +1004,67 @@
         <translation>轴方向不能为零。</translation>
     </message>
 </context>
+<context>
+    <name>WidgetInterference</name>
+    <message>
+        <source>Show collision pair only</source>
+        <translation>仅显示碰撞对象</translation>
+    </message>
+    <message>
+        <source>Result Display</source>
+        <translation>结果显示</translation>
+    </message>
+    <message>
+        <source>Render result on top</source>
+        <translation>结果置顶渲染</translation>
+    </message>
+    <message>
+        <source>Solid</source>
+        <translation>实体</translation>
+    </message>
+    <message>
+        <source>Transparent (30%)</source>
+        <translation>半透明（30%）</translation>
+    </message>
+    <message>
+        <source>Hidden</source>
+        <translation>不显示</translation>
+    </message>
+    <message>
+        <source>Object A</source>
+        <translation>对象 A</translation>
+    </message>
+    <message>
+        <source>Object B</source>
+        <translation>对象 B</translation>
+    </message>
+    <message>
+        <source>Details</source>
+        <translation>详情</translation>
+    </message>
+    <message>
+        <source>Bounding Box</source>
+        <translation>包围盒</translation>
+    </message>
+    <message>
+        <source>Object A:</source>
+        <translation>碰撞对象 A：</translation>
+    </message>
+    <message>
+        <source>Object B:</source>
+        <translation>碰撞对象 B：</translation>
+    </message>
+    <message>
+        <source>Checking: %v / %m</source>
+        <translation>检测中：%v / %m</translation>
+    </message>
+    <message>
+        <source>Completed: %v / %m</source>
+        <translation>已完成：%v / %m</translation>
+    </message>
+    <message>
+        <source>Add All</source>
+        <translation>全部添加</translation>
+    </message>
+</context>
 </TS>

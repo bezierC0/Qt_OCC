@@ -14,12 +14,21 @@
 #include <QGroupBox>
 #include <QHeaderView>
 #include <QMessageBox>
+#include <QCoreApplication>
+#include <QEventLoop>
+#include <QProgressBar>
+#include <QCheckBox>
+#include <QFormLayout>
 #include <QDebug>
+#include <algorithm>
 #include <TopExp_Explorer.hxx>
 #include <TopoDS.hxx>
 #include <AIS_Shape.hxx>
+#include <XCAFPrs_AISObject.hxx>
 #include <TCollection_ExtendedString.hxx>
 #include <TDataStd_Name.hxx> // Added for direct name access
+#include <BRepBndLib.hxx>
+#include <Bnd_Box.hxx>
 
 
 WidgetInterference::WidgetInterference(QWidget *parent) :
@@ -29,7 +38,13 @@ WidgetInterference::WidgetInterference(QWidget *parent) :
     m_resultTreeWidget(nullptr),
     m_btnAdd(nullptr),
     m_btnRemove(nullptr),
-    m_btnCheck(nullptr)
+    m_btnCheck(nullptr),
+    m_btnAddAll(nullptr),
+    m_progressBar(nullptr),
+    m_resultOnTop(nullptr),
+    m_objectAStyle(nullptr),
+    m_objectBStyle(nullptr),
+    m_showOnlyPair(nullptr)
 {
     setupUi();
     setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint);
@@ -61,11 +76,18 @@ void WidgetInterference::setupUi()
     m_btnAdd = new QPushButton(tr("Add"), this);
     m_btnRemove = new QPushButton(tr("Remove"), this);
     m_btnCheck = new QPushButton(tr("Check"), this);
+    m_btnAddAll = new QPushButton(tr("Add All"), this);
     
     btnLayout->addWidget(m_btnAdd);
+    btnLayout->addWidget(m_btnAddAll);
     btnLayout->addWidget(m_btnRemove);
     btnLayout->addWidget(m_btnCheck);
     m_mainLayout->addLayout(btnLayout);
+
+    m_progressBar = new QProgressBar(this);
+    m_progressBar->setValue(0);
+    m_progressBar->setVisible(false);
+    m_mainLayout->addWidget(m_progressBar);
 
     // Input List
     QGroupBox* grpInput = new QGroupBox(tr("Selected Parts"), this);
@@ -78,8 +100,25 @@ void WidgetInterference::setupUi()
     // Result List
     QGroupBox* grpResult = new QGroupBox(tr("Interference Results"), this);
     QVBoxLayout* grpResultLayout = new QVBoxLayout(grpResult);
+
+    QGroupBox* displayOptions = new QGroupBox(tr("Result Display"), grpResult);
+    QFormLayout* displayOptionsLayout = new QFormLayout(displayOptions);
+    m_resultOnTop = new QCheckBox(tr("Render result on top"), displayOptions);
+    m_resultOnTop->setChecked(true);
+    displayOptionsLayout->addRow(m_resultOnTop);
+
+    m_objectAStyle = new QPushButton(tr("Solid"), displayOptions);
+    m_objectBStyle = new QPushButton(tr("Solid"), displayOptions);
+    displayOptionsLayout->addRow(tr("Object A:"), m_objectAStyle);
+    displayOptionsLayout->addRow(tr("Object B:"), m_objectBStyle);
+
+    m_showOnlyPair = new QCheckBox(tr("Show collision pair only"), displayOptions);
+    displayOptionsLayout->addRow(m_showOnlyPair);
+    grpResultLayout->addWidget(displayOptions);
+
     m_resultTreeWidget = new QTreeWidget(this);
-    m_resultTreeWidget->setHeaderLabels({tr("Collision Pair"), tr("Details")});
+    m_resultTreeWidget->setHeaderLabels(
+        {tr("Object A"), tr("Object B"), tr("Details"), tr("Bounding Box")});
     m_resultTreeWidget->header()->setSectionResizeMode(QHeaderView::ResizeToContents);
     grpResultLayout->addWidget(m_resultTreeWidget);
     m_mainLayout->addWidget(grpResult);
@@ -88,6 +127,19 @@ void WidgetInterference::setupUi()
     connect(m_btnAdd, &QPushButton::clicked, this, &WidgetInterference::onAddClicked);
     connect(m_btnRemove, &QPushButton::clicked, this, &WidgetInterference::onRemoveClicked);
     connect(m_btnCheck, &QPushButton::clicked, this, &WidgetInterference::onCheckClicked);
+    connect(m_btnAddAll, &QPushButton::clicked, this, &WidgetInterference::onAddAllClicked);
+    connect(m_resultTreeWidget, &QTreeWidget::itemClicked,
+            this, &WidgetInterference::onResultClicked);
+    connect(m_resultOnTop, &QCheckBox::toggled,
+            this, [this]() { applyResultDisplayOptions(); });
+    connect(m_objectAStyle, &QPushButton::clicked, this, [this]() {
+        cycleObjectStyle(m_objectAStyle, m_objectAStyleIndex);
+    });
+    connect(m_objectBStyle, &QPushButton::clicked, this, [this]() {
+        cycleObjectStyle(m_objectBStyle, m_objectBStyleIndex);
+    });
+    connect(m_showOnlyPair, &QCheckBox::toggled,
+            this, [this]() { applyResultDisplayOptions(); });
 }
 
 void WidgetInterference::onAddClicked()
@@ -171,6 +223,38 @@ void WidgetInterference::updateInputList()
     }
 }
 
+void WidgetInterference::onAddAllClicked()
+{
+    auto view = ViewManager::getInstance().getActiveView();
+    if (!view) return;
+
+    bool added = false;
+    for (const Handle(AIS_InteractiveObject)& object : view->getShapeObjects()) {
+        if (object.IsNull()) continue;
+
+        const Handle(AIS_Shape) shape = Handle(AIS_Shape)::DownCast(object);
+        if (shape.IsNull() || shape->Shape().IsNull()) continue;
+
+        const bool exists = std::any_of(
+            m_inputObjects.cbegin(), m_inputObjects.cend(),
+            [&object](const std::shared_ptr<View::SelectedEntity>& entity) {
+                return entity && entity->GetParentInteractiveObject() == object;
+            });
+        if (exists) continue;
+
+        TDF_Label label;
+        const Handle(XCAFPrs_AISObject) xcafObject =
+            Handle(XCAFPrs_AISObject)::DownCast(object);
+        if (!xcafObject.IsNull()) label = xcafObject->GetLabel();
+
+        m_inputObjects.push_back(
+            std::make_shared<View::SelectedEntity>(object, shape, label));
+        added = true;
+    }
+
+    if (added) updateInputList();
+}
+
 void WidgetInterference::onCheckClicked()
 {
     auto view = ViewManager::getInstance().getActiveView();
@@ -183,12 +267,52 @@ void WidgetInterference::onCheckClicked()
 
     // Call OCCView check with extracted shapes
     std::vector<Handle(AIS_InteractiveObject)> objectsToCheck;
-    for(const auto& entity : m_inputObjects) {
-        objectsToCheck.push_back(entity->GetSelectedShape());
+    for (const auto& entity : m_inputObjects) {
+        if (!entity) continue;
+        const Handle(AIS_InteractiveObject) parent = entity->GetParentInteractiveObject();
+        objectsToCheck.push_back(parent.IsNull() ? entity->GetSelectedShape() : parent);
     }
-    auto results = view->checkInterference(objectsToCheck);
+    const std::size_t totalPairs = objectsToCheck.size() < 2
+        ? 0
+        : objectsToCheck.size() * (objectsToCheck.size() - 1) / 2;
+    m_progressBar->setRange(0, static_cast<int>(totalPairs));
+    m_progressBar->setValue(0);
+    m_progressBar->setFormat(tr("Checking: %v / %m"));
+    m_progressBar->setVisible(true);
+
+    for (QPushButton* button : {m_btnAdd, m_btnAddAll, m_btnRemove, m_btnCheck}) {
+        button->setEnabled(false);
+    }
+    QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+
+    auto results = view->checkInterference(
+        objectsToCheck,
+        [this](std::size_t completed, std::size_t total) {
+            m_progressBar->setMaximum(static_cast<int>(total));
+            m_progressBar->setValue(static_cast<int>(completed));
+            QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents);
+        });
+
+    m_progressBar->setFormat(tr("Completed: %v / %m"));
+    for (QPushButton* button : {m_btnAdd, m_btnAddAll, m_btnRemove, m_btnCheck}) {
+        button->setEnabled(true);
+    }
     
     m_resultTreeWidget->clear();
+    m_resultContexts.clear();
+
+    auto boundingBoxText = [](const TopoDS_Shape& shape) {
+        Bnd_Box box;
+        BRepBndLib::Add(shape, box);
+        if (box.IsVoid()) return QStringLiteral("-");
+
+        Standard_Real xmin, ymin, zmin, xmax, ymax, zmax;
+        box.Get(xmin, ymin, zmin, xmax, ymax, zmax);
+        return QStringLiteral("%1 x %2 x %3")
+            .arg(xmax - xmin, 0, 'f', 2)
+            .arg(ymax - ymin, 0, 'f', 2)
+            .arg(zmax - zmin, 0, 'f', 2);
+    };
 
     for (const auto& res : results) {
         QString nameA = tr("Unknown");
@@ -196,6 +320,15 @@ void WidgetInterference::onCheckClicked()
         
         auto getName = [](const Handle(AIS_InteractiveObject)& obj) -> QString {
             if (obj.IsNull()) return tr("Unknown");
+            const Handle(XCAFPrs_AISObject) xcafObject =
+                Handle(XCAFPrs_AISObject)::DownCast(obj);
+            if (!xcafObject.IsNull()) {
+                Handle(TDataStd_Name) attrName;
+                if (xcafObject->GetLabel().FindAttribute(TDataStd_Name::GetID(), attrName)
+                    && !attrName->Get().IsEmpty()) {
+                    return QString::fromUtf16(attrName->Get().ToExtString());
+                }
+            }
             Handle(AIS_Shape) aisShape = Handle(AIS_Shape)::DownCast(obj);
             if (!aisShape.IsNull()) {
                 const TopoDS_Shape& shape = aisShape->Shape();
@@ -234,25 +367,96 @@ void WidgetInterference::onCheckClicked()
             // Multiple intersections
             int idx = 1;
             for (TopExp_Explorer e2(intersection, TopAbs_SOLID); e2.More(); e2.Next()) {
+                const int resultIndex = static_cast<int>(m_resultContexts.size());
+                m_resultContexts.push_back({e2.Current(), res.objA, res.objB});
                 QTreeWidgetItem* item = new QTreeWidgetItem(m_resultTreeWidget);
-                item->setText(0, QString("%1 - %2").arg(nameA, nameB));
-                item->setText(1, QString("Intersection %1").arg(idx++));
+                item->setText(0, nameA);
+                item->setText(1, nameB);
+                item->setText(2, QString("Intersection %1").arg(idx++));
+                item->setText(3, boundingBoxText(e2.Current()));
+                item->setData(0, Qt::UserRole, resultIndex);
             }
         } else {
             // Single intersection (or non-solid intersection)
+            const int resultIndex = static_cast<int>(m_resultContexts.size());
+            m_resultContexts.push_back({intersection, res.objA, res.objB});
             QTreeWidgetItem* item = new QTreeWidgetItem(m_resultTreeWidget);
-            item->setText(0, QString("%1 - %2").arg(nameA, nameB));
+            item->setText(0, nameA);
+            item->setText(1, nameB);
+            item->setText(3, boundingBoxText(intersection));
+            item->setData(0, Qt::UserRole, resultIndex);
              if (solidCount == 1) {
-                item->setText(1, tr("1 Solid Intersection"));
+                item->setText(2, tr("1 Solid Intersection"));
              } else {
                  // Check faces
                  int faceCount = 0;
                  for (TopExp_Explorer ef(intersection, TopAbs_FACE); ef.More(); ef.Next()) faceCount++;
                  if (faceCount > 0)
-                     item->setText(1, QString("%1 Face Intersections").arg(faceCount));
+                     item->setText(2, QString("%1 Face Intersections").arg(faceCount));
                  else 
-                     item->setText(1, tr("Intersection"));
+                     item->setText(2, tr("Intersection"));
              }
         }
     }
+
+    if (m_resultTreeWidget->topLevelItemCount() > 0) {
+        m_resultTreeWidget->setCurrentItem(m_resultTreeWidget->topLevelItem(0));
+        applyResultDisplayOptions();
+    }
+}
+
+void WidgetInterference::onResultClicked(QTreeWidgetItem* item, int column)
+{
+    Q_UNUSED(column);
+    if (!item) return;
+
+    const QVariant resultData = item->data(0, Qt::UserRole);
+    if (!resultData.isValid()) return;
+    const int resultIndex = resultData.toInt();
+    if (resultIndex < 0 || resultIndex >= static_cast<int>(m_resultContexts.size())) return;
+
+    auto view = ViewManager::getInstance().getActiveView();
+    if (!view) return;
+    applyResultDisplayOptions();
+    view->fitShape(m_resultContexts.at(resultIndex).shape);
+}
+
+void WidgetInterference::applyResultDisplayOptions()
+{
+    auto view = ViewManager::getInstance().getActiveView();
+    if (!view) return;
+
+    view->setInterferenceResultOnTop(m_resultOnTop->isChecked());
+    QTreeWidgetItem* item = m_resultTreeWidget->currentItem();
+    if (!item) return;
+
+    const QVariant resultData = item->data(0, Qt::UserRole);
+    if (!resultData.isValid()) return;
+    const int resultIndex = resultData.toInt();
+    if (resultIndex < 0 || resultIndex >= static_cast<int>(m_resultContexts.size())) return;
+
+    auto styleFromIndex = [](int index) {
+        if (index == 1) return View::InterferenceObjectStyle::Transparent;
+        if (index == 2) return View::InterferenceObjectStyle::Hidden;
+        return View::InterferenceObjectStyle::Solid;
+    };
+    const ResultContext& result = m_resultContexts.at(resultIndex);
+    view->setInterferenceObjectDisplay(
+        result.objectA, result.objectB,
+        styleFromIndex(m_objectAStyleIndex),
+        styleFromIndex(m_objectBStyleIndex),
+        m_showOnlyPair->isChecked());
+}
+
+void WidgetInterference::cycleObjectStyle(QPushButton* button, int& styleIndex)
+{
+    styleIndex = (styleIndex + 1) % 3;
+    if (styleIndex == 1) {
+        button->setText(tr("Transparent (30%)"));
+    } else if (styleIndex == 2) {
+        button->setText(tr("Hidden"));
+    } else {
+        button->setText(tr("Solid"));
+    }
+    applyResultDisplayOptions();
 }
