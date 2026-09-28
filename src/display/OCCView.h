@@ -2,6 +2,8 @@
 #include <map>
 #include <vector>
 #include <memory>
+#include <cstddef>
+#include <functional>
 
 #include <Standard_WarningsDisable.hxx>
 #include <QOpenGLWidget>
@@ -69,6 +71,12 @@ struct InterferenceResult {
     Handle(AIS_InteractiveObject) objA;
     Handle(AIS_InteractiveObject) objB;
     TopoDS_Shape intersection;
+};
+
+enum class InterferenceObjectStyle {
+    Solid,
+    Transparent,
+    Hidden
 };
 
 class InterfereceSetting{
@@ -165,12 +173,23 @@ public:
     void transform(); 
 
     void checkInterference();
-    std::vector<View::InterferenceResult> checkInterference(const std::vector<Handle(AIS_InteractiveObject)>& objects);
+    std::vector<View::InterferenceResult> checkInterference(
+        const std::vector<Handle(AIS_InteractiveObject)>& objects,
+        const std::function<void(std::size_t, std::size_t)>& progress = {});
     void clearInterference();
+    void setInterferenceResultOnTop(bool onTop);
+    void setInterferenceObjectDisplay(
+        const Handle(AIS_InteractiveObject)& objectA,
+        const Handle(AIS_InteractiveObject)& objectB,
+        View::InterferenceObjectStyle styleA,
+        View::InterferenceObjectStyle styleB,
+        bool showOnlyPair);
+    void resetInterferenceObjectDisplay();
 
     void reDraw();
 
     void viewfit();
+    void fitShape(const TopoDS_Shape& shape);
 
     void viewUpdate();
 
@@ -274,6 +293,7 @@ private:
 
     //! Request widget paintGL() event.
     void updateView();
+    void applyInterferenceObjectDisplay();
 
     /*
     * ! Convert screen coordinates to 3D world coordinates.
@@ -306,6 +326,12 @@ private:
     std::vector<std::shared_ptr<View::SelectedEntity>> m_selectedObjects;
     Handle(AIS_Shape) m_boundingBoxNode{nullptr};
     std::vector<std::shared_ptr<View::IInterferece>> m_interferenceObjects;
+    Handle(AIS_InteractiveObject) m_interferenceObjectA;
+    Handle(AIS_InteractiveObject) m_interferenceObjectB;
+    View::InterferenceObjectStyle m_interferenceStyleA{View::InterferenceObjectStyle::Transparent};
+    View::InterferenceObjectStyle m_interferenceStyleB{View::InterferenceObjectStyle::Transparent};
+    bool m_showOnlyInterferencePair{false};
+    bool m_interferenceResultOnTop{true};
 
     QString myGlInfo;
     bool myIsCoreProfile;

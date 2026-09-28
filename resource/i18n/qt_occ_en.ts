@@ -1369,4 +1369,67 @@
         <translation>Axis direction must be nonzero.</translation>
     </message>
 </context>
+<context>
+    <name>WidgetInterference</name>
+    <message>
+        <source>Show collision pair only</source>
+        <translation>Show collision pair only</translation>
+    </message>
+    <message>
+        <source>Result Display</source>
+        <translation>Result Display</translation>
+    </message>
+    <message>
+        <source>Render result on top</source>
+        <translation>Render result on top</translation>
+    </message>
+    <message>
+        <source>Solid</source>
+        <translation>Solid</translation>
+    </message>
+    <message>
+        <source>Transparent (30%)</source>
+        <translation>Transparent (30%)</translation>
+    </message>
+    <message>
+        <source>Hidden</source>
+        <translation>Hidden</translation>
+    </message>
+    <message>
+        <source>Object A</source>
+        <translation>Object A</translation>
+    </message>
+    <message>
+        <source>Object B</source>
+        <translation>Object B</translation>
+    </message>
+    <message>
+        <source>Details</source>
+        <translation>Details</translation>
+    </message>
+    <message>
+        <source>Bounding Box</source>
+        <translation>Bounding Box</translation>
+    </message>
+    <message>
+        <source>Object A:</source>
+        <translation>Object A:</translation>
+    </message>
+    <message>
+        <source>Object B:</source>
+        <translation>Object B:</translation>
+    </message>
+    <message>
+        <source>Checking: %v / %m</source>
+        <translation>Checking: %v / %m</translation>
+    </message>
+    <message>
+        <source>Completed: %v / %m</source>
+        <translation>Completed: %v / %m</translation>
+    </message>
+    <message>
+        <source>Add All</source>
+        <translation>Add All</translation>
+    </message>
+</context>
 </TS>
