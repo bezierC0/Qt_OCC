@@ -1007,16 +1007,16 @@
 <context>
     <name>WidgetInterference</name>
     <message>
-        <source>Show collision pair only</source>
-        <translation>衝突オブジェクトのみ表示</translation>
+        <source>Only display collision pair</source>
+        <translation>干渉部品のみ表示</translation>
     </message>
     <message>
         <source>Result Display</source>
         <translation>結果表示</translation>
     </message>
     <message>
-        <source>Render result on top</source>
-        <translation>結果を最前面に表示</translation>
+        <source>Display result on top</source>
+        <translation>最前面に表示</translation>
     </message>
     <message>
         <source>Solid</source>
@@ -1061,6 +1061,10 @@
     <message>
         <source>Completed: %v / %m</source>
         <translation>完了：%v / %m</translation>
+    </message>
+    <message>
+        <source>Start Check</source>
+        <translation>Start</translation>
     </message>
     <message>
         <source>Add All</source>

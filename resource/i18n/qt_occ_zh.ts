@@ -1007,7 +1007,7 @@
 <context>
     <name>WidgetInterference</name>
     <message>
-        <source>Show collision pair only</source>
+        <source>Only display collision pair</source>
         <translation>仅显示碰撞对象</translation>
     </message>
     <message>
@@ -1015,8 +1015,8 @@
         <translation>结果显示</translation>
     </message>
     <message>
-        <source>Render result on top</source>
-        <translation>结果置顶渲染</translation>
+        <source>Display result on top</source>
+        <translation>置顶显示</translation>
     </message>
     <message>
         <source>Solid</source>
@@ -1061,6 +1061,10 @@
     <message>
         <source>Completed: %v / %m</source>
         <translation>已完成：%v / %m</translation>
+    </message>
+    <message>
+        <source>Start Check</source>
+        <translation>开始</translation>
     </message>
     <message>
         <source>Add All</source>

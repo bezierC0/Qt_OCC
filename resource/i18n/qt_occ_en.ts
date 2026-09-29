@@ -1372,16 +1372,16 @@
 <context>
     <name>WidgetInterference</name>
     <message>
-        <source>Show collision pair only</source>
-        <translation>Show collision pair only</translation>
+        <source>Only display collision pair</source>
+        <translation>Only display collision pair</translation>
     </message>
     <message>
         <source>Result Display</source>
         <translation>Result Display</translation>
     </message>
     <message>
-        <source>Render result on top</source>
-        <translation>Render result on top</translation>
+        <source>Display result on top</source>
+        <translation>Display result on top</translation>
     </message>
     <message>
         <source>Solid</source>
@@ -1426,6 +1426,10 @@
     <message>
         <source>Completed: %v / %m</source>
         <translation>Completed: %v / %m</translation>
+    </message>
+    <message>
+        <source>Start Check</source>
+        <translation>Start</translation>
     </message>
     <message>
         <source>Add All</source>
