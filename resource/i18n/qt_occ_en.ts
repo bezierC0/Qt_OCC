@@ -80,8 +80,12 @@
     <message>
         <location filename="../../src/MainWindow.ui" line="153"/>
         <location filename="../../src/MainWindow.cpp" line="81"/>
-        <source>Open</source>
-        <translation>Open</translation>
+        <source>Import</source>
+        <translation>Import</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation>Export</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="58"/>

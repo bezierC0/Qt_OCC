@@ -197,6 +197,7 @@ private:
     // ---- File Group ----
     SARibbonCategory* m_fileCategory;
     SARibbonPannel* m_filePannel;
+    SARibbonPannel* m_importPannel;
     SARibbonPannel* m_exportPannel;
     SARibbonPannel* m_fileOthersPannel;
     QAction* m_newAction;
