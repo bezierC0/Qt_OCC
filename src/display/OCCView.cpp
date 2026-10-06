@@ -56,6 +56,7 @@
 #include <XCAFPrs_AISObject.hxx>
 
 #include <gp_Pln.hxx>
+#include <gp_Ax2.hxx>
 #include <gp_Pnt2d.hxx>
 #include <gp_Trsf.hxx>
 #include <gp_Pnt.hxx>
@@ -82,6 +83,33 @@
 #include "OcctInputMapper.h"
 #include "OcctQtFrameBuffer.h"
 
+
+namespace
+{
+bool manipulatorPosition(const Handle(AIS_InteractiveObject)& object, gp_Ax2& position)
+{
+    const Handle(AIS_Shape) aisShape = Handle(AIS_Shape)::DownCast(object);
+    if (aisShape.IsNull() || aisShape->Shape().IsNull()) return false;
+
+    Bnd_Box boundingBox;
+    BRepBndLib::Add(aisShape->Shape(), boundingBox);
+    if (boundingBox.IsVoid()) return false;
+
+    Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
+    boundingBox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
+    gp_Pnt center((xMin + xMax) * 0.5,
+                  (yMin + yMax) * 0.5,
+                  (zMin + zMax) * 0.5);
+    gp_Dir zDirection(0.0, 0.0, 1.0);
+    gp_Dir xDirection(1.0, 0.0, 0.0);
+    const gp_Trsf transform = object->LocalTransformation();
+    center.Transform(transform);
+    zDirection.Transform(transform);
+    xDirection.Transform(transform);
+    position = gp_Ax2(center, zDirection, xDirection);
+    return true;
+}
+}
 
 View::InterfereceSetting OCCView::m_interfereceSetting{ 1.0, 0.0, 0.0, 0.4, 10, true };
 
@@ -164,6 +192,7 @@ OCCView::OCCView(QWidget *theParent)
 
     // Manipulator setup
     m_manipulator = new AIS_Manipulator();
+    m_manipulator->SetModeActivationOnDetection(true);
 
     // Coordinate display setup
     if( m_showMouseCoordinates ){
@@ -334,17 +363,18 @@ void OCCView::mousePressEvent(QMouseEvent *theEvent)
         emit signalViewportClicked(theEvent->pos().x(), theEvent->pos().y());
     }
 
-    if (m_mouseMode == View::SELECTION) {
-        // Check manipulator intersection first when in SELECTION mode
-        if (!m_manipulator.IsNull() && m_manipulator->HasActiveMode()) {
-            m_manipulator->StartTransform(theEvent->pos().x(), theEvent->pos().y(), m_view);
-            if (m_manipulator->HasActiveMode()) {
-                m_previousMouseMode = m_mouseMode;
-                m_mouseMode = View::MANIPULATING;
-                return; // Stop processing selection
-            }
+    if (theEvent->button() == Qt::LeftButton
+        && !m_manipulator.IsNull() && m_manipulator->HasActiveMode()) {
+        m_manipulator->StartTransform(theEvent->pos().x(), theEvent->pos().y(), m_view);
+        if (m_manipulator->HasActiveTransformation()) {
+            m_previousMouseMode = m_mouseMode;
+            m_mouseMode = View::MANIPULATING;
+            theEvent->accept();
+            return;
         }
+    }
 
+    if (m_mouseMode == View::SELECTION) {
         // Perform selection first before checking selected objects
         const AIS_SelectionScheme aScheme = (theEvent->modifiers() & Qt::ShiftModifier)
                                                 ? AIS_SelectionScheme_Add
@@ -423,6 +453,11 @@ void OCCView::mouseReleaseEvent(QMouseEvent *theEvent)
     {
         m_manipulator->StopTransform(true);
         m_mouseMode = m_previousMouseMode;
+        QOpenGLWidget::mouseReleaseEvent(theEvent);
+        requestSceneRedraw();
+        repaint();
+        theEvent->accept();
+        return;
     }
 
     QOpenGLWidget::mouseReleaseEvent(theEvent);
@@ -448,13 +483,13 @@ void OCCView::mouseMoveEvent(QMouseEvent *theEvent)
 
     if (m_mouseMode == View::MANIPULATING && !m_manipulator.IsNull())
     {
-        m_manipulator->Transform(theEvent->pos().x(), theEvent->pos().y(), m_view);
-        updateView();
+        const gp_Trsf trsf = m_manipulator->Transform(
+            theEvent->pos().x(), theEvent->pos().y(), m_view);
         
         // Notify observers
         if (Handle(AIS_InteractiveObject) obj = m_manipulator->Object())
         {
-             const auto trsf = obj->LocalTransformation();
+            m_context->SetLocation(obj, TopLoc_Location(trsf));
 #if __cplusplus >= 202002L
             for (const auto& observer : m_manipulatorObservers 
                                 | std::views::filter([](ManipulatorObserver *o) { return o != nullptr; })) {
@@ -467,6 +502,11 @@ void OCCView::mouseMoveEvent(QMouseEvent *theEvent)
             }
 #endif
         }
+        requestSceneRedraw();
+        repaint();
+        QOpenGLWidget::mouseMoveEvent(theEvent);
+        theEvent->accept();
+        return;
     }
 
     m_context->MoveTo(theEvent->pos().x(), theEvent->pos().y(), m_view, true);
@@ -829,67 +869,49 @@ std::vector<Handle( AIS_Shape )> OCCView::getSelectedAisShape( const int count )
 
 void OCCView::attachManipulator(const Handle(AIS_InteractiveObject) object)
 {
-    if( !m_manipulator )
-        return ;
-    
-    m_manipulator->Attach(object);
-    const auto aisShape = Handle(AIS_Shape)::DownCast(object);
-    if( !aisShape || aisShape.IsNull() )
-        return ;
-    TopoDS_Shape shape = aisShape->Shape();
-    Bnd_Box boundingBox;
-    BRepBndLib::Add(shape, boundingBox);
-    if (boundingBox.IsVoid()) {
-        return;
-    }
-    Standard_Real xMin, yMin, zMin, xMax, yMax, zMax;
-    boundingBox.Get(xMin, yMin, zMin, xMax, yMax, zMax);
-    const gp_Pnt point((xMin + xMax) / 2.0, 
-                       (yMin + yMax) / 2.0, 
-                       (zMin + zMax) / 2.0);
+    if (m_manipulator.IsNull() || object.IsNull()) return;
 
-    const gp_Dir dir(0.0,0.0,1.0);
-    const gp_Ax2 theA2(point,dir);
-    m_manipulator->SetPosition(theA2);
+    gp_Ax2 position;
+    if (!manipulatorPosition(object, position)) return;
+
+    m_manipulator->Attach(object);
+    m_manipulator->SetPosition(position);
 }
 
 void OCCView::detachManipulator()
 {
-    if (m_manipulator)
-    {
-        m_manipulator->Detach();
-        reDraw();
+    if (m_manipulator.IsNull()) return;
+
+    if (m_manipulator->HasActiveTransformation()) {
+        m_manipulator->StopTransform(false);
     }
+    m_manipulator->DeactivateCurrentMode();
+    m_context->ClearDetected(false);
+    if (m_manipulator->IsAttached()) {
+        m_manipulator->Detach();
+    }
+    m_context->UpdateCurrentViewer();
+    requestSceneRedraw();
+    repaint();
 }
 
 void OCCView::updateManipulator()
 {
-    if (!m_manipulator.IsNull() && m_manipulator->HasActiveMode()) {
-        if (Handle(AIS_InteractiveObject) obj = m_manipulator->Object()) {
-            gp_Trsf trsf = obj->LocalTransformation();
-            gp_Quaternion rot = trsf.GetRotation();
-            
-            // Reconstruct Ax2 from Trsf
-            gp_Dir zDir(0, 0, 1);
-            gp_Dir xDir(1, 0, 0);
-            zDir.Transform(trsf);
-            xDir.Transform(trsf);
+    if (m_manipulator.IsNull()) return;
 
-            gp_Ax2 pos; 
-            pos.SetLocation(trsf.TranslationPart());
-            pos.SetDirection(zDir);
-            pos.SetXDirection(xDir);
-            
-            m_manipulator->SetPosition(pos);
-            // m_manipulator->UpdateCurrentTransform(trsf); 
-            reDraw();
-        }
-    }
+    const Handle(AIS_InteractiveObject) object = m_manipulator->Object();
+    gp_Ax2 position;
+    if (object.IsNull() || !manipulatorPosition(object, position)) return;
+
+    m_manipulator->SetPosition(position);
+    m_context->Redisplay(m_manipulator, false);
 }
 
 void OCCView::addManipulatorObserver(ManipulatorObserver* observer)
 {
-    if (observer) {
+    if (observer
+        && std::find(m_manipulatorObservers.cbegin(),
+                     m_manipulatorObservers.cend(), observer) == m_manipulatorObservers.cend()) {
         m_manipulatorObservers.emplace_back(observer);
     }
 }

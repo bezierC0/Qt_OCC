@@ -1440,4 +1440,43 @@
         <translation>Add All</translation>
     </message>
 </context>
+<context>
+    <name>WidgetTransform</name>
+    <message>
+        <source>Transform Object</source>
+        <translation>Transform Object</translation>
+    </message>
+    <message>
+        <source>Object:</source>
+        <translation>Object:</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>None</translation>
+    </message>
+    <message>
+        <source>Pick</source>
+        <translation>Pick</translation>
+    </message>
+    <message>
+        <source>Position</source>
+        <translation>Position</translation>
+    </message>
+    <message>
+        <source>Rotation</source>
+        <translation>Rotation</translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation>Apply</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Close</translation>
+    </message>
+    <message>
+        <source>Selected Solid</source>
+        <translation>Selected Solid</translation>
+    </message>
+</context>
 </TS>
