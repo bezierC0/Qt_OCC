@@ -1075,4 +1075,43 @@
         <translation>全部添加</translation>
     </message>
 </context>
+<context>
+    <name>WidgetTransform</name>
+    <message>
+        <source>Transform Object</source>
+        <translation>变换对象</translation>
+    </message>
+    <message>
+        <source>Object:</source>
+        <translation>对象：</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>无</translation>
+    </message>
+    <message>
+        <source>Pick</source>
+        <translation>拾取</translation>
+    </message>
+    <message>
+        <source>Position</source>
+        <translation>位置</translation>
+    </message>
+    <message>
+        <source>Rotation</source>
+        <translation>旋转</translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation>应用</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
+    <message>
+        <source>Selected Solid</source>
+        <translation>选中的实体</translation>
+    </message>
+</context>
 </TS>

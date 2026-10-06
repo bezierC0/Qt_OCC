@@ -1075,4 +1075,43 @@
         <translation>すべて追加</translation>
     </message>
 </context>
+<context>
+    <name>WidgetTransform</name>
+    <message>
+        <source>Transform Object</source>
+        <translation>オブジェクトを変換</translation>
+    </message>
+    <message>
+        <source>Object:</source>
+        <translation>オブジェクト：</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>なし</translation>
+    </message>
+    <message>
+        <source>Pick</source>
+        <translation>選択</translation>
+    </message>
+    <message>
+        <source>Position</source>
+        <translation>位置</translation>
+    </message>
+    <message>
+        <source>Rotation</source>
+        <translation>回転</translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation>適用</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>閉じる</translation>
+    </message>
+    <message>
+        <source>Selected Solid</source>
+        <translation>選択したソリッド</translation>
+    </message>
+</context>
 </TS>

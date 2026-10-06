@@ -3,6 +3,7 @@
 
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopoDS_Shape.hxx>
+#include <gp_Trsf.hxx>
 
 #include <QWidget>
 
@@ -41,6 +42,7 @@ private slots:
     void onObjectSelected(const TopoDS_Shape& shape);
     void onTransformChanged();
     void onResetClicked();
+    void onApplyClicked();
     void onCloseClicked();
 
     //void onManipulatorChanged(const gp_Trsf& trsf); // Removed, replaced by override
@@ -48,16 +50,22 @@ private slots:
 private:
     void saveMouseState();
     void restoreMouseState();
+    void finishInteraction();
+    void restorePreview();
+    void clearTarget();
     void updateTransform();
 
 private:
     Ui::WidgetTransform* ui;
     
     // State saving
-    int m_savedMouseMode;
+    int m_savedMouseMode{0};
     std::map<TopAbs_ShapeEnum, bool> m_savedFilters;
+    bool m_hasSavedMouseState{false};
     
     bool m_isPicking;
     Handle(AIS_InteractiveObject) m_targetObject;
     TopoDS_Shape m_targetShape;
+    gp_Trsf m_originalTransform;
+    bool m_hasOriginalTransform{false};
 };

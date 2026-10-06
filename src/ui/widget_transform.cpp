@@ -10,11 +10,13 @@
 #include <BRep_Tool.hxx>
 #include <gp_Trsf.hxx>
 #include <gp_Quaternion.hxx>
+#include <TopLoc_Location.hxx>
 
 
 #include <QtMath>
 #include <QMessageBox>
 #include <QDebug>
+#include <algorithm>
 
 WidgetTransform::WidgetTransform(QWidget *parent) :
     QWidget(parent),
@@ -26,6 +28,7 @@ WidgetTransform::WidgetTransform(QWidget *parent) :
     setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint);
 
     connect(ui->pushButtonPick, &QPushButton::clicked, this, &WidgetTransform::onPickClicked);
+    connect(ui->pushButtonApply, &QPushButton::clicked, this, &WidgetTransform::onApplyClicked);
     connect(ui->pushButtonClose, &QPushButton::clicked, this, &WidgetTransform::onCloseClicked);
 
     // Connect 
@@ -44,39 +47,26 @@ WidgetTransform::~WidgetTransform()
 
 void WidgetTransform::show()
 {
+    finishInteraction();
+    clearTarget();
     QWidget::show();
-    
-    // Subscribe
-    if (auto view = ViewManager::getInstance().getActiveView()) {
-        view->addManipulatorObserver(this);
-    }
 
-    if (m_targetObject.IsNull()) {
-        onPickClicked();
-    }
+    auto view = ViewManager::getInstance().getActiveView();
+    if (!view) return;
+
+    view->addManipulatorObserver(this);
+    onPickClicked();
 }
 
 void WidgetTransform::hide()
 {
-    restoreMouseState();
-    auto view = ViewManager::getInstance().getActiveView();
-    if (view) {
-         view->detachManipulator();
-         view->removeManipulatorObserver(this);
-    }
+    finishInteraction();
     QWidget::hide();
 }
 
 void WidgetTransform::closeEvent(QCloseEvent *event)
 {
-    restoreMouseState();
-    if (m_targetObject) {
-        // Optionally detach manipulator here if we were using one
-        auto view = ViewManager::getInstance().getActiveView();
-        if (view) {
-             view->detachManipulator();
-        }
-    }
+    finishInteraction();
     QWidget::closeEvent(event);
 }
 
@@ -85,6 +75,9 @@ void WidgetTransform::onPickClicked()
     auto view = ViewManager::getInstance().getActiveView();
     if (!view) return;
 
+    restorePreview();
+    clearTarget();
+
     if (m_isPicking) {
         restoreMouseState();
     }
@@ -92,8 +85,11 @@ void WidgetTransform::onPickClicked()
     saveMouseState();
     m_isPicking = true;
 
+    view->detachManipulator();
     view->clearSelectedObjects();
-    view->updateSelectionFilter(TopAbs_SOLID, true);
+    for (const auto& filter : m_savedFilters) {
+        view->updateSelectionFilter(filter.first, filter.first == TopAbs_SOLID);
+    }
     view->setMouseMode(View::MouseMode::SELECTION);
     
     // Disconnect old connection if any to avoid duplicates
@@ -114,9 +110,20 @@ void WidgetTransform::onObjectSelected(const TopoDS_Shape& shape)
     const auto selectedObjects = view->getSelectedObjects();
     if (selectedObjects.empty()) return;
 
-    // Use the first selected object's parent interactive object
-    m_targetObject = selectedObjects.at(0)->GetParentInteractiveObject();
+    const auto selectedIt = std::find_if(
+        selectedObjects.cbegin(), selectedObjects.cend(),
+        [&shape](const std::shared_ptr<View::SelectedEntity>& entity) {
+            return entity && !entity->GetSelectedShape().IsNull()
+                && shape.IsSame(entity->GetSelectedShape()->Shape());
+        });
+    if (selectedIt == selectedObjects.cend()) return;
+
+    m_targetObject = (*selectedIt)->GetParentInteractiveObject();
+    if (m_targetObject.IsNull()) return;
     m_targetShape = shape;
+    m_originalTransform = m_targetObject->LocalTransformation();
+    m_hasOriginalTransform = true;
+    ui->pushButtonApply->setEnabled(true);
 
     // Update UI name
     TCollection_ExtendedString name = Util::Ais::GetNameFromAISObject(m_targetObject);
@@ -158,9 +165,9 @@ void WidgetTransform::onObjectSelected(const TopoDS_Shape& shape)
     ui->spinBoxRotY->blockSignals(oldState);
     ui->spinBoxRotZ->blockSignals(oldState);
 
-    // Restore mouse state
     m_isPicking = false;
     disconnect(view, &OCCView::signalSpaceSelected, this, &WidgetTransform::onObjectSelected);
+    restoreMouseState();
 
     // connect(view, &OCCView::signalManipulatorChange, this, &WidgetTransform::onManipulatorChanged); // Replaced by Observer
 
@@ -197,14 +204,15 @@ void WidgetTransform::updateTransform()
     trsf.SetRotation(q);
     trsf.SetTranslationPart(gp_Vec(x, y, z));
 
-    m_targetObject->SetLocalTransformation(trsf);
+    view->Context()->SetLocation(m_targetObject, TopLoc_Location(trsf));
 
     // Bug 2 fix: Update manipulator position
     view->updateManipulator(); // This method we added to OCCView
 
     // view->attachManipulator(m_targetObject); 
 
-    view->reDraw();
+    view->requestSceneRedraw();
+    view->repaint();
 }
 
 void WidgetTransform::onResetClicked()
@@ -217,27 +225,93 @@ void WidgetTransform::onCloseClicked()
     close();
 }
 
+void WidgetTransform::onApplyClicked()
+{
+    if (m_targetObject.IsNull()) return;
+
+    m_originalTransform = m_targetObject->LocalTransformation();
+    m_hasOriginalTransform = true;
+    if (auto view = ViewManager::getInstance().getActiveView()) {
+        view->Context()->SetLocation(m_targetObject, TopLoc_Location(m_originalTransform));
+        view->requestSceneRedraw();
+        view->repaint();
+    }
+}
+
 void WidgetTransform::saveMouseState()
 {
     auto view = ViewManager::getInstance().getActiveView();
-    if (!view) return;
+    if (!view || m_hasSavedMouseState) return;
     m_savedMouseMode = static_cast<int>(view->getMouseMode());
     m_savedFilters = view->getSelectionFilters();
+    m_hasSavedMouseState = true;
 }
 
 void WidgetTransform::restoreMouseState()
 {
+    if (!m_hasSavedMouseState) return;
     auto view = ViewManager::getInstance().getActiveView();
-    if (!view) return;
+    if (!view) {
+        m_hasSavedMouseState = false;
+        return;
+    }
     
     view->setMouseMode(static_cast<View::MouseMode>(m_savedMouseMode));
     view->clearSelectedObjects();
-    
-    for(const auto& filter : m_savedFilters) {
+    for (const auto& filter : m_savedFilters) {
         view->updateSelectionFilter(filter.first, filter.second);
     }
+    m_hasSavedMouseState = false;
+}
 
-    //disconnect(view, &OCCView::signalManipulatorChange, this, &WidgetTransform::onManipulatorChanged);
+void WidgetTransform::finishInteraction()
+{
+    m_isPicking = false;
+    restorePreview();
+    auto view = ViewManager::getInstance().getActiveView();
+    if (!view) {
+        m_hasSavedMouseState = false;
+        clearTarget();
+        return;
+    }
+
+    disconnect(view, &OCCView::signalSpaceSelected, this, &WidgetTransform::onObjectSelected);
+    restoreMouseState();
+    view->detachManipulator();
+    view->removeManipulatorObserver(this);
+    clearTarget();
+}
+
+void WidgetTransform::restorePreview()
+{
+    if (m_targetObject.IsNull() || !m_hasOriginalTransform) return;
+
+    if (auto view = ViewManager::getInstance().getActiveView()) {
+        view->Context()->SetLocation(m_targetObject, TopLoc_Location(m_originalTransform));
+        view->requestSceneRedraw();
+        view->repaint();
+    } else {
+        m_targetObject->SetLocalTransformation(m_originalTransform);
+    }
+}
+
+void WidgetTransform::clearTarget()
+{
+    m_targetObject.Nullify();
+    m_targetShape.Nullify();
+    m_hasOriginalTransform = false;
+    ui->labelObjectName->setText(tr("None"));
+    ui->pushButtonApply->setEnabled(false);
+
+    QDoubleSpinBox* editors[] = {
+        ui->spinBoxPosX, ui->spinBoxPosY, ui->spinBoxPosZ,
+        ui->spinBoxRotX, ui->spinBoxRotY, ui->spinBoxRotZ
+    };
+    for (QDoubleSpinBox* editor : editors) {
+        const bool oldState = editor->blockSignals(true);
+        editor->setValue(0.0);
+        editor->blockSignals(oldState);
+    }
 }
 
 void WidgetTransform::onManipulatorChange(const gp_Trsf& trsf)
