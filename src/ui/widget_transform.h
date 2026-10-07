@@ -4,7 +4,9 @@
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopoDS_Shape.hxx>
 #include <gp_Trsf.hxx>
+#include <TDF_Label.hxx>
 
+#include <QPointer>
 #include <QWidget>
 
 #include "display/ManipulatorObserver.h"
@@ -13,6 +15,8 @@
 //class TopoDS_Shape;
 class AIS_InteractiveObject;
 class QCloseEvent;
+class QKeyEvent;
+class OCCView;
 
 namespace Ui {
 class WidgetTransform;
@@ -36,6 +40,7 @@ public:
 
 protected:
     void closeEvent(QCloseEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
 private slots:
     void onPickClicked();
@@ -44,6 +49,9 @@ private slots:
     void onResetClicked();
     void onApplyClicked();
     void onCloseClicked();
+    void onActiveViewChanged(OCCView* view);
+    void onShapeObjectsChanged();
+    void onCancelRequested();
 
     //void onManipulatorChanged(const gp_Trsf& trsf); // Removed, replaced by override
 
@@ -64,8 +72,10 @@ private:
     bool m_hasSavedMouseState{false};
     
     bool m_isPicking;
+    QPointer<OCCView> m_view;
     Handle(AIS_InteractiveObject) m_targetObject;
     TopoDS_Shape m_targetShape;
+    TDF_Label m_targetLabel;
     gp_Trsf m_originalTransform;
     bool m_hasOriginalTransform{false};
 };
