@@ -18,6 +18,7 @@
 #include <QKeyEvent>
 #include <QMessageBox>
 #include <QDebug>
+#include <QSignalBlocker>
 #include <algorithm>
 
 WidgetTransform::WidgetTransform(QWidget *parent) :
@@ -146,6 +147,7 @@ void WidgetTransform::onObjectSelected(const TopoDS_Shape& shape)
         m_targetLabel = xcafObject->GetLabel();
     }
     m_originalTransform = m_targetObject->LocalTransformation();
+    m_workingTransform = m_originalTransform;
     m_hasOriginalTransform = true;
     ui->pushButtonApply->setEnabled(true);
 
@@ -159,35 +161,7 @@ void WidgetTransform::onObjectSelected(const TopoDS_Shape& shape)
     }
     ui->labelObjectName->setText(objectName);
 
-    // Get current transformation
-    gp_Trsf trsf = m_targetObject->LocalTransformation();
-    gp_XYZ loc = trsf.TranslationPart();
-    gp_Quaternion rot = trsf.GetRotation();
-    
-    double rx, ry, rz;
-    rot.GetEulerAngles(gp_Intrinsic_ZYX, rz, ry, rx);
-
-    // Block signals to prevent triggering updateTransform
-    bool oldState = ui->spinBoxPosX->blockSignals(true);
-    ui->spinBoxPosY->blockSignals(true);
-    ui->spinBoxPosZ->blockSignals(true);
-    ui->spinBoxRotX->blockSignals(true);
-    ui->spinBoxRotY->blockSignals(true);
-    ui->spinBoxRotZ->blockSignals(true);
-
-    ui->spinBoxPosX->setValue(loc.X());
-    ui->spinBoxPosY->setValue(loc.Y());
-    ui->spinBoxPosZ->setValue(loc.Z());
-    ui->spinBoxRotX->setValue(qRadiansToDegrees(rx));
-    ui->spinBoxRotY->setValue(qRadiansToDegrees(ry));
-    ui->spinBoxRotZ->setValue(qRadiansToDegrees(rz));
-
-    ui->spinBoxPosX->blockSignals(oldState);
-    ui->spinBoxPosY->blockSignals(oldState);
-    ui->spinBoxPosZ->blockSignals(oldState);
-    ui->spinBoxRotX->blockSignals(oldState);
-    ui->spinBoxRotY->blockSignals(oldState);
-    ui->spinBoxRotZ->blockSignals(oldState);
+    updateEditorsFromTransform(m_workingTransform);
 
     m_isPicking = false;
     disconnect(view, &OCCView::signalSpaceSelected, this, &WidgetTransform::onObjectSelected);
@@ -228,15 +202,47 @@ void WidgetTransform::updateTransform()
     trsf.SetRotation(q);
     trsf.SetTranslationPart(gp_Vec(x, y, z));
 
-    view->Context()->SetLocation(m_targetObject, TopLoc_Location(trsf));
+    applyWorkingTransform(trsf, TransformSource::Editors);
+}
 
-    // Bug 2 fix: Update manipulator position
-    view->updateManipulator(); // This method we added to OCCView
+void WidgetTransform::applyWorkingTransform(const gp_Trsf& transform, TransformSource source)
+{
+    OCCView* view = m_view.data();
+    if (!view || m_targetObject.IsNull()) return;
 
-    // view->attachManipulator(m_targetObject); 
+    m_workingTransform = transform;
+    view->Context()->SetLocation(m_targetObject, TopLoc_Location(m_workingTransform));
+
+    if (source == TransformSource::Editors) {
+        view->updateManipulator();
+    } else if (source == TransformSource::Manipulator) {
+        updateEditorsFromTransform(m_workingTransform);
+    }
 
     view->requestSceneRedraw();
     view->repaint();
+}
+
+void WidgetTransform::updateEditorsFromTransform(const gp_Trsf& transform)
+{
+    const gp_XYZ location = transform.TranslationPart();
+    const gp_Quaternion rotation = transform.GetRotation();
+    double rx, ry, rz;
+    rotation.GetEulerAngles(gp_Intrinsic_ZYX, rz, ry, rx);
+
+    const QSignalBlocker blockPosX(ui->spinBoxPosX);
+    const QSignalBlocker blockPosY(ui->spinBoxPosY);
+    const QSignalBlocker blockPosZ(ui->spinBoxPosZ);
+    const QSignalBlocker blockRotX(ui->spinBoxRotX);
+    const QSignalBlocker blockRotY(ui->spinBoxRotY);
+    const QSignalBlocker blockRotZ(ui->spinBoxRotZ);
+
+    ui->spinBoxPosX->setValue(location.X());
+    ui->spinBoxPosY->setValue(location.Y());
+    ui->spinBoxPosZ->setValue(location.Z());
+    ui->spinBoxRotX->setValue(qRadiansToDegrees(rx));
+    ui->spinBoxRotY->setValue(qRadiansToDegrees(ry));
+    ui->spinBoxRotZ->setValue(qRadiansToDegrees(rz));
 }
 
 void WidgetTransform::onResetClicked()
@@ -253,14 +259,8 @@ void WidgetTransform::onApplyClicked()
 {
     if (m_targetObject.IsNull()) return;
 
-    m_originalTransform = m_targetObject->LocalTransformation();
+    m_originalTransform = m_workingTransform;
     m_hasOriginalTransform = true;
-    if (m_view) {
-        OCCView* view = m_view.data();
-        view->Context()->SetLocation(m_targetObject, TopLoc_Location(m_originalTransform));
-        view->requestSceneRedraw();
-        view->repaint();
-    }
 }
 
 void WidgetTransform::saveMouseState()
@@ -314,12 +314,10 @@ void WidgetTransform::restorePreview()
     if (m_targetObject.IsNull() || !m_hasOriginalTransform) return;
 
     if (m_view) {
-        OCCView* view = m_view.data();
-        view->Context()->SetLocation(m_targetObject, TopLoc_Location(m_originalTransform));
-        view->requestSceneRedraw();
-        view->repaint();
+        applyWorkingTransform(m_originalTransform, TransformSource::Restore);
     } else {
         m_targetObject->SetLocalTransformation(m_originalTransform);
+        m_workingTransform = m_originalTransform;
     }
 }
 
@@ -345,33 +343,7 @@ void WidgetTransform::clearTarget()
 
 void WidgetTransform::onManipulatorChange(const gp_Trsf& trsf)
 {
-    // Update UI from trsf
-    gp_XYZ loc = trsf.TranslationPart();
-    gp_Quaternion rot = trsf.GetRotation();
-    double rx, ry, rz;
-    rot.GetEulerAngles(gp_Intrinsic_ZYX, rz, ry, rx);
-    
-    // Block signals
-    bool oldState = ui->spinBoxPosX->blockSignals(true);
-    ui->spinBoxPosY->blockSignals(true);
-    ui->spinBoxPosZ->blockSignals(true);
-    ui->spinBoxRotX->blockSignals(true);
-    ui->spinBoxRotY->blockSignals(true);
-    ui->spinBoxRotZ->blockSignals(true);
-
-    ui->spinBoxPosX->setValue(loc.X());
-    ui->spinBoxPosY->setValue(loc.Y());
-    ui->spinBoxPosZ->setValue(loc.Z());
-    ui->spinBoxRotX->setValue(qRadiansToDegrees(rx));
-    ui->spinBoxRotY->setValue(qRadiansToDegrees(ry));
-    ui->spinBoxRotZ->setValue(qRadiansToDegrees(rz));
-
-    ui->spinBoxPosX->blockSignals(oldState);
-    ui->spinBoxPosY->blockSignals(oldState);
-    ui->spinBoxPosZ->blockSignals(oldState);
-    ui->spinBoxRotX->blockSignals(oldState);
-    ui->spinBoxRotY->blockSignals(oldState);
-    ui->spinBoxRotZ->blockSignals(oldState);
+    applyWorkingTransform(trsf, TransformSource::Manipulator);
 }
 
 void WidgetTransform::onActiveViewChanged(OCCView* view)

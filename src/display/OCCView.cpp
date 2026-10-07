@@ -492,25 +492,30 @@ void OCCView::mouseMoveEvent(QMouseEvent *theEvent)
     {
         const gp_Trsf trsf = m_manipulator->Transform(
             theEvent->pos().x(), theEvent->pos().y(), m_view);
-        
-        // Notify observers
+        bool transformHandled = false;
         if (Handle(AIS_InteractiveObject) obj = m_manipulator->Object())
         {
-            m_context->SetLocation(obj, TopLoc_Location(trsf));
 #if __cplusplus >= 202002L
             for (const auto& observer : m_manipulatorObservers 
                                 | std::views::filter([](ManipulatorObserver *o) { return o != nullptr; })) {
                 observer->onManipulatorChange(trsf);
+                transformHandled = true;
             }
 #else
             for (const auto& observer : m_manipulatorObservers 
                 | boost::adaptors::filtered([](const auto it){return it != nullptr;})){
                 observer->onManipulatorChange(trsf);
+                transformHandled = true;
             }
 #endif
+            if (!transformHandled) {
+                m_context->SetLocation(obj, TopLoc_Location(trsf));
+            }
         }
-        requestSceneRedraw();
-        repaint();
+        if (!transformHandled) {
+            requestSceneRedraw();
+            repaint();
+        }
         QOpenGLWidget::mouseMoveEvent(theEvent);
         theEvent->accept();
         return;

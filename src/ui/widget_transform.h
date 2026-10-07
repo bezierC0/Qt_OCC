@@ -56,12 +56,21 @@ private slots:
     //void onManipulatorChanged(const gp_Trsf& trsf); // Removed, replaced by override
 
 private:
+    enum class TransformSource
+    {
+        Editors,
+        Manipulator,
+        Restore
+    };
+
     void saveMouseState();
     void restoreMouseState();
     void finishInteraction();
     void restorePreview();
     void clearTarget();
     void updateTransform();
+    void applyWorkingTransform(const gp_Trsf& transform, TransformSource source);
+    void updateEditorsFromTransform(const gp_Trsf& transform);
 
 private:
     Ui::WidgetTransform* ui;
@@ -77,5 +86,6 @@ private:
     TopoDS_Shape m_targetShape;
     TDF_Label m_targetLabel;
     gp_Trsf m_originalTransform;
+    gp_Trsf m_workingTransform;
     bool m_hasOriginalTransform{false};
 };
