@@ -11,11 +11,14 @@
 #include <gp_Trsf.hxx>
 #include <gp_Quaternion.hxx>
 #include <TopLoc_Location.hxx>
+#include <XCAFPrs_AISObject.hxx>
 
 
 #include <QtMath>
+#include <QKeyEvent>
 #include <QMessageBox>
 #include <QDebug>
+#include <QSignalBlocker>
 #include <algorithm>
 
 WidgetTransform::WidgetTransform(QWidget *parent) :
@@ -28,8 +31,11 @@ WidgetTransform::WidgetTransform(QWidget *parent) :
     setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint);
 
     connect(ui->pushButtonPick, &QPushButton::clicked, this, &WidgetTransform::onPickClicked);
+    connect(ui->pushButtonReset, &QPushButton::clicked, this, &WidgetTransform::onResetClicked);
     connect(ui->pushButtonApply, &QPushButton::clicked, this, &WidgetTransform::onApplyClicked);
     connect(ui->pushButtonClose, &QPushButton::clicked, this, &WidgetTransform::onCloseClicked);
+    connect(&ViewManager::getInstance(), &ViewManager::activeViewChanged,
+            this, &WidgetTransform::onActiveViewChanged);
 
     // Connect 
     connect(ui->spinBoxPosX, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this, &WidgetTransform::onTransformChanged);
@@ -42,6 +48,7 @@ WidgetTransform::WidgetTransform(QWidget *parent) :
 
 WidgetTransform::~WidgetTransform()
 {
+    finishInteraction();
     delete ui;
 }
 
@@ -51,11 +58,14 @@ void WidgetTransform::show()
     clearTarget();
     QWidget::show();
 
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view) return;
+    m_view = ViewManager::getInstance().getActiveView();
+    if (!m_view) return;
 
-    view->addManipulatorObserver(this);
-    onPickClicked();
+    m_view->addManipulatorObserver(this);
+    connect(m_view, &OCCView::signalShapeObjectsChanged,
+            this, &WidgetTransform::onShapeObjectsChanged, Qt::UniqueConnection);
+    connect(m_view, &OCCView::signalEscapePressed,
+            this, &WidgetTransform::onCancelRequested, Qt::UniqueConnection);
 }
 
 void WidgetTransform::hide()
@@ -70,13 +80,24 @@ void WidgetTransform::closeEvent(QCloseEvent *event)
     QWidget::closeEvent(event);
 }
 
+void WidgetTransform::keyPressEvent(QKeyEvent *event)
+{
+    if (event->key() == Qt::Key_Escape) {
+        close();
+        event->accept();
+        return;
+    }
+    QWidget::keyPressEvent(event);
+}
+
 void WidgetTransform::onPickClicked()
 {
-    auto view = ViewManager::getInstance().getActiveView();
+    OCCView* view = m_view.data();
     if (!view) return;
 
     restorePreview();
     clearTarget();
+    ui->labelStatus->setText(tr("Select an object in the view."));
 
     if (m_isPicking) {
         restoreMouseState();
@@ -103,7 +124,7 @@ void WidgetTransform::onObjectSelected(const TopoDS_Shape& shape)
 {
     if (!m_isPicking || shape.IsNull()) return;
 
-    auto view = ViewManager::getInstance().getActiveView();
+    OCCView* view = m_view.data();
     if (!view) return;
 
     // Find the AIS Object Check selected objects in view
@@ -121,8 +142,17 @@ void WidgetTransform::onObjectSelected(const TopoDS_Shape& shape)
     m_targetObject = (*selectedIt)->GetParentInteractiveObject();
     if (m_targetObject.IsNull()) return;
     m_targetShape = shape;
-    m_originalTransform = m_targetObject->LocalTransformation();
+    m_targetLabel.Nullify();
+    const Handle(XCAFPrs_AISObject) xcafObject =
+        Handle(XCAFPrs_AISObject)::DownCast(m_targetObject);
+    if (!xcafObject.IsNull()) {
+        m_targetLabel = xcafObject->GetLabel();
+    }
+    m_initialTransform = m_targetObject->LocalTransformation();
+    m_originalTransform = m_initialTransform;
+    m_workingTransform = m_originalTransform;
     m_hasOriginalTransform = true;
+    ui->pushButtonReset->setEnabled(true);
     ui->pushButtonApply->setEnabled(true);
 
     // Update UI name
@@ -134,36 +164,9 @@ void WidgetTransform::onObjectSelected(const TopoDS_Shape& shape)
         objectName = QString::fromUtf16(name.ToExtString());
     }
     ui->labelObjectName->setText(objectName);
+    ui->labelStatus->setText(tr("Ready."));
 
-    // Get current transformation
-    gp_Trsf trsf = m_targetObject->LocalTransformation();
-    gp_XYZ loc = trsf.TranslationPart();
-    gp_Quaternion rot = trsf.GetRotation();
-    
-    double rx, ry, rz;
-    rot.GetEulerAngles(gp_Intrinsic_ZYX, rz, ry, rx);
-
-    // Block signals to prevent triggering updateTransform
-    bool oldState = ui->spinBoxPosX->blockSignals(true);
-    ui->spinBoxPosY->blockSignals(true);
-    ui->spinBoxPosZ->blockSignals(true);
-    ui->spinBoxRotX->blockSignals(true);
-    ui->spinBoxRotY->blockSignals(true);
-    ui->spinBoxRotZ->blockSignals(true);
-
-    ui->spinBoxPosX->setValue(loc.X());
-    ui->spinBoxPosY->setValue(loc.Y());
-    ui->spinBoxPosZ->setValue(loc.Z());
-    ui->spinBoxRotX->setValue(qRadiansToDegrees(rx));
-    ui->spinBoxRotY->setValue(qRadiansToDegrees(ry));
-    ui->spinBoxRotZ->setValue(qRadiansToDegrees(rz));
-
-    ui->spinBoxPosX->blockSignals(oldState);
-    ui->spinBoxPosY->blockSignals(oldState);
-    ui->spinBoxPosZ->blockSignals(oldState);
-    ui->spinBoxRotX->blockSignals(oldState);
-    ui->spinBoxRotY->blockSignals(oldState);
-    ui->spinBoxRotZ->blockSignals(oldState);
+    updateEditorsFromTransform(m_workingTransform);
 
     m_isPicking = false;
     disconnect(view, &OCCView::signalSpaceSelected, this, &WidgetTransform::onObjectSelected);
@@ -186,7 +189,7 @@ void WidgetTransform::onTransformChanged()
 
 void WidgetTransform::updateTransform()
 {
-    auto view = ViewManager::getInstance().getActiveView();
+    OCCView* view = m_view.data();
     if (!view) return;
 
     const double x = ui->spinBoxPosX->value();
@@ -204,20 +207,59 @@ void WidgetTransform::updateTransform()
     trsf.SetRotation(q);
     trsf.SetTranslationPart(gp_Vec(x, y, z));
 
-    view->Context()->SetLocation(m_targetObject, TopLoc_Location(trsf));
+    applyWorkingTransform(trsf, TransformSource::Editors);
+}
 
-    // Bug 2 fix: Update manipulator position
-    view->updateManipulator(); // This method we added to OCCView
+void WidgetTransform::applyWorkingTransform(const gp_Trsf& transform, TransformSource source)
+{
+    OCCView* view = m_view.data();
+    if (!view || m_targetObject.IsNull()) return;
 
-    // view->attachManipulator(m_targetObject); 
+    m_workingTransform = transform;
+    view->Context()->SetLocation(m_targetObject, TopLoc_Location(m_workingTransform));
+
+    if (source == TransformSource::Editors) {
+        view->updateManipulator();
+        ui->labelStatus->setText(tr("Previewing changes."));
+    } else if (source == TransformSource::Manipulator) {
+        updateEditorsFromTransform(m_workingTransform);
+        ui->labelStatus->setText(tr("Previewing changes."));
+    } else if (source == TransformSource::Reset) {
+        updateEditorsFromTransform(m_workingTransform);
+        view->updateManipulator();
+        ui->labelStatus->setText(tr("Previewing original transform."));
+    }
 
     view->requestSceneRedraw();
     view->repaint();
 }
 
+void WidgetTransform::updateEditorsFromTransform(const gp_Trsf& transform)
+{
+    const gp_XYZ location = transform.TranslationPart();
+    const gp_Quaternion rotation = transform.GetRotation();
+    double rx, ry, rz;
+    rotation.GetEulerAngles(gp_Intrinsic_ZYX, rz, ry, rx);
+
+    const QSignalBlocker blockPosX(ui->spinBoxPosX);
+    const QSignalBlocker blockPosY(ui->spinBoxPosY);
+    const QSignalBlocker blockPosZ(ui->spinBoxPosZ);
+    const QSignalBlocker blockRotX(ui->spinBoxRotX);
+    const QSignalBlocker blockRotY(ui->spinBoxRotY);
+    const QSignalBlocker blockRotZ(ui->spinBoxRotZ);
+
+    ui->spinBoxPosX->setValue(location.X());
+    ui->spinBoxPosY->setValue(location.Y());
+    ui->spinBoxPosZ->setValue(location.Z());
+    ui->spinBoxRotX->setValue(qRadiansToDegrees(rx));
+    ui->spinBoxRotY->setValue(qRadiansToDegrees(ry));
+    ui->spinBoxRotZ->setValue(qRadiansToDegrees(rz));
+}
+
 void WidgetTransform::onResetClicked()
 {
-    // TODO: Reset transform to identity?
+    if (m_targetObject.IsNull() || !m_hasOriginalTransform) return;
+    applyWorkingTransform(m_initialTransform, TransformSource::Reset);
 }
 
 void WidgetTransform::onCloseClicked()
@@ -229,18 +271,14 @@ void WidgetTransform::onApplyClicked()
 {
     if (m_targetObject.IsNull()) return;
 
-    m_originalTransform = m_targetObject->LocalTransformation();
+    m_originalTransform = m_workingTransform;
     m_hasOriginalTransform = true;
-    if (auto view = ViewManager::getInstance().getActiveView()) {
-        view->Context()->SetLocation(m_targetObject, TopLoc_Location(m_originalTransform));
-        view->requestSceneRedraw();
-        view->repaint();
-    }
+    ui->labelStatus->setText(tr("Changes applied."));
 }
 
 void WidgetTransform::saveMouseState()
 {
-    auto view = ViewManager::getInstance().getActiveView();
+    OCCView* view = m_view.data();
     if (!view || m_hasSavedMouseState) return;
     m_savedMouseMode = static_cast<int>(view->getMouseMode());
     m_savedFilters = view->getSelectionFilters();
@@ -250,7 +288,7 @@ void WidgetTransform::saveMouseState()
 void WidgetTransform::restoreMouseState()
 {
     if (!m_hasSavedMouseState) return;
-    auto view = ViewManager::getInstance().getActiveView();
+    OCCView* view = m_view.data();
     if (!view) {
         m_hasSavedMouseState = false;
         return;
@@ -268,30 +306,31 @@ void WidgetTransform::finishInteraction()
 {
     m_isPicking = false;
     restorePreview();
-    auto view = ViewManager::getInstance().getActiveView();
+    OCCView* view = m_view.data();
     if (!view) {
         m_hasSavedMouseState = false;
         clearTarget();
+        m_view.clear();
         return;
     }
 
-    disconnect(view, &OCCView::signalSpaceSelected, this, &WidgetTransform::onObjectSelected);
+    disconnect(view, nullptr, this, nullptr);
     restoreMouseState();
     view->detachManipulator();
     view->removeManipulatorObserver(this);
     clearTarget();
+    m_view.clear();
 }
 
 void WidgetTransform::restorePreview()
 {
     if (m_targetObject.IsNull() || !m_hasOriginalTransform) return;
 
-    if (auto view = ViewManager::getInstance().getActiveView()) {
-        view->Context()->SetLocation(m_targetObject, TopLoc_Location(m_originalTransform));
-        view->requestSceneRedraw();
-        view->repaint();
+    if (m_view) {
+        applyWorkingTransform(m_originalTransform, TransformSource::Restore);
     } else {
         m_targetObject->SetLocalTransformation(m_originalTransform);
+        m_workingTransform = m_originalTransform;
     }
 }
 
@@ -299,8 +338,11 @@ void WidgetTransform::clearTarget()
 {
     m_targetObject.Nullify();
     m_targetShape.Nullify();
+    m_targetLabel.Nullify();
     m_hasOriginalTransform = false;
     ui->labelObjectName->setText(tr("None"));
+    ui->labelStatus->setText(tr("No object selected."));
+    ui->pushButtonReset->setEnabled(false);
     ui->pushButtonApply->setEnabled(false);
 
     QDoubleSpinBox* editors[] = {
@@ -316,31 +358,28 @@ void WidgetTransform::clearTarget()
 
 void WidgetTransform::onManipulatorChange(const gp_Trsf& trsf)
 {
-    // Update UI from trsf
-    gp_XYZ loc = trsf.TranslationPart();
-    gp_Quaternion rot = trsf.GetRotation();
-    double rx, ry, rz;
-    rot.GetEulerAngles(gp_Intrinsic_ZYX, rz, ry, rx);
-    
-    // Block signals
-    bool oldState = ui->spinBoxPosX->blockSignals(true);
-    ui->spinBoxPosY->blockSignals(true);
-    ui->spinBoxPosZ->blockSignals(true);
-    ui->spinBoxRotX->blockSignals(true);
-    ui->spinBoxRotY->blockSignals(true);
-    ui->spinBoxRotZ->blockSignals(true);
+    applyWorkingTransform(trsf, TransformSource::Manipulator);
+}
 
-    ui->spinBoxPosX->setValue(loc.X());
-    ui->spinBoxPosY->setValue(loc.Y());
-    ui->spinBoxPosZ->setValue(loc.Z());
-    ui->spinBoxRotX->setValue(qRadiansToDegrees(rx));
-    ui->spinBoxRotY->setValue(qRadiansToDegrees(ry));
-    ui->spinBoxRotZ->setValue(qRadiansToDegrees(rz));
+void WidgetTransform::onActiveViewChanged(OCCView* view)
+{
+    if (!isVisible() || (!m_view.isNull() && view == m_view.data())) return;
+    close();
+}
 
-    ui->spinBoxPosX->blockSignals(oldState);
-    ui->spinBoxPosY->blockSignals(oldState);
-    ui->spinBoxPosZ->blockSignals(oldState);
-    ui->spinBoxRotX->blockSignals(oldState);
-    ui->spinBoxRotY->blockSignals(oldState);
-    ui->spinBoxRotZ->blockSignals(oldState);
+void WidgetTransform::onShapeObjectsChanged()
+{
+    if (!m_view || m_targetObject.IsNull()) return;
+
+    const auto& objects = m_view->getShapeObjects();
+    if (std::find(objects.cbegin(), objects.cend(), m_targetObject) != objects.cend()) return;
+
+    m_hasOriginalTransform = false;
+    m_targetObject.Nullify();
+    close();
+}
+
+void WidgetTransform::onCancelRequested()
+{
+    close();
 }

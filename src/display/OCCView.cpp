@@ -343,6 +343,10 @@ void OCCView::closeEvent(QCloseEvent *theEvent)
 
 void OCCView::keyPressEvent(QKeyEvent *theEvent)
 {
+    if (theEvent->key() == Qt::Key_Escape) {
+        emit signalEscapePressed();
+    }
+
     Aspect_VKey aKey = OcctInputMapper::qtKey2VKey(theEvent->key());
     switch (aKey)
     {
@@ -364,7 +368,10 @@ void OCCView::mousePressEvent(QMouseEvent *theEvent)
     }
 
     if (theEvent->button() == Qt::LeftButton
-        && !m_manipulator.IsNull() && m_manipulator->HasActiveMode()) {
+        && !m_manipulator.IsNull()
+        && m_context->HasDetected()
+        && m_context->DetectedInteractive() == m_manipulator
+        && m_manipulator->HasActiveMode()) {
         m_manipulator->StartTransform(theEvent->pos().x(), theEvent->pos().y(), m_view);
         if (m_manipulator->HasActiveTransformation()) {
             m_previousMouseMode = m_mouseMode;
@@ -483,27 +490,29 @@ void OCCView::mouseMoveEvent(QMouseEvent *theEvent)
 
     if (m_mouseMode == View::MANIPULATING && !m_manipulator.IsNull())
     {
-        const gp_Trsf trsf = m_manipulator->Transform(
-            theEvent->pos().x(), theEvent->pos().y(), m_view);
-        
-        // Notify observers
+        m_manipulator->Transform(theEvent->pos().x(), theEvent->pos().y(), m_view);
+        bool transformHandled = false;
         if (Handle(AIS_InteractiveObject) obj = m_manipulator->Object())
         {
-            m_context->SetLocation(obj, TopLoc_Location(trsf));
+            const gp_Trsf objectTransform = obj->LocalTransformation();
 #if __cplusplus >= 202002L
             for (const auto& observer : m_manipulatorObservers 
                                 | std::views::filter([](ManipulatorObserver *o) { return o != nullptr; })) {
-                observer->onManipulatorChange(trsf);
+                observer->onManipulatorChange(objectTransform);
+                transformHandled = true;
             }
 #else
             for (const auto& observer : m_manipulatorObservers 
                 | boost::adaptors::filtered([](const auto it){return it != nullptr;})){
-                observer->onManipulatorChange(trsf);
+                observer->onManipulatorChange(objectTransform);
+                transformHandled = true;
             }
 #endif
         }
-        requestSceneRedraw();
-        repaint();
+        if (!transformHandled) {
+            requestSceneRedraw();
+            repaint();
+        }
         QOpenGLWidget::mouseMoveEvent(theEvent);
         theEvent->accept();
         return;
@@ -740,6 +749,7 @@ void OCCView::clearShape()
         m_context->Erase(m_boundingBoxNode, false);
         m_boundingBoxNode.Nullify();
     }
+    emit signalShapeObjectsChanged();
 }
 
 void OCCView::setShape(const Handle(AIS_InteractiveObject) & loadedShape)
@@ -758,6 +768,7 @@ void OCCView::setShape(const Handle(AIS_InteractiveObject) & loadedShape)
     m_explosionSourceShapes.emplace_back(aisShape.IsNull() ? TopoDS_Shape() : aisShape->Shape());
     m_explosionSourceTransforms.emplace_back(
         loadedShape.IsNull() ? gp_Trsf() : loadedShape->LocalTransformation());
+    emit signalShapeObjectsChanged();
 }
 
 void OCCView::removeShape(const TopoDS_Shape& removeShape)
@@ -779,6 +790,7 @@ void OCCView::removeShape(const TopoDS_Shape& removeShape)
         m_loadedObjects.erase(it);
         m_explosionSourceShapes.erase(m_explosionSourceShapes.begin() + index);
         m_explosionSourceTransforms.erase(m_explosionSourceTransforms.begin() + index);
+        emit signalShapeObjectsChanged();
     }
     auto size1 = m_loadedObjects.size();
 }

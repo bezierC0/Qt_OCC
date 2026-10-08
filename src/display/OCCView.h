@@ -113,6 +113,8 @@ signals:
     void signalMouseMove(double x, double y, double z);
     void signalViewportMouseMoved(int x, int y);
     void signalViewportClicked(int x, int y);
+    void signalEscapePressed();
+    void signalShapeObjectsChanged();
 public:
     //! Main constructor.
     OCCView(QWidget *theParent = nullptr);
