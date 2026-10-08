@@ -75,13 +75,13 @@ void WidgetInterference::setupUi()
     QHBoxLayout* btnLayout = new QHBoxLayout();
     m_btnAdd = new QPushButton(tr("Add"), this);
     m_btnRemove = new QPushButton(tr("Remove"), this);
-    m_btnCheck = new QPushButton(tr("Check"), this);
+    m_btnCheck = new QPushButton(tr("Start Check"), this);
     m_btnAddAll = new QPushButton(tr("Add All"), this);
+    m_mainLayout->addWidget(m_btnCheck);
     
     btnLayout->addWidget(m_btnAdd);
     btnLayout->addWidget(m_btnAddAll);
     btnLayout->addWidget(m_btnRemove);
-    btnLayout->addWidget(m_btnCheck);
     m_mainLayout->addLayout(btnLayout);
 
     m_progressBar = new QProgressBar(this);
@@ -103,17 +103,17 @@ void WidgetInterference::setupUi()
 
     QGroupBox* displayOptions = new QGroupBox(tr("Result Display"), grpResult);
     QFormLayout* displayOptionsLayout = new QFormLayout(displayOptions);
-    m_resultOnTop = new QCheckBox(tr("Render result on top"), displayOptions);
+    m_resultOnTop = new QCheckBox(tr("Display result on top"), displayOptions);
     m_resultOnTop->setChecked(true);
     displayOptionsLayout->addRow(m_resultOnTop);
+
+    m_showOnlyPair = new QCheckBox(tr("Only display collision pair"), displayOptions);
+    displayOptionsLayout->addRow(m_showOnlyPair);
 
     m_objectAStyle = new QPushButton(tr("Solid"), displayOptions);
     m_objectBStyle = new QPushButton(tr("Solid"), displayOptions);
     displayOptionsLayout->addRow(tr("Object A:"), m_objectAStyle);
     displayOptionsLayout->addRow(tr("Object B:"), m_objectBStyle);
-
-    m_showOnlyPair = new QCheckBox(tr("Show collision pair only"), displayOptions);
-    displayOptionsLayout->addRow(m_showOnlyPair);
     grpResultLayout->addWidget(displayOptions);
 
     m_resultTreeWidget = new QTreeWidget(this);

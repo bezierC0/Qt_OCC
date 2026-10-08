@@ -80,8 +80,12 @@
     <message>
         <location filename="../../src/MainWindow.ui" line="153"/>
         <location filename="../../src/MainWindow.cpp" line="81"/>
-        <source>Open</source>
-        <translation>打开</translation>
+        <source>Import</source>
+        <translation>导入</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation>导出</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="58"/>
@@ -1007,7 +1011,7 @@
 <context>
     <name>WidgetInterference</name>
     <message>
-        <source>Show collision pair only</source>
+        <source>Only display collision pair</source>
         <translation>仅显示碰撞对象</translation>
     </message>
     <message>
@@ -1015,8 +1019,8 @@
         <translation>结果显示</translation>
     </message>
     <message>
-        <source>Render result on top</source>
-        <translation>结果置顶渲染</translation>
+        <source>Display result on top</source>
+        <translation>置顶显示</translation>
     </message>
     <message>
         <source>Solid</source>
@@ -1063,8 +1067,79 @@
         <translation>已完成：%v / %m</translation>
     </message>
     <message>
+        <source>Start Check</source>
+        <translation>开始</translation>
+    </message>
+    <message>
         <source>Add All</source>
         <translation>全部添加</translation>
+    </message>
+</context>
+<context>
+    <name>WidgetTransform</name>
+    <message>
+        <source>Transform Object</source>
+        <translation>变换对象</translation>
+    </message>
+    <message>
+        <source>Object:</source>
+        <translation>对象：</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>无</translation>
+    </message>
+    <message>
+        <source>Pick</source>
+        <translation>拾取</translation>
+    </message>
+    <message>
+        <source>Position</source>
+        <translation>位置</translation>
+    </message>
+    <message>
+        <source>Rotation</source>
+        <translation>旋转</translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation>应用</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation>重置</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
+    <message>
+        <source>No object selected.</source>
+        <translation>未选择对象。</translation>
+    </message>
+    <message>
+        <source>Select an object in the view.</source>
+        <translation>请在视图中选择一个对象。</translation>
+    </message>
+    <message>
+        <source>Ready.</source>
+        <translation>就绪。</translation>
+    </message>
+    <message>
+        <source>Previewing changes.</source>
+        <translation>正在预览更改。</translation>
+    </message>
+    <message>
+        <source>Previewing original transform.</source>
+        <translation>正在预览初始变换。</translation>
+    </message>
+    <message>
+        <source>Changes applied.</source>
+        <translation>更改已应用。</translation>
+    </message>
+    <message>
+        <source>Selected Solid</source>
+        <translation>选中的实体</translation>
     </message>
 </context>
 </TS>

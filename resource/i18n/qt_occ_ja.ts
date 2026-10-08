@@ -80,8 +80,12 @@
     <message>
         <location filename="../../src/MainWindow.ui" line="153"/>
         <location filename="../../src/MainWindow.cpp" line="81"/>
-        <source>Open</source>
-        <translation>開く</translation>
+        <source>Import</source>
+        <translation>インポート</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation>エクスポート</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="58"/>
@@ -1007,16 +1011,16 @@
 <context>
     <name>WidgetInterference</name>
     <message>
-        <source>Show collision pair only</source>
-        <translation>衝突オブジェクトのみ表示</translation>
+        <source>Only display collision pair</source>
+        <translation>干渉部品のみ表示</translation>
     </message>
     <message>
         <source>Result Display</source>
         <translation>結果表示</translation>
     </message>
     <message>
-        <source>Render result on top</source>
-        <translation>結果を最前面に表示</translation>
+        <source>Display result on top</source>
+        <translation>最前面に表示</translation>
     </message>
     <message>
         <source>Solid</source>
@@ -1063,8 +1067,79 @@
         <translation>完了：%v / %m</translation>
     </message>
     <message>
+        <source>Start Check</source>
+        <translation>Start</translation>
+    </message>
+    <message>
         <source>Add All</source>
         <translation>すべて追加</translation>
+    </message>
+</context>
+<context>
+    <name>WidgetTransform</name>
+    <message>
+        <source>Transform Object</source>
+        <translation>オブジェクトを変換</translation>
+    </message>
+    <message>
+        <source>Object:</source>
+        <translation>オブジェクト：</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>なし</translation>
+    </message>
+    <message>
+        <source>Pick</source>
+        <translation>選択</translation>
+    </message>
+    <message>
+        <source>Position</source>
+        <translation>位置</translation>
+    </message>
+    <message>
+        <source>Rotation</source>
+        <translation>回転</translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation>適用</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation>リセット</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>閉じる</translation>
+    </message>
+    <message>
+        <source>No object selected.</source>
+        <translation>オブジェクトが選択されていません。</translation>
+    </message>
+    <message>
+        <source>Select an object in the view.</source>
+        <translation>ビューでオブジェクトを選択してください。</translation>
+    </message>
+    <message>
+        <source>Ready.</source>
+        <translation>準備完了。</translation>
+    </message>
+    <message>
+        <source>Previewing changes.</source>
+        <translation>変更をプレビューしています。</translation>
+    </message>
+    <message>
+        <source>Previewing original transform.</source>
+        <translation>初期変換をプレビューしています。</translation>
+    </message>
+    <message>
+        <source>Changes applied.</source>
+        <translation>変更を適用しました。</translation>
+    </message>
+    <message>
+        <source>Selected Solid</source>
+        <translation>選択したソリッド</translation>
     </message>
 </context>
 </TS>

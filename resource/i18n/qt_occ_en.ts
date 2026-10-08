@@ -80,8 +80,12 @@
     <message>
         <location filename="../../src/MainWindow.ui" line="153"/>
         <location filename="../../src/MainWindow.cpp" line="81"/>
-        <source>Open</source>
-        <translation>Open</translation>
+        <source>Import</source>
+        <translation>Import</translation>
+    </message>
+    <message>
+        <source>Export</source>
+        <translation>Export</translation>
     </message>
     <message>
         <location filename="../../src/MainWindow.ui" line="58"/>
@@ -1372,16 +1376,16 @@
 <context>
     <name>WidgetInterference</name>
     <message>
-        <source>Show collision pair only</source>
-        <translation>Show collision pair only</translation>
+        <source>Only display collision pair</source>
+        <translation>Only display collision pair</translation>
     </message>
     <message>
         <source>Result Display</source>
         <translation>Result Display</translation>
     </message>
     <message>
-        <source>Render result on top</source>
-        <translation>Render result on top</translation>
+        <source>Display result on top</source>
+        <translation>Display result on top</translation>
     </message>
     <message>
         <source>Solid</source>
@@ -1428,8 +1432,79 @@
         <translation>Completed: %v / %m</translation>
     </message>
     <message>
+        <source>Start Check</source>
+        <translation>Start</translation>
+    </message>
+    <message>
         <source>Add All</source>
         <translation>Add All</translation>
+    </message>
+</context>
+<context>
+    <name>WidgetTransform</name>
+    <message>
+        <source>Transform Object</source>
+        <translation>Transform Object</translation>
+    </message>
+    <message>
+        <source>Object:</source>
+        <translation>Object:</translation>
+    </message>
+    <message>
+        <source>None</source>
+        <translation>None</translation>
+    </message>
+    <message>
+        <source>Pick</source>
+        <translation>Pick</translation>
+    </message>
+    <message>
+        <source>Position</source>
+        <translation>Position</translation>
+    </message>
+    <message>
+        <source>Rotation</source>
+        <translation>Rotation</translation>
+    </message>
+    <message>
+        <source>Apply</source>
+        <translation>Apply</translation>
+    </message>
+    <message>
+        <source>Reset</source>
+        <translation>Reset</translation>
+    </message>
+    <message>
+        <source>Close</source>
+        <translation>Close</translation>
+    </message>
+    <message>
+        <source>No object selected.</source>
+        <translation>No object selected.</translation>
+    </message>
+    <message>
+        <source>Select an object in the view.</source>
+        <translation>Select an object in the view.</translation>
+    </message>
+    <message>
+        <source>Ready.</source>
+        <translation>Ready.</translation>
+    </message>
+    <message>
+        <source>Previewing changes.</source>
+        <translation>Previewing changes.</translation>
+    </message>
+    <message>
+        <source>Previewing original transform.</source>
+        <translation>Previewing original transform.</translation>
+    </message>
+    <message>
+        <source>Changes applied.</source>
+        <translation>Changes applied.</translation>
+    </message>
+    <message>
+        <source>Selected Solid</source>
+        <translation>Selected Solid</translation>
     </message>
 </context>
 </TS>

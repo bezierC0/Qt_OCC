@@ -274,16 +274,17 @@ void MainWindow::createFileGroup()
     connect(m_newAction, &QAction::triggered, this, &MainWindow::onNewFile);
     m_filePannel->addLargeAction(m_newAction);
 
-    // open
-    m_openAction = new QAction(QIcon(":/icons/icon/open.png"), tr("Open"), this); // Assuming an icon path
+    // import panel
+    m_importPannel = m_fileCategory->addPannel(tr("Import"));
+    m_openAction = new QAction(QIcon(":/icons/icon/file_import_import.svg"), tr("Import"), this); // Assuming an icon path
     connect(m_openAction, &QAction::triggered, this, &MainWindow::onOpenFile);
-    m_filePannel->addLargeAction(m_openAction);
+    m_importPannel->addLargeAction(m_openAction);
 
     // export panel
     auto createExportPannel = [&](){
         m_exportPannel = m_fileCategory->addPannel(tr("Export"));
 
-        m_exportFileAction = new QAction(QIcon(":/icons/icon/file_export_file.svg"), tr("File"), this); 
+        m_exportFileAction = new QAction(QIcon(":/icons/icon/file_export_export.svg"), tr("Export"), this);
         connect(m_exportFileAction, &QAction::triggered, this, &MainWindow::onExportFile);
         m_exportPannel->addLargeAction(m_exportFileAction);
 
