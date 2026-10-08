@@ -31,6 +31,7 @@ WidgetTransform::WidgetTransform(QWidget *parent) :
     setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint);
 
     connect(ui->pushButtonPick, &QPushButton::clicked, this, &WidgetTransform::onPickClicked);
+    connect(ui->pushButtonReset, &QPushButton::clicked, this, &WidgetTransform::onResetClicked);
     connect(ui->pushButtonApply, &QPushButton::clicked, this, &WidgetTransform::onApplyClicked);
     connect(ui->pushButtonClose, &QPushButton::clicked, this, &WidgetTransform::onCloseClicked);
     connect(&ViewManager::getInstance(), &ViewManager::activeViewChanged,
@@ -96,6 +97,7 @@ void WidgetTransform::onPickClicked()
 
     restorePreview();
     clearTarget();
+    ui->labelStatus->setText(tr("Select an object in the view."));
 
     if (m_isPicking) {
         restoreMouseState();
@@ -146,9 +148,11 @@ void WidgetTransform::onObjectSelected(const TopoDS_Shape& shape)
     if (!xcafObject.IsNull()) {
         m_targetLabel = xcafObject->GetLabel();
     }
-    m_originalTransform = m_targetObject->LocalTransformation();
+    m_initialTransform = m_targetObject->LocalTransformation();
+    m_originalTransform = m_initialTransform;
     m_workingTransform = m_originalTransform;
     m_hasOriginalTransform = true;
+    ui->pushButtonReset->setEnabled(true);
     ui->pushButtonApply->setEnabled(true);
 
     // Update UI name
@@ -160,6 +164,7 @@ void WidgetTransform::onObjectSelected(const TopoDS_Shape& shape)
         objectName = QString::fromUtf16(name.ToExtString());
     }
     ui->labelObjectName->setText(objectName);
+    ui->labelStatus->setText(tr("Ready."));
 
     updateEditorsFromTransform(m_workingTransform);
 
@@ -215,8 +220,14 @@ void WidgetTransform::applyWorkingTransform(const gp_Trsf& transform, TransformS
 
     if (source == TransformSource::Editors) {
         view->updateManipulator();
+        ui->labelStatus->setText(tr("Previewing changes."));
     } else if (source == TransformSource::Manipulator) {
         updateEditorsFromTransform(m_workingTransform);
+        ui->labelStatus->setText(tr("Previewing changes."));
+    } else if (source == TransformSource::Reset) {
+        updateEditorsFromTransform(m_workingTransform);
+        view->updateManipulator();
+        ui->labelStatus->setText(tr("Previewing original transform."));
     }
 
     view->requestSceneRedraw();
@@ -247,7 +258,8 @@ void WidgetTransform::updateEditorsFromTransform(const gp_Trsf& transform)
 
 void WidgetTransform::onResetClicked()
 {
-    // TODO: Reset transform to identity?
+    if (m_targetObject.IsNull() || !m_hasOriginalTransform) return;
+    applyWorkingTransform(m_initialTransform, TransformSource::Reset);
 }
 
 void WidgetTransform::onCloseClicked()
@@ -261,6 +273,7 @@ void WidgetTransform::onApplyClicked()
 
     m_originalTransform = m_workingTransform;
     m_hasOriginalTransform = true;
+    ui->labelStatus->setText(tr("Changes applied."));
 }
 
 void WidgetTransform::saveMouseState()
@@ -328,6 +341,8 @@ void WidgetTransform::clearTarget()
     m_targetLabel.Nullify();
     m_hasOriginalTransform = false;
     ui->labelObjectName->setText(tr("None"));
+    ui->labelStatus->setText(tr("No object selected."));
+    ui->pushButtonReset->setEnabled(false);
     ui->pushButtonApply->setEnabled(false);
 
     QDoubleSpinBox* editors[] = {

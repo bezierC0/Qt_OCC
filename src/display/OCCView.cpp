@@ -490,27 +490,24 @@ void OCCView::mouseMoveEvent(QMouseEvent *theEvent)
 
     if (m_mouseMode == View::MANIPULATING && !m_manipulator.IsNull())
     {
-        const gp_Trsf trsf = m_manipulator->Transform(
-            theEvent->pos().x(), theEvent->pos().y(), m_view);
+        m_manipulator->Transform(theEvent->pos().x(), theEvent->pos().y(), m_view);
         bool transformHandled = false;
         if (Handle(AIS_InteractiveObject) obj = m_manipulator->Object())
         {
+            const gp_Trsf objectTransform = obj->LocalTransformation();
 #if __cplusplus >= 202002L
             for (const auto& observer : m_manipulatorObservers 
                                 | std::views::filter([](ManipulatorObserver *o) { return o != nullptr; })) {
-                observer->onManipulatorChange(trsf);
+                observer->onManipulatorChange(objectTransform);
                 transformHandled = true;
             }
 #else
             for (const auto& observer : m_manipulatorObservers 
                 | boost::adaptors::filtered([](const auto it){return it != nullptr;})){
-                observer->onManipulatorChange(trsf);
+                observer->onManipulatorChange(objectTransform);
                 transformHandled = true;
             }
 #endif
-            if (!transformHandled) {
-                m_context->SetLocation(obj, TopLoc_Location(trsf));
-            }
         }
         if (!transformHandled) {
             requestSceneRedraw();

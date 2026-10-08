@@ -1471,8 +1471,36 @@
         <translation>Apply</translation>
     </message>
     <message>
+        <source>Reset</source>
+        <translation>Reset</translation>
+    </message>
+    <message>
         <source>Close</source>
         <translation>Close</translation>
+    </message>
+    <message>
+        <source>No object selected.</source>
+        <translation>No object selected.</translation>
+    </message>
+    <message>
+        <source>Select an object in the view.</source>
+        <translation>Select an object in the view.</translation>
+    </message>
+    <message>
+        <source>Ready.</source>
+        <translation>Ready.</translation>
+    </message>
+    <message>
+        <source>Previewing changes.</source>
+        <translation>Previewing changes.</translation>
+    </message>
+    <message>
+        <source>Previewing original transform.</source>
+        <translation>Previewing original transform.</translation>
+    </message>
+    <message>
+        <source>Changes applied.</source>
+        <translation>Changes applied.</translation>
     </message>
     <message>
         <source>Selected Solid</source>

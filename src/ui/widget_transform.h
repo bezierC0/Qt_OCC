@@ -60,6 +60,7 @@ private:
     {
         Editors,
         Manipulator,
+        Reset,
         Restore
     };
 
@@ -85,6 +86,7 @@ private:
     Handle(AIS_InteractiveObject) m_targetObject;
     TopoDS_Shape m_targetShape;
     TDF_Label m_targetLabel;
+    gp_Trsf m_initialTransform;
     gp_Trsf m_originalTransform;
     gp_Trsf m_workingTransform;
     bool m_hasOriginalTransform{false};

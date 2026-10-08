@@ -1106,8 +1106,36 @@
         <translation>適用</translation>
     </message>
     <message>
+        <source>Reset</source>
+        <translation>リセット</translation>
+    </message>
+    <message>
         <source>Close</source>
         <translation>閉じる</translation>
+    </message>
+    <message>
+        <source>No object selected.</source>
+        <translation>オブジェクトが選択されていません。</translation>
+    </message>
+    <message>
+        <source>Select an object in the view.</source>
+        <translation>ビューでオブジェクトを選択してください。</translation>
+    </message>
+    <message>
+        <source>Ready.</source>
+        <translation>準備完了。</translation>
+    </message>
+    <message>
+        <source>Previewing changes.</source>
+        <translation>変更をプレビューしています。</translation>
+    </message>
+    <message>
+        <source>Previewing original transform.</source>
+        <translation>初期変換をプレビューしています。</translation>
+    </message>
+    <message>
+        <source>Changes applied.</source>
+        <translation>変更を適用しました。</translation>
     </message>
     <message>
         <source>Selected Solid</source>

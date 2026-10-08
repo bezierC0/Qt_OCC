@@ -1106,8 +1106,36 @@
         <translation>应用</translation>
     </message>
     <message>
+        <source>Reset</source>
+        <translation>重置</translation>
+    </message>
+    <message>
         <source>Close</source>
         <translation>关闭</translation>
+    </message>
+    <message>
+        <source>No object selected.</source>
+        <translation>未选择对象。</translation>
+    </message>
+    <message>
+        <source>Select an object in the view.</source>
+        <translation>请在视图中选择一个对象。</translation>
+    </message>
+    <message>
+        <source>Ready.</source>
+        <translation>就绪。</translation>
+    </message>
+    <message>
+        <source>Previewing changes.</source>
+        <translation>正在预览更改。</translation>
+    </message>
+    <message>
+        <source>Previewing original transform.</source>
+        <translation>正在预览初始变换。</translation>
+    </message>
+    <message>
+        <source>Changes applied.</source>
+        <translation>更改已应用。</translation>
     </message>
     <message>
         <source>Selected Solid</source>
