@@ -5,6 +5,7 @@
 #include <TopoDS_Shape.hxx>
 #include <gp_Trsf.hxx>
 #include <TDF_Label.hxx>
+#include <TopLoc_Location.hxx>
 
 #include <QPointer>
 #include <QWidget>
@@ -71,6 +72,7 @@ private:
     void clearTarget();
     void updateTransform();
     void applyWorkingTransform(const gp_Trsf& transform, TransformSource source);
+    bool commitWorkingTransform();
     void updateEditorsFromTransform(const gp_Trsf& transform);
 
 private:
@@ -86,6 +88,8 @@ private:
     Handle(AIS_InteractiveObject) m_targetObject;
     TopoDS_Shape m_targetShape;
     TDF_Label m_targetLabel;
+    TopLoc_Location m_targetLocation;
+    gp_Trsf m_parentTransform;
     gp_Trsf m_initialTransform;
     gp_Trsf m_originalTransform;
     gp_Trsf m_workingTransform;

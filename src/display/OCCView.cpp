@@ -771,6 +771,27 @@ void OCCView::setShape(const Handle(AIS_InteractiveObject) & loadedShape)
     emit signalShapeObjectsChanged();
 }
 
+void OCCView::syncShapeSource(const Handle(AIS_InteractiveObject) & loadedShape)
+{
+    const auto objectIt = std::find(m_loadedObjects.cbegin(), m_loadedObjects.cend(), loadedShape);
+    if (objectIt == m_loadedObjects.cend()) return;
+
+    const Handle(XCAFPrs_AISObject) xcafObject =
+        Handle(XCAFPrs_AISObject)::DownCast(loadedShape);
+    if (!xcafObject.IsNull()) {
+        xcafObject->DispatchStyles();
+    }
+
+    const auto index = static_cast<std::size_t>(std::distance(m_loadedObjects.cbegin(), objectIt));
+    const Handle(AIS_Shape) aisShape = Handle(AIS_Shape)::DownCast(loadedShape);
+    m_explosionSourceShapes[index] = aisShape.IsNull() ? TopoDS_Shape() : aisShape->Shape();
+    m_explosionSourceTransforms[index] = loadedShape->LocalTransformation();
+    m_context->Redisplay(loadedShape, false);
+    requestSceneRedraw();
+    repaint();
+    emit signalShapeDocumentChanged();
+}
+
 void OCCView::removeShape(const TopoDS_Shape& removeShape)
 {
     auto it = m_loadedObjects.end();

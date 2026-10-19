@@ -11,6 +11,9 @@
 #include <gp_Trsf.hxx>
 #include <gp_Quaternion.hxx>
 #include <TopLoc_Location.hxx>
+#include <TDocStd_Document.hxx>
+#include <XCAFDoc_DocumentTool.hxx>
+#include <XCAFDoc_ShapeTool.hxx>
 #include <XCAFPrs_AISObject.hxx>
 
 
@@ -147,8 +150,13 @@ void WidgetTransform::onObjectSelected(const TopoDS_Shape& shape)
         Handle(XCAFPrs_AISObject)::DownCast(m_targetObject);
     if (!xcafObject.IsNull()) {
         m_targetLabel = xcafObject->GetLabel();
+        m_targetLocation = XCAFDoc_ShapeTool::GetLocation(m_targetLabel);
+    } else {
+        m_targetLocation = TopLoc_Location();
     }
-    m_initialTransform = m_targetObject->LocalTransformation();
+    m_parentTransform = m_targetObject->LocalTransformation();
+    m_initialTransform = m_parentTransform;
+    m_initialTransform.Multiply(m_targetLocation.Transformation());
     m_originalTransform = m_initialTransform;
     m_workingTransform = m_originalTransform;
     m_hasOriginalTransform = true;
@@ -216,7 +224,9 @@ void WidgetTransform::applyWorkingTransform(const gp_Trsf& transform, TransformS
     if (!view || m_targetObject.IsNull()) return;
 
     m_workingTransform = transform;
-    view->Context()->SetLocation(m_targetObject, TopLoc_Location(m_workingTransform));
+    gp_Trsf previewTransform = m_workingTransform;
+    previewTransform.Multiply(m_targetLocation.Transformation().Inverted());
+    view->Context()->SetLocation(m_targetObject, TopLoc_Location(previewTransform));
 
     if (source == TransformSource::Editors) {
         view->updateManipulator();
@@ -271,9 +281,71 @@ void WidgetTransform::onApplyClicked()
 {
     if (m_targetObject.IsNull()) return;
 
+    if (!commitWorkingTransform()) {
+        ui->labelStatus->setText(tr("Failed to apply transform."));
+        return;
+    }
+
     m_originalTransform = m_workingTransform;
     m_hasOriginalTransform = true;
     ui->labelStatus->setText(tr("Changes applied."));
+}
+
+bool WidgetTransform::commitWorkingTransform()
+{
+    if (m_targetLabel.IsNull()) return true;
+
+    Handle(TDocStd_Document) document = TDocStd_Document::Get(m_targetLabel);
+    if (document.IsNull()) return false;
+
+    Handle(XCAFDoc_ShapeTool) shapeTool = XCAFDoc_DocumentTool::ShapeTool(document->Main());
+    if (shapeTool.IsNull()) return false;
+
+    gp_Trsf targetLocation = m_parentTransform.Inverted();
+    targetLocation.Multiply(m_workingTransform);
+
+    const bool openedCommand = !document->HasOpenCommand();
+    if (openedCommand) document->OpenCommand();
+
+    TDF_Label updatedLabel = m_targetLabel;
+    bool locationUpdated = false;
+    if (XCAFDoc_ShapeTool::IsSimpleShape(m_targetLabel)
+        && XCAFDoc_ShapeTool::IsFree(m_targetLabel)) {
+        TopoDS_Shape shape;
+        if (XCAFDoc_ShapeTool::GetShape(m_targetLabel, shape)) {
+            shape.Location(TopLoc_Location(targetLocation));
+            shapeTool->SetShape(m_targetLabel, shape);
+            locationUpdated = true;
+        }
+    } else {
+        gp_Trsf locationDelta = targetLocation;
+        locationDelta.Multiply(m_targetLocation.Transformation().Inverted());
+        locationUpdated = shapeTool->SetLocation(
+            m_targetLabel, TopLoc_Location(locationDelta), updatedLabel);
+    }
+
+    if (!locationUpdated) {
+        if (openedCommand) document->AbortCommand();
+        return false;
+    }
+
+    const Handle(XCAFPrs_AISObject) xcafObject =
+        Handle(XCAFPrs_AISObject)::DownCast(m_targetObject);
+    if (!xcafObject.IsNull()) {
+        xcafObject->SetLabel(updatedLabel);
+    }
+    m_targetLabel = updatedLabel;
+    m_targetLocation = XCAFDoc_ShapeTool::GetLocation(m_targetLabel);
+    document->SetModified(m_targetLabel);
+    if (openedCommand) document->CommitCommand();
+
+    OCCView* view = m_view.data();
+    if (view) {
+        view->Context()->SetLocation(m_targetObject, TopLoc_Location(m_parentTransform));
+        view->syncShapeSource(m_targetObject);
+        view->updateManipulator();
+    }
+    return true;
 }
 
 void WidgetTransform::saveMouseState()
@@ -339,6 +411,7 @@ void WidgetTransform::clearTarget()
     m_targetObject.Nullify();
     m_targetShape.Nullify();
     m_targetLabel.Nullify();
+    m_targetLocation = TopLoc_Location();
     m_hasOriginalTransform = false;
     ui->labelObjectName->setText(tr("None"));
     ui->labelStatus->setText(tr("No object selected."));
@@ -358,7 +431,9 @@ void WidgetTransform::clearTarget()
 
 void WidgetTransform::onManipulatorChange(const gp_Trsf& trsf)
 {
-    applyWorkingTransform(trsf, TransformSource::Manipulator);
+    gp_Trsf worldTransform = trsf;
+    worldTransform.Multiply(m_targetLocation.Transformation());
+    applyWorkingTransform(worldTransform, TransformSource::Manipulator);
 }
 
 void WidgetTransform::onActiveViewChanged(OCCView* view)

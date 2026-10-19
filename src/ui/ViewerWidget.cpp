@@ -567,6 +567,7 @@ ViewerWidget::ViewerWidget(QWidget *parent) : QWidget(parent)
     connect(m_occView, &OCCView::signalSelectedObjects, this, &ViewerWidget::onUpdateSelectionInfo);
     connect(m_occView, &OCCView::signalViewportMouseMoved, this, &ViewerWidget::onCaePickMouseMoved);
     connect(m_occView, &OCCView::signalViewportClicked, this, &ViewerWidget::onCaePickMousePressed);
+    connect(m_occView, &OCCView::signalShapeDocumentChanged, this, &ViewerWidget::updateTree);
 
     connect(m_occView, &OCCView::selectionChanged, this, [this](){
         if (m_occView->Context()->NbSelected() == 0) {
