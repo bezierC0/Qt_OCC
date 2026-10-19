@@ -1503,6 +1503,10 @@
         <translation>Changes applied.</translation>
     </message>
     <message>
+        <source>Failed to apply transform.</source>
+        <translation>Failed to apply transform.</translation>
+    </message>
+    <message>
         <source>Selected Solid</source>
         <translation>Selected Solid</translation>
     </message>

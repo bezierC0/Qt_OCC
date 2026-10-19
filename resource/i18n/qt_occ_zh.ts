@@ -1138,6 +1138,10 @@
         <translation>更改已应用。</translation>
     </message>
     <message>
+        <source>Failed to apply transform.</source>
+        <translation>应用变换失败。</translation>
+    </message>
+    <message>
         <source>Selected Solid</source>
         <translation>选中的实体</translation>
     </message>

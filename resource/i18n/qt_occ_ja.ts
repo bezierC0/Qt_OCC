@@ -1138,6 +1138,10 @@
         <translation>変更を適用しました。</translation>
     </message>
     <message>
+        <source>Failed to apply transform.</source>
+        <translation>変換を適用できませんでした。</translation>
+    </message>
+    <message>
         <source>Selected Solid</source>
         <translation>選択したソリッド</translation>
     </message>

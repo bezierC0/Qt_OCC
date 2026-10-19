@@ -115,6 +115,7 @@ signals:
     void signalViewportClicked(int x, int y);
     void signalEscapePressed();
     void signalShapeObjectsChanged();
+    void signalShapeDocumentChanged();
 public:
     //! Main constructor.
     OCCView(QWidget *theParent = nullptr);
@@ -151,6 +152,7 @@ public:
     void clearShape();
 
     void setShape(const Handle(AIS_InteractiveObject) & loadedShape);
+    void syncShapeSource(const Handle(AIS_InteractiveObject) & loadedShape);
 
     void removeShape(const TopoDS_Shape& removeShape);
     void setBoundingBox(const TopoDS_Shape& shape);
