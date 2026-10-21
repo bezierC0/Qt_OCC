@@ -26,6 +26,7 @@ Qt_OCC est une application de bureau dédiée à la CAO et aux nuages de points.
 *   **Primitives 2D** : Créez des Points, Lignes, Rectangles, Cercles, Arcs, Ellipses, Polygones, Courbes de Bézier et Courbes NURBS.
 *   **Primitives 3D** : Générez des Boîtes, Sphères, Cylindres, Cônes et Pyramides.
 *   **Opérations Booléennes** : Effectuez des opérations d'Union (Fuse), d'Intersection (Common) et de Différence (Cut) sur des solides.
+*   **Connecteur de Tôle** : Reliez deux faces sélectionnées par une tôle à chemin orthogonal avec plis arrondis, extrémités soudées ou boulonnées et contrôle des collisions.
 *   **Modifications** :
     *   **Miroir** : Reflétez des objets par Plan ou par Axe.
     *   **Motif** : Créez des motifs Linéaires et Circulaires.
@@ -53,6 +54,8 @@ Qt_OCC est une application de bureau dédiée à la CAO et aux nuages de points.
 
 ## 📚 Documentation
 
+*   **Guide du Connecteur de Tôle** : [`../tool_busbar.md`](../tool_busbar.md)
+*   **Implémentation interne du Connecteur de Tôle** : [`../sheet_metal_connector_implementation.md`](../sheet_metal_connector_implementation.md)
 *   **Plan de développement et de test manuel des nuages de points** : [`../point_cloud_development_plan.md`](../point_cloud_development_plan.md)
 *   **Données d'exemple de nuages de points** : [`../../samples/pointcloud/README.md`](../../samples/pointcloud/README.md)
 

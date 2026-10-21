@@ -26,6 +26,7 @@ Qt_OCC is a desktop CAD and point-cloud application developed using the Qt frame
 *   **2D Primitives**: Create Points, Lines, Rectangles, Circles, Arcs, Ellipses, Polygons, Bezier Curves, and NURBS Curves.
 *   **3D Primitives**: Generate Boxes, Spheres, Cylinders, Cones, and Pyramids.
 *   **Boolean Operations**: Perform Union (Fuse), Intersection (Common), and Difference (Cut) on solid bodies.
+*   **Sheet Metal Connector**: Connect two selected faces with an orthogonal routed sheet-metal body, rounded bends, Weld or Bolt/Nut endpoints, and collision checks.
 *   **Modifications**:
     *   **Mirror**: Mirror objects by Plane or Axis.
     *   **Pattern**: Create Linear and Circular patterns.
@@ -54,7 +55,9 @@ Qt_OCC is a desktop CAD and point-cloud application developed using the Qt frame
 ## 📚 Documentation
 
 *   **Development and refactoring notes**: [`doc/development_refactoring.md`](doc/development_refactoring.md)
-*   **3D Busbar Routing feature**: [`doc/tool_busbar.md`](doc/tool_busbar.md)
+*   **Sheet Metal Connector user guide**: [`doc/tool_busbar.md`](doc/tool_busbar.md)
+*   **Sheet Metal Connector implementation**: [`doc/sheet_metal_connector_implementation.md`](doc/sheet_metal_connector_implementation.md)
+*   **Sheet Metal Connector plans**: [`doc/sheet_metal_connector_refactor_plan.md`](doc/sheet_metal_connector_refactor_plan.md), [`doc/sheet_metal_connector_phase2_plan.md`](doc/sheet_metal_connector_phase2_plan.md)
 *   **3D PDF export feature**: [`doc/file_export_3dpdf.md`](doc/file_export_3dpdf.md)
 *   **Animation feature**: [`doc/animation.md`](doc/animation.md)
 *   **Point Cloud development and manual test plan**: [`doc/point_cloud_development_plan.md`](doc/point_cloud_development_plan.md)

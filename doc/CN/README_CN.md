@@ -26,6 +26,7 @@ Qt_OCC 是一个使用 Qt 框架开发用户界面并以 OpenCASCADE Technology 
 *   **2D 图元**: 创建点、直线、矩形、圆、圆弧、椭圆、多边形、贝塞尔曲线 (Bezier Curve) 和 NURBS 曲线。
 *   **3D 图元**: 生成立方体、球体、圆柱体、圆锥体和棱锥体。
 *   **布尔运算**: 对实体进行并集 (Fuse)、交集 (Common) 和差集 (Cut) 运算。
+*   **钣金连接**: 在两个选中面之间生成正交路径钣金，支持圆弧折弯、焊接或螺栓/螺母端部以及碰撞检查。
 *   **修改操作**:
     *   **镜像**: 通过平面或轴镜像对象。
     *   **阵列**: 创建线性或圆形阵列。
@@ -54,7 +55,9 @@ Qt_OCC 是一个使用 Qt 框架开发用户界面并以 OpenCASCADE Technology 
 ## 📚 文档
 
 *   **开发与重构说明**: [`../development_refactoring.md`](../development_refactoring.md)
-*   **3D 铜排布线功能**: [`../tool_busbar.md`](../tool_busbar.md)
+*   **钣金连接使用说明**: [`../tool_busbar.md`](../tool_busbar.md)
+*   **钣金连接内部实现**: [`sheet_metal_connector_implementation_CN.md`](sheet_metal_connector_implementation_CN.md)
+*   **钣金连接基础版与 Phase 2 计划**: [`../sheet_metal_connector_refactor_plan.md`](../sheet_metal_connector_refactor_plan.md), [`../sheet_metal_connector_phase2_plan.md`](../sheet_metal_connector_phase2_plan.md)
 *   **3D PDF 导出功能**: [`../file_export_3dpdf.md`](../file_export_3dpdf.md)
 *   **点云开发与手动测试计划**: [`../point_cloud_development_plan.md`](../point_cloud_development_plan.md)
 *   **点云样例数据**: [`../../samples/pointcloud/README.md`](../../samples/pointcloud/README.md)
