@@ -1,16 +1,26 @@
 # Aplicación CAD Qt_OCC
 
-Qt_OCC es una aplicación CAD de escritorio desarrollada utilizando el poder del marco de trabajo Qt para la interfaz de usuario y OpenCASCADE Technology (OCCT) como núcleo geométrico. Su objetivo es proporcionar una plataforma para el modelado y visualización 3D, incorporando una gama de características para la creación, manipulación y análisis de formas.
+Qt_OCC es una aplicación de escritorio para CAD y nubes de puntos. Utiliza el marco de trabajo Qt para la interfaz de usuario y OpenCASCADE Technology (OCCT) como núcleo geométrico y de visualización. Proporciona funciones de modelado 3D, visualización de nubes de puntos, manipulación, medición y análisis.
 
 ## ✨ Características
 
 ### 📂 Gestión de Archivos
-*   **Entrada/Salida**: Soporte para crear nuevos proyectos, abrir archivos existentes, guardar y exportar modelos.
+*   **Entrada/Salida CAD**: Importe modelos STEP/IGES y exporte a los formatos CAD compatibles.
+*   **Importación de Nubes de Puntos**: Importe archivos `.xyz`, `.txt`, `.pts` y `.ply`.
 
 ### 🎥 Visualización y Navegación
 *   **Vistas Estándar**: Cambie rápidamente entre vistas Isométrica, Superior, Inferior, Izquierda, Derecha, Frontal y Trasera.
 *   **Modos de Visualización**: Alterne entre los estilos de renderizado Alámbrico (Wireframe), Sombreado (Shaded) y Sombreado con Bordes.
 *   **Control de Vista**: Ajuste automático de la vista al contenido de la escena.
+
+### ☁️ Nubes de Puntos
+*   **Datos Compatibles**: Registros XYZ y XYZRGB, archivos PTS con encabezado opcional de cantidad de puntos, PLY ASCII y PLY Binary Little Endian.
+*   **Visualización Nativa de OCCT**: Renderizado mediante `AIS_PointCloud` sin crear un vértice topológico para cada punto.
+*   **Controles de Visualización**: Muestre u oculte la nube, ajústela a la vista, elimínela, cambie el tamaño de los puntos y restablezca la configuración.
+*   **Modos de Color**: RGB original, un único color seleccionado o colores generados según la altura Z.
+*   **Información de la Nube**: Registros de origen, puntos válidos y mostrados, registros no válidos, disponibilidad de RGB, tamaño del archivo, límites y dimensiones.
+*   **Protección para Archivos Grandes**: Lectura en un hilo de trabajo con progreso y cancelación. Límites de visualización de 500K, 1M, 2M, 5M o todos los puntos, con muestreo uniforme cuando sea necesario.
+*   **Aislamiento CAD/CAE**: Las nubes de puntos no se utilizan en operaciones de modelado, medición, exportación, interferencia o CAE que dependen de topología.
 
 ### 🛠️ Herramientas de Modelado
 *   **Primitivas 2D**: Cree Puntos, Líneas, Rectángulos, Círculos, Arcos, Elipses, Polígonos, Curvas de Bezier y Curvas NURBS.
@@ -40,6 +50,11 @@ Qt_OCC es una aplicación CAD de escritorio desarrollada utilizando el poder del
 *   **Qt Framework**: Utilizado para toda la interfaz gráfica de usuario (GUI), utilizando SARibbon para una barra de herramientas moderna estilo cinta.
 *   **OpenCASCADE Technology (OCCT)**: El potente núcleo de modelado geométrico 3D de código abierto que maneja todas las operaciones CAD.
 *   **CMake**: El sistema de construcción multiplataforma utilizado para configurar y compilar el proyecto.
+
+## 📚 Documentación
+
+*   **Plan de desarrollo y pruebas manuales de nubes de puntos**: [`../point_cloud_development_plan.md`](../point_cloud_development_plan.md)
+*   **Datos de ejemplo de nubes de puntos**: [`../../samples/pointcloud/README.md`](../../samples/pointcloud/README.md)
 
 ## 🚀 Comenzando
 
@@ -92,6 +107,17 @@ Necesitará tener instalado el siguiente software en su sistema:
 5.  **Ejecutar la aplicación**
 
     El ejecutable se ubicará en el directorio `build/bin/Release` (en Windows) o `build/bin` (en Linux).
+
+### Importar una Nube de Puntos
+
+1. Abra **Archivo > Importar**.
+2. Seleccione un archivo `.xyz`, `.txt`, `.pts` o `.ply`.
+3. Utilice el panel **Nube de puntos** para consultar las estadísticas y cambiar la visualización.
+4. Utilice **Ajustar nube de puntos** para encuadrar todos los datos.
+
+La importación de otro modelo o nube de puntos reemplaza la escena actual. Actualmente no se admiten PLY Binary Big Endian, PCD, LAS/LAZ, registro, filtrado ni reconstrucción de superficies. Los comandos específicos de CAD y CAE no están disponibles mientras hay una nube de puntos cargada.
+
+Los archivos para pruebas manuales están en [`samples/pointcloud`](../../samples/pointcloud). El archivo `binary_colored_cube.ply` comprueba PLY Binary Little Endian con orden mixto de propiedades y datos RGB.
 
 ## 🤝 Contribuyendo
 

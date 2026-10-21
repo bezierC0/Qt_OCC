@@ -1,16 +1,26 @@
 # Qt_OCC CAD Application
 
-Qt_OCC is a desktop CAD application developed using the power of the Qt framework for the user interface and OpenCASCADE Technology (OCCT) as the geometry kernel. It aims to provide a platform for 3D modeling and visualization, incorporating a range of features for shape creation, manipulation, and analysis.
+Qt_OCC is a desktop CAD and point-cloud application developed using the Qt framework for the user interface and OpenCASCADE Technology (OCCT) as the geometry and visualization kernel. It provides tools for 3D modeling, point-cloud visualization, manipulation, measurement, and analysis.
 
 ## ✨ Features
 
 ### 📂 File Management
-*   **Input/Output**: Support for creating new projects, opening existing files, saving, and exporting models.
+*   **CAD Input/Output**: Import STEP/IGES models and export supported CAD formats.
+*   **Point Cloud Import**: Import `.xyz`, `.txt`, `.pts`, and `.ply` point-cloud files.
 
 ### 🎥 Visualization & Navigation
 *   **Standard Views**: Quickly switch between Isometric, Top, Bottom, Left, Right, Front, and Back views.
 *   **Display Modes**: Toggle between Wireframe, Shaded, and Shaded with Edges rendering styles.
 *   **View Control**: Auto-fit view to scene content.
+
+### ☁️ Point Cloud
+*   **Supported Data**: XYZ and XYZRGB records, PTS files with an optional point-count header, ASCII PLY, and Binary Little Endian PLY.
+*   **Native OCCT Display**: Render point data with `AIS_PointCloud` without creating a topological vertex for every point.
+*   **Display Controls**: Show or hide the cloud, fit it to the view, remove it, adjust point size, and reset display settings.
+*   **Color Modes**: Use original RGB values, a selected single color, or colors generated from Z height.
+*   **Cloud Information**: Inspect source and displayed point counts, invalid records, RGB availability, file size, bounds, and dimensions.
+*   **Large File Protection**: Parse files in a worker thread with progress and cancellation. Limit displayed points to 500K, 1M, 2M, 5M, or all points, using uniform sampling when required.
+*   **CAD/CAE Isolation**: Keep point clouds out of topology-dependent modeling, measurement, export, interference, and CAE operations.
 
 ### 🛠️ Modeling Tools
 *   **2D Primitives**: Create Points, Lines, Rectangles, Circles, Arcs, Ellipses, Polygons, Bezier Curves, and NURBS Curves.
@@ -47,6 +57,8 @@ Qt_OCC is a desktop CAD application developed using the power of the Qt framewor
 *   **3D Busbar Routing feature**: [`doc/tool_busbar.md`](doc/tool_busbar.md)
 *   **3D PDF export feature**: [`doc/file_export_3dpdf.md`](doc/file_export_3dpdf.md)
 *   **Animation feature**: [`doc/animation.md`](doc/animation.md)
+*   **Point Cloud development and manual test plan**: [`doc/point_cloud_development_plan.md`](doc/point_cloud_development_plan.md)
+*   **Point Cloud sample data**: [`samples/pointcloud/README.md`](samples/pointcloud/README.md)
 *   **Localized READMEs**: [`doc/CN/README_CN.md`](doc/CN/README_CN.md), [`doc/JP/README_JP.md`](doc/JP/README_JP.md), [`doc/FR/README_FR.md`](doc/FR/README_FR.md), [`doc/RU/README_RU.md`](doc/RU/README_RU.md), [`doc/ES/README_ES.md`](doc/ES/README_ES.md)
 
 ## 🚀 Getting Started
@@ -100,6 +112,17 @@ You will need to have the following software installed on your system:
 5.  **Run the application**
 
     The executable will be located in the `build/bin/Release` (on Windows) or `build/bin` (on Linux) directory.
+
+### Importing a Point Cloud
+
+1. Open **File > Import**.
+2. Select an `.xyz`, `.txt`, `.pts`, or `.ply` file.
+3. Use the **Point Cloud** panel to inspect statistics and change the display settings.
+4. Use **Fit Point Cloud** to frame the imported data.
+
+Importing another model or point cloud replaces the current scene. Binary Big Endian PLY, PCD, LAS/LAZ, registration, filtering, and surface reconstruction are not currently supported. CAD- and CAE-specific commands are unavailable while a point cloud is loaded.
+
+Manual test files are available in [`samples/pointcloud`](samples/pointcloud). The compact `binary_colored_cube.ply` sample exercises Binary Little Endian PLY with mixed property order and RGB data.
 
 ## 🤝 Contributing
 

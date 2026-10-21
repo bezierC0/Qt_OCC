@@ -1,16 +1,26 @@
 # Application CAO Qt_OCC
 
-Qt_OCC est une application de CAO de bureau développée en utilisant la puissance du framework Qt pour l'interface utilisateur et OpenCASCADE Technology (OCCT) comme noyau géométrique. Elle vise à fournir une plate-forme pour la modélisation et la visualisation 3D, intégrant une gamme de fonctionnalités pour la création de formes, la manipulation et l'analyse.
+Qt_OCC est une application de bureau dédiée à la CAO et aux nuages de points. Elle utilise le framework Qt pour l'interface utilisateur et OpenCASCADE Technology (OCCT) comme noyau géométrique et de visualisation. Elle fournit des fonctions de modélisation 3D, d'affichage de nuages de points, de manipulation, de mesure et d'analyse.
 
 ## ✨ Fonctionnalités
 
 ### 📂 Gestion de Fichiers
-*   **Entrée/Sortie** : Prise en charge de la création de nouveaux projets, de l'ouverture de fichiers existants, de la sauvegarde et de l'exportation de modèles.
+*   **Entrée/Sortie CAO** : Importation de modèles STEP/IGES et exportation vers les formats CAO pris en charge.
+*   **Importation de Nuages de Points** : Importation des fichiers `.xyz`, `.txt`, `.pts` et `.ply`.
 
 ### 🎥 Visualisation & Navigation
 *   **Vues Standard** : Basculez rapidement entre les vues Isométrique, Dessus, Dessous, Gauche, Droite, Avant et Arrière.
 *   **Modes d'Affichage** : Basculez entre les styles de rendu Fil de fer (Wireframe), Ombré (Shaded) et Ombré avec Arêtes.
 *   **Contrôle de la Vue** : Ajustement automatique de la vue au contenu de la scène.
+
+### ☁️ Nuages de Points
+*   **Données Prises en Charge** : Enregistrements XYZ et XYZRGB, fichiers PTS avec en-tête de nombre de points facultatif, PLY ASCII et PLY binaire Little Endian.
+*   **Affichage OCCT Natif** : Affichage avec `AIS_PointCloud`, sans créer un sommet topologique pour chaque point.
+*   **Contrôles d'Affichage** : Afficher ou masquer le nuage, l'ajuster à la vue, le supprimer, modifier la taille des points et réinitialiser les réglages.
+*   **Modes de Couleur** : Couleurs RGB d'origine, couleur unique sélectionnée ou couleurs générées selon la hauteur Z.
+*   **Informations du Nuage** : Nombre d'enregistrements source, points valides et affichés, enregistrements invalides, présence de RGB, taille du fichier, limites et dimensions.
+*   **Protection pour les Gros Fichiers** : Lecture dans un thread de travail avec progression et annulation. Limites d'affichage de 500K, 1M, 2M, 5M ou tous les points, avec échantillonnage uniforme si nécessaire.
+*   **Isolation CAD/CAE** : Les nuages de points sont exclus des opérations de modélisation, mesure, exportation, interférence et CAE qui dépendent de la topologie.
 
 ### 🛠️ Outils de Modélisation
 *   **Primitives 2D** : Créez des Points, Lignes, Rectangles, Cercles, Arcs, Ellipses, Polygones, Courbes de Bézier et Courbes NURBS.
@@ -40,6 +50,11 @@ Qt_OCC est une application de CAO de bureau développée en utilisant la puissan
 *   **Qt Framework** : Utilisé pour toute l'interface graphique (GUI), utilisant SARibbon pour une barre d'outils moderne de style ruban.
 *   **OpenCASCADE Technology (OCCT)** : Le puissant noyau de modélisation géométrique 3D open-source qui gère toutes les opérations CAO.
 *   **CMake** : Le système de construction multiplateforme utilisé pour configurer et construire le projet.
+
+## 📚 Documentation
+
+*   **Plan de développement et de test manuel des nuages de points** : [`../point_cloud_development_plan.md`](../point_cloud_development_plan.md)
+*   **Données d'exemple de nuages de points** : [`../../samples/pointcloud/README.md`](../../samples/pointcloud/README.md)
 
 ## 🚀 Démarrage
 
@@ -92,6 +107,17 @@ Vous aurez besoin d'installer les logiciels suivants sur votre système :
 5.  **Lancer l'application**
 
     L'exécutable se trouvera dans le répertoire `build/bin/Release` (sur Windows) ou `build/bin` (sur Linux).
+
+### Importer un Nuage de Points
+
+1. Ouvrez **Fichier > Importer**.
+2. Sélectionnez un fichier `.xyz`, `.txt`, `.pts` ou `.ply`.
+3. Utilisez le panneau **Nuage de points** pour consulter les statistiques et modifier l'affichage.
+4. Utilisez **Ajuster le nuage de points** pour cadrer toutes les données.
+
+L'importation d'un autre modèle ou nuage de points remplace la scène actuelle. Les formats PLY Binary Big Endian, PCD et LAS/LAZ, ainsi que le recalage, le filtrage et la reconstruction de surface ne sont pas encore pris en charge. Les commandes propres à la CAO et au CAE sont indisponibles lorsqu'un nuage de points est chargé.
+
+Les fichiers de test manuel se trouvent dans [`samples/pointcloud`](../../samples/pointcloud). Le fichier `binary_colored_cube.ply` vérifie un PLY Binary Little Endian avec un ordre de propriétés mixte et des données RGB.
 
 ## 🤝 Contribution
 

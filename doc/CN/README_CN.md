@@ -1,16 +1,26 @@
 # Qt_OCC CAD 应用程序
 
-Qt_OCC 是一个使用 Qt 框架开发用户界面并以 OpenCASCADE Technology (OCCT) 作为几何内核的桌面 CAD 应用程序。它旨在提供一个 3D 建模和可视化的平台，集成了形状创建、操作和分析的一系列功能。
+Qt_OCC 是一个使用 Qt 框架开发用户界面并以 OpenCASCADE Technology (OCCT) 作为几何与可视化内核的桌面 CAD 和点云应用程序。它提供 3D 建模、点云显示、操作、测量和分析功能。
 
 ## ✨ 功能特性
 
 ### 📂 文件管理
-*   **输入/输出**: 支持新建项目、打开现有文件、保存以及导出模型。
+*   **CAD 输入/输出**: 导入 STEP/IGES 模型，并导出支持的 CAD 格式。
+*   **点云导入**: 导入 `.xyz`、`.txt`、`.pts` 和 `.ply` 点云文件。
 
 ### 🎥 可视化与导航
 *   **标准视图**: 快速切换等轴测(Isometric)、顶、底、左、右、前、后视图。
 *   **显示模式**: 支持线框(Wireframe)、着色(Shaded)以及带边框着色(Shaded with Edges)模式。
 *   **视图控制**: 自动适应视图以显示所有内容。
+
+### ☁️ 点云
+*   **支持的数据**: XYZ、XYZRGB、带可选点数头的 PTS、ASCII PLY 和 Binary Little Endian PLY。
+*   **OCCT 原生显示**: 使用 `AIS_PointCloud` 显示点数据，不为每个点创建拓扑顶点。
+*   **显示控制**: 显示或隐藏、适应视图、删除、调整点大小以及重置显示设置。
+*   **颜色模式**: 使用原始 RGB、指定单色或按 Z 高度生成颜色。
+*   **点云信息**: 查看原始记录数、有效点数、显示点数、无效记录、RGB 状态、文件大小、包围盒和尺寸。
+*   **大文件保护**: 在工作线程中读取，支持进度显示和取消；显示上限可选 500K、1M、2M、5M 或全部点，超出上限时均匀抽样。
+*   **CAD/CAE 隔离**: 点云不会进入依赖拓扑的建模、测量、导出、干涉和 CAE 操作。
 
 ### 🛠️ 建模工具
 *   **2D 图元**: 创建点、直线、矩形、圆、圆弧、椭圆、多边形、贝塞尔曲线 (Bezier Curve) 和 NURBS 曲线。
@@ -46,6 +56,8 @@ Qt_OCC 是一个使用 Qt 框架开发用户界面并以 OpenCASCADE Technology 
 *   **开发与重构说明**: [`../development_refactoring.md`](../development_refactoring.md)
 *   **3D 铜排布线功能**: [`../tool_busbar.md`](../tool_busbar.md)
 *   **3D PDF 导出功能**: [`../file_export_3dpdf.md`](../file_export_3dpdf.md)
+*   **点云开发与手动测试计划**: [`../point_cloud_development_plan.md`](../point_cloud_development_plan.md)
+*   **点云样例数据**: [`../../samples/pointcloud/README.md`](../../samples/pointcloud/README.md)
 *   **其他语言 README**: [`../JP/README_JP.md`](../JP/README_JP.md), [`../FR/README_FR.md`](../FR/README_FR.md), [`../RU/README_RU.md`](../RU/README_RU.md), [`../ES/README_ES.md`](../ES/README_ES.md)
 
 ## 🚀 快速开始
@@ -99,6 +111,17 @@ Qt_OCC 是一个使用 Qt 框架开发用户界面并以 OpenCASCADE Technology 
 5.  **运行应用程序**
 
     可执行文件将位于 `build/bin/Release` (Windows) 或 `build/bin` (Linux) 目录中。
+
+### 导入点云
+
+1. 打开 **文件 > 导入**。
+2. 选择 `.xyz`、`.txt`、`.pts` 或 `.ply` 文件。
+3. 在 **点云** 面板中查看统计信息并调整显示设置。
+4. 使用 **适应点云** 将点云完整显示在视图中。
+
+导入其他模型或点云会替换当前场景。目前不支持 Binary Big Endian PLY、PCD、LAS/LAZ、点云配准、滤波和曲面重建。加载点云时，CAD 和 CAE 专用命令不可用。
+
+手动测试文件位于 [`samples/pointcloud`](../../samples/pointcloud)。其中 `binary_colored_cube.ply` 用于测试属性顺序混合并包含 RGB 数据的 Binary Little Endian PLY。
 
 ## 🤝 贡献
 
