@@ -1146,4 +1146,90 @@
         <translation>选中的实体</translation>
     </message>
 </context>
+<context>
+    <name>MainWindow</name>
+    <message><source>Point Cloud</source><translation>点云</translation></message>
+    <message><source>Open Geometry File</source><translation>打开几何文件</translation></message>
+    <message><source>All Supported Files (*.step *.stp *.iges *.igs *.xyz *.txt *.pts *.ply);;CAD Files (*.step *.stp *.iges *.igs);;Point Cloud Files (*.xyz *.txt *.pts *.ply)</source><translation>所有支持的文件 (*.step *.stp *.iges *.igs *.xyz *.txt *.pts *.ply);;CAD 文件 (*.step *.stp *.iges *.igs);;点云文件 (*.xyz *.txt *.pts *.ply)</translation></message>
+</context>
+<context>
+    <name>ViewerWidget</name>
+    <message><source>Point Cloud Import</source><translation>点云导入</translation></message>
+    <message><source>A point cloud is already being imported.</source><translation>正在导入点云。</translation></message>
+    <message><source>Reading point cloud...</source><translation>正在读取点云...</translation></message>
+    <message><source>Cancel</source><translation>取消</translation></message>
+    <message><source>Point cloud import cancelled.</source><translation>点云导入已取消。</translation></message>
+    <message><source>Point cloud import failed.</source><translation>点云导入失败。</translation></message>
+    <message><source>Loaded %1 points from %2.</source><translation>已从 %2 加载 %1 个点。</translation></message>
+    <message><source> Ignored %1 invalid records.</source><translation> 已忽略 %1 条无效记录。</translation></message>
+    <message><source>Displaying %1 of %2 points.</source><translation>正在显示 %2 个点中的 %1 个。</translation></message>
+    <message><source> CAD and CAE shape commands are unavailable for point clouds.</source><translation> 点云场景不能使用 CAD 和 CAE 拓扑命令。</translation></message>
+</context>
+<context>
+    <name>WidgetPointCloud</name>
+    <message><source>Point Cloud Information</source><translation>点云信息</translation></message>
+    <message><source>File</source><translation>文件</translation></message>
+    <message><source>File Size</source><translation>文件大小</translation></message>
+    <message><source>Source Records</source><translation>原始记录数</translation></message>
+    <message><source>Valid Points</source><translation>有效点数</translation></message>
+    <message><source>Displayed Points</source><translation>显示点数</translation></message>
+    <message><source>Point Colors</source><translation>点颜色</translation></message>
+    <message><source>Bounds</source><translation>边界</translation></message>
+    <message><source>Dimensions</source><translation>尺寸</translation></message>
+    <message><source>Invalid Records</source><translation>无效记录</translation></message>
+    <message><source>Point Cloud Display</source><translation>点云显示</translation></message>
+    <message><source>Visible</source><translation>可见</translation></message>
+    <message><source>Original RGB</source><translation>原始 RGB</translation></message>
+    <message><source>Single Color</source><translation>单色</translation></message>
+    <message><source>Height (Z)</source><translation>高度 (Z)</translation></message>
+    <message><source>Choose Color</source><translation>选择颜色</translation></message>
+    <message><source>All Points</source><translation>全部点</translation></message>
+    <message><source>Point Size</source><translation>点大小</translation></message>
+    <message><source>Color Mode</source><translation>颜色模式</translation></message>
+    <message><source>Maximum Display</source><translation>最大显示数</translation></message>
+    <message><source>Fit Point Cloud</source><translation>适合点云</translation></message>
+    <message><source>Remove Point Cloud</source><translation>移除点云</translation></message>
+    <message><source>Reset Display Settings</source><translation>重置显示设置</translation></message>
+    <message><source>RGB</source><translation>RGB</translation></message>
+    <message><source>No</source><translation>无</translation></message>
+    <message><source>X: %1 .. %2
+Y: %3 .. %4
+Z: %5 .. %6</source><translation>X: %1 .. %2
+Y: %3 .. %4
+Z: %5 .. %6</translation></message>
+    <message><source>%1 x %2 x %3</source><translation>%1 x %2 x %3</translation></message>
+    <message><source>Point Cloud Color</source><translation>点云颜色</translation></message>
+</context>
+<context>
+    <name>PointCloudReader</name>
+    <message><source>The file does not contain any valid points.</source><translation>文件中没有有效点。</translation></message>
+    <message><source>The declared point count does not match the number of valid points.</source><translation>声明的点数与有效点数不一致。</translation></message>
+    <message><source>Invalid PLY header.</source><translation>PLY 文件头无效。</translation></message>
+    <message><source>Invalid PLY vertex count.</source><translation>PLY 顶点数无效。</translation></message>
+    <message><source>Unsupported PLY vertex property.</source><translation>不支持的 PLY 顶点属性。</translation></message>
+    <message><source>PLY header is incomplete.</source><translation>PLY 文件头不完整。</translation></message>
+    <message><source>Only ASCII PLY files are supported.</source><translation>仅支持 ASCII PLY 文件。</translation></message>
+    <message><source>The PLY file does not contain vertices.</source><translation>PLY 文件不包含顶点。</translation></message>
+    <message><source>PLY vertex properties must include x, y, and z.</source><translation>PLY 顶点属性必须包含 x、y 和 z。</translation></message>
+    <message><source>The PLY file does not contain any valid points.</source><translation>PLY 文件中没有有效点。</translation></message>
+    <message><source>Some PLY vertex records were invalid or missing.</source><translation>部分 PLY 顶点记录无效或缺失。</translation></message>
+    <message><source>Unsupported point cloud file format.</source><translation>不支持的点云文件格式。</translation></message>
+    <message><source>Unable to open the point cloud file.</source><translation>无法打开点云文件。</translation></message>
+    <message><source>Not enough memory to read the point cloud.</source><translation>读取点云的内存不足。</translation></message>
+    <message><source>The point cloud is too large to read.</source><translation>点云过大，无法读取。</translation></message>
+    <message><source>Unsupported PLY format.</source><translation>不支持的 PLY 格式。</translation></message>
+    <message><source>Invalid PLY element count.</source><translation>PLY 元素数量无效。</translation></message>
+    <message><source>PLY property is not associated with an element.</source><translation>PLY 属性没有关联的元素。</translation></message>
+    <message><source>Unsupported PLY property declaration.</source><translation>不支持的 PLY 属性声明。</translation></message>
+    <message><source>Unsupported PLY property type.</source><translation>不支持的 PLY 属性类型。</translation></message>
+    <message><source>PLY format is missing.</source><translation>PLY 文件缺少格式声明。</translation></message>
+    <message><source>PLY list properties on vertices are not supported.</source><translation>暂不支持顶点中的 PLY 列表属性。</translation></message>
+    <message><source>PLY vertex colors must include red, green, and blue.</source><translation>PLY 顶点颜色必须同时包含红、绿、蓝分量。</translation></message>
+    <message><source>PLY data is incomplete.</source><translation>PLY 数据不完整。</translation></message>
+    <message><source>PLY binary data is incomplete.</source><translation>PLY 二进制数据不完整。</translation></message>
+    <message><source>PLY vertex record is too large.</source><translation>PLY 顶点记录过大。</translation></message>
+    <message><source>PLY vertex record is invalid.</source><translation>PLY 顶点记录无效。</translation></message>
+    <message><source>PLY binary vertex data is incomplete.</source><translation>PLY 二进制顶点数据不完整。</translation></message>
+    <message><source>Binary big-endian PLY files are not supported.</source><translation>暂不支持大端序二进制 PLY 文件。</translation></message>
+</context>
 </TS>

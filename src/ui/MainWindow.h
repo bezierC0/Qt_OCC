@@ -15,6 +15,7 @@
 
 class QTranslator;
 class QCloseEvent;
+class QTabWidget;
 
 class TopoDS_Shape;
 
@@ -25,6 +26,7 @@ class WidgetSetCoordinateSystem;
 class WidgetExplodeAssembly;
 class WidgetClipping;
 class WidgetTransform;
+class WidgetPointCloud;
 
 namespace Cae {
 class CaeController;
@@ -183,11 +185,14 @@ private:
     };
     
     void setStatusText(StatusType type, const QString& text);
+    void updateSceneActionState(bool hasCadGeometry, bool hasPointCloud);
 
 private:
     ViewerWidget* m_viewerWidget;
     ModelTreeWidget* m_modelTreeWidget;
     CaeTreeWidget* m_caeTreeWidget{nullptr};
+    WidgetPointCloud* m_pointCloudWidget{nullptr};
+    QTabWidget* m_navigationTabs{nullptr};
     QTranslator* m_translator;
     int m_currentLanguage;
 

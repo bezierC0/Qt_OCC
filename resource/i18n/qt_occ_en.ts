@@ -1511,4 +1511,90 @@
         <translation>Selected Solid</translation>
     </message>
 </context>
+<context>
+    <name>MainWindow</name>
+    <message><source>Point Cloud</source><translation>Point Cloud</translation></message>
+    <message><source>Open Geometry File</source><translation>Open Geometry File</translation></message>
+    <message><source>All Supported Files (*.step *.stp *.iges *.igs *.xyz *.txt *.pts *.ply);;CAD Files (*.step *.stp *.iges *.igs);;Point Cloud Files (*.xyz *.txt *.pts *.ply)</source><translation>All Supported Files (*.step *.stp *.iges *.igs *.xyz *.txt *.pts *.ply);;CAD Files (*.step *.stp *.iges *.igs);;Point Cloud Files (*.xyz *.txt *.pts *.ply)</translation></message>
+</context>
+<context>
+    <name>ViewerWidget</name>
+    <message><source>Point Cloud Import</source><translation>Point Cloud Import</translation></message>
+    <message><source>A point cloud is already being imported.</source><translation>A point cloud is already being imported.</translation></message>
+    <message><source>Reading point cloud...</source><translation>Reading point cloud...</translation></message>
+    <message><source>Cancel</source><translation>Cancel</translation></message>
+    <message><source>Point cloud import cancelled.</source><translation>Point cloud import cancelled.</translation></message>
+    <message><source>Point cloud import failed.</source><translation>Point cloud import failed.</translation></message>
+    <message><source>Loaded %1 points from %2.</source><translation>Loaded %1 points from %2.</translation></message>
+    <message><source> Ignored %1 invalid records.</source><translation> Ignored %1 invalid records.</translation></message>
+    <message><source>Displaying %1 of %2 points.</source><translation>Displaying %1 of %2 points.</translation></message>
+    <message><source> CAD and CAE shape commands are unavailable for point clouds.</source><translation> CAD and CAE shape commands are unavailable for point clouds.</translation></message>
+</context>
+<context>
+    <name>WidgetPointCloud</name>
+    <message><source>Point Cloud Information</source><translation>Point Cloud Information</translation></message>
+    <message><source>File</source><translation>File</translation></message>
+    <message><source>File Size</source><translation>File Size</translation></message>
+    <message><source>Source Records</source><translation>Source Records</translation></message>
+    <message><source>Valid Points</source><translation>Valid Points</translation></message>
+    <message><source>Displayed Points</source><translation>Displayed Points</translation></message>
+    <message><source>Point Colors</source><translation>Point Colors</translation></message>
+    <message><source>Bounds</source><translation>Bounds</translation></message>
+    <message><source>Dimensions</source><translation>Dimensions</translation></message>
+    <message><source>Invalid Records</source><translation>Invalid Records</translation></message>
+    <message><source>Point Cloud Display</source><translation>Point Cloud Display</translation></message>
+    <message><source>Visible</source><translation>Visible</translation></message>
+    <message><source>Original RGB</source><translation>Original RGB</translation></message>
+    <message><source>Single Color</source><translation>Single Color</translation></message>
+    <message><source>Height (Z)</source><translation>Height (Z)</translation></message>
+    <message><source>Choose Color</source><translation>Choose Color</translation></message>
+    <message><source>All Points</source><translation>All Points</translation></message>
+    <message><source>Point Size</source><translation>Point Size</translation></message>
+    <message><source>Color Mode</source><translation>Color Mode</translation></message>
+    <message><source>Maximum Display</source><translation>Maximum Display</translation></message>
+    <message><source>Fit Point Cloud</source><translation>Fit Point Cloud</translation></message>
+    <message><source>Remove Point Cloud</source><translation>Remove Point Cloud</translation></message>
+    <message><source>Reset Display Settings</source><translation>Reset Display Settings</translation></message>
+    <message><source>RGB</source><translation>RGB</translation></message>
+    <message><source>No</source><translation>No</translation></message>
+    <message><source>X: %1 .. %2
+Y: %3 .. %4
+Z: %5 .. %6</source><translation>X: %1 .. %2
+Y: %3 .. %4
+Z: %5 .. %6</translation></message>
+    <message><source>%1 x %2 x %3</source><translation>%1 x %2 x %3</translation></message>
+    <message><source>Point Cloud Color</source><translation>Point Cloud Color</translation></message>
+</context>
+<context>
+    <name>PointCloudReader</name>
+    <message><source>The file does not contain any valid points.</source><translation>The file does not contain any valid points.</translation></message>
+    <message><source>The declared point count does not match the number of valid points.</source><translation>The declared point count does not match the number of valid points.</translation></message>
+    <message><source>Invalid PLY header.</source><translation>Invalid PLY header.</translation></message>
+    <message><source>Invalid PLY vertex count.</source><translation>Invalid PLY vertex count.</translation></message>
+    <message><source>Unsupported PLY vertex property.</source><translation>Unsupported PLY vertex property.</translation></message>
+    <message><source>PLY header is incomplete.</source><translation>PLY header is incomplete.</translation></message>
+    <message><source>Only ASCII PLY files are supported.</source><translation>Only ASCII PLY files are supported.</translation></message>
+    <message><source>The PLY file does not contain vertices.</source><translation>The PLY file does not contain vertices.</translation></message>
+    <message><source>PLY vertex properties must include x, y, and z.</source><translation>PLY vertex properties must include x, y, and z.</translation></message>
+    <message><source>The PLY file does not contain any valid points.</source><translation>The PLY file does not contain any valid points.</translation></message>
+    <message><source>Some PLY vertex records were invalid or missing.</source><translation>Some PLY vertex records were invalid or missing.</translation></message>
+    <message><source>Unsupported point cloud file format.</source><translation>Unsupported point cloud file format.</translation></message>
+    <message><source>Unable to open the point cloud file.</source><translation>Unable to open the point cloud file.</translation></message>
+    <message><source>Not enough memory to read the point cloud.</source><translation>Not enough memory to read the point cloud.</translation></message>
+    <message><source>The point cloud is too large to read.</source><translation>The point cloud is too large to read.</translation></message>
+    <message><source>Unsupported PLY format.</source><translation>Unsupported PLY format.</translation></message>
+    <message><source>Invalid PLY element count.</source><translation>Invalid PLY element count.</translation></message>
+    <message><source>PLY property is not associated with an element.</source><translation>PLY property is not associated with an element.</translation></message>
+    <message><source>Unsupported PLY property declaration.</source><translation>Unsupported PLY property declaration.</translation></message>
+    <message><source>Unsupported PLY property type.</source><translation>Unsupported PLY property type.</translation></message>
+    <message><source>PLY format is missing.</source><translation>PLY format is missing.</translation></message>
+    <message><source>PLY list properties on vertices are not supported.</source><translation>PLY list properties on vertices are not supported.</translation></message>
+    <message><source>PLY vertex colors must include red, green, and blue.</source><translation>PLY vertex colors must include red, green, and blue.</translation></message>
+    <message><source>PLY data is incomplete.</source><translation>PLY data is incomplete.</translation></message>
+    <message><source>PLY binary data is incomplete.</source><translation>PLY binary data is incomplete.</translation></message>
+    <message><source>PLY vertex record is too large.</source><translation>PLY vertex record is too large.</translation></message>
+    <message><source>PLY vertex record is invalid.</source><translation>PLY vertex record is invalid.</translation></message>
+    <message><source>PLY binary vertex data is incomplete.</source><translation>PLY binary vertex data is incomplete.</translation></message>
+    <message><source>Binary big-endian PLY files are not supported.</source><translation>Binary big-endian PLY files are not supported.</translation></message>
+</context>
 </TS>

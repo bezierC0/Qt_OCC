@@ -57,10 +57,16 @@
 #include <QColor>
 #include <QDebug>
 #include <QLabel>
+#include <QLocale>
+#include <QFutureWatcher>
+#include <QProgressDialog>
 #include <QResizeEvent>
+#include <QTimer>
+#include <QtConcurrent/QtConcurrentRun>
 #include <algorithm>
 #include <array>
 #include <cmath>
+#include <limits>
 #include <utility>
 
 /* read */
@@ -126,8 +132,10 @@
 #include <BRepBuilderAPI_Transform.hxx>
 #include <AIS_Shape.hxx>
 #include <AIS_Point.hxx>
+#include <AIS_PointCloud.hxx>
 #include <AIS_TextLabel.hxx>
 #include <AIS_InteractiveObject.hxx>
+#include <Graphic3d_ArrayOfPoints.hxx>
 #include <Graphic3d_ClipPlane.hxx> // Added missing include for clipping
 #include <gp_Pln.hxx>              // Added missing include for clipping
 #include <Quantity_Color.hxx>      // Added missing include for colors
@@ -546,6 +554,9 @@ struct ViewerWidget::Document {
     std::vector<opencascade::handle<AIS_InteractiveObject>> m_scalarHiddenObjects;
     Handle(MeshVS_Mesh) m_caeMesh;
     Handle(TDocStd_Document) m_ocafDoc;
+    std::shared_ptr<PointCloud::Data> m_pointCloudData;
+    Handle(AIS_PointCloud) m_pointCloudObject;
+    std::uint64_t m_pointCloudDisplayedPointCount{};
 };
 
 ViewerWidget::ViewerWidget(QWidget *parent) : QWidget(parent)
@@ -672,6 +683,7 @@ void ViewerWidget::onUpdateSelectionInfo(const std::vector<std::shared_ptr<View:
 
 ViewerWidget::~ViewerWidget()
 {
+    cancelPointCloudLoad();
     // WidgetAnimation restores transforms through OCCView during teardown, so
     // destroy the non-modal tool before its owning view.
     if (m_widgetAnimation) {
@@ -686,13 +698,18 @@ ViewerWidget::~ViewerWidget()
 
 void ViewerWidget::clearAll()
 {
+    cancelPointCloudLoad();
     clearScalarField();
     clearCaeMesh();
     clearCaeBoundaryMarkers();
 
     if (m_doc) {
         m_doc->m_list.clear();
+        m_doc->m_pointCloudData.reset();
+        m_doc->m_pointCloudObject.Nullify();
+        m_doc->m_pointCloudDisplayedPointCount = 0;
     }
+    m_pointCloudVisible = true;
 
     // Clear labels and geometry owned by the previous OCAF document.
     m_defaultAssemblyLabel.Nullify();
@@ -719,11 +736,28 @@ void ViewerWidget::clearAll()
             treeWidget->setModelTree(emptyTree);
         }
     }
+    emit signalPointCloudCleared();
+    emitSceneContentChanged();
 }
 
 bool ViewerWidget::hasGeometry() const
 {
+    return hasCadGeometry();
+}
+
+bool ViewerWidget::hasCadGeometry() const
+{
     return m_doc && !m_doc->m_list.empty();
+}
+
+bool ViewerWidget::hasPointCloud() const
+{
+    return m_doc && m_doc->m_pointCloudData && !m_doc->m_pointCloudData->points.empty();
+}
+
+bool ViewerWidget::hasSceneContent() const
+{
+    return hasCadGeometry() || hasPointCloud();
 }
 
 bool ViewerWidget::exportCaeGeometry(const QString& filePath, QString* errorMessage)
@@ -1453,9 +1487,14 @@ void ViewerWidget::onFunctionTest()
 
 void ViewerWidget::loadModel(const QString &filename)
 {
+    if (PointCloud::Reader::supportsFile(filename)) {
+        startPointCloudLoad(filename);
+        return;
+    }
+
     clearAll();
     Tree<TDF_Label> modelTree;
-    if (filename.endsWith(".step") || filename.endsWith(".stp")) {
+    if (filename.endsWith(".step", Qt::CaseInsensitive) || filename.endsWith(".stp", Qt::CaseInsensitive)) {
         STEPCAFControl_Reader reader;
         IFSelect_ReturnStatus status = reader.ReadFile(filename.toStdString().c_str());
         if (status != IFSelect_RetDone) {
@@ -1518,7 +1557,7 @@ void ViewerWidget::loadModel(const QString &filename)
                 m_doc->m_list.emplace_back(object);
             }
         }
-    } else if (filename.endsWith(".iges") || filename.endsWith(".igs")) {
+    } else if (filename.endsWith(".iges", Qt::CaseInsensitive) || filename.endsWith(".igs", Qt::CaseInsensitive)) {
         IGESControl_Reader reader;
         if (reader.ReadFile(filename.toStdString().c_str()) == IFSelect_RetDone) {
             reader.TransferRoots();
@@ -1553,6 +1592,302 @@ void ViewerWidget::loadModel(const QString &filename)
 
     m_occView->reDraw();
     m_occView->viewfit();
+    emitSceneContentChanged();
+}
+
+void ViewerWidget::startPointCloudLoad(const QString& filename)
+{
+    if (m_pointCloudWatcher && !m_pointCloudWatcher->isFinished()) {
+        QMessageBox::information(this, tr("Point Cloud Import"), tr("A point cloud is already being imported."));
+        return;
+    }
+
+    clearAll();
+    m_pointCloudCancelFlag = std::make_shared<std::atomic_bool>(false);
+    m_pointCloudProgress = std::make_shared<std::atomic_int>(0);
+
+    m_pointCloudProgressDialog = new QProgressDialog(
+        tr("Reading point cloud..."), tr("Cancel"), 0, 100, this);
+    m_pointCloudProgressDialog->setWindowTitle(tr("Point Cloud Import"));
+    m_pointCloudProgressDialog->setWindowModality(Qt::WindowModal);
+    m_pointCloudProgressDialog->setMinimumDuration(0);
+    m_pointCloudProgressDialog->setValue(0);
+
+    connect(m_pointCloudProgressDialog, &QProgressDialog::canceled, this, [this]() {
+        if (m_pointCloudCancelFlag) {
+            m_pointCloudCancelFlag->store(true, std::memory_order_relaxed);
+        }
+    });
+
+    m_pointCloudProgressTimer = new QTimer(this);
+    m_pointCloudProgressTimer->setInterval(100);
+    connect(m_pointCloudProgressTimer, &QTimer::timeout, this, [this]() {
+        if (m_pointCloudProgressDialog && m_pointCloudProgress) {
+            m_pointCloudProgressDialog->setValue(
+                m_pointCloudProgress->load(std::memory_order_relaxed));
+        }
+    });
+    m_pointCloudProgressTimer->start();
+
+    const auto cancelFlag = m_pointCloudCancelFlag;
+    const auto progress = m_pointCloudProgress;
+    m_pointCloudWatcher = new QFutureWatcher<PointCloud::ReadResult>(this);
+    QFutureWatcher<PointCloud::ReadResult>* watcher = m_pointCloudWatcher;
+    connect(watcher, &QFutureWatcher<PointCloud::ReadResult>::finished, this, [this, watcher, cancelFlag]() {
+        PointCloud::ReadResult result = watcher->result();
+        if (cancelFlag->load(std::memory_order_relaxed)) {
+            result.cancelled = true;
+        }
+        if (m_pointCloudProgressTimer) {
+            m_pointCloudProgressTimer->stop();
+            m_pointCloudProgressTimer->deleteLater();
+            m_pointCloudProgressTimer = nullptr;
+        }
+        if (m_pointCloudProgressDialog) {
+            m_pointCloudProgressDialog->setValue(100);
+            m_pointCloudProgressDialog->deleteLater();
+            m_pointCloudProgressDialog = nullptr;
+        }
+        if (m_pointCloudWatcher == watcher) {
+            m_pointCloudWatcher = nullptr;
+        }
+        watcher->deleteLater();
+        finishPointCloudLoad(result);
+    });
+
+    watcher->setFuture(QtConcurrent::run([filename, cancelFlag, progress]() {
+        PointCloud::ReadOptions options;
+        options.isCancelled = [cancelFlag]() {
+            return cancelFlag->load(std::memory_order_relaxed);
+        };
+        options.reportProgress = [progress](int value) {
+            progress->store(value, std::memory_order_relaxed);
+        };
+        return PointCloud::Reader::read(filename, options);
+    }));
+}
+
+void ViewerWidget::finishPointCloudLoad(const PointCloud::ReadResult& result)
+{
+    m_pointCloudCancelFlag.reset();
+    m_pointCloudProgress.reset();
+
+    if (result.cancelled) {
+        emit signalStatusMessage(tr("Point cloud import cancelled."), 5000);
+        return;
+    }
+    if (!result.succeeded()) {
+        QMessageBox::critical(
+            this, tr("Point Cloud Import"),
+            result.errorMessage.isEmpty() ? tr("Point cloud import failed.") : result.errorMessage);
+        emitSceneContentChanged();
+        return;
+    }
+
+    m_doc->m_pointCloudData = result.data;
+    rebuildPointCloudPresentation();
+    emit signalPointCloudLoaded(*m_doc->m_pointCloudData, m_doc->m_pointCloudDisplayedPointCount);
+    emitSceneContentChanged();
+
+    QString message = tr("Loaded %1 points from %2.")
+        .arg(QLocale().toString(static_cast<qulonglong>(result.data->points.size())),
+             QFileInfo(result.data->sourcePath).fileName());
+    if (result.data->invalidRecordCount > 0) {
+        message += tr(" Ignored %1 invalid records.")
+            .arg(QLocale().toString(static_cast<qulonglong>(result.data->invalidRecordCount)));
+    }
+    if (!result.warningMessage.isEmpty()) {
+        message += QStringLiteral(" ") + result.warningMessage;
+    }
+    message += tr(" CAD and CAE shape commands are unavailable for point clouds.");
+    emit signalStatusMessage(message, 10000);
+}
+
+void ViewerWidget::rebuildPointCloudPresentation()
+{
+    if (!hasPointCloud()) {
+        return;
+    }
+
+    const PointCloud::Data& data = *m_doc->m_pointCloudData;
+    const std::uint64_t sourceCount = data.points.size();
+    const std::uint64_t configuredMaximum = m_pointCloudMaximumDisplayPoints == 0
+        ? sourceCount
+        : m_pointCloudMaximumDisplayPoints;
+    const std::uint64_t displayCount = std::min({
+        sourceCount,
+        configuredMaximum,
+        static_cast<std::uint64_t>(std::numeric_limits<Standard_Integer>::max())});
+    if (displayCount == 0) {
+        return;
+    }
+
+    const bool useOriginalColors = m_pointCloudColorMode == PointCloud::ColorMode::Original
+        && data.hasColors();
+    const bool useHeightColors = m_pointCloudColorMode == PointCloud::ColorMode::Height;
+    const bool useVertexColors = useOriginalColors || useHeightColors;
+    Handle(Graphic3d_ArrayOfPoints) points = new Graphic3d_ArrayOfPoints(
+        static_cast<Standard_Integer>(displayCount), useVertexColors, false);
+
+    const double zRange = data.bounds.valid ? data.bounds.zMax - data.bounds.zMin : 0.0;
+    auto heightColor = [zRange, &data](double z) {
+        const double value = zRange > Precision::Confusion()
+            ? std::clamp((z - data.bounds.zMin) / zRange, 0.0, 1.0)
+            : 0.5;
+        const double red = std::clamp(1.5 - std::abs(4.0 * value - 3.0), 0.0, 1.0);
+        const double green = std::clamp(1.5 - std::abs(4.0 * value - 2.0), 0.0, 1.0);
+        const double blue = std::clamp(1.5 - std::abs(4.0 * value - 1.0), 0.0, 1.0);
+        return Quantity_Color(red, green, blue, Quantity_TOC_RGB);
+    };
+
+    for (std::uint64_t displayIndex = 0; displayIndex < displayCount; ++displayIndex) {
+        const auto sourceIndex = static_cast<std::uint64_t>(
+            (static_cast<long double>(displayIndex) * sourceCount) / displayCount);
+        const PointCloud::Point& point = data.points[static_cast<std::size_t>(sourceIndex)];
+        const gp_Pnt position(point.x, point.y, point.z);
+        if (useOriginalColors) {
+            const PointCloud::Color& color = data.colors[static_cast<std::size_t>(sourceIndex)];
+            points->AddVertex(position, Quantity_Color(
+                static_cast<double>(color.red) / 255.0,
+                static_cast<double>(color.green) / 255.0,
+                static_cast<double>(color.blue) / 255.0,
+                Quantity_TOC_RGB));
+        } else if (useHeightColors) {
+            points->AddVertex(position, heightColor(point.z));
+        } else {
+            points->AddVertex(position);
+        }
+    }
+
+    const bool isNewObject = m_doc->m_pointCloudObject.IsNull();
+    if (isNewObject) {
+        m_doc->m_pointCloudObject = new AIS_PointCloud();
+    }
+    m_doc->m_pointCloudObject->SetPoints(points);
+    const QColor displayColor = m_pointCloudColorMode == PointCloud::ColorMode::Single
+        ? m_pointCloudSingleColor
+        : QColor(Qt::lightGray);
+    m_doc->m_pointCloudObject->SetColor(Quantity_Color(
+        displayColor.redF(), displayColor.greenF(), displayColor.blueF(), Quantity_TOC_RGB));
+    m_doc->m_pointCloudObject->Attributes()->SetPointAspect(
+        new Prs3d_PointAspect(Aspect_TOM_O, Quantity_Color(
+            displayColor.redF(), displayColor.greenF(), displayColor.blueF(), Quantity_TOC_RGB),
+            m_pointCloudPointSize));
+    m_doc->m_pointCloudDisplayedPointCount = displayCount;
+
+    if (isNewObject) {
+        m_occView->setShape(m_doc->m_pointCloudObject);
+    } else {
+        m_occView->Context()->Redisplay(m_doc->m_pointCloudObject, false);
+    }
+    m_occView->reDraw();
+    if (!m_pointCloudVisible) {
+        m_occView->Context()->Erase(m_doc->m_pointCloudObject, false);
+        m_occView->Context()->UpdateCurrentViewer();
+    }
+    if (isNewObject) {
+        m_occView->viewfit();
+    }
+}
+
+void ViewerWidget::cancelPointCloudLoad()
+{
+    if (m_pointCloudCancelFlag) {
+        m_pointCloudCancelFlag->store(true, std::memory_order_relaxed);
+    }
+}
+
+void ViewerWidget::emitSceneContentChanged()
+{
+    emit signalSceneContentChanged(hasCadGeometry(), hasPointCloud());
+}
+
+void ViewerWidget::setPointCloudVisible(bool visible)
+{
+    m_pointCloudVisible = visible;
+    if (!hasPointCloud() || m_doc->m_pointCloudObject.IsNull()) {
+        return;
+    }
+    if (visible) {
+        m_occView->Context()->Display(m_doc->m_pointCloudObject, 0, AIS_PointCloud::SM_BndBox, false);
+    } else {
+        m_occView->Context()->Erase(m_doc->m_pointCloudObject, false);
+    }
+    m_occView->Context()->UpdateCurrentViewer();
+}
+
+void ViewerWidget::setPointCloudPointSize(double size)
+{
+    m_pointCloudPointSize = std::clamp(size, 1.0, 10.0);
+    if (!hasPointCloud()) {
+        return;
+    }
+    rebuildPointCloudPresentation();
+}
+
+void ViewerWidget::setPointCloudColorMode(int mode)
+{
+    if (mode < static_cast<int>(PointCloud::ColorMode::Original)
+        || mode > static_cast<int>(PointCloud::ColorMode::Height)) {
+        return;
+    }
+    m_pointCloudColorMode = static_cast<PointCloud::ColorMode>(mode);
+    if (hasPointCloud()) {
+        rebuildPointCloudPresentation();
+    }
+}
+
+void ViewerWidget::setPointCloudSingleColor(const QColor& color)
+{
+    if (!color.isValid()) {
+        return;
+    }
+    m_pointCloudSingleColor = color;
+    if (hasPointCloud() && m_pointCloudColorMode == PointCloud::ColorMode::Single) {
+        rebuildPointCloudPresentation();
+    }
+}
+
+void ViewerWidget::setPointCloudMaximumDisplayPoints(qulonglong maximumPointCount)
+{
+    m_pointCloudMaximumDisplayPoints = static_cast<std::uint64_t>(maximumPointCount);
+    if (!hasPointCloud()) {
+        return;
+    }
+    rebuildPointCloudPresentation();
+    emit signalPointCloudLoaded(*m_doc->m_pointCloudData, m_doc->m_pointCloudDisplayedPointCount);
+    emit signalStatusMessage(
+        tr("Displaying %1 of %2 points.")
+            .arg(QLocale().toString(static_cast<qulonglong>(m_doc->m_pointCloudDisplayedPointCount)),
+                 QLocale().toString(static_cast<qulonglong>(m_doc->m_pointCloudData->points.size()))),
+        5000);
+}
+
+void ViewerWidget::resetPointCloudDisplaySettings()
+{
+    m_pointCloudVisible = true;
+    m_pointCloudPointSize = 2.0;
+    m_pointCloudColorMode = PointCloud::ColorMode::Original;
+    m_pointCloudSingleColor = QColor(Qt::lightGray);
+    m_pointCloudMaximumDisplayPoints = 2000000;
+    if (hasPointCloud()) {
+        rebuildPointCloudPresentation();
+        emit signalPointCloudLoaded(*m_doc->m_pointCloudData, m_doc->m_pointCloudDisplayedPointCount);
+    }
+}
+
+void ViewerWidget::fitPointCloud()
+{
+    if (hasPointCloud()) {
+        m_occView->viewfit();
+    }
+}
+
+void ViewerWidget::removePointCloud()
+{
+    if (hasPointCloud()) {
+        clearAll();
+    }
 }
 
 

@@ -161,7 +161,7 @@ endif()
 # Qt
 #########
 find_package(Qt5 REQUIRED COMPONENTS 
-    Core Widgets LinguistTools
+    Core Widgets Concurrent LinguistTools
 )
 # Output Qt info
 if(Qt5_FOUND)
@@ -339,6 +339,7 @@ file(
     src/command/*.cpp
     src/cae/*.cpp
     src/common/*.cpp
+    src/pointcloud/*.cpp
     #src/core/*.cpp
     # ui
     src/ui/*.ui
@@ -360,6 +361,7 @@ file(
     src/command/*.h
     src/cae/*.h
     src/common/*.h
+    src/pointcloud/*.h
     #src/core/*.h
 )
 
@@ -470,11 +472,24 @@ target_link_libraries(${PROJECT_NAME}
         ${OCCT_LIBRARIES_TO_LINK} 
         ${MANUAL_3RDPARTY_LIBRARIES} 
         Qt5::Widgets Qt5::Core
+        Qt5::Concurrent
         CoreApi
         ${Boost_LIBRARIES}
 )
 
 include(CTest)
+if(BUILD_TESTING)
+    add_executable(PointCloudReaderTests
+        tests/PointCloudReaderTests.cpp
+        src/pointcloud/PointCloudReader.cpp
+        src/pointcloud/PointCloudReader.h
+        src/pointcloud/PointCloudData.h
+    )
+    target_include_directories(PointCloudReaderTests PRIVATE src)
+    target_link_libraries(PointCloudReaderTests PRIVATE Qt5::Core)
+    add_test(NAME PointCloudReader COMMAND PointCloudReaderTests)
+endif()
+
 # AnimationSequenceTests.cpp is currently not kept in the repository. Preserve
 # the target definition as a reference, but keep it disabled by default.
 option(BUILD_ANIMATION_SEQUENCE_TESTS

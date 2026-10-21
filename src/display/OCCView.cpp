@@ -18,6 +18,7 @@
 #include <QMouseEvent>
 
 #include <AIS_Shape.hxx>
+#include <AIS_PointCloud.hxx>
 #include <AIS_ViewController.hxx>
 #include <XCAFPrs_AISObject.hxx>
 #include <TDF_Label.hxx>
@@ -1209,6 +1210,11 @@ void OCCView::reDraw()
             for (auto it = m_context->CurrentViewer()->DefinedViewIterator(); it.More(); it.Next())
                 it.Value()->SetComputedMode(on);
         };
+        if (!Handle(AIS_PointCloud)::DownCast(object).IsNull()) {
+            fnSetViewComputedMode(false);
+            m_context->DefaultDrawer()->DisableDrawHiddenLine();
+            return;
+        }
         if(m_displayMode == View::DisplayMode::MODE_HIDDEN_LINE){
             m_context->DefaultDrawer()->SetTypeOfHLR(Prs3d_TOH_PolyAlgo);
             m_context->DefaultDrawer()->EnableDrawHiddenLine();
@@ -1251,7 +1257,11 @@ void OCCView::reDraw()
         }
         else
         {
-            m_context->Display(object, object->DisplayMode(), 0, false);
+            const Handle(AIS_PointCloud) pointCloud = Handle(AIS_PointCloud)::DownCast(object);
+            const Standard_Integer selectionMode = pointCloud.IsNull()
+                ? 0
+                : AIS_PointCloud::SM_BndBox;
+            m_context->Display(object, object->DisplayMode(), selectionMode, false);
         }
         reDisplayMode(object);
     }
