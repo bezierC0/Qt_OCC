@@ -1146,4 +1146,90 @@
         <translation>選択したソリッド</translation>
     </message>
 </context>
+<context>
+    <name>MainWindow</name>
+    <message><source>Point Cloud</source><translation>点群</translation></message>
+    <message><source>Open Geometry File</source><translation>ジオメトリファイルを開く</translation></message>
+    <message><source>All Supported Files (*.step *.stp *.iges *.igs *.xyz *.txt *.pts *.ply);;CAD Files (*.step *.stp *.iges *.igs);;Point Cloud Files (*.xyz *.txt *.pts *.ply)</source><translation>すべての対応ファイル (*.step *.stp *.iges *.igs *.xyz *.txt *.pts *.ply);;CAD ファイル (*.step *.stp *.iges *.igs);;点群ファイル (*.xyz *.txt *.pts *.ply)</translation></message>
+</context>
+<context>
+    <name>ViewerWidget</name>
+    <message><source>Point Cloud Import</source><translation>点群インポート</translation></message>
+    <message><source>A point cloud is already being imported.</source><translation>点群をインポートしています。</translation></message>
+    <message><source>Reading point cloud...</source><translation>点群を読み込んでいます...</translation></message>
+    <message><source>Cancel</source><translation>キャンセル</translation></message>
+    <message><source>Point cloud import cancelled.</source><translation>点群のインポートをキャンセルしました。</translation></message>
+    <message><source>Point cloud import failed.</source><translation>点群のインポートに失敗しました。</translation></message>
+    <message><source>Loaded %1 points from %2.</source><translation>%2 から %1 点を読み込みました。</translation></message>
+    <message><source> Ignored %1 invalid records.</source><translation> 無効なレコード %1 件を無視しました。</translation></message>
+    <message><source>Displaying %1 of %2 points.</source><translation>%2 点中 %1 点を表示しています。</translation></message>
+    <message><source> CAD and CAE shape commands are unavailable for point clouds.</source><translation> 点群では CAD および CAE の形状コマンドを使用できません。</translation></message>
+</context>
+<context>
+    <name>WidgetPointCloud</name>
+    <message><source>Point Cloud Information</source><translation>点群情報</translation></message>
+    <message><source>File</source><translation>ファイル</translation></message>
+    <message><source>File Size</source><translation>ファイルサイズ</translation></message>
+    <message><source>Source Records</source><translation>元レコード数</translation></message>
+    <message><source>Valid Points</source><translation>有効点数</translation></message>
+    <message><source>Displayed Points</source><translation>表示点数</translation></message>
+    <message><source>Point Colors</source><translation>点の色</translation></message>
+    <message><source>Bounds</source><translation>境界</translation></message>
+    <message><source>Dimensions</source><translation>寸法</translation></message>
+    <message><source>Invalid Records</source><translation>無効なレコード</translation></message>
+    <message><source>Point Cloud Display</source><translation>点群表示</translation></message>
+    <message><source>Visible</source><translation>表示</translation></message>
+    <message><source>Original RGB</source><translation>元の RGB</translation></message>
+    <message><source>Single Color</source><translation>単色</translation></message>
+    <message><source>Height (Z)</source><translation>高さ (Z)</translation></message>
+    <message><source>Choose Color</source><translation>色を選択</translation></message>
+    <message><source>All Points</source><translation>すべての点</translation></message>
+    <message><source>Point Size</source><translation>点サイズ</translation></message>
+    <message><source>Color Mode</source><translation>カラーモード</translation></message>
+    <message><source>Maximum Display</source><translation>最大表示数</translation></message>
+    <message><source>Fit Point Cloud</source><translation>点群をフィット</translation></message>
+    <message><source>Remove Point Cloud</source><translation>点群を削除</translation></message>
+    <message><source>Reset Display Settings</source><translation>表示設定をリセット</translation></message>
+    <message><source>RGB</source><translation>RGB</translation></message>
+    <message><source>No</source><translation>なし</translation></message>
+    <message><source>X: %1 .. %2
+Y: %3 .. %4
+Z: %5 .. %6</source><translation>X: %1 .. %2
+Y: %3 .. %4
+Z: %5 .. %6</translation></message>
+    <message><source>%1 x %2 x %3</source><translation>%1 x %2 x %3</translation></message>
+    <message><source>Point Cloud Color</source><translation>点群の色</translation></message>
+</context>
+<context>
+    <name>PointCloudReader</name>
+    <message><source>The file does not contain any valid points.</source><translation>ファイルに有効な点がありません。</translation></message>
+    <message><source>The declared point count does not match the number of valid points.</source><translation>宣言された点数と有効点数が一致しません。</translation></message>
+    <message><source>Invalid PLY header.</source><translation>PLY ヘッダーが無効です。</translation></message>
+    <message><source>Invalid PLY vertex count.</source><translation>PLY の頂点数が無効です。</translation></message>
+    <message><source>Unsupported PLY vertex property.</source><translation>未対応の PLY 頂点プロパティです。</translation></message>
+    <message><source>PLY header is incomplete.</source><translation>PLY ヘッダーが不完全です。</translation></message>
+    <message><source>Only ASCII PLY files are supported.</source><translation>ASCII PLY ファイルのみ対応しています。</translation></message>
+    <message><source>The PLY file does not contain vertices.</source><translation>PLY ファイルに頂点がありません。</translation></message>
+    <message><source>PLY vertex properties must include x, y, and z.</source><translation>PLY 頂点プロパティには x、y、z が必要です。</translation></message>
+    <message><source>The PLY file does not contain any valid points.</source><translation>PLY ファイルに有効な点がありません。</translation></message>
+    <message><source>Some PLY vertex records were invalid or missing.</source><translation>一部の PLY 頂点レコードが無効または不足しています。</translation></message>
+    <message><source>Unsupported point cloud file format.</source><translation>未対応の点群ファイル形式です。</translation></message>
+    <message><source>Unable to open the point cloud file.</source><translation>点群ファイルを開けません。</translation></message>
+    <message><source>Not enough memory to read the point cloud.</source><translation>点群を読み込むためのメモリが不足しています。</translation></message>
+    <message><source>The point cloud is too large to read.</source><translation>点群が大きすぎるため読み込めません。</translation></message>
+    <message><source>Unsupported PLY format.</source><translation>未対応の PLY 形式です。</translation></message>
+    <message><source>Invalid PLY element count.</source><translation>PLY 要素数が無効です。</translation></message>
+    <message><source>PLY property is not associated with an element.</source><translation>PLY プロパティに対応する要素がありません。</translation></message>
+    <message><source>Unsupported PLY property declaration.</source><translation>未対応の PLY プロパティ宣言です。</translation></message>
+    <message><source>Unsupported PLY property type.</source><translation>未対応の PLY プロパティ型です。</translation></message>
+    <message><source>PLY format is missing.</source><translation>PLY の形式宣言がありません。</translation></message>
+    <message><source>PLY list properties on vertices are not supported.</source><translation>頂点の PLY リストプロパティには対応していません。</translation></message>
+    <message><source>PLY vertex colors must include red, green, and blue.</source><translation>PLY 頂点色には赤、緑、青がすべて必要です。</translation></message>
+    <message><source>PLY data is incomplete.</source><translation>PLY データが不完全です。</translation></message>
+    <message><source>PLY binary data is incomplete.</source><translation>PLY バイナリデータが不完全です。</translation></message>
+    <message><source>PLY vertex record is too large.</source><translation>PLY 頂点レコードが大きすぎます。</translation></message>
+    <message><source>PLY vertex record is invalid.</source><translation>PLY 頂点レコードが無効です。</translation></message>
+    <message><source>PLY binary vertex data is incomplete.</source><translation>PLY バイナリ頂点データが不完全です。</translation></message>
+    <message><source>Binary big-endian PLY files are not supported.</source><translation>ビッグエンディアンのバイナリ PLY には対応していません。</translation></message>
+</context>
 </TS>
