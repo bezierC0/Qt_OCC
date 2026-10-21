@@ -54,7 +54,7 @@ Qt_OCC — это настольное приложение для CAD и обл
 
 ## 📚 Документация
 
-*   **Руководство по соединителю из листового металла**: [`../tool_busbar.md`](../tool_busbar.md)
+*   **Руководство по соединителю из листового металла**: [`../tool_sheet_metal_connector.md`](../tool_sheet_metal_connector.md)
 *   **Внутренняя реализация соединителя**: [`../sheet_metal_connector_implementation.md`](../sheet_metal_connector_implementation.md)
 *   **План разработки и ручного тестирования облаков точек**: [`../point_cloud_development_plan.md`](../point_cloud_development_plan.md)
 *   **Примеры данных облаков точек**: [`../../samples/pointcloud/README.md`](../../samples/pointcloud/README.md)

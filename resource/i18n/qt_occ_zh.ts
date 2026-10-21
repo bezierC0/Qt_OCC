@@ -1234,7 +1234,7 @@ Z: %5 .. %6</translation></message>
     <message><source>Binary big-endian PLY files are not supported.</source><translation>暂不支持大端序二进制 PLY 文件。</translation></message>
 </context>
 <context>
-    <name>WidgetBusbar</name>
+    <name>WidgetSheetMetalConnector</name>
     <message><source>Sheet Metal Connector</source><translation>钣金连接</translation></message>
     <message><source>Start Connection</source><translation>起始连接</translation></message>
     <message><source>End Connection</source><translation>终止连接</translation></message>
@@ -1305,5 +1305,8 @@ Z: %5 .. %6</translation></message>
     <message><source>Start and end points cannot be deleted.</source><translation>不能删除起点和终点。</translation></message>
     <message><source>The owning viewer is not available.</source><translation>所属视图不可用。</translation></message>
     <message><source>Select both connection faces in the same view.</source><translation>请在同一视图中选择两个连接面。</translation></message>
+    <message><source>Failed to load connector parameters: %1</source><translation>加载连接件参数失败：%1</translation></message>
+    <message><source>Failed to restore the connector target shapes.</source><translation>无法恢复连接件的目标形状。</translation></message>
+    <message><source>Connector parameters loaded. Reselect a face before changing its point.</source><translation>已加载连接件参数。修改连接点前请重新选择连接面。</translation></message>
 </context>
 </TS>

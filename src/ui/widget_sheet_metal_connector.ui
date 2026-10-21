@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>WidgetBusbar</class>
- <widget class="QWidget" name="WidgetBusbar">
+ <class>WidgetSheetMetalConnector</class>
+ <widget class="QWidget" name="WidgetSheetMetalConnector">
   <property name="geometry">
    <rect><x>0</x><y>0</y><width>380</width><height>820</height></rect>
   </property>

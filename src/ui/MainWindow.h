@@ -77,7 +77,7 @@ private slots:
     void onExplosion();
     void onCreateWorkPlane();
     void onAnimation();
-    void onBusbar();
+    void onSheetMetalConnector();
 
     /* measure */
     void onMeasureDistance() const;
@@ -251,7 +251,7 @@ private:
     QAction* m_measureMinimumDistanceAction;
     QAction* m_createWorkPlaneAction;
     QAction* m_animationAction{};
-    QAction* m_busbarAction{};
+    QAction* m_sheetMetalConnectorAction{};
 
     // ---- Shape Group ----
     SARibbonCategory* m_shapeCategory;

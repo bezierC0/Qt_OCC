@@ -1234,7 +1234,7 @@ Z: %5 .. %6</translation></message>
     <message><source>Binary big-endian PLY files are not supported.</source><translation>ビッグエンディアンのバイナリ PLY には対応していません。</translation></message>
 </context>
 <context>
-    <name>WidgetBusbar</name>
+    <name>WidgetSheetMetalConnector</name>
     <message><source>Sheet Metal Connector</source><translation>板金コネクタ</translation></message>
     <message><source>Start Connection</source><translation>始点接続</translation></message>
     <message><source>End Connection</source><translation>終点接続</translation></message>
@@ -1305,5 +1305,8 @@ Z: %5 .. %6</translation></message>
     <message><source>Start and end points cannot be deleted.</source><translation>始点と終点は削除できません。</translation></message>
     <message><source>The owning viewer is not available.</source><translation>対象のビューアを利用できません。</translation></message>
     <message><source>Select both connection faces in the same view.</source><translation>2つの接続面を同じビューで選択してください。</translation></message>
+    <message><source>Failed to load connector parameters: %1</source><translation>コネクターパラメータの読み込みに失敗しました：%1</translation></message>
+    <message><source>Failed to restore the connector target shapes.</source><translation>コネクターの対象形状を復元できませんでした。</translation></message>
+    <message><source>Connector parameters loaded. Reselect a face before changing its point.</source><translation>コネクターパラメータを読み込みました。接続点を変更する前に面を再選択してください。</translation></message>
 </context>
 </TS>

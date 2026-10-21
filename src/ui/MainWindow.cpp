@@ -599,9 +599,9 @@ void MainWindow::createToolGroup()
         m_otherPannel->addLargeAction(m_animationAction);
 
         // sheet metal connector
-        m_busbarAction = new QAction(QIcon(":/icons/icon/busbar.svg"), tr("Sheet Metal Connector"), this);
-        connect(m_busbarAction, &QAction::triggered, this, &MainWindow::onBusbar);
-        m_otherPannel->addLargeAction(m_busbarAction);
+        m_sheetMetalConnectorAction = new QAction(QIcon(":/icons/icon/sheet_metal_connector.svg"), tr("Sheet Metal Connector"), this);
+        connect(m_sheetMetalConnectorAction, &QAction::triggered, this, &MainWindow::onSheetMetalConnector);
+        m_otherPannel->addLargeAction(m_sheetMetalConnectorAction);
     };
     createOtherPannel();
 
@@ -1080,9 +1080,9 @@ void MainWindow::onAnimation()
     m_viewerWidget->animation();
 }
 
-void MainWindow::onBusbar()
+void MainWindow::onSheetMetalConnector()
 {
-    m_viewerWidget->busbar();
+    m_viewerWidget->sheetMetalConnector();
 }
 
 void MainWindow::onMeasureDistance() const
@@ -2316,7 +2316,7 @@ void MainWindow::updateSceneActionState(bool hasCadGeometry, bool hasPointCloud)
         m_measureMinimumDistanceAction,
         m_createWorkPlaneAction,
         m_animationAction,
-        m_busbarAction,
+        m_sheetMetalConnectorAction,
         m_pointAction,
         m_lineAction,
         m_rectangleAction,

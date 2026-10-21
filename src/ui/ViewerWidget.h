@@ -58,7 +58,7 @@ class WidgetChamfer;
 class WidgetMinimumDistance;
 class WidgetHole;
 class WidgetAnimation;
-class WidgetBusbar;
+class WidgetSheetMetalConnector;
 
 template<typename T>
 class Tree;
@@ -113,7 +113,7 @@ public:
     void clipping(const gp_Dir& normal, const gp_Pnt& point, bool isOn = true);
     void explosion();
     void animation();
-    void busbar();
+    void sheetMetalConnector();
     
     /* measure */
     void measureDistance();
@@ -154,6 +154,12 @@ public:
 
     TDF_Label displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0);
     void removeShape(const TopoDS_Shape& shape);
+    bool selectedSheetMetalConnector(QString& metadata,
+                                     TDF_Label& label,
+                                     TopoDS_Shape& shape) const;
+    bool resolveShapeLabel(const QString& entry,
+                           TDF_Label& label,
+                           TopoDS_Shape& shape) const;
     const std::map<TopAbs_ShapeEnum, bool>& getSelectionFilters() const ;
     void repairAndSave(const TopoDS_Shape& shape);
     void updateTree();
@@ -318,6 +324,6 @@ private:
     WidgetMinimumDistance* m_widgetMinimumDistance{nullptr};
     WidgetHole*      m_widgetHole{nullptr};
     WidgetAnimation* m_widgetAnimation{nullptr};
-    WidgetBusbar*    m_widgetBusbar{nullptr};
+    WidgetSheetMetalConnector* m_widgetSheetMetalConnector{nullptr};
 };
 

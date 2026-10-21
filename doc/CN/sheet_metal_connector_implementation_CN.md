@@ -6,9 +6,9 @@ _基础版开发说明，对应提交 `a4c55fc`，更新日期：2026-10-22。_
 
 ## 📋 范围与命名
 
-Sheet Metal Connector 用一段带宽度和厚度的路径钣金连接两个模型 Face。界面已经使用“钣金连接”，内部仍保留 `WidgetBusbar` 和 `widget_busbar.*` 文件名，以避免无关重命名扩大改动范围。
+Sheet Metal Connector 用一段带宽度和厚度的路径钣金连接两个模型 Face。界面和源码标识统一使用通用的 Sheet Metal Connector 名称。
 
-基础版包含 Face/Point 拾取、正交路径、圆弧折弯、Weld/BoltNut 端部、预览、碰撞检查和 XCAF 写入。自动避障、保存后重新编辑、展开及制造补偿不在当前范围内。
+基础版包含 Face/Point 拾取、正交路径、圆弧折弯、Weld/BoltNut 端部、预览、碰撞检查、XCAF 写入和当前文档内参数恢复。自动避障、原生文档持久化、展开及制造补偿不在当前范围内。
 
 ## 🏗️ 总体架构
 
@@ -17,7 +17,7 @@ flowchart LR
     accTitle: 钣金连接内部架构
     accDescr: 从交互拾取到路径规划、实体生成、碰撞检查、预览和 XCAF 写入的主要数据流
 
-    ui[🖥️ WidgetBusbar] --> face_geometry[📐 Face 几何]
+    ui[🖥️ WidgetSheetMetalConnector] --> face_geometry[📐 Face 几何]
     face_geometry --> model[📋 连接数据]
     model --> route_planner[🧭 路径规划]
     route_planner --> builder[🔧 实体生成]
@@ -41,7 +41,7 @@ flowchart LR
 
 | 组件 | 职责 |
 | --- | --- |
-| `WidgetBusbar` | UI 状态、拾取会话、预览、Apply/Clear 和数据传递 |
+| `WidgetSheetMetalConnector` | UI 状态、拾取会话、预览、Apply/Clear 和数据传递 |
 | `SheetMetalConnectorModel.h` | 端点、连接方式、折弯、路径和全局参数 |
 | `SheetMetalFaceGeometry` | Face 内默认点、点投影和有方向的法向 |
 | `SheetMetalRoutePlanner` | 六种正交路径候选及排序 |
@@ -121,7 +121,9 @@ Face 选择与 Point 选择承担不同职责。
 
 Preview 使用临时 `AIS_Shape`。Apply 会重新构建和重新检查最终实体，删除旧的已应用连接件，再调用 `ViewerWidget::displayShape()`。返回的 `TDF_Label` 写入名称 `Sheet Metal Connector` 和 `TDataStd_Comment` 元数据。
 
-元数据包含宽度、厚度、间隙、端点坐标与法向、连接参数、目标 Label Entry、路径点和折弯半径。当前只负责写入，尚未实现重新打开后解析回 UI。
+`version=2` 元数据包含宽度、厚度、间隙、截面方向、端点坐标与法向、连接参数、目标 Label Entry、路径点和折弯半径，并兼容读取 `version=1`。打开工具前选中已生成的连接件，可以恢复参数、路径和两个父 Shape/Label 引用；再次 Apply 会替换该连接件。
+
+元数据尚未保存稳定的子 Face 标识。恢复后原坐标和法向仍可使用，但修改连接点前必须重新选择对应 Face。
 
 ## ⚠️ 当前限制
 
@@ -129,13 +131,13 @@ Preview 使用临时 `AIS_Shape`。Apply 会重新构建和重新检查最终实
 - 允许接触区使用球形近似，不是精确 Face 接触区域
 - 已保存 `holeCount`，但当前每端只生成一个中心孔
 - Weld 保存参数，但不生成焊缝实体
-- 元数据当前只写不读
+- 当前支持同一 XCAF 文档内恢复；尚未提供原生文档持久化保存/重新打开
 - 模型拓扑变化后，Face 引用仍需要稳定的子 Shape 命名策略
 - 当前扫掠实体不是带展开/K-factor 的制造级钣金定义
 
 ## 🧪 验证范围
 
-`SheetMetalConnectorTests` 已覆盖直线路径、折弯路径、BoltNut 孔、过大折弯半径、相交/远离障碍物、Face 内默认点，以及带 Location 的 Face 返回世界坐标点。
+`SheetMetalConnectorTests` 已覆盖直线路径、折弯路径、BoltNut 孔、过大折弯半径、相交/远离障碍物、Face 内默认点、带 Location 的 Face 返回世界坐标点，以及元数据往返和非法输入拒绝。
 
 仍需 GUI 手动验收：
 
@@ -146,8 +148,9 @@ Preview 使用临时 `AIS_Shape`。Apply 会重新构建和重新检查最终实
 
 ## 🔗 源码索引
 
-- UI：`src/ui/widget_busbar.h/.cpp/.ui`
+- UI：`src/ui/widget_sheet_metal_connector.h/.cpp/.ui`
 - 数据模型：`src/ui/SheetMetalConnectorModel.h`
+- 元数据：`src/ui/SheetMetalConnectorMetadata.h/.cpp`
 - Face 几何：`src/ui/SheetMetalFaceGeometry.h/.cpp`
 - 路径：`src/ui/SheetMetalRoutePlanner.h/.cpp`
 - 实体：`src/ui/SheetMetalConnectorBuilder.h/.cpp`

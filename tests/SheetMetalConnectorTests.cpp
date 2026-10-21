@@ -1,6 +1,7 @@
 #include "SheetMetalCollisionChecker.h"
 #include "SheetMetalConnectorBuilder.h"
 #include "SheetMetalFaceGeometry.h"
+#include "SheetMetalConnectorMetadata.h"
 #include "SheetMetalRoutePlanner.h"
 
 #include <AIS_Shape.hxx>
@@ -117,6 +118,35 @@ int main()
     success &= require(bentBuild.isValid(), "Bent connector build failed.");
     success &= require(containsSolid(bentBuild.solid),
                        "Bent connector does not contain a solid.");
+
+    bent.upDirection = gp_Dir(0.0, 1.0, 0.0);
+    const QString metadata = SheetMetalConnectorMetadata::serialize(bent);
+    SheetMetalConnectorMetadataResult parsedMetadata;
+    success &= require(
+        SheetMetalConnectorMetadata::deserialize(
+            metadata, parsedMetadata, &errorMessage),
+        "Connector metadata round trip failed.");
+    success &= require(
+        parsedMetadata.data.routePoints.size() == bent.routePoints.size()
+            && parsedMetadata.data.start.jointType == bent.start.jointType
+            && parsedMetadata.data.upDirection.IsEqual(
+                bent.upDirection, Precision::Angular()),
+        "Connector metadata values were not preserved.");
+    success &= require(
+        !SheetMetalConnectorMetadata::deserialize(
+            QStringLiteral("version=2;width=invalid"),
+            parsedMetadata,
+            &errorMessage),
+        "Malformed connector metadata was accepted.");
+    success &= require(
+        SheetMetalConnectorMetadata::deserialize(
+            QStringLiteral("version=1;width=20;thickness=2;clearance=1;"
+                           "start=0,0,0,1,0,0,0,0,0,;"
+                           "end=10,0,0,-1,0,0,0,0,0,;"
+                           "route=0,0,0,5|10,0,0,5"),
+            parsedMetadata,
+            &errorMessage),
+        "Version 1 connector metadata is not compatible.");
 
     auto invalidBend = bent;
     invalidBend.routePoints[1].bend.radius = 1000.0;

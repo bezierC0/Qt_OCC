@@ -1599,7 +1599,7 @@ Z: %5 .. %6</translation></message>
     <message><source>Binary big-endian PLY files are not supported.</source><translation>Binary big-endian PLY files are not supported.</translation></message>
 </context>
 <context>
-    <name>WidgetBusbar</name>
+    <name>WidgetSheetMetalConnector</name>
     <message><source>Sheet Metal Connector</source><translation>Sheet Metal Connector</translation></message>
     <message><source>Start Connection</source><translation>Start Connection</translation></message>
     <message><source>End Connection</source><translation>End Connection</translation></message>
@@ -1670,5 +1670,8 @@ Z: %5 .. %6</translation></message>
     <message><source>Start and end points cannot be deleted.</source><translation>Start and end points cannot be deleted.</translation></message>
     <message><source>The owning viewer is not available.</source><translation>The owning viewer is not available.</translation></message>
     <message><source>Select both connection faces in the same view.</source><translation>Select both connection faces in the same view.</translation></message>
+    <message><source>Failed to load connector parameters: %1</source><translation>Failed to load connector parameters: %1</translation></message>
+    <message><source>Failed to restore the connector target shapes.</source><translation>Failed to restore the connector target shapes.</translation></message>
+    <message><source>Connector parameters loaded. Reselect a face before changing its point.</source><translation>Connector parameters loaded. Reselect a face before changing its point.</translation></message>
 </context>
 </TS>

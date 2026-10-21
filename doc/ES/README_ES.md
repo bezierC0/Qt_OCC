@@ -54,7 +54,7 @@ Qt_OCC es una aplicación de escritorio para CAD y nubes de puntos. Utiliza el m
 
 ## 📚 Documentación
 
-*   **Guía del Conector de Chapa Metálica**: [`../tool_busbar.md`](../tool_busbar.md)
+*   **Guía del Conector de Chapa Metálica**: [`../tool_sheet_metal_connector.md`](../tool_sheet_metal_connector.md)
 *   **Implementación interna del Conector de Chapa Metálica**: [`../sheet_metal_connector_implementation.md`](../sheet_metal_connector_implementation.md)
 *   **Plan de desarrollo y pruebas manuales de nubes de puntos**: [`../point_cloud_development_plan.md`](../point_cloud_development_plan.md)
 *   **Datos de ejemplo de nubes de puntos**: [`../../samples/pointcloud/README.md`](../../samples/pointcloud/README.md)

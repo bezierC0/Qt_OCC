@@ -19,11 +19,11 @@ class OCCView;
 
 namespace Ui
 {
-class WidgetBusbar;
+class WidgetSheetMetalConnector;
 }
 
 // ============================================================
-// WidgetBusbar
+// WidgetSheetMetalConnector
 // ============================================================
 
 /**
@@ -36,13 +36,13 @@ class WidgetBusbar;
  *  4. Set sheet-metal and endpoint joint parameters.
  *  5. Validate collisions and apply the generated solid.
  */
-class WidgetBusbar : public QWidget
+class WidgetSheetMetalConnector : public QWidget
 {
     Q_OBJECT
 
 public:
-    explicit WidgetBusbar(QWidget *parent = nullptr);
-    ~WidgetBusbar() override;
+    explicit WidgetSheetMetalConnector(QWidget *parent = nullptr);
+    ~WidgetSheetMetalConnector() override;
 
     void show();
 
@@ -85,8 +85,9 @@ private:
                                   const TopoDS_Face& face,
                                   const Handle(AIS_InteractiveObject)& parentObject);
     void updateDataFromUi();
+    void updateUiFromData();
     void updatePreview();
-    QString connectorMetadata() const;
+    bool loadSelectedConnector();
     void refreshWaypointList();
     void updateNodePropertyPanel();
     void saveCurrentNodeProps();
@@ -94,7 +95,7 @@ private:
     void clearPreview();
 
 private:
-    Ui::WidgetBusbar *ui{};
+    Ui::WidgetSheetMetalConnector *ui{};
 
     SheetMetalConnectorData m_data;
     bool m_hasStart{false};

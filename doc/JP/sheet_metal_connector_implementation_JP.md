@@ -6,9 +6,9 @@ _基本版の開発者向け説明。コミット `a4c55fc`、更新日：2026-1
 
 ## 📋 対象範囲と命名
 
-Sheet Metal Connectorは、選択した2つのFaceを幅と厚さを持つ経路板金で接続します。UIでは新しい名称を使用しますが、不要な変更を避けるため、内部クラス名 `WidgetBusbar` と `widget_busbar.*` は互換名として残しています。
+Sheet Metal Connectorは、選択した2つのFaceを幅と厚さを持つ経路板金で接続します。UIとソース識別子は、汎用的なSheet Metal Connector名称に統一されています。
 
-基本版はFace/Point選択、直交経路、円弧曲げ、Weld/BoltNut端部、プレビュー、干渉確認、XCAF登録を実装しています。自動回避、再オープン後の編集、展開、製造補正は対象外です。
+基本版はFace/Point選択、直交経路、円弧曲げ、Weld/BoltNut端部、プレビュー、干渉確認、XCAF登録、現在のドキュメント内でのパラメータ復元を実装しています。自動回避、ネイティブドキュメント永続化、展開、製造補正は対象外です。
 
 ## 🏗️ 全体構成
 
@@ -17,7 +17,7 @@ flowchart LR
     accTitle: 板金コネクタ内部構成
     accDescr: 対話選択から経路計算、形状生成、干渉確認、プレビュー、XCAF登録までの主要データフロー
 
-    ui[🖥️ WidgetBusbar] --> face_geometry[📐 Face処理]
+    ui[🖥️ WidgetSheetMetalConnector] --> face_geometry[📐 Face処理]
     face_geometry --> model[📋 接続データ]
     model --> route_planner[🧭 経路計算]
     route_planner --> builder[🔧 形状生成]
@@ -41,7 +41,7 @@ flowchart LR
 
 | コンポーネント | 役割 |
 | --- | --- |
-| `WidgetBusbar` | UI状態、選択セッション、プレビュー、Apply/Clear、データ受け渡し |
+| `WidgetSheetMetalConnector` | UI状態、選択セッション、プレビュー、Apply/Clear、データ受け渡し |
 | `SheetMetalConnectorModel.h` | 端点、接合方法、曲げ、経路、共通パラメータ |
 | `SheetMetalFaceGeometry` | Face内の既定点、点投影、向き付き法線 |
 | `SheetMetalRoutePlanner` | 6種類の直交候補と順位付け |
@@ -121,7 +121,9 @@ Face選択とPoint選択は役割を分離しています。
 
 Previewは一時的な `AIS_Shape` です。Apply時には形状を再生成・再確認し、前回の適用Shapeがあれば削除してから `ViewerWidget::displayShape()` を呼びます。返された `TDF_Label` に `Sheet Metal Connector` 名と `TDataStd_Comment` メタデータを設定します。
 
-メタデータには幅、厚さ、クリアランス、端点座標と法線、接合パラメータ、対象Label Entry、経路点、曲げ半径を保存します。現在は書き込みのみで、再オープン後にUIへ復元する処理は未実装です。
+`version=2` メタデータには幅、厚さ、クリアランス、断面方向、端点座標と法線、接合パラメータ、対象Label Entry、経路点、曲げ半径を保存し、`version=1` の読み込みにも対応します。生成済みコネクターを選択してからツールを開くと、パラメータ、経路、両方の親Shape/Label参照を復元し、次のApplyで選択したコネクターを置換します。
+
+安定したサブFace識別子はまだ保存しません。復元した座標と法線は使用できますが、接続点を変更する前に対応するFaceを再選択する必要があります。
 
 ## ⚠️ 現在の制限
 
@@ -129,13 +131,13 @@ Previewは一時的な `AIS_Shape` です。Apply時には形状を再生成・�
 - 許容接触領域は球形近似で、厳密なFace接触領域ではありません
 - `holeCount` は保存しますが、現在は各端部に中央穴を1個だけ作ります
 - Weldパラメータは保存しますが、溶接ビードShapeは作りません
-- メタデータは現在、書き込み専用です
+- 現在のXCAFドキュメント内では復元できますが、ネイティブドキュメントの保存・再オープンは未対応です
 - トポロジ変更後のFace参照には安定したサブShape命名が必要です
 - 現在のスイープShapeは展開やK-factorを持つ製造用板金定義ではありません
 
 ## 🧪 検証範囲
 
-`SheetMetalConnectorTests` は直線経路、曲げ経路、BoltNut穴、過大曲げ半径、交差/遠方障害物、Face内の既定点、Location付きFaceのワールド座標点を確認します。
+`SheetMetalConnectorTests` は直線経路、曲げ経路、BoltNut穴、過大曲げ半径、交差/遠方障害物、Face内の既定点、Location付きFaceのワールド座標点、メタデータの往復と不正入力拒否を確認します。
 
 GUIでは次を手動確認する必要があります。
 
@@ -146,8 +148,9 @@ GUIでは次を手動確認する必要があります。
 
 ## 🔗 ソース一覧
 
-- UI：`src/ui/widget_busbar.h/.cpp/.ui`
+- UI：`src/ui/widget_sheet_metal_connector.h/.cpp/.ui`
 - データモデル：`src/ui/SheetMetalConnectorModel.h`
+- メタデータ：`src/ui/SheetMetalConnectorMetadata.h/.cpp`
 - Face処理：`src/ui/SheetMetalFaceGeometry.h/.cpp`
 - 経路：`src/ui/SheetMetalRoutePlanner.h/.cpp`
 - 形状生成：`src/ui/SheetMetalConnectorBuilder.h/.cpp`

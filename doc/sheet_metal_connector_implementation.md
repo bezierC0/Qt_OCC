@@ -6,9 +6,9 @@ _Developer guide for the base implementation in commit `a4c55fc`, updated 2026-1
 
 ## 📋 Scope and naming
 
-Sheet Metal Connector creates one routed sheet-metal shape between two selected faces. The public UI uses the new name, while `WidgetBusbar` and `widget_busbar.*` remain as internal compatibility names to keep the change focused.
+Sheet Metal Connector creates one routed sheet-metal shape between two selected faces. The UI and source identifiers use the same general-purpose name.
 
-The base implementation covers face and point selection, orthogonal route planning, rounded bends, Weld/BoltNut endpoint settings, preview, collision checks, and XCAF insertion. Automatic obstacle avoidance, editable reload, unfolding, and manufacturing compensation are outside this version.
+The base implementation covers face and point selection, orthogonal route planning, rounded bends, Weld/BoltNut endpoint settings, preview, collision checks, XCAF insertion, and in-document parameter reload. Automatic obstacle avoidance, native document persistence, unfolding, and manufacturing compensation are outside this version.
 
 ## 🏗️ Architecture
 
@@ -17,7 +17,7 @@ flowchart LR
     accTitle: Sheet Metal Connector Architecture
     accDescr: Main data flow from interactive face selection through route planning, solid generation, collision validation, preview, and XCAF insertion
 
-    ui[🖥️ WidgetBusbar] --> face_geometry[📐 Face geometry]
+    ui[🖥️ WidgetSheetMetalConnector] --> face_geometry[📐 Face geometry]
     face_geometry --> model[📋 Connector data]
     model --> route_planner[🧭 Route planner]
     route_planner --> builder[🔧 Connector builder]
@@ -41,7 +41,7 @@ flowchart LR
 
 | Component | Responsibility |
 | --- | --- |
-| `WidgetBusbar` | UI state, pick sessions, preview, Apply/Clear, and data transfer |
+| `WidgetSheetMetalConnector` | UI state, pick sessions, preview, Apply/Clear, and data transfer |
 | `SheetMetalConnectorModel.h` | Endpoint, joint, bend, route, and global parameter structures |
 | `SheetMetalFaceGeometry` | Face-inside default point, point projection, and oriented normal |
 | `SheetMetalRoutePlanner` | Six orthogonal route candidates and candidate ranking |
@@ -55,7 +55,7 @@ Face selection and point selection intentionally have different responsibilities
 
 ### Face selection
 
-1. `WidgetBusbar::startPicking()` temporarily enables only the `TopAbs_FACE` selection filter.
+1. `WidgetSheetMetalConnector::startPicking()` temporarily enables only the `TopAbs_FACE` selection filter.
 2. `onObjectSelected()` obtains the selected sub-face and its parent `AIS_InteractiveObject`.
 3. The parent `LocalTransformation()` is composed with the face location so that the face, endpoint, target shape, preview, and collision checks use world coordinates.
 4. `SheetMetalFaceGeometry::centerPointAndNormal()` computes the area center with `BRepGProp::SurfaceProperties` and projects it to the underlying surface.
@@ -125,7 +125,7 @@ sequenceDiagram
     accDescr: Interaction between the panel, planner, builder, collision checker, viewer, and XCAF document during connector creation
 
     participant user as 👤 User
-    participant panel as 🖥️ WidgetBusbar
+    participant panel as 🖥️ WidgetSheetMetalConnector
     participant geometry as 🔧 Planner and builder
     participant checker as 🔍 Collision checker
     participant viewer as 💾 Viewer and XCAF
@@ -145,7 +145,9 @@ sequenceDiagram
 
 Preview shapes are temporary `AIS_Shape` objects. Apply rebuilds and rechecks the solid, removes the previous applied result when present, and calls `ViewerWidget::displayShape()`. The returned `TDF_Label` receives the name `Sheet Metal Connector` and a `TDataStd_Comment` metadata string.
 
-The metadata contains width, thickness, clearance, endpoint coordinates and normals, joint parameters, target-label entries, and route points with bend radii. It supports future reload work, but the current code does not parse it back into the panel.
+The `version=2` metadata contains width, thickness, clearance, section direction, endpoint coordinates and normals, joint parameters, target-label entries, and route points with bend radii. The parser remains compatible with `version=1`. When a generated connector is selected before opening the tool, the panel restores these values, resolves both parent Shape/Label references, and marks the selected connector as the result to replace on the next Apply.
+
+The metadata does not store a stable sub-Face identifier. After reload, the saved point and normal remain usable, but changing a point requires reselecting its Face first.
 
 ## ⚠️ Limits and extension points
 
@@ -153,7 +155,7 @@ The metadata contains width, thickness, clearance, endpoint coordinates and norm
 - Allowed contact uses a spherical approximation rather than an exact face contact region
 - `holeCount` is stored but the base builder creates one centered hole
 - Weld stores parameters but does not create a weld bead solid
-- Metadata persistence is write-only in the current UI
+- Reload works inside the current XCAF document; durable native document save/reopen is not yet available
 - Topological face references may need a stable sub-shape naming strategy after model changes
 - The sweep represents a routed solid, not a manufacturing-grade unfolded sheet-metal definition
 
@@ -161,7 +163,7 @@ Phase 2 should extend the planner and evaluator without merging joint type back 
 
 ## 🧪 Verification
 
-`SheetMetalConnectorTests` covers straight and bent routes, BoltNut construction, oversized bend rejection, intersecting and distant obstacles, a face-inside default point, and a transformed face returning a world-space point.
+`SheetMetalConnectorTests` covers straight and bent routes, BoltNut construction, oversized bend rejection, intersecting and distant obstacles, a face-inside default point, a transformed face returning a world-space point, and metadata round-trip/rejection.
 
 Manual GUI acceptance should still verify:
 
@@ -172,8 +174,9 @@ Manual GUI acceptance should still verify:
 
 ## 🔗 Source map
 
-- UI orchestration: `src/ui/widget_busbar.h`, `src/ui/widget_busbar.cpp`, `src/ui/widget_busbar.ui`
+- UI orchestration: `src/ui/widget_sheet_metal_connector.h`, `src/ui/widget_sheet_metal_connector.cpp`, `src/ui/widget_sheet_metal_connector.ui`
 - Model: `src/ui/SheetMetalConnectorModel.h`
+- Metadata codec: `src/ui/SheetMetalConnectorMetadata.h`, `src/ui/SheetMetalConnectorMetadata.cpp`
 - Face geometry: `src/ui/SheetMetalFaceGeometry.h`, `src/ui/SheetMetalFaceGeometry.cpp`
 - Route planner: `src/ui/SheetMetalRoutePlanner.h`, `src/ui/SheetMetalRoutePlanner.cpp`
 - Builder: `src/ui/SheetMetalConnectorBuilder.h`, `src/ui/SheetMetalConnectorBuilder.cpp`
