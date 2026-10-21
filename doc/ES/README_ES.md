@@ -26,6 +26,7 @@ Qt_OCC es una aplicación de escritorio para CAD y nubes de puntos. Utiliza el m
 *   **Primitivas 2D**: Cree Puntos, Líneas, Rectángulos, Círculos, Arcos, Elipses, Polígonos, Curvas de Bezier y Curvas NURBS.
 *   **Primitivas 3D**: Genere Cajas, Esferas, Cilindros, Conos y Pirámides.
 *   **Operaciones Booleanas**: Realice Unión (Fuse), Intersección (Common) y Diferencia (Cut) en sólidos.
+*   **Conector de Chapa Metálica**: Conecte dos caras seleccionadas mediante una chapa de ruta ortogonal con curvas redondeadas, extremos soldados o atornillados y comprobación de colisiones.
 *   **Modificaciones**:
     *   **Espejo**: Refleje objetos por Plano o Eje.
     *   **Patrón**: Cree patrones Lineales y Circulares.
@@ -53,6 +54,8 @@ Qt_OCC es una aplicación de escritorio para CAD y nubes de puntos. Utiliza el m
 
 ## 📚 Documentación
 
+*   **Guía del Conector de Chapa Metálica**: [`../tool_busbar.md`](../tool_busbar.md)
+*   **Implementación interna del Conector de Chapa Metálica**: [`../sheet_metal_connector_implementation.md`](../sheet_metal_connector_implementation.md)
 *   **Plan de desarrollo y pruebas manuales de nubes de puntos**: [`../point_cloud_development_plan.md`](../point_cloud_development_plan.md)
 *   **Datos de ejemplo de nubes de puntos**: [`../../samples/pointcloud/README.md`](../../samples/pointcloud/README.md)
 

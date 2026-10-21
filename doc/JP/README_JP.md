@@ -26,6 +26,7 @@ Qt_OCCは、ユーザーインターフェースにQtフレームワーク、ジ
 *   **2D プリミティブ**: 点、線、長方形、円、円弧、楕円、ポリゴン、ベジェ曲線、NURBS曲線の作成。
 *   **3D プリミティブ**: 直方体(Box)、球、円柱、円錐、角錐の生成。
 *   **ブール演算**: ソリッドに対する和(Fuse)、積(Common)、差(Cut)演算の実行。
+*   **板金コネクタ**: 選択した2つの面を直交経路の板金で接続し、円弧曲げ、溶接またはボルト/ナット端部、干渉チェックに対応。
 *   **変形・編集**:
     *   **ミラー**: 平面または軸によるオブジェクトの鏡像作成。
     *   **パターン**: 線形および円形パターンの作成。
@@ -53,6 +54,9 @@ Qt_OCCは、ユーザーインターフェースにQtフレームワーク、ジ
 
 ## 📚 ドキュメント
 
+*   **板金コネクタ利用ガイド**: [`../tool_busbar.md`](../tool_busbar.md)
+*   **板金コネクタ内部実装**: [`sheet_metal_connector_implementation_JP.md`](sheet_metal_connector_implementation_JP.md)
+*   **板金コネクタ基本版・Phase 2計画**: [`../sheet_metal_connector_refactor_plan.md`](../sheet_metal_connector_refactor_plan.md), [`../sheet_metal_connector_phase2_plan.md`](../sheet_metal_connector_phase2_plan.md)
 *   **点群の開発・手動テスト計画**: [`../point_cloud_development_plan.md`](../point_cloud_development_plan.md)
 *   **点群サンプルデータ**: [`../../samples/pointcloud/README.md`](../../samples/pointcloud/README.md)
 
