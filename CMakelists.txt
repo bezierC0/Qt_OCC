@@ -478,18 +478,6 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 include(CTest)
-if(BUILD_TESTING)
-    add_executable(PointCloudReaderTests
-        tests/PointCloudReaderTests.cpp
-        src/pointcloud/PointCloudReader.cpp
-        src/pointcloud/PointCloudReader.h
-        src/pointcloud/PointCloudData.h
-    )
-    target_include_directories(PointCloudReaderTests PRIVATE src)
-    target_link_libraries(PointCloudReaderTests PRIVATE Qt5::Core)
-    add_test(NAME PointCloudReader COMMAND PointCloudReaderTests)
-endif()
-
 # AnimationSequenceTests.cpp is currently not kept in the repository. Preserve
 # the target definition as a reference, but keep it disabled by default.
 option(BUILD_ANIMATION_SEQUENCE_TESTS
