@@ -3331,8 +3331,8 @@ void ViewerWidget::onApplyFillet(const TopoDS_Shape& edgeShape, double radius)
     }
 }
 
-void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const double g,
-                                const double b)
+TDF_Label ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const double g,
+                                     const double b)
 {
     // Add to OCAF Document
     TDF_Label label;
@@ -3394,6 +3394,7 @@ void ViewerWidget::displayShape(const TopoDS_Shape &shape, const double r, const
     
     m_occView->reDraw();
     m_occView->viewfit(); // Fit view to the new shape
+    return label;
 }
 
 void ViewerWidget::removeShape(const TopoDS_Shape &shape)

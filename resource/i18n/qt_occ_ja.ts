@@ -27,6 +27,7 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Sheet Metal Connector</source><translation>板金コネクタ</translation></message>
     <message>
         <source>Revolve</source>
         <translation>回転体</translation>
@@ -1231,5 +1232,78 @@ Z: %5 .. %6</translation></message>
     <message><source>PLY vertex record is invalid.</source><translation>PLY 頂点レコードが無効です。</translation></message>
     <message><source>PLY binary vertex data is incomplete.</source><translation>PLY バイナリ頂点データが不完全です。</translation></message>
     <message><source>Binary big-endian PLY files are not supported.</source><translation>ビッグエンディアンのバイナリ PLY には対応していません。</translation></message>
+</context>
+<context>
+    <name>WidgetBusbar</name>
+    <message><source>Sheet Metal Connector</source><translation>板金コネクタ</translation></message>
+    <message><source>Start Connection</source><translation>始点接続</translation></message>
+    <message><source>End Connection</source><translation>終点接続</translation></message>
+    <message><source>Position:</source><translation>位置：</translation></message>
+    <message><source>Face Normal:</source><translation>面法線：</translation></message>
+    <message><source>Joint:</source><translation>接合方法：</translation></message>
+    <message><source>Weld</source><translation>溶接</translation></message>
+    <message><source>Bolt / Nut</source><translation>ボルト / ナット</translation></message>
+    <message><source>Weld Type:</source><translation>溶接種類：</translation></message>
+    <message><source>Bolt Spec:</source><translation>ボルト仕様：</translation></message>
+    <message><source>Butt</source><translation>突合せ</translation></message>
+    <message><source>Lap</source><translation>重ね</translation></message>
+    <message><source>Pick Start Face</source><translation>始点面を選択</translation></message>
+    <message><source>Pick Start Point</source><translation>始点を選択</translation></message>
+    <message><source>Pick End Face</source><translation>終点面を選択</translation></message>
+    <message><source>Pick End Point</source><translation>終点を選択</translation></message>
+    <message><source>Auto Calculate Route</source><translation>経路を自動計算</translation></message>
+    <message><source>Route Points</source><translation>経路点</translation></message>
+    <message><source>Add Waypoint</source><translation>経路点を追加</translation></message>
+    <message><source>Delete Waypoint</source><translation>経路点を削除</translation></message>
+    <message><source>Selected Bend</source><translation>選択した曲げ</translation></message>
+    <message><source>Bend Radius:</source><translation>曲げ半径：</translation></message>
+    <message><source>Sheet Metal Parameters</source><translation>板金パラメータ</translation></message>
+    <message><source>Width:</source><translation>幅：</translation></message>
+    <message><source>Thickness:</source><translation>厚さ：</translation></message>
+    <message><source>Default Bend Radius:</source><translation>既定の曲げ半径：</translation></message>
+    <message><source>Minimum Clearance:</source><translation>最小クリアランス：</translation></message>
+    <message><source>Section Direction:</source><translation>断面方向：</translation></message>
+    <message><source>Auto / +Z</source><translation>自動 / +Z</translation></message>
+    <message><source>Fixed +X</source><translation>固定 +X</translation></message>
+    <message><source>Fixed +Y</source><translation>固定 +Y</translation></message>
+    <message><source>Allow Apply with collision warning</source><translation>干渉警告があっても適用を許可</translation></message>
+    <message><source>Ready</source><translation>準備完了</translation></message>
+    <message><source>Select the start connection face.</source><translation>始点の接続面を選択してください。</translation></message>
+    <message><source>Select the start connection face first.</source><translation>先に始点の接続面を選択してください。</translation></message>
+    <message><source>Select a point on the start connection face.</source><translation>始点の接続面上で点を選択してください。</translation></message>
+    <message><source>Select the end connection face.</source><translation>終点の接続面を選択してください。</translation></message>
+    <message><source>Select the end connection face first.</source><translation>先に終点の接続面を選択してください。</translation></message>
+    <message><source>Select a point on the end connection face.</source><translation>終点の接続面上で点を選択してください。</translation></message>
+    <message><source>Select a point on the previously selected face.</source><translation>先に選択した接続面上で点を選択してください。</translation></message>
+    <message><source>Connection point selected.</source><translation>接続点を選択しました。</translation></message>
+    <message><source>Connection face selected. A default point was placed on the face.</source><translation>接続面を選択し、面上に既定の点を配置しました。</translation></message>
+    <message><source>Select the start and end connection faces first.</source><translation>先に始点と終点の接続面を選択してください。</translation></message>
+    <message><source>Route calculation failed: %1</source><translation>経路計算に失敗しました：%1</translation></message>
+    <message><source>Preview failed: %1</source><translation>プレビューに失敗しました：%1</translation></message>
+    <message><source>Route is valid and ready to apply.</source><translation>経路は有効で、適用できます。</translation></message>
+    <message><source>Route has a collision or clearance violation.</source><translation>経路に干渉またはクリアランス違反があります。</translation></message>
+    <message><source>The connector collides with another shape or violates the minimum clearance.</source><translation>板金コネクタが他の形状と干渉しているか、最小クリアランスを満たしていません。</translation></message>
+    <message><source>Sheet-metal connector generated successfully.</source><translation>板金コネクタを生成しました。</translation></message>
+    <message><source>Cleared.</source><translation>クリアしました。</translation></message>
+    <message><source> mm</source><translation> mm</translation></message>
+    <message><source>-</source><translation>-</translation></message>
+    <message><source>Apply</source><translation>適用</translation></message>
+    <message><source>Clear</source><translation>クリア</translation></message>
+    <message><source>Close</source><translation>閉じる</translation></message>
+    <message><source>M6</source><translation>M6</translation></message>
+    <message><source>M8</source><translation>M8</translation></message>
+    <message><source>M10</source><translation>M10</translation></message>
+    <message><source>M12</source><translation>M12</translation></message>
+    <message><source>Calculate a route before adding waypoints.</source><translation>経路点を追加する前に経路を計算してください。</translation></message>
+    <message><source>Failed to evaluate the selected face.</source><translation>選択した面を評価できませんでした。</translation></message>
+    <message><source>Failed to generate sheet metal: %1</source><translation>板金の生成に失敗しました：%1</translation></message>
+    <message><source>No active view available.</source><translation>利用可能なアクティブビューがありません。</translation></message>
+    <message><source>P%1 Bend R=%2 mm</source><translation>P%1 曲げ R=%2 mm</translation></message>
+    <message><source>P%1 End</source><translation>P%1 終点</translation></message>
+    <message><source>P0 Start</source><translation>P0 始点</translation></message>
+    <message><source>Select two faces and calculate a route first.</source><translation>先に2つの接続面を選択して経路を計算してください。</translation></message>
+    <message><source>Start and end points cannot be deleted.</source><translation>始点と終点は削除できません。</translation></message>
+    <message><source>The owning viewer is not available.</source><translation>対象のビューアを利用できません。</translation></message>
+    <message><source>Select both connection faces in the same view.</source><translation>2つの接続面を同じビューで選択してください。</translation></message>
 </context>
 </TS>
