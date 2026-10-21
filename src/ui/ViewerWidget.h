@@ -152,7 +152,7 @@ public:
     void fillet();
     void hole();
 
-    void displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0); // Add this function
+    TDF_Label displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0);
     void removeShape(const TopoDS_Shape& shape);
     const std::map<TopAbs_ShapeEnum, bool>& getSelectionFilters() const ;
     void repairAndSave(const TopoDS_Shape& shape);

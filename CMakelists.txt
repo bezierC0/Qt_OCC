@@ -478,6 +478,31 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 include(CTest)
+if(BUILD_TESTING)
+    add_executable(SheetMetalConnectorTests
+        tests/SheetMetalConnectorTests.cpp
+        src/ui/SheetMetalCollisionChecker.cpp
+        src/ui/SheetMetalCollisionChecker.h
+        src/ui/SheetMetalConnectorBuilder.cpp
+        src/ui/SheetMetalConnectorBuilder.h
+        src/ui/SheetMetalFaceGeometry.cpp
+        src/ui/SheetMetalFaceGeometry.h
+        src/ui/SheetMetalConnectorModel.h
+        src/ui/SheetMetalRoutePlanner.cpp
+        src/ui/SheetMetalRoutePlanner.h
+    )
+    target_include_directories(SheetMetalConnectorTests PRIVATE
+        ${MANUAL_OCCT_INCLUDE_DIR}
+        src/ui
+    )
+    target_link_libraries(SheetMetalConnectorTests PRIVATE
+        ${OCCT_LIBRARIES_TO_LINK}
+        ${MANUAL_3RDPARTY_LIBRARIES}
+        Qt5::Core
+    )
+    add_test(NAME SheetMetalConnectorTests COMMAND SheetMetalConnectorTests)
+endif()
+
 # AnimationSequenceTests.cpp is currently not kept in the repository. Preserve
 # the target definition as a reference, but keep it disabled by default.
 option(BUILD_ANIMATION_SEQUENCE_TESTS

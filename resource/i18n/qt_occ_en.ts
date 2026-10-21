@@ -27,6 +27,7 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Sheet Metal Connector</source><translation>Sheet Metal Connector</translation></message>
     <message>
         <source>Revolve</source>
         <translation>Revolve</translation>
@@ -1596,5 +1597,78 @@ Z: %5 .. %6</translation></message>
     <message><source>PLY vertex record is invalid.</source><translation>PLY vertex record is invalid.</translation></message>
     <message><source>PLY binary vertex data is incomplete.</source><translation>PLY binary vertex data is incomplete.</translation></message>
     <message><source>Binary big-endian PLY files are not supported.</source><translation>Binary big-endian PLY files are not supported.</translation></message>
+</context>
+<context>
+    <name>WidgetBusbar</name>
+    <message><source>Sheet Metal Connector</source><translation>Sheet Metal Connector</translation></message>
+    <message><source>Start Connection</source><translation>Start Connection</translation></message>
+    <message><source>End Connection</source><translation>End Connection</translation></message>
+    <message><source>Position:</source><translation>Position:</translation></message>
+    <message><source>Face Normal:</source><translation>Face Normal:</translation></message>
+    <message><source>Joint:</source><translation>Joint:</translation></message>
+    <message><source>Weld</source><translation>Weld</translation></message>
+    <message><source>Bolt / Nut</source><translation>Bolt / Nut</translation></message>
+    <message><source>Weld Type:</source><translation>Weld Type:</translation></message>
+    <message><source>Bolt Spec:</source><translation>Bolt Spec:</translation></message>
+    <message><source>Butt</source><translation>Butt</translation></message>
+    <message><source>Lap</source><translation>Lap</translation></message>
+    <message><source>Pick Start Face</source><translation>Pick Start Face</translation></message>
+    <message><source>Pick Start Point</source><translation>Pick Start Point</translation></message>
+    <message><source>Pick End Face</source><translation>Pick End Face</translation></message>
+    <message><source>Pick End Point</source><translation>Pick End Point</translation></message>
+    <message><source>Auto Calculate Route</source><translation>Auto Calculate Route</translation></message>
+    <message><source>Route Points</source><translation>Route Points</translation></message>
+    <message><source>Add Waypoint</source><translation>Add Waypoint</translation></message>
+    <message><source>Delete Waypoint</source><translation>Delete Waypoint</translation></message>
+    <message><source>Selected Bend</source><translation>Selected Bend</translation></message>
+    <message><source>Bend Radius:</source><translation>Bend Radius:</translation></message>
+    <message><source>Sheet Metal Parameters</source><translation>Sheet Metal Parameters</translation></message>
+    <message><source>Width:</source><translation>Width:</translation></message>
+    <message><source>Thickness:</source><translation>Thickness:</translation></message>
+    <message><source>Default Bend Radius:</source><translation>Default Bend Radius:</translation></message>
+    <message><source>Minimum Clearance:</source><translation>Minimum Clearance:</translation></message>
+    <message><source>Section Direction:</source><translation>Section Direction:</translation></message>
+    <message><source>Auto / +Z</source><translation>Auto / +Z</translation></message>
+    <message><source>Fixed +X</source><translation>Fixed +X</translation></message>
+    <message><source>Fixed +Y</source><translation>Fixed +Y</translation></message>
+    <message><source>Allow Apply with collision warning</source><translation>Allow Apply with collision warning</translation></message>
+    <message><source>Ready</source><translation>Ready</translation></message>
+    <message><source>Select the start connection face.</source><translation>Select the start connection face.</translation></message>
+    <message><source>Select the start connection face first.</source><translation>Select the start connection face first.</translation></message>
+    <message><source>Select a point on the start connection face.</source><translation>Select a point on the start connection face.</translation></message>
+    <message><source>Select the end connection face.</source><translation>Select the end connection face.</translation></message>
+    <message><source>Select the end connection face first.</source><translation>Select the end connection face first.</translation></message>
+    <message><source>Select a point on the end connection face.</source><translation>Select a point on the end connection face.</translation></message>
+    <message><source>Select a point on the previously selected face.</source><translation>Select a point on the previously selected face.</translation></message>
+    <message><source>Connection point selected.</source><translation>Connection point selected.</translation></message>
+    <message><source>Connection face selected. A default point was placed on the face.</source><translation>Connection face selected. A default point was placed on the face.</translation></message>
+    <message><source>Select the start and end connection faces first.</source><translation>Select the start and end connection faces first.</translation></message>
+    <message><source>Route calculation failed: %1</source><translation>Route calculation failed: %1</translation></message>
+    <message><source>Preview failed: %1</source><translation>Preview failed: %1</translation></message>
+    <message><source>Route is valid and ready to apply.</source><translation>Route is valid and ready to apply.</translation></message>
+    <message><source>Route has a collision or clearance violation.</source><translation>Route has a collision or clearance violation.</translation></message>
+    <message><source>The connector collides with another shape or violates the minimum clearance.</source><translation>The connector collides with another shape or violates the minimum clearance.</translation></message>
+    <message><source>Sheet-metal connector generated successfully.</source><translation>Sheet-metal connector generated successfully.</translation></message>
+    <message><source>Cleared.</source><translation>Cleared.</translation></message>
+    <message><source> mm</source><translation> mm</translation></message>
+    <message><source>-</source><translation>-</translation></message>
+    <message><source>Apply</source><translation>Apply</translation></message>
+    <message><source>Clear</source><translation>Clear</translation></message>
+    <message><source>Close</source><translation>Close</translation></message>
+    <message><source>M6</source><translation>M6</translation></message>
+    <message><source>M8</source><translation>M8</translation></message>
+    <message><source>M10</source><translation>M10</translation></message>
+    <message><source>M12</source><translation>M12</translation></message>
+    <message><source>Calculate a route before adding waypoints.</source><translation>Calculate a route before adding waypoints.</translation></message>
+    <message><source>Failed to evaluate the selected face.</source><translation>Failed to evaluate the selected face.</translation></message>
+    <message><source>Failed to generate sheet metal: %1</source><translation>Failed to generate sheet metal: %1</translation></message>
+    <message><source>No active view available.</source><translation>No active view available.</translation></message>
+    <message><source>P%1 Bend R=%2 mm</source><translation>P%1 Bend R=%2 mm</translation></message>
+    <message><source>P%1 End</source><translation>P%1 End</translation></message>
+    <message><source>P0 Start</source><translation>P0 Start</translation></message>
+    <message><source>Select two faces and calculate a route first.</source><translation>Select two faces and calculate a route first.</translation></message>
+    <message><source>Start and end points cannot be deleted.</source><translation>Start and end points cannot be deleted.</translation></message>
+    <message><source>The owning viewer is not available.</source><translation>The owning viewer is not available.</translation></message>
+    <message><source>Select both connection faces in the same view.</source><translation>Select both connection faces in the same view.</translation></message>
 </context>
 </TS>

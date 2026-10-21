@@ -1,128 +1,162 @@
 #include "widget_busbar.h"
 #include "ui_widget_busbar.h"
 
-#include "ViewManager.h"
 #include "OCCView.h"
-#include "ViewerPickHelper.h"
+#include "SelectedEntity.h"
+#include "SheetMetalConnectorBuilder.h"
+#include "SheetMetalFaceGeometry.h"
+#include "SheetMetalRoutePlanner.h"
+#include "ViewManager.h"
+#include "ViewerWidget.h"
 
-// OCC
-#include <gp_Pnt.hxx>
-#include <gp_Dir.hxx>
-#include <gp_Ax2.hxx>
-#include <gp_Vec.hxx>
-#include <BRepBuilderAPI_MakeEdge.hxx>
-#include <BRepBuilderAPI_MakeWire.hxx>
-#include <BRepBuilderAPI_MakeFace.hxx>
-#include <BRepBuilderAPI_MakePolygon.hxx>
-#include <BRepBuilderAPI_MakeSolid.hxx>
-#include <BRepPrimAPI_MakePrism.hxx>
-#include <BRepAlgoAPI_Fuse.hxx>
-#include <BRep_Builder.hxx>
-#include <TopoDS_Wire.hxx>
-#include <TopoDS_Face.hxx>
-#include <TopoDS_Solid.hxx>
-#include <TopoDS_Compound.hxx>
-#include <TopoDS.hxx>
 #include <AIS_InteractiveContext.hxx>
-#include <Precision.hxx>
+#include <AIS_Shape.hxx>
+#include <Quantity_Color.hxx>
+#include <StdSelect_ViewerSelector3d.hxx>
+#include <TCollection_AsciiString.hxx>
+#include <TCollection_ExtendedString.hxx>
+#include <TDataStd_Comment.hxx>
+#include <TDataStd_Name.hxx>
+#include <TDF_Tool.hxx>
+#include <TopLoc_Location.hxx>
+#include <TopoDS.hxx>
+#include <XCAFDoc_ShapeTool.hxx>
+#include <XCAFPrs_AISObject.hxx>
 
-// Qt
-#include <QMessageBox>
-#include <QListWidgetItem>
 #include <QCloseEvent>
+#include <QListWidgetItem>
+#include <QMessageBox>
 
-// ============================================================
-// Anonymous namespace - helpers
-// ============================================================
 namespace
 {
-
-/// Returns the total arc-length of a polyline defined by pts.
-double pathLength(const std::vector<gp_Pnt> &pts)
+TopoDS_Shape shapeFromObject(const Handle(AIS_InteractiveObject)& object)
 {
-    double len = 0.0;
-    for (std::size_t i = 1; i < pts.size(); ++i)
-        len += pts[i - 1].Distance(pts[i]);
-    return len;
-}
-
-/**
- * @brief Generates one orthogonal candidate path using the given axis order.
- *
- * Starting from p0, the function moves sequentially along axes[0], axes[1],
- * axes[2] until it reaches p1.  This produces at most two intermediate
- * waypoints (four points total: p0, Q1, Q2, p1).
- *
- * @param p0    Start point.
- * @param p1    End point.
- * @param axes  Axis indices in traversal order (0=X, 1=Y, 2=Z).
- * @return      Candidate path points including p0 and p1.
- */
-std::vector<gp_Pnt> makeCandidatePath(const gp_Pnt &p0,
-                                      const gp_Pnt &p1,
-                                      const int     axes[3])
-{
-    double c[3] = {p0.X(), p0.Y(), p0.Z()};
-    const double d[3] = {p1.X(), p1.Y(), p1.Z()};
-
-    std::vector<gp_Pnt> pts;
-    pts.push_back(p0);
-
-    for (int k = 0; k < 3; ++k) {
-        int ax = axes[k];
-        c[ax] = d[ax];
-        pts.emplace_back(c[0], c[1], c[2]);
+    if (object.IsNull()) {
+        return {};
     }
-    return pts;
-}
 
-/// Removes consecutive duplicate points closer than Precision::Confusion().
-std::vector<gp_Pnt> removeDuplicates(const std::vector<gp_Pnt> &pts)
-{
-    std::vector<gp_Pnt> out;
-    for (const auto &p : pts) {
-        if (out.empty() || out.back().Distance(p) > Precision::Confusion())
-            out.push_back(p);
+    TopoDS_Shape shape;
+    const auto aisShape = Handle(AIS_Shape)::DownCast(object);
+    if (!aisShape.IsNull()) {
+        shape = aisShape->Shape();
+    } else {
+        const auto xcafObject = Handle(XCAFPrs_AISObject)::DownCast(object);
+        if (!xcafObject.IsNull()) {
+            XCAFDoc_ShapeTool::GetShape(xcafObject->GetLabel(), shape);
+        }
     }
-    return out;
+
+    if (!shape.IsNull() && object->LocalTransformation().Form() != gp_Identity) {
+        shape.Location(TopLoc_Location(object->LocalTransformation()) * shape.Location());
+    }
+    return shape;
 }
 
-} // namespace
+QString pointText(const gp_Pnt& point)
+{
+    return QStringLiteral("(%1, %2, %3)")
+        .arg(point.X(), 0, 'f', 1)
+        .arg(point.Y(), 0, 'f', 1)
+        .arg(point.Z(), 0, 'f', 1);
+}
 
-// ============================================================
-// WidgetBusbar
-// ============================================================
+QString directionText(const gp_Dir& direction)
+{
+    return QStringLiteral("(%1, %2, %3)")
+        .arg(direction.X(), 0, 'f', 3)
+        .arg(direction.Y(), 0, 'f', 3)
+        .arg(direction.Z(), 0, 'f', 3);
+}
+}
 
-WidgetBusbar::WidgetBusbar(QWidget *parent)
+WidgetBusbar::WidgetBusbar(QWidget* parent)
     : QWidget(parent)
     , ui(new Ui::WidgetBusbar)
 {
     ui->setupUi(this);
     setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint);
 
-    // Default normal direction: +Z (index 4)
-    ui->comboBoxStartNormal->setCurrentIndex(defaultNormalIndex());
-    ui->comboBoxEndNormal->setCurrentIndex(defaultNormalIndex());
-
-    // Button connections
-    connect(ui->pushButtonPickStart,      &QPushButton::clicked, this, &WidgetBusbar::onPickStartClicked);
-    connect(ui->pushButtonPickEnd,        &QPushButton::clicked, this, &WidgetBusbar::onPickEndClicked);
-    connect(ui->pushButtonAutoCalc,       &QPushButton::clicked, this, &WidgetBusbar::onAutoCalcClicked);
-    connect(ui->pushButtonAddWaypoint,    &QPushButton::clicked, this, &WidgetBusbar::onAddWaypointClicked);
-    connect(ui->pushButtonDeleteWaypoint, &QPushButton::clicked, this, &WidgetBusbar::onDeleteWaypointClicked);
-    connect(ui->pushButtonApply,          &QPushButton::clicked, this, &WidgetBusbar::onApplyClicked);
-    connect(ui->pushButtonClear,          &QPushButton::clicked, this, &WidgetBusbar::onClearClicked);
-    connect(ui->pushButtonClose,          &QPushButton::clicked, this, &WidgetBusbar::onCloseClicked);
-    connect(ui->listWidgetWaypoints,      &QListWidget::currentItemChanged,
+    connect(ui->pushButtonPickStart, &QPushButton::clicked,
+            this, &WidgetBusbar::onPickStartClicked);
+    connect(ui->pushButtonPickStartPoint, &QPushButton::clicked,
+            this, &WidgetBusbar::onPickStartPointClicked);
+    connect(ui->pushButtonPickEnd, &QPushButton::clicked,
+            this, &WidgetBusbar::onPickEndClicked);
+    connect(ui->pushButtonPickEndPoint, &QPushButton::clicked,
+            this, &WidgetBusbar::onPickEndPointClicked);
+    connect(ui->pushButtonAutoCalc, &QPushButton::clicked,
+            this, &WidgetBusbar::onAutoCalcClicked);
+    connect(ui->pushButtonAddWaypoint, &QPushButton::clicked,
+            this, &WidgetBusbar::onAddWaypointClicked);
+    connect(ui->pushButtonDeleteWaypoint, &QPushButton::clicked,
+            this, &WidgetBusbar::onDeleteWaypointClicked);
+    connect(ui->pushButtonApply, &QPushButton::clicked,
+            this, &WidgetBusbar::onApplyClicked);
+    connect(ui->pushButtonClear, &QPushButton::clicked,
+            this, &WidgetBusbar::onClearClicked);
+    connect(ui->pushButtonClose, &QPushButton::clicked,
+            this, &WidgetBusbar::onCloseClicked);
+    connect(ui->listWidgetWaypoints, &QListWidget::currentItemChanged,
             this, &WidgetBusbar::onWaypointSelected);
-    connect(ui->comboBoxNodeType,         QOverload<int>::of(&QComboBox::currentIndexChanged),
-            this, &WidgetBusbar::onNodeTypeChanged);
+
+    const auto refreshPreview = [this]() {
+        if (m_data.routePoints.size() >= 2) {
+            updatePreview();
+        }
+    };
+    connect(ui->spinBoxWidth, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, refreshPreview);
+    connect(ui->spinBoxThickness, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, refreshPreview);
+    connect(ui->spinBoxClearance, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, refreshPreview);
+    connect(ui->comboBoxStartJoint, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, refreshPreview);
+    connect(ui->comboBoxEndJoint, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, refreshPreview);
+    connect(ui->comboBoxStartBoltSpec, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, refreshPreview);
+    connect(ui->comboBoxEndBoltSpec, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, refreshPreview);
+    connect(ui->comboBoxSectionDir, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, refreshPreview);
+    connect(ui->spinBoxBendRadius, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
+            this, [this](double) {
+                if (m_selectedNodeIndex > 0
+                    && m_selectedNodeIndex < static_cast<int>(m_data.routePoints.size()) - 1) {
+                    saveCurrentNodeProps();
+                    updatePreview();
+                    refreshWaypointList();
+                }
+            });
+
+    const auto updateStartJointControls = [this](int index) {
+        const bool isWeld = index == 0;
+        ui->labelStartWeldType->setEnabled(isWeld);
+        ui->comboBoxStartWeldType->setEnabled(isWeld);
+        ui->labelStartBoltSpec->setEnabled(!isWeld);
+        ui->comboBoxStartBoltSpec->setEnabled(!isWeld);
+    };
+    const auto updateEndJointControls = [this](int index) {
+        const bool isWeld = index == 0;
+        ui->labelEndWeldType->setEnabled(isWeld);
+        ui->comboBoxEndWeldType->setEnabled(isWeld);
+        ui->labelEndBoltSpec->setEnabled(!isWeld);
+        ui->comboBoxEndBoltSpec->setEnabled(!isWeld);
+    };
+    connect(ui->comboBoxStartJoint, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, updateStartJointControls);
+    connect(ui->comboBoxEndJoint, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, updateEndJointControls);
+    updateStartJointControls(ui->comboBoxStartJoint->currentIndex());
+    updateEndJointControls(ui->comboBoxEndJoint->currentIndex());
 
     updateStatus(tr("Ready"));
 }
 
 WidgetBusbar::~WidgetBusbar()
 {
+    stopFacePicking();
     clearPreview();
     delete ui;
 }
@@ -133,409 +167,527 @@ void WidgetBusbar::show()
     refreshWaypointList();
 }
 
-void WidgetBusbar::closeEvent(QCloseEvent *event)
+void WidgetBusbar::closeEvent(QCloseEvent* event)
 {
+    stopFacePicking();
     clearPreview();
     QWidget::closeEvent(event);
 }
 
-// ============================================================
-// Start point picking
-// ============================================================
-
 void WidgetBusbar::onPickStartClicked()
 {
-    // Stop any in-progress end-pick
-    if (m_pickHelperEnd && m_pickHelperEnd->isActive())
-        m_pickHelperEnd->stop();
-
-    if (!m_pickHelperStart)
-        m_pickHelperStart = new ViewerPickHelper(this);
-
-    // Disconnect any previous connection to avoid duplicate slots
-    disconnect(m_pickHelperStart, &ViewerPickHelper::pointPicked,
-               this, &WidgetBusbar::onStartPicked);
-    connect(m_pickHelperStart, &ViewerPickHelper::pointPicked,
-            this, &WidgetBusbar::onStartPicked, Qt::UniqueConnection);
-
-    m_pickHelperStart->start();
-    updateStatus(tr("Click in the 3D view to pick the start point..."));
+    startPicking(PickingState::StartFace);
 }
 
-void WidgetBusbar::onStartPicked(double x, double y, double z)
+void WidgetBusbar::onPickStartPointClicked()
 {
-    // One-shot: immediately disconnect so this slot fires only once
-    if (m_pickHelperStart)
-        disconnect(m_pickHelperStart, &ViewerPickHelper::pointPicked,
-                   this, &WidgetBusbar::onStartPicked);
-    if (m_pickHelperStart)
-        m_pickHelperStart->stop();
-
-    BusbarNode node;
-    node.position   = gp_Pnt(x, y, z);
-    node.normal     = normalFromIndex(ui->comboBoxStartNormal->currentIndex());
-    node.isEndpoint = true;
-
-    // Start node is always m_nodes[0]
-    if (m_hasStart && !m_nodes.empty())
-        m_nodes[0] = node;
-    else {
-        m_nodes.insert(m_nodes.begin(), node);
-        m_hasStart = true;
+    if (!m_hasStart) {
+        updateStatus(tr("Select the start connection face first."));
+        return;
     }
-
-    ui->labelStartPosValue->setText(
-        QString("(%1, %2, %3)").arg(x, 0, 'f', 1).arg(y, 0, 'f', 1).arg(z, 0, 'f', 1));
-    updateStatus(tr("Start point picked."));
-    refreshWaypointList();
+    startPicking(PickingState::StartPoint);
 }
-
-// ============================================================
-// End point picking
-// ============================================================
 
 void WidgetBusbar::onPickEndClicked()
 {
-    // Stop any in-progress start-pick
-    if (m_pickHelperStart && m_pickHelperStart->isActive())
-        m_pickHelperStart->stop();
-
-    if (!m_pickHelperEnd)
-        m_pickHelperEnd = new ViewerPickHelper(this);
-
-    disconnect(m_pickHelperEnd, &ViewerPickHelper::pointPicked,
-               this, &WidgetBusbar::onEndPicked);
-    connect(m_pickHelperEnd, &ViewerPickHelper::pointPicked,
-            this, &WidgetBusbar::onEndPicked, Qt::UniqueConnection);
-
-    m_pickHelperEnd->start();
-    updateStatus(tr("Click in the 3D view to pick the end point..."));
+    startPicking(PickingState::EndFace);
 }
 
-void WidgetBusbar::onEndPicked(double x, double y, double z)
+void WidgetBusbar::onPickEndPointClicked()
 {
-    // One-shot: immediately disconnect so this slot fires only once
-    if (m_pickHelperEnd)
-        disconnect(m_pickHelperEnd, &ViewerPickHelper::pointPicked,
-                   this, &WidgetBusbar::onEndPicked);
-    if (m_pickHelperEnd)
-        m_pickHelperEnd->stop();
+    if (!m_hasEnd) {
+        updateStatus(tr("Select the end connection face first."));
+        return;
+    }
+    startPicking(PickingState::EndPoint);
+}
 
-    BusbarNode node;
-    node.position   = gp_Pnt(x, y, z);
-    node.normal     = normalFromIndex(ui->comboBoxEndNormal->currentIndex());
-    node.isEndpoint = true;
+void WidgetBusbar::startPicking(PickingState state)
+{
+    stopFacePicking();
 
-    if (m_hasEnd && !m_nodes.empty())
-        m_nodes.back() = node;
-    else {
-        m_nodes.push_back(node);
-        m_hasEnd = true;
+    auto* view = ViewManager::getInstance().getActiveView();
+    if (!view) {
+        updateStatus(tr("No active view available."));
+        return;
+    }
+    if (m_modelView && view != m_modelView) {
+        updateStatus(tr("Select both connection faces in the same view."));
+        return;
     }
 
-    ui->labelEndPosValue->setText(
-        QString("(%1, %2, %3)").arg(x, 0, 'f', 1).arg(y, 0, 'f', 1).arg(z, 0, 'f', 1));
-    updateStatus(tr("End point picked."));
-    refreshWaypointList();
+    m_pickView = view;
+    m_pickingState = state;
+    m_savedMouseMode = static_cast<int>(view->getMouseMode());
+    m_savedFilters = view->getSelectionFilters();
+
+    view->clearSelectedObjects();
+    for (const auto& filter : m_savedFilters) {
+        view->updateSelectionFilter(filter.first, false);
+    }
+    view->updateSelectionFilter(TopAbs_FACE, true);
+    view->setMouseMode(View::MouseMode::SELECTION);
+
+    connect(view, &OCCView::signalSpaceSelected,
+            this, &WidgetBusbar::onObjectSelected, Qt::UniqueConnection);
+
+    if (state == PickingState::StartFace) {
+        updateStatus(tr("Select the start connection face."));
+    } else if (state == PickingState::StartPoint) {
+        updateStatus(tr("Select a point on the start connection face."));
+    } else if (state == PickingState::EndFace) {
+        updateStatus(tr("Select the end connection face."));
+    } else {
+        updateStatus(tr("Select a point on the end connection face."));
+    }
 }
 
-// ============================================================
-// Auto route calculation
-// ============================================================
+void WidgetBusbar::stopFacePicking()
+{
+    if (m_pickingState == PickingState::Idle) {
+        return;
+    }
+
+    if (m_pickView) {
+        disconnect(m_pickView, &OCCView::signalSpaceSelected,
+                   this, &WidgetBusbar::onObjectSelected);
+        m_pickView->setMouseMode(static_cast<View::MouseMode>(m_savedMouseMode));
+        for (const auto& filter : m_savedFilters) {
+            m_pickView->updateSelectionFilter(filter.first, filter.second);
+        }
+    }
+
+    m_pickView.clear();
+    m_pickingState = PickingState::Idle;
+}
+
+void WidgetBusbar::onObjectSelected(const TopoDS_Shape& shape)
+{
+    if (m_pickingState == PickingState::Idle
+        || shape.IsNull()
+        || shape.ShapeType() != TopAbs_FACE) {
+        return;
+    }
+
+    const bool isStart = m_pickingState == PickingState::StartFace
+        || m_pickingState == PickingState::StartPoint;
+    const bool isPoint = m_pickingState == PickingState::StartPoint
+        || m_pickingState == PickingState::EndPoint;
+    SheetMetalConnectionEnd& connection = isStart
+        ? m_data.start
+        : m_data.end;
+    const PickingState completedState = m_pickingState;
+
+    const auto& selectedObjects = m_pickView->getSelectedObjects();
+    if (selectedObjects.empty() || !selectedObjects.back()) {
+        updateStatus(tr("Failed to evaluate the selected face."));
+        return;
+    }
+    const auto& entity = selectedObjects.back();
+    const Handle(AIS_InteractiveObject) parentObject = entity->GetParentInteractiveObject();
+    const bool updated = isPoint
+        ? updatePointFromSelection(connection, TopoDS::Face(shape), parentObject)
+        : updateConnectionFromSelection(connection, TopoDS::Face(shape), parentObject);
+    if (!updated) {
+        updateStatus(isPoint
+            ? tr("Select a point on the previously selected face.")
+            : tr("Failed to evaluate the selected face."));
+        return;
+    }
+
+    if (completedState == PickingState::StartFace) {
+        const bool sameView = !m_modelView || m_modelView == m_pickView;
+        m_modelView = m_pickView;
+        if (!sameView) {
+            m_data.end = SheetMetalConnectionEnd();
+            m_hasEnd = false;
+            ui->labelEndPosValue->setText(QStringLiteral("-"));
+            ui->labelEndNormalValue->setText(QStringLiteral("-"));
+        }
+        m_hasStart = true;
+        ui->labelStartPosValue->setText(pointText(connection.position));
+        ui->labelStartNormalValue->setText(directionText(connection.normal));
+    } else if (completedState == PickingState::EndFace) {
+        m_hasEnd = true;
+        ui->labelEndPosValue->setText(pointText(connection.position));
+        ui->labelEndNormalValue->setText(directionText(connection.normal));
+    } else if (completedState == PickingState::StartPoint) {
+        ui->labelStartPosValue->setText(pointText(connection.position));
+    } else {
+        ui->labelEndPosValue->setText(pointText(connection.position));
+    }
+
+    stopFacePicking();
+    m_data.routePoints.clear();
+    clearPreview();
+    refreshWaypointList();
+    updateStatus(isPoint
+        ? tr("Connection point selected.")
+        : tr("Connection face selected. A default point was placed on the face."));
+}
+
+bool WidgetBusbar::updateConnectionFromSelection(SheetMetalConnectionEnd& connection,
+                                                  const TopoDS_Face& face,
+                                                  const Handle(AIS_InteractiveObject)& parentObject)
+{
+    if (!m_pickView || face.IsNull() || parentObject.IsNull()) {
+        return false;
+    }
+
+    TopoDS_Face worldFace = face;
+    if (parentObject->LocalTransformation().Form() != gp_Identity) {
+        worldFace.Location(TopLoc_Location(parentObject->LocalTransformation())
+                           * worldFace.Location());
+    }
+
+    gp_Pnt centerPoint;
+    gp_Dir faceNormal;
+    if (!SheetMetalFaceGeometry::centerPointAndNormal(
+            worldFace, centerPoint, faceNormal)) {
+        return false;
+    }
+
+    connection.position = centerPoint;
+    connection.normal = faceNormal;
+    connection.face = worldFace;
+    connection.targetShape = shapeFromObject(parentObject);
+    connection.targetLabel = m_pickView->getSelectedObjects().back()->GetLabel();
+    return !connection.targetShape.IsNull();
+}
+
+bool WidgetBusbar::updatePointFromSelection(
+    SheetMetalConnectionEnd& connection,
+    const TopoDS_Face& face,
+    const Handle(AIS_InteractiveObject)& parentObject)
+{
+    if (!m_pickView || face.IsNull() || parentObject.IsNull()
+        || connection.face.IsNull()) {
+        return false;
+    }
+
+    TopoDS_Face worldFace = face;
+    if (parentObject->LocalTransformation().Form() != gp_Identity) {
+        worldFace.Location(TopLoc_Location(parentObject->LocalTransformation())
+                           * worldFace.Location());
+    }
+    if (!worldFace.IsSame(connection.face)) {
+        return false;
+    }
+
+    const Handle(StdSelect_ViewerSelector3d)& selector =
+        m_pickView->Context()->MainSelector();
+    if (selector.IsNull() || selector->NbPicked() < 1) {
+        return false;
+    }
+
+    gp_Pnt selectedPoint;
+    if (!SheetMetalFaceGeometry::projectPoint(
+            connection.face, selector->PickedPoint(1), selectedPoint)) {
+        return false;
+    }
+    connection.position = selectedPoint;
+    return true;
+}
 
 void WidgetBusbar::onAutoCalcClicked()
 {
-    if (!m_hasStart || !m_hasEnd || m_nodes.size() < 2) {
-        updateStatus(tr("Please pick start and end points first."));
+    if (!m_hasStart || !m_hasEnd) {
+        updateStatus(tr("Select the start and end connection faces first."));
         return;
     }
-    computeOrthogonalPath();
+
+    updateDataFromUi();
+    QString errorMessage;
+    if (!SheetMetalRoutePlanner::computeOrthogonalRoute(
+            m_data, ui->spinBoxDefaultBendRadius->value(), &errorMessage)) {
+        updateStatus(tr("Route calculation failed: %1").arg(errorMessage));
+        return;
+    }
+
+    m_selectedNodeIndex = -1;
     refreshWaypointList();
-
-    // Display preview wire
-    clearPreview();
-    TopoDS_Shape wire = buildWire();
-    if (!wire.IsNull()) {
-        auto view = ViewManager::getInstance().getActiveView();
-        if (view && view->Context()) {
-            m_previewWire = new AIS_Shape(wire);
-            m_previewWire->SetColor(Quantity_NOC_CYAN1);
-            view->Context()->Display(m_previewWire, Standard_True);
-        }
-    }
-    updateStatus(tr("Route calculated automatically."));
+    updatePreview();
 }
-
-void WidgetBusbar::computeOrthogonalPath()
-{
-    // Preserve start and end; clear intermediate waypoints
-    BusbarNode startNode = m_nodes.front();
-    BusbarNode endNode   = m_nodes.back();
-
-    const gp_Pnt &p0 = startNode.position;
-    const gp_Pnt &p1 = endNode.position;
-
-    // Resolve default connection type from radio buttons
-    ConnectionType defConn = ConnectionType::Bend;
-    if (ui->radioButtonBolt->isChecked()) defConn = ConnectionType::Bolt;
-    if (ui->radioButtonWeld->isChecked()) defConn = ConnectionType::Weld;
-
-    // Count non-zero displacement axes
-    double dx = std::abs(p1.X() - p0.X());
-    double dy = std::abs(p1.Y() - p0.Y());
-    double dz = std::abs(p1.Z() - p0.Z());
-    int nonZeroAxes = (dx > Precision::Confusion() ? 1 : 0)
-                    + (dy > Precision::Confusion() ? 1 : 0)
-                    + (dz > Precision::Confusion() ? 1 : 0);
-
-    m_nodes.clear();
-    m_nodes.push_back(startNode);
-
-    if (nonZeroAxes <= 1) {
-        // Collinear: straight segment, no waypoints
-    } else if (nonZeroAxes == 2) {
-        // Co-planar: L-shaped path with one waypoint
-        double c[3] = {p0.X(), p0.Y(), p0.Z()};
-        double d[3] = {p1.X(), p1.Y(), p1.Z()};
-        int firstAxis = (dx > Precision::Confusion()) ? 0 : (dy > Precision::Confusion() ? 1 : 2);
-        c[firstAxis] = d[firstAxis];
-
-        BusbarNode wp;
-        wp.position = gp_Pnt(c[0], c[1], c[2]);
-        wp.type     = defConn;
-        m_nodes.push_back(wp);
-    } else {
-        // General case: enumerate all 6 axis-order permutations, pick shortest
-        const int perms[6][3] = {
-            {0, 1, 2}, {0, 2, 1},
-            {1, 0, 2}, {1, 2, 0},
-            {2, 0, 1}, {2, 1, 0}
-        };
-
-        std::vector<gp_Pnt> bestPts;
-        double bestLen = std::numeric_limits<double>::max();
-
-        for (const auto &axes : perms) {
-            auto cand = makeCandidatePath(p0, p1, axes);
-            cand = removeDuplicates(cand);
-            double len = pathLength(cand);
-            if (len < bestLen) {
-                bestLen = len;
-                bestPts = cand;
-            }
-        }
-
-        // Insert intermediate points as waypoints (exclude first and last)
-        for (std::size_t i = 1; i + 1 < bestPts.size(); ++i) {
-            BusbarNode wp;
-            wp.position = bestPts[i];
-            wp.type     = defConn;
-            m_nodes.push_back(wp);
-        }
-    }
-
-    m_nodes.push_back(endNode);
-}
-
-// ============================================================
-// Waypoint add / delete
-// ============================================================
 
 void WidgetBusbar::onAddWaypointClicked()
 {
-    if (!m_hasStart || !m_hasEnd || m_nodes.size() < 2) {
-        updateStatus(tr("Pick start and end points before adding waypoints."));
+    if (m_data.routePoints.size() < 2) {
+        updateStatus(tr("Calculate a route before adding waypoints."));
         return;
     }
 
-    // Insert a new waypoint at the midpoint of the last segment
-    BusbarNode &last = m_nodes.back();
-    BusbarNode &prev = m_nodes[m_nodes.size() - 2];
-
-    BusbarNode wp;
-    wp.position = gp_Pnt(
-        (prev.position.X() + last.position.X()) * 0.5,
-        (prev.position.Y() + last.position.Y()) * 0.5,
-        (prev.position.Z() + last.position.Z()) * 0.5);
-    wp.type = ConnectionType::Bend;
-
-    m_nodes.insert(m_nodes.end() - 1, wp);
+    const auto& previous = m_data.routePoints[m_data.routePoints.size() - 2];
+    const auto& last = m_data.routePoints.back();
+    SheetMetalRoutePoint waypoint;
+    waypoint.position = gp_Pnt(
+        (previous.position.X() + last.position.X()) * 0.5,
+        (previous.position.Y() + last.position.Y()) * 0.5,
+        (previous.position.Z() + last.position.Z()) * 0.5);
+    waypoint.bend.radius = ui->spinBoxDefaultBendRadius->value();
+    m_data.routePoints.insert(m_data.routePoints.end() - 1, waypoint);
     refreshWaypointList();
-    updateStatus(tr("Waypoint added at midpoint of last segment."));
+    updatePreview();
 }
 
 void WidgetBusbar::onDeleteWaypointClicked()
 {
     const int row = ui->listWidgetWaypoints->currentRow();
-    if (row < 0 || row >= static_cast<int>(m_nodes.size())) return;
-    if (m_nodes[row].isEndpoint) {
+    if (row < 0 || row >= static_cast<int>(m_data.routePoints.size())) {
+        return;
+    }
+    if (m_data.routePoints[static_cast<std::size_t>(row)].isEndpoint) {
         updateStatus(tr("Start and end points cannot be deleted."));
         return;
     }
-    m_nodes.erase(m_nodes.begin() + row);
+
+    m_data.routePoints.erase(m_data.routePoints.begin() + row);
     m_selectedNodeIndex = -1;
     refreshWaypointList();
-    updateStatus(tr("Waypoint deleted."));
+    updatePreview();
 }
-
-// ============================================================
-// Waypoint list & property panel
-// ============================================================
 
 void WidgetBusbar::refreshWaypointList()
 {
     ui->listWidgetWaypoints->blockSignals(true);
     ui->listWidgetWaypoints->clear();
-
-    for (std::size_t i = 0; i < m_nodes.size(); ++i) {
-        const BusbarNode &n = m_nodes[i];
+    for (std::size_t index = 0; index < m_data.routePoints.size(); ++index) {
+        const auto& point = m_data.routePoints[index];
         QString label;
-        if (i == 0)
-            label = tr("P0  Start");
-        else if (i == m_nodes.size() - 1)
-            label = QString("P%1  End").arg(i);
-        else
-            label = QString("P%1  Waypoint [%2]").arg(i).arg(connectionTypeName(n.type));
-
-        label += QString("  (%1, %2, %3)")
-                     .arg(n.position.X(), 0, 'f', 1)
-                     .arg(n.position.Y(), 0, 'f', 1)
-                     .arg(n.position.Z(), 0, 'f', 1);
-
-        ui->listWidgetWaypoints->addItem(label);
+        if (index == 0) {
+            label = tr("P0 Start");
+        } else if (index + 1 == m_data.routePoints.size()) {
+            label = tr("P%1 End").arg(index);
+        } else {
+            label = tr("P%1 Bend R=%2 mm")
+                .arg(index)
+                .arg(point.bend.radius, 0, 'f', 1);
+        }
+        ui->listWidgetWaypoints->addItem(label + QStringLiteral("  ") + pointText(point.position));
+    }
+    if (m_selectedNodeIndex >= 0
+        && m_selectedNodeIndex < ui->listWidgetWaypoints->count()) {
+        ui->listWidgetWaypoints->setCurrentRow(m_selectedNodeIndex);
     }
     ui->listWidgetWaypoints->blockSignals(false);
     updateNodePropertyPanel();
 }
 
-void WidgetBusbar::onWaypointSelected(QListWidgetItem *current, QListWidgetItem * /*previous*/)
+void WidgetBusbar::onWaypointSelected(QListWidgetItem* current,
+                                       QListWidgetItem* previous)
 {
-    if (!current) { m_selectedNodeIndex = -1; updateNodePropertyPanel(); return; }
-
-    // Save previously edited node properties back to m_nodes
-    if (m_selectedNodeIndex >= 0 && m_selectedNodeIndex < static_cast<int>(m_nodes.size()))
+    Q_UNUSED(previous)
+    if (m_selectedNodeIndex >= 0) {
         saveCurrentNodeProps();
-
-    m_selectedNodeIndex = ui->listWidgetWaypoints->row(current);
+    }
+    m_selectedNodeIndex = current
+        ? ui->listWidgetWaypoints->row(current)
+        : -1;
     updateNodePropertyPanel();
 }
 
 void WidgetBusbar::updateNodePropertyPanel()
 {
-    // Only intermediate waypoints are editable
-    bool editable = (m_selectedNodeIndex > 0 &&
-                     m_selectedNodeIndex < static_cast<int>(m_nodes.size()) - 1);
-
+    const bool editable = m_selectedNodeIndex > 0
+        && m_selectedNodeIndex < static_cast<int>(m_data.routePoints.size()) - 1;
     ui->groupBoxNodeProp->setEnabled(editable);
-    if (!editable) return;
+    if (!editable) {
+        return;
+    }
 
-    const BusbarNode &n = m_nodes[m_selectedNodeIndex];
-    ui->comboBoxNodeType->blockSignals(true);
-    ui->comboBoxNodeType->setCurrentIndex(static_cast<int>(n.type));
-    ui->comboBoxNodeType->blockSignals(false);
-
-    ui->spinBoxBendRadius->setValue(n.bend.radius);
-    ui->comboBoxBoltSpec->setCurrentIndex(n.bolt.specIndex);
-    ui->comboBoxWeldType->setCurrentIndex(n.weld.typeIndex);
-
-    onNodeTypeChanged(static_cast<int>(n.type));
-}
-
-void WidgetBusbar::onNodeTypeChanged(int index)
-{
-    // Show only the parameters relevant to the selected connection type
-    bool isBend = (index == 0);
-    bool isBolt = (index == 1);
-    bool isWeld = (index == 2);
-
-    ui->labelBendRadius->setVisible(isBend);
-    ui->spinBoxBendRadius->setVisible(isBend);
-    ui->labelBoltSpec->setVisible(isBolt);
-    ui->comboBoxBoltSpec->setVisible(isBolt);
-    ui->labelWeldType->setVisible(isWeld);
-    ui->comboBoxWeldType->setVisible(isWeld);
+    ui->spinBoxBendRadius->setValue(
+        m_data.routePoints[static_cast<std::size_t>(m_selectedNodeIndex)].bend.radius);
 }
 
 void WidgetBusbar::saveCurrentNodeProps()
 {
-    if (m_selectedNodeIndex < 0 || m_selectedNodeIndex >= static_cast<int>(m_nodes.size())) return;
-    BusbarNode &n      = m_nodes[m_selectedNodeIndex];
-    n.type             = static_cast<ConnectionType>(ui->comboBoxNodeType->currentIndex());
-    n.bend.radius      = ui->spinBoxBendRadius->value();
-    n.bolt.specIndex   = ui->comboBoxBoltSpec->currentIndex();
-    n.weld.typeIndex   = ui->comboBoxWeldType->currentIndex();
+    if (m_selectedNodeIndex <= 0
+        || m_selectedNodeIndex >= static_cast<int>(m_data.routePoints.size()) - 1) {
+        return;
+    }
+    m_data.routePoints[static_cast<std::size_t>(m_selectedNodeIndex)].bend.radius =
+        ui->spinBoxBendRadius->value();
 }
 
-// ============================================================
-// Apply - generate 3-D busbar solid
-// ============================================================
+void WidgetBusbar::updateDataFromUi()
+{
+    saveCurrentNodeProps();
+    m_data.width = ui->spinBoxWidth->value();
+    m_data.thickness = ui->spinBoxThickness->value();
+    m_data.clearance = ui->spinBoxClearance->value();
+    m_data.start.jointType = ui->comboBoxStartJoint->currentIndex() == 0
+        ? SheetMetalJointType::Weld
+        : SheetMetalJointType::BoltNut;
+    m_data.end.jointType = ui->comboBoxEndJoint->currentIndex() == 0
+        ? SheetMetalJointType::Weld
+        : SheetMetalJointType::BoltNut;
+    m_data.start.boltNut.specIndex = ui->comboBoxStartBoltSpec->currentIndex();
+    m_data.end.boltNut.specIndex = ui->comboBoxEndBoltSpec->currentIndex();
+    m_data.start.weld.typeIndex = ui->comboBoxStartWeldType->currentIndex();
+    m_data.end.weld.typeIndex = ui->comboBoxEndWeldType->currentIndex();
+
+    const int directionIndex = ui->comboBoxSectionDir->currentIndex();
+    if (directionIndex == 1) {
+        m_data.upDirection = gp_Dir(1.0, 0.0, 0.0);
+    } else if (directionIndex == 2) {
+        m_data.upDirection = gp_Dir(0.0, 1.0, 0.0);
+    } else {
+        m_data.upDirection = gp_Dir(0.0, 0.0, 1.0);
+    }
+}
+
+void WidgetBusbar::updatePreview()
+{
+    updateDataFromUi();
+    clearPreview();
+
+    const auto buildResult = SheetMetalConnectorBuilder::build(m_data);
+    if (!buildResult.isValid()) {
+        updateStatus(tr("Preview failed: %1").arg(buildResult.errorMessage));
+        return;
+    }
+
+    auto* view = m_modelView.data();
+    if (!view || view->Context().IsNull()) {
+        updateStatus(tr("No active view available."));
+        return;
+    }
+
+    m_collisionResult = SheetMetalCollisionChecker::check(
+        buildResult.solid, m_data, view->getShapeObjects(), m_appliedShape);
+    m_previewShape = new AIS_Shape(buildResult.solid);
+    m_previewView = view;
+    m_previewShape->SetColor(m_collisionResult.isAcceptable()
+        ? Quantity_NOC_CYAN1
+        : Quantity_NOC_RED);
+    m_previewShape->SetTransparency(0.35);
+    m_previewShape->SetZLayer(Graphic3d_ZLayerId_Topmost);
+    view->Context()->Display(m_previewShape, Standard_False);
+    view->Context()->UpdateCurrentViewer();
+
+    updateStatus(m_collisionResult.isAcceptable()
+        ? tr("Route is valid and ready to apply.")
+        : tr("Route has a collision or clearance violation."));
+}
 
 void WidgetBusbar::onApplyClicked()
 {
-    if (m_nodes.size() < 2) {
-        updateStatus(tr("At least a start and end point are required."));
+    if (!m_hasStart || !m_hasEnd || m_data.routePoints.size() < 2) {
+        updateStatus(tr("Select two faces and calculate a route first."));
         return;
     }
 
-    // Commit current property panel before building
-    if (m_selectedNodeIndex >= 0)
-        saveCurrentNodeProps();
-
-    TopoDS_Shape wire = buildWire();
-    if (wire.IsNull()) {
-        updateStatus(tr("Failed to build route wire."));
+    updateDataFromUi();
+    const auto buildResult = SheetMetalConnectorBuilder::build(m_data);
+    if (!buildResult.isValid()) {
+        updateStatus(tr("Failed to generate sheet metal: %1").arg(buildResult.errorMessage));
         return;
     }
 
-    // Determine cross-section up-direction
-    gp_Dir upDir(0, 0, 1);
-    int sectionIdx = ui->comboBoxSectionDir->currentIndex();
-    if (sectionIdx == 1) upDir = gp_Dir(1, 0, 0);
-    else if (sectionIdx == 2) upDir = gp_Dir(0, 1, 0);
-    // sectionIdx == 0 -> auto, keep (0,0,1); sectionIdx == 3 -> Fixed +Z, same
-
-    double w = ui->spinBoxWidth->value();
-    double t = ui->spinBoxThickness->value();
-
-    TopoDS_Shape solid = buildSolid(wire, w, t, upDir);
-    if (solid.IsNull()) {
-        updateStatus(tr("Failed to generate busbar solid."));
+    auto* view = m_modelView.data();
+    if (!view) {
+        updateStatus(tr("No active view available."));
         return;
     }
 
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view) { updateStatus(tr("No active view available.")); return; }
-
-    // Remove previous solid if any
-    if (!m_solidShape.IsNull()) {
-        view->removeShape(m_solidShape->Shape());
-        m_solidShape.Nullify();
+    m_collisionResult = SheetMetalCollisionChecker::check(
+        buildResult.solid, m_data, view->getShapeObjects(), m_appliedShape);
+    if (!m_collisionResult.isAcceptable() && !ui->checkBoxAllowCollision->isChecked()) {
+        QMessageBox::warning(
+            this,
+            tr("Sheet Metal Connector"),
+            tr("The connector collides with another shape or violates the minimum clearance."));
+        updatePreview();
+        return;
     }
 
-    m_solidShape = new AIS_Shape(solid);
-    m_solidShape->SetColor(Quantity_NOC_GOLD);
-    // Let OCCView manage this shape so it responds to setDisplayMode
-    view->setShape(m_solidShape);
-    view->reDraw();
+    auto* viewer = qobject_cast<ViewerWidget*>(parentWidget());
+    if (!viewer) {
+        updateStatus(tr("The owning viewer is not available."));
+        return;
+    }
 
-    updateStatus(tr("Busbar solid generated successfully."));
+    if (!m_appliedShape.IsNull()) {
+        viewer->removeShape(m_appliedShape);
+    }
+    const TDF_Label label = viewer->displayShape(buildResult.solid, 0.83, 0.63, 0.16);
+    if (!label.IsNull()) {
+        TDataStd_Name::Set(label, "Sheet Metal Connector");
+        const QByteArray metadata = connectorMetadata().toUtf8();
+        TDataStd_Comment::Set(label, TCollection_ExtendedString(metadata.constData()));
+        viewer->updateTree();
+    }
+
+    m_appliedShape = buildResult.solid;
+    clearPreview();
+    updateStatus(tr("Sheet-metal connector generated successfully."));
 }
 
-// ============================================================
-// Clear
-// ============================================================
+QString WidgetBusbar::connectorMetadata() const
+{
+    const auto labelEntry = [](const TDF_Label& label) {
+        if (label.IsNull()) {
+            return QString();
+        }
+        TCollection_AsciiString entry;
+        TDF_Tool::Entry(label, entry);
+        return QString::fromLatin1(entry.ToCString());
+    };
+    const auto connectionText = [&labelEntry](const SheetMetalConnectionEnd& connection) {
+        return QStringLiteral("%1,%2,%3,%4,%5,%6,%7,%8,%9,%10")
+            .arg(connection.position.X(), 0, 'g', 12)
+            .arg(connection.position.Y(), 0, 'g', 12)
+            .arg(connection.position.Z(), 0, 'g', 12)
+            .arg(connection.normal.X(), 0, 'g', 12)
+            .arg(connection.normal.Y(), 0, 'g', 12)
+            .arg(connection.normal.Z(), 0, 'g', 12)
+            .arg(static_cast<int>(connection.jointType))
+            .arg(connection.boltNut.specIndex)
+            .arg(connection.weld.typeIndex)
+            .arg(labelEntry(connection.targetLabel));
+    };
+
+    QStringList routePoints;
+    routePoints.reserve(static_cast<int>(m_data.routePoints.size()));
+    for (const auto& point : m_data.routePoints) {
+        routePoints.push_back(QStringLiteral("%1,%2,%3,%4")
+            .arg(point.position.X(), 0, 'g', 12)
+            .arg(point.position.Y(), 0, 'g', 12)
+            .arg(point.position.Z(), 0, 'g', 12)
+            .arg(point.bend.radius, 0, 'g', 12));
+    }
+
+    return QStringLiteral(
+        "version=1;width=%1;thickness=%2;clearance=%3;start=%4;end=%5;route=%6")
+        .arg(m_data.width, 0, 'g', 12)
+        .arg(m_data.thickness, 0, 'g', 12)
+        .arg(m_data.clearance, 0, 'g', 12)
+        .arg(connectionText(m_data.start))
+        .arg(connectionText(m_data.end))
+        .arg(routePoints.join(QLatin1Char('|')));
+}
 
 void WidgetBusbar::onClearClicked()
 {
+    stopFacePicking();
     clearPreview();
-    m_nodes.clear();
-    m_hasStart = false;
-    m_hasEnd   = false;
-    m_selectedNodeIndex = -1;
 
-    ui->labelStartPosValue->setText(tr("-"));
-    ui->labelEndPosValue->setText(tr("-"));
-    ui->listWidgetWaypoints->clear();
+    if (!m_appliedShape.IsNull()) {
+        if (auto* viewer = qobject_cast<ViewerWidget*>(parentWidget())) {
+            viewer->removeShape(m_appliedShape);
+        }
+        m_appliedShape.Nullify();
+    }
+
+    m_data = SheetMetalConnectorData();
+    m_hasStart = false;
+    m_hasEnd = false;
+    m_modelView.clear();
+    m_selectedNodeIndex = -1;
+    ui->labelStartPosValue->setText(QStringLiteral("-"));
+    ui->labelStartNormalValue->setText(QStringLiteral("-"));
+    ui->labelEndPosValue->setText(QStringLiteral("-"));
+    ui->labelEndNormalValue->setText(QStringLiteral("-"));
+    refreshWaypointList();
     updateStatus(tr("Cleared."));
 }
 
@@ -546,162 +698,16 @@ void WidgetBusbar::onCloseClicked()
 
 void WidgetBusbar::clearPreview()
 {
-    auto view = ViewManager::getInstance().getActiveView();
-    if (!view || !view->Context()) return;
-
-    if (!m_previewWire.IsNull()) {
-        view->Context()->Remove(m_previewWire, Standard_False);
-        m_previewWire.Nullify();
+    auto* view = m_previewView.data();
+    if (view && !view->Context().IsNull() && !m_previewShape.IsNull()) {
+        view->Context()->Remove(m_previewShape, Standard_False);
+        view->Context()->UpdateCurrentViewer();
     }
-    if (!m_solidShape.IsNull()) {
-        view->removeShape(m_solidShape->Shape());
-        m_solidShape.Nullify();
-    }
-    view->reDraw();
-    view->Context()->UpdateCurrentViewer();
+    m_previewShape.Nullify();
+    m_previewView.clear();
 }
 
-// ============================================================
-// Route wire construction
-// ============================================================
-
-TopoDS_Shape WidgetBusbar::buildWire() const
+void WidgetBusbar::updateStatus(const QString& message)
 {
-    if (m_nodes.size() < 2) return {};
-
-    BRepBuilderAPI_MakeWire wireBuilder;
-    bool ok = false;
-
-    for (std::size_t i = 0; i + 1 < m_nodes.size(); ++i) {
-        const gp_Pnt &a = m_nodes[i].position;
-        const gp_Pnt &b = m_nodes[i + 1].position;
-
-        if (a.Distance(b) < Precision::Confusion()) continue;
-
-        BRepBuilderAPI_MakeEdge edgeMaker(a, b);
-        if (!edgeMaker.IsDone()) continue;
-
-        wireBuilder.Add(edgeMaker.Edge());
-        ok = true;
-    }
-
-    if (!ok || !wireBuilder.IsDone()) return {};
-    return wireBuilder.Wire();
-}
-
-// ============================================================
-// Sweep solid construction
-// ============================================================
-
-TopoDS_Shape WidgetBusbar::buildSolid(const TopoDS_Shape &/*wireShape*/,
-                                      double              width,
-                                      double              thick,
-                                      const gp_Dir       &upDir) const
-{
-    // Strategy: per-segment Prism + Fuse.
-    // BRepOffsetAPI_MakePipe fails at 90-degree corners on orthogonal routes;
-    // extruding each segment independently and fusing the results is robust.
-    try {
-        if (m_nodes.size() < 2) return {};
-
-        TopoDS_Shape result;
-        bool firstSeg = true;
-
-        for (std::size_t i = 0; i + 1 < m_nodes.size(); ++i) {
-            const gp_Pnt &a = m_nodes[i].position;
-            const gp_Pnt &b = m_nodes[i + 1].position;
-
-            gp_Vec segVec(a, b);
-            double segLen = segVec.Magnitude();
-            if (segLen < Precision::Confusion()) continue;
-            segVec.Normalize();
-
-            // Build a local frame for the cross-section at point 'a':
-            //   X = segment direction
-            //   Y = section width axis  (perpendicular to X, guided by upDir)
-            //   Z = section thickness axis
-            gp_Dir xDir(segVec);
-            gp_Dir zRef = upDir;
-            // If segment is parallel to upDir, choose an orthogonal fallback
-            if (std::abs(gp_Vec(zRef).Dot(segVec)) > 0.999)
-                zRef = (std::abs(segVec.Y()) < 0.999) ? gp_Dir(0, 1, 0)
-                                                       : gp_Dir(1, 0, 0);
-
-            gp_Vec yVec = gp_Vec(zRef).Crossed(segVec).Normalized();
-            gp_Vec zVec = segVec.Crossed(yVec).Normalized();
-
-            // Four corners of the rectangular cross-section at start point 'a'
-            double hw = width * 0.5;
-            double ht = thick * 0.5;
-
-            gp_Pnt c0 = a.Translated( hw * yVec + ht * zVec);
-            gp_Pnt c1 = a.Translated(-hw * yVec + ht * zVec);
-            gp_Pnt c2 = a.Translated(-hw * yVec - ht * zVec);
-            gp_Pnt c3 = a.Translated( hw * yVec - ht * zVec);
-
-            BRepBuilderAPI_MakePolygon rect(c0, c1, c2, c3, Standard_True);
-            if (!rect.IsDone()) continue;
-
-            BRepBuilderAPI_MakeFace face(rect.Wire(), Standard_True);
-            if (!face.IsDone()) continue;
-
-            // Extrude the face along the segment vector to produce a solid
-            gp_Vec extrudeVec = segVec * segLen;
-            BRepPrimAPI_MakePrism prism(face.Face(), extrudeVec, Standard_False);
-            prism.Build();
-            if (!prism.IsDone()) continue;
-
-            TopoDS_Shape segSolid = prism.Shape();
-            if (segSolid.IsNull()) continue;
-
-            if (firstSeg) {
-                result   = segSolid;
-                firstSeg = false;
-            } else {
-                // Fuse this segment's box with the accumulated solid
-                BRepAlgoAPI_Fuse fuse(result, segSolid);
-                fuse.Build();
-                if (fuse.IsDone())
-                    result = fuse.Shape();
-                else
-                    result = segSolid; // fall back: keep at least current segment
-            }
-        }
-
-        return result;
-    } catch (...) {
-        return {};
-    }
-}
-
-// ============================================================
-// Utility
-// ============================================================
-
-void WidgetBusbar::updateStatus(const QString &msg)
-{
-    ui->labelStatus->setText(msg);
-}
-
-QString WidgetBusbar::connectionTypeName(ConnectionType t)
-{
-    switch (t) {
-    case ConnectionType::Bend: return QStringLiteral("Bend");
-    case ConnectionType::Bolt: return QStringLiteral("Bolt");
-    case ConnectionType::Weld: return QStringLiteral("Weld");
-    }
-    return QStringLiteral("Bend");
-}
-
-gp_Dir WidgetBusbar::normalFromIndex(int idx)
-{
-    switch (idx) {
-    case 0: return gp_Dir( 1,  0,  0);
-    case 1: return gp_Dir(-1,  0,  0);
-    case 2: return gp_Dir( 0,  1,  0);
-    case 3: return gp_Dir( 0, -1,  0);
-    case 4: return gp_Dir( 0,  0,  1);
-    case 5: return gp_Dir( 0,  0, -1);
-    default: return gp_Dir(0,  0,  1);
-    }
+    ui->labelStatus->setText(message);
 }

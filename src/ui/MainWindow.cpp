@@ -598,8 +598,8 @@ void MainWindow::createToolGroup()
         connect(m_animationAction, &QAction::triggered, this, &MainWindow::onAnimation);
         m_otherPannel->addLargeAction(m_animationAction);
 
-        // busbar
-        m_busbarAction = new QAction(QIcon(":/icons/icon/busbar.svg"), tr("Busbar"), this);
+        // sheet metal connector
+        m_busbarAction = new QAction(QIcon(":/icons/icon/busbar.svg"), tr("Sheet Metal Connector"), this);
         connect(m_busbarAction, &QAction::triggered, this, &MainWindow::onBusbar);
         m_otherPannel->addLargeAction(m_busbarAction);
     };
