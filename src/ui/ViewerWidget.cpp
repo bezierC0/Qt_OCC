@@ -40,7 +40,7 @@
 #include "widget_chamfer.h"
 #include "widget_hole.h"
 #include "widget_animation.h"
-#include "widget_busbar.h"
+#include "widget_sheet_metal_connector.h"
 
 #include <BRepPrimAPI_MakeCylinder.hxx>
 #include <BRepAlgoAPI_Cut.hxx>
@@ -125,6 +125,9 @@
 #include <XCAFDoc_ColorTool.hxx>
 #include <XCAFPrs_AISObject.hxx>
 #include <TDataStd_Name.hxx>
+#include <TDataStd_Comment.hxx>
+#include <TCollection_AsciiString.hxx>
+#include <TDF_Tool.hxx>
 #include <BRepBndLib.hxx>
 #include <BRepGProp.hxx>
 #include <BRep_Tool.hxx>
@@ -2361,16 +2364,16 @@ void ViewerWidget::animation()
     m_widgetAnimation->raise();
 }
 
-void ViewerWidget::busbar()
+void ViewerWidget::sheetMetalConnector()
 {
-    if (!m_widgetBusbar) {
-        m_widgetBusbar = new WidgetBusbar(this);
-        m_widgetBusbar->setAttribute(Qt::WA_DeleteOnClose);
-        connect(m_widgetBusbar, &QWidget::destroyed, this,
-                [this]() { m_widgetBusbar = nullptr; });
+    if (!m_widgetSheetMetalConnector) {
+        m_widgetSheetMetalConnector = new WidgetSheetMetalConnector(this);
+        m_widgetSheetMetalConnector->setAttribute(Qt::WA_DeleteOnClose);
+        connect(m_widgetSheetMetalConnector, &QWidget::destroyed, this,
+                [this]() { m_widgetSheetMetalConnector = nullptr; });
     }
-    m_widgetBusbar->show();
-    m_widgetBusbar->raise();
+    m_widgetSheetMetalConnector->show();
+    m_widgetSheetMetalConnector->raise();
 }
 
 void ViewerWidget::measureDistance()
@@ -3461,6 +3464,67 @@ void ViewerWidget::removeShape(const TopoDS_Shape &shape)
     updateTree();
     m_occView->reDraw();
     m_occView->viewfit(); // Fit view to the new shape
+}
+
+bool ViewerWidget::selectedSheetMetalConnector(QString& metadata,
+                                               TDF_Label& label,
+                                               TopoDS_Shape& shape) const
+{
+    metadata.clear();
+    label.Nullify();
+    shape.Nullify();
+
+    if (!m_occView || m_doc->m_ocafDoc.IsNull()) {
+        return false;
+    }
+
+    const auto& selectedObjects = m_occView->getSelectedObjects();
+    if (selectedObjects.size() != 1 || !selectedObjects.front()) {
+        return false;
+    }
+
+    label = selectedObjects.front()->GetLabel();
+    Handle(TDataStd_Name) nameAttribute;
+    Handle(TDataStd_Comment) commentAttribute;
+    if (label.IsNull()
+        || !label.FindAttribute(TDataStd_Name::GetID(), nameAttribute)
+        || QString::fromUtf16(nameAttribute->Get().ToExtString())
+            != QStringLiteral("Sheet Metal Connector")
+        || !label.FindAttribute(TDataStd_Comment::GetID(), commentAttribute)
+        || !XCAFDoc_ShapeTool::GetShape(label, shape)
+        || shape.IsNull()) {
+        label.Nullify();
+        shape.Nullify();
+        return false;
+    }
+
+    metadata = QString::fromUtf16(commentAttribute->Get().ToExtString());
+    return !metadata.isEmpty();
+}
+
+bool ViewerWidget::resolveShapeLabel(const QString& entry,
+                                     TDF_Label& label,
+                                     TopoDS_Shape& shape) const
+{
+    label.Nullify();
+    shape.Nullify();
+    if (entry.isEmpty() || m_doc->m_ocafDoc.IsNull()) {
+        return false;
+    }
+
+    const QByteArray entryBytes = entry.toLatin1();
+    TDF_Tool::Label(m_doc->m_ocafDoc->GetData(),
+                    TCollection_AsciiString(entryBytes.constData()),
+                    label,
+                    Standard_False);
+    if (label.IsNull()
+        || !XCAFDoc_ShapeTool::GetShape(label, shape)
+        || shape.IsNull()) {
+        label.Nullify();
+        shape.Nullify();
+        return false;
+    }
+    return true;
 }
 
 void ViewerWidget::removeLabelShape(const TDF_Label& label)

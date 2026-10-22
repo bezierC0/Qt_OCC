@@ -1234,7 +1234,7 @@ Z: %5 .. %6</translation></message>
     <message><source>Binary big-endian PLY files are not supported.</source><translation>暂不支持大端序二进制 PLY 文件。</translation></message>
 </context>
 <context>
-    <name>WidgetBusbar</name>
+    <name>WidgetSheetMetalConnector</name>
     <message><source>Sheet Metal Connector</source><translation>钣金连接</translation></message>
     <message><source>Start Connection</source><translation>起始连接</translation></message>
     <message><source>End Connection</source><translation>终止连接</translation></message>
@@ -1255,18 +1255,23 @@ Z: %5 .. %6</translation></message>
     <message><source>Route Points</source><translation>路径点</translation></message>
     <message><source>Add Waypoint</source><translation>添加路径点</translation></message>
     <message><source>Delete Waypoint</source><translation>删除路径点</translation></message>
-    <message><source>Selected Bend</source><translation>选中的折弯</translation></message>
+    <message><source>Selected Route Node</source><translation>选中的路径节点</translation></message>
+    <message><source>Transition:</source><translation>节点连接：</translation></message>
+    <message><source>Bend</source><translation>折弯</translation></message>
     <message><source>Bend Radius:</source><translation>折弯半径：</translation></message>
     <message><source>Sheet Metal Parameters</source><translation>钣金参数</translation></message>
     <message><source>Width:</source><translation>宽度：</translation></message>
     <message><source>Thickness:</source><translation>厚度：</translation></message>
     <message><source>Default Bend Radius:</source><translation>默认折弯半径：</translation></message>
     <message><source>Minimum Clearance:</source><translation>最小间隙：</translation></message>
+      <message><source>Maximum Bends per Sheet:</source><translation>每块钣金最大折弯次数：</translation></message>
+      <message><source>Allow Side Bends</source><translation>允许侧向折弯</translation></message>
     <message><source>Section Direction:</source><translation>截面方向：</translation></message>
-    <message><source>Auto / +Z</source><translation>自动 / +Z</translation></message>
+    <message><source>Auto / Start Normal</source><translation>自动 / 起点法向</translation></message>
     <message><source>Fixed +X</source><translation>固定 +X</translation></message>
     <message><source>Fixed +Y</source><translation>固定 +Y</translation></message>
     <message><source>Allow Apply with collision warning</source><translation>允许在碰撞警告下应用</translation></message>
+    <message><source>Options</source><translation>选项</translation></message>
     <message><source>Ready</source><translation>就绪</translation></message>
     <message><source>Select the start connection face.</source><translation>请选择起始连接面。</translation></message>
     <message><source>Select the start connection face first.</source><translation>请先选择起始连接面。</translation></message>
@@ -1299,11 +1304,16 @@ Z: %5 .. %6</translation></message>
     <message><source>Failed to generate sheet metal: %1</source><translation>生成钣金失败：%1</translation></message>
     <message><source>No active view available.</source><translation>没有可用的活动视图。</translation></message>
     <message><source>P%1 Bend R=%2 mm</source><translation>P%1 折弯 R=%2 毫米</translation></message>
+    <message><source>P%1 Weld</source><translation>P%1 焊接</translation></message>
+    <message><source>P%1 Bolt / Nut</source><translation>P%1 螺栓/螺母</translation></message>
     <message><source>P%1 End</source><translation>P%1 终点</translation></message>
     <message><source>P0 Start</source><translation>P0 起点</translation></message>
     <message><source>Select two faces and calculate a route first.</source><translation>请先选择两个连接面并计算路径。</translation></message>
     <message><source>Start and end points cannot be deleted.</source><translation>不能删除起点和终点。</translation></message>
     <message><source>The owning viewer is not available.</source><translation>所属视图不可用。</translation></message>
     <message><source>Select both connection faces in the same view.</source><translation>请在同一视图中选择两个连接面。</translation></message>
+    <message><source>Failed to load connector parameters: %1</source><translation>加载连接件参数失败：%1</translation></message>
+    <message><source>Failed to restore the connector target shapes.</source><translation>无法恢复连接件的目标形状。</translation></message>
+    <message><source>Connector parameters loaded. Reselect a face before changing its point.</source><translation>已加载连接件参数。修改连接点前请重新选择连接面。</translation></message>
 </context>
 </TS>

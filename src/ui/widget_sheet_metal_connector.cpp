@@ -1,10 +1,13 @@
-#include "widget_busbar.h"
-#include "ui_widget_busbar.h"
+#include "widget_sheet_metal_connector.h"
+#include "ui_widget_sheet_metal_connector.h"
 
 #include "OCCView.h"
 #include "SelectedEntity.h"
+#include "SheetMetalCollisionChecker.h"
 #include "SheetMetalConnectorBuilder.h"
 #include "SheetMetalFaceGeometry.h"
+#include "SheetMetalConnectorMetadata.h"
+#include "SheetMetalObstacleMap.h"
 #include "SheetMetalRoutePlanner.h"
 #include "ViewManager.h"
 #include "ViewerWidget.h"
@@ -12,20 +15,28 @@
 #include <AIS_InteractiveContext.hxx>
 #include <AIS_Shape.hxx>
 #include <Quantity_Color.hxx>
+#include <Precision.hxx>
 #include <StdSelect_ViewerSelector3d.hxx>
-#include <TCollection_AsciiString.hxx>
 #include <TCollection_ExtendedString.hxx>
 #include <TDataStd_Comment.hxx>
 #include <TDataStd_Name.hxx>
-#include <TDF_Tool.hxx>
 #include <TopLoc_Location.hxx>
 #include <TopoDS.hxx>
 #include <XCAFDoc_ShapeTool.hxx>
 #include <XCAFPrs_AISObject.hxx>
 
 #include <QCloseEvent>
+#include <QGroupBox>
+#include <QHBoxLayout>
 #include <QListWidgetItem>
 #include <QMessageBox>
+#include <QSignalBlocker>
+#include <QTimer>
+#include <QToolButton>
+#include <QVBoxLayout>
+
+#include <cmath>
+#include <utility>
 
 namespace
 {
@@ -69,35 +80,89 @@ QString directionText(const gp_Dir& direction)
 }
 }
 
-WidgetBusbar::WidgetBusbar(QWidget* parent)
+WidgetSheetMetalConnector::WidgetSheetMetalConnector(QWidget* parent)
     : QWidget(parent)
-    , ui(new Ui::WidgetBusbar)
+    , ui(new Ui::WidgetSheetMetalConnector)
 {
     ui->setupUi(this);
     setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint);
 
+    auto* connectionContainer = new QWidget(this);
+    connectionContainer->setObjectName(QStringLiteral("widgetConnections"));
+    auto* connectionLayout = new QHBoxLayout(connectionContainer);
+    connectionLayout->setContentsMargins(0, 0, 0, 0);
+    connectionLayout->setSpacing(6);
+
+    auto* routeContainer = new QWidget(connectionContainer);
+    routeContainer->setObjectName(QStringLiteral("widgetRoute"));
+    auto* routeLayout = new QVBoxLayout(routeContainer);
+    routeLayout->setContentsMargins(0, 0, 0, 0);
+    routeLayout->setSpacing(6);
+
+    ui->verticalLayoutMain->removeWidget(ui->groupBoxStart);
+    ui->verticalLayoutMain->removeWidget(ui->groupBoxEnd);
+    ui->verticalLayoutMain->removeWidget(ui->pushButtonAutoCalc);
+    ui->verticalLayoutMain->removeWidget(ui->groupBoxWaypoints);
+    routeLayout->addWidget(ui->pushButtonAutoCalc);
+    routeLayout->addWidget(ui->groupBoxWaypoints);
+    connectionLayout->addWidget(ui->groupBoxStart);
+    connectionLayout->addWidget(ui->groupBoxEnd);
+    connectionLayout->addWidget(routeContainer);
+    ui->verticalLayoutMain->insertWidget(0, connectionContainer);
+
+    auto* optionsButton = new QToolButton(this);
+    optionsButton->setObjectName(QStringLiteral("toolButtonOptions"));
+    optionsButton->setText(tr("Options"));
+    optionsButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    optionsButton->setArrowType(Qt::RightArrow);
+    optionsButton->setCheckable(true);
+
+    auto* optionsContainer = new QWidget(this);
+    optionsContainer->setObjectName(QStringLiteral("widgetOptions"));
+    auto* optionsLayout = new QVBoxLayout(optionsContainer);
+    optionsLayout->setContentsMargins(0, 0, 0, 0);
+    optionsLayout->setSpacing(6);
+    ui->verticalLayoutMain->removeWidget(ui->groupBoxNodeProp);
+    ui->verticalLayoutMain->removeWidget(ui->groupBoxSheetMetalParams);
+    optionsLayout->addWidget(ui->groupBoxNodeProp);
+    optionsLayout->addWidget(ui->groupBoxSheetMetalParams);
+
+    const int connectionIndex = ui->verticalLayoutMain->indexOf(connectionContainer);
+    ui->verticalLayoutMain->insertWidget(connectionIndex + 1, optionsButton);
+    ui->verticalLayoutMain->insertWidget(connectionIndex + 2, optionsContainer);
+    optionsContainer->setVisible(false);
+    connect(optionsButton, &QToolButton::toggled,
+            this, [this, optionsButton, optionsContainer](bool expanded) {
+                optionsButton->setArrowType(
+                    expanded ? Qt::DownArrow : Qt::RightArrow);
+                optionsContainer->setVisible(expanded);
+                QTimer::singleShot(0, this, [this]() { adjustSize(); });
+            });
+
+    adjustSize();
+
     connect(ui->pushButtonPickStart, &QPushButton::clicked,
-            this, &WidgetBusbar::onPickStartClicked);
+            this, &WidgetSheetMetalConnector::onPickStartClicked);
     connect(ui->pushButtonPickStartPoint, &QPushButton::clicked,
-            this, &WidgetBusbar::onPickStartPointClicked);
+            this, &WidgetSheetMetalConnector::onPickStartPointClicked);
     connect(ui->pushButtonPickEnd, &QPushButton::clicked,
-            this, &WidgetBusbar::onPickEndClicked);
+            this, &WidgetSheetMetalConnector::onPickEndClicked);
     connect(ui->pushButtonPickEndPoint, &QPushButton::clicked,
-            this, &WidgetBusbar::onPickEndPointClicked);
+            this, &WidgetSheetMetalConnector::onPickEndPointClicked);
     connect(ui->pushButtonAutoCalc, &QPushButton::clicked,
-            this, &WidgetBusbar::onAutoCalcClicked);
+            this, &WidgetSheetMetalConnector::onAutoCalcClicked);
     connect(ui->pushButtonAddWaypoint, &QPushButton::clicked,
-            this, &WidgetBusbar::onAddWaypointClicked);
+            this, &WidgetSheetMetalConnector::onAddWaypointClicked);
     connect(ui->pushButtonDeleteWaypoint, &QPushButton::clicked,
-            this, &WidgetBusbar::onDeleteWaypointClicked);
+            this, &WidgetSheetMetalConnector::onDeleteWaypointClicked);
     connect(ui->pushButtonApply, &QPushButton::clicked,
-            this, &WidgetBusbar::onApplyClicked);
+            this, &WidgetSheetMetalConnector::onApplyClicked);
     connect(ui->pushButtonClear, &QPushButton::clicked,
-            this, &WidgetBusbar::onClearClicked);
+            this, &WidgetSheetMetalConnector::onClearClicked);
     connect(ui->pushButtonClose, &QPushButton::clicked,
-            this, &WidgetBusbar::onCloseClicked);
+            this, &WidgetSheetMetalConnector::onCloseClicked);
     connect(ui->listWidgetWaypoints, &QListWidget::currentItemChanged,
-            this, &WidgetBusbar::onWaypointSelected);
+            this, &WidgetSheetMetalConnector::onWaypointSelected);
 
     const auto refreshPreview = [this]() {
         if (m_data.routePoints.size() >= 2) {
@@ -110,6 +175,10 @@ WidgetBusbar::WidgetBusbar(QWidget* parent)
             this, refreshPreview);
     connect(ui->spinBoxClearance, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
             this, refreshPreview);
+    connect(ui->spinBoxMaximumBendCount, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, refreshPreview);
+    connect(ui->checkBoxAllowSideBends, &QCheckBox::toggled,
+            this, refreshPreview);
     connect(ui->comboBoxStartJoint, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, refreshPreview);
     connect(ui->comboBoxEndJoint, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -117,6 +186,10 @@ WidgetBusbar::WidgetBusbar(QWidget* parent)
     connect(ui->comboBoxStartBoltSpec, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, refreshPreview);
     connect(ui->comboBoxEndBoltSpec, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, refreshPreview);
+    connect(ui->comboBoxStartWeldType, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, refreshPreview);
+    connect(ui->comboBoxEndWeldType, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, refreshPreview);
     connect(ui->comboBoxSectionDir, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, refreshPreview);
@@ -129,6 +202,27 @@ WidgetBusbar::WidgetBusbar(QWidget* parent)
                     refreshWaypointList();
                 }
             });
+    const auto updateNodeTransition = [this](int) {
+        if (m_selectedNodeIndex > 0
+            && m_selectedNodeIndex < static_cast<int>(m_data.routePoints.size()) - 1) {
+            saveCurrentNodeProps();
+            updateNodePropertyPanel();
+            updatePreview();
+            refreshWaypointList();
+        }
+    };
+    connect(ui->comboBoxNodeTransition,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this,
+            updateNodeTransition);
+    connect(ui->comboBoxNodeWeldType,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this,
+            updateNodeTransition);
+    connect(ui->comboBoxNodeBoltSpec,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this,
+            updateNodeTransition);
 
     const auto updateStartJointControls = [this](int index) {
         const bool isWeld = index == 0;
@@ -154,55 +248,56 @@ WidgetBusbar::WidgetBusbar(QWidget* parent)
     updateStatus(tr("Ready"));
 }
 
-WidgetBusbar::~WidgetBusbar()
+WidgetSheetMetalConnector::~WidgetSheetMetalConnector()
 {
     stopFacePicking();
     clearPreview();
     delete ui;
 }
 
-void WidgetBusbar::show()
+void WidgetSheetMetalConnector::show()
 {
+    loadSelectedConnector();
     QWidget::show();
     refreshWaypointList();
 }
 
-void WidgetBusbar::closeEvent(QCloseEvent* event)
+void WidgetSheetMetalConnector::closeEvent(QCloseEvent* event)
 {
     stopFacePicking();
     clearPreview();
     QWidget::closeEvent(event);
 }
 
-void WidgetBusbar::onPickStartClicked()
+void WidgetSheetMetalConnector::onPickStartClicked()
 {
     startPicking(PickingState::StartFace);
 }
 
-void WidgetBusbar::onPickStartPointClicked()
+void WidgetSheetMetalConnector::onPickStartPointClicked()
 {
-    if (!m_hasStart) {
+    if (!m_hasStart || m_data.start.face.IsNull()) {
         updateStatus(tr("Select the start connection face first."));
         return;
     }
     startPicking(PickingState::StartPoint);
 }
 
-void WidgetBusbar::onPickEndClicked()
+void WidgetSheetMetalConnector::onPickEndClicked()
 {
     startPicking(PickingState::EndFace);
 }
 
-void WidgetBusbar::onPickEndPointClicked()
+void WidgetSheetMetalConnector::onPickEndPointClicked()
 {
-    if (!m_hasEnd) {
+    if (!m_hasEnd || m_data.end.face.IsNull()) {
         updateStatus(tr("Select the end connection face first."));
         return;
     }
     startPicking(PickingState::EndPoint);
 }
 
-void WidgetBusbar::startPicking(PickingState state)
+void WidgetSheetMetalConnector::startPicking(PickingState state)
 {
     stopFacePicking();
 
@@ -229,7 +324,7 @@ void WidgetBusbar::startPicking(PickingState state)
     view->setMouseMode(View::MouseMode::SELECTION);
 
     connect(view, &OCCView::signalSpaceSelected,
-            this, &WidgetBusbar::onObjectSelected, Qt::UniqueConnection);
+            this, &WidgetSheetMetalConnector::onObjectSelected, Qt::UniqueConnection);
 
     if (state == PickingState::StartFace) {
         updateStatus(tr("Select the start connection face."));
@@ -242,7 +337,7 @@ void WidgetBusbar::startPicking(PickingState state)
     }
 }
 
-void WidgetBusbar::stopFacePicking()
+void WidgetSheetMetalConnector::stopFacePicking()
 {
     if (m_pickingState == PickingState::Idle) {
         return;
@@ -250,7 +345,7 @@ void WidgetBusbar::stopFacePicking()
 
     if (m_pickView) {
         disconnect(m_pickView, &OCCView::signalSpaceSelected,
-                   this, &WidgetBusbar::onObjectSelected);
+                   this, &WidgetSheetMetalConnector::onObjectSelected);
         m_pickView->setMouseMode(static_cast<View::MouseMode>(m_savedMouseMode));
         for (const auto& filter : m_savedFilters) {
             m_pickView->updateSelectionFilter(filter.first, filter.second);
@@ -261,7 +356,7 @@ void WidgetBusbar::stopFacePicking()
     m_pickingState = PickingState::Idle;
 }
 
-void WidgetBusbar::onObjectSelected(const TopoDS_Shape& shape)
+void WidgetSheetMetalConnector::onObjectSelected(const TopoDS_Shape& shape)
 {
     if (m_pickingState == PickingState::Idle
         || shape.IsNull()
@@ -326,7 +421,7 @@ void WidgetBusbar::onObjectSelected(const TopoDS_Shape& shape)
         : tr("Connection face selected. A default point was placed on the face."));
 }
 
-bool WidgetBusbar::updateConnectionFromSelection(SheetMetalConnectionEnd& connection,
+bool WidgetSheetMetalConnector::updateConnectionFromSelection(SheetMetalConnectionEnd& connection,
                                                   const TopoDS_Face& face,
                                                   const Handle(AIS_InteractiveObject)& parentObject)
 {
@@ -355,7 +450,7 @@ bool WidgetBusbar::updateConnectionFromSelection(SheetMetalConnectionEnd& connec
     return !connection.targetShape.IsNull();
 }
 
-bool WidgetBusbar::updatePointFromSelection(
+bool WidgetSheetMetalConnector::updatePointFromSelection(
     SheetMetalConnectionEnd& connection,
     const TopoDS_Face& face,
     const Handle(AIS_InteractiveObject)& parentObject)
@@ -389,7 +484,7 @@ bool WidgetBusbar::updatePointFromSelection(
     return true;
 }
 
-void WidgetBusbar::onAutoCalcClicked()
+void WidgetSheetMetalConnector::onAutoCalcClicked()
 {
     if (!m_hasStart || !m_hasEnd) {
         updateStatus(tr("Select the start and end connection faces first."));
@@ -397,9 +492,29 @@ void WidgetBusbar::onAutoCalcClicked()
     }
 
     updateDataFromUi();
+    clearPreview();
+
+    auto* view = m_modelView.data();
+    if (!view) {
+        updateStatus(tr("No active view available."));
+        return;
+    }
+    const auto obstacleMap = SheetMetalObstacleMap::build(
+        TopoDS_Shape(), m_data, view->getShapeObjects(), m_appliedShape);
+    const auto routeValidator = [&obstacleMap](
+        const SheetMetalConnectorData& candidateData) {
+        const auto buildResult = SheetMetalConnectorBuilder::build(candidateData);
+        return buildResult.isValid()
+            && SheetMetalCollisionChecker::check(
+                   buildResult.solid, candidateData, obstacleMap).isAcceptable();
+    };
+
     QString errorMessage;
     if (!SheetMetalRoutePlanner::computeOrthogonalRoute(
-            m_data, ui->spinBoxDefaultBendRadius->value(), &errorMessage)) {
+            m_data,
+            ui->spinBoxDefaultBendRadius->value(),
+            &errorMessage,
+            routeValidator)) {
         updateStatus(tr("Route calculation failed: %1").arg(errorMessage));
         return;
     }
@@ -409,7 +524,7 @@ void WidgetBusbar::onAutoCalcClicked()
     updatePreview();
 }
 
-void WidgetBusbar::onAddWaypointClicked()
+void WidgetSheetMetalConnector::onAddWaypointClicked()
 {
     if (m_data.routePoints.size() < 2) {
         updateStatus(tr("Calculate a route before adding waypoints."));
@@ -423,13 +538,13 @@ void WidgetBusbar::onAddWaypointClicked()
         (previous.position.X() + last.position.X()) * 0.5,
         (previous.position.Y() + last.position.Y()) * 0.5,
         (previous.position.Z() + last.position.Z()) * 0.5);
-    waypoint.bend.radius = ui->spinBoxDefaultBendRadius->value();
+    waypoint.transition.bend.radius = ui->spinBoxDefaultBendRadius->value();
     m_data.routePoints.insert(m_data.routePoints.end() - 1, waypoint);
     refreshWaypointList();
     updatePreview();
 }
 
-void WidgetBusbar::onDeleteWaypointClicked()
+void WidgetSheetMetalConnector::onDeleteWaypointClicked()
 {
     const int row = ui->listWidgetWaypoints->currentRow();
     if (row < 0 || row >= static_cast<int>(m_data.routePoints.size())) {
@@ -446,7 +561,7 @@ void WidgetBusbar::onDeleteWaypointClicked()
     updatePreview();
 }
 
-void WidgetBusbar::refreshWaypointList()
+void WidgetSheetMetalConnector::refreshWaypointList()
 {
     ui->listWidgetWaypoints->blockSignals(true);
     ui->listWidgetWaypoints->clear();
@@ -458,9 +573,15 @@ void WidgetBusbar::refreshWaypointList()
         } else if (index + 1 == m_data.routePoints.size()) {
             label = tr("P%1 End").arg(index);
         } else {
-            label = tr("P%1 Bend R=%2 mm")
-                .arg(index)
-                .arg(point.bend.radius, 0, 'f', 1);
+            if (point.transition.type == SheetMetalRouteTransitionType::Bend) {
+                label = tr("P%1 Bend R=%2 mm")
+                    .arg(index)
+                    .arg(point.transition.bend.radius, 0, 'f', 1);
+            } else if (point.transition.type == SheetMetalRouteTransitionType::Weld) {
+                label = tr("P%1 Weld").arg(index);
+            } else {
+                label = tr("P%1 Bolt / Nut").arg(index);
+            }
         }
         ui->listWidgetWaypoints->addItem(label + QStringLiteral("  ") + pointText(point.position));
     }
@@ -472,7 +593,7 @@ void WidgetBusbar::refreshWaypointList()
     updateNodePropertyPanel();
 }
 
-void WidgetBusbar::onWaypointSelected(QListWidgetItem* current,
+void WidgetSheetMetalConnector::onWaypointSelected(QListWidgetItem* current,
                                        QListWidgetItem* previous)
 {
     Q_UNUSED(previous)
@@ -485,7 +606,7 @@ void WidgetBusbar::onWaypointSelected(QListWidgetItem* current,
     updateNodePropertyPanel();
 }
 
-void WidgetBusbar::updateNodePropertyPanel()
+void WidgetSheetMetalConnector::updateNodePropertyPanel()
 {
     const bool editable = m_selectedNodeIndex > 0
         && m_selectedNodeIndex < static_cast<int>(m_data.routePoints.size()) - 1;
@@ -494,26 +615,52 @@ void WidgetBusbar::updateNodePropertyPanel()
         return;
     }
 
+    const auto& transition =
+        m_data.routePoints[static_cast<std::size_t>(m_selectedNodeIndex)].transition;
+    const QSignalBlocker transitionBlocker(ui->comboBoxNodeTransition);
+    const QSignalBlocker radiusBlocker(ui->spinBoxBendRadius);
+    const QSignalBlocker weldBlocker(ui->comboBoxNodeWeldType);
+    const QSignalBlocker boltBlocker(ui->comboBoxNodeBoltSpec);
+    ui->comboBoxNodeTransition->setCurrentIndex(
+        static_cast<int>(transition.type));
     ui->spinBoxBendRadius->setValue(
-        m_data.routePoints[static_cast<std::size_t>(m_selectedNodeIndex)].bend.radius);
+        transition.bend.radius);
+    ui->comboBoxNodeWeldType->setCurrentIndex(transition.weld.typeIndex);
+    ui->comboBoxNodeBoltSpec->setCurrentIndex(transition.boltNut.specIndex);
+
+    const bool isBend = transition.type == SheetMetalRouteTransitionType::Bend;
+    const bool isWeld = transition.type == SheetMetalRouteTransitionType::Weld;
+    ui->labelBendRadius->setEnabled(isBend);
+    ui->spinBoxBendRadius->setEnabled(isBend);
+    ui->labelNodeWeldType->setEnabled(isWeld);
+    ui->comboBoxNodeWeldType->setEnabled(isWeld);
+    ui->labelNodeBoltSpec->setEnabled(!isBend && !isWeld);
+    ui->comboBoxNodeBoltSpec->setEnabled(!isBend && !isWeld);
 }
 
-void WidgetBusbar::saveCurrentNodeProps()
+void WidgetSheetMetalConnector::saveCurrentNodeProps()
 {
     if (m_selectedNodeIndex <= 0
         || m_selectedNodeIndex >= static_cast<int>(m_data.routePoints.size()) - 1) {
         return;
     }
-    m_data.routePoints[static_cast<std::size_t>(m_selectedNodeIndex)].bend.radius =
-        ui->spinBoxBendRadius->value();
+    auto& transition =
+        m_data.routePoints[static_cast<std::size_t>(m_selectedNodeIndex)].transition;
+    transition.type = static_cast<SheetMetalRouteTransitionType>(
+        ui->comboBoxNodeTransition->currentIndex());
+    transition.bend.radius = ui->spinBoxBendRadius->value();
+    transition.weld.typeIndex = ui->comboBoxNodeWeldType->currentIndex();
+    transition.boltNut.specIndex = ui->comboBoxNodeBoltSpec->currentIndex();
 }
 
-void WidgetBusbar::updateDataFromUi()
+void WidgetSheetMetalConnector::updateDataFromUi()
 {
     saveCurrentNodeProps();
     m_data.width = ui->spinBoxWidth->value();
     m_data.thickness = ui->spinBoxThickness->value();
     m_data.clearance = ui->spinBoxClearance->value();
+    m_data.maximumBendCount = ui->spinBoxMaximumBendCount->value();
+    m_data.allowSideBends = ui->checkBoxAllowSideBends->isChecked();
     m_data.start.jointType = ui->comboBoxStartJoint->currentIndex() == 0
         ? SheetMetalJointType::Weld
         : SheetMetalJointType::BoltNut;
@@ -531,11 +678,112 @@ void WidgetBusbar::updateDataFromUi()
     } else if (directionIndex == 2) {
         m_data.upDirection = gp_Dir(0.0, 1.0, 0.0);
     } else {
-        m_data.upDirection = gp_Dir(0.0, 0.0, 1.0);
+        m_data.upDirection = m_hasStart
+            ? m_data.start.normal
+            : gp_Dir(0.0, 0.0, 1.0);
     }
 }
 
-void WidgetBusbar::updatePreview()
+void WidgetSheetMetalConnector::updateUiFromData()
+{
+    const QSignalBlocker widthBlocker(ui->spinBoxWidth);
+    const QSignalBlocker thicknessBlocker(ui->spinBoxThickness);
+    const QSignalBlocker clearanceBlocker(ui->spinBoxClearance);
+    const QSignalBlocker bendCountBlocker(ui->spinBoxMaximumBendCount);
+    const QSignalBlocker sideBendsBlocker(ui->checkBoxAllowSideBends);
+    const QSignalBlocker directionBlocker(ui->comboBoxSectionDir);
+    const QSignalBlocker startJointBlocker(ui->comboBoxStartJoint);
+    const QSignalBlocker startBoltBlocker(ui->comboBoxStartBoltSpec);
+    const QSignalBlocker startWeldBlocker(ui->comboBoxStartWeldType);
+    const QSignalBlocker endJointBlocker(ui->comboBoxEndJoint);
+    const QSignalBlocker endBoltBlocker(ui->comboBoxEndBoltSpec);
+    const QSignalBlocker endWeldBlocker(ui->comboBoxEndWeldType);
+
+    ui->spinBoxWidth->setValue(m_data.width);
+    ui->spinBoxThickness->setValue(m_data.thickness);
+    ui->spinBoxClearance->setValue(m_data.clearance);
+    ui->spinBoxMaximumBendCount->setValue(m_data.maximumBendCount);
+    ui->checkBoxAllowSideBends->setChecked(m_data.allowSideBends);
+    const bool usesStartNormal = m_hasStart
+        && m_data.upDirection.IsEqual(
+            m_data.start.normal, Precision::Angular());
+    ui->comboBoxSectionDir->setCurrentIndex(
+        usesStartNormal ? 0
+        : std::abs(m_data.upDirection.X()) > 0.999 ? 1
+        : std::abs(m_data.upDirection.Y()) > 0.999 ? 2
+        : 0);
+    ui->comboBoxStartJoint->setCurrentIndex(
+        m_data.start.jointType == SheetMetalJointType::Weld ? 0 : 1);
+    ui->comboBoxStartBoltSpec->setCurrentIndex(m_data.start.boltNut.specIndex);
+    ui->comboBoxStartWeldType->setCurrentIndex(m_data.start.weld.typeIndex);
+    ui->comboBoxEndJoint->setCurrentIndex(
+        m_data.end.jointType == SheetMetalJointType::Weld ? 0 : 1);
+    ui->comboBoxEndBoltSpec->setCurrentIndex(m_data.end.boltNut.specIndex);
+    ui->comboBoxEndWeldType->setCurrentIndex(m_data.end.weld.typeIndex);
+
+    const bool startIsWeld = m_data.start.jointType == SheetMetalJointType::Weld;
+    ui->labelStartWeldType->setEnabled(startIsWeld);
+    ui->comboBoxStartWeldType->setEnabled(startIsWeld);
+    ui->labelStartBoltSpec->setEnabled(!startIsWeld);
+    ui->comboBoxStartBoltSpec->setEnabled(!startIsWeld);
+    const bool endIsWeld = m_data.end.jointType == SheetMetalJointType::Weld;
+    ui->labelEndWeldType->setEnabled(endIsWeld);
+    ui->comboBoxEndWeldType->setEnabled(endIsWeld);
+    ui->labelEndBoltSpec->setEnabled(!endIsWeld);
+    ui->comboBoxEndBoltSpec->setEnabled(!endIsWeld);
+    ui->labelStartPosValue->setText(pointText(m_data.start.position));
+    ui->labelStartNormalValue->setText(directionText(m_data.start.normal));
+    ui->labelEndPosValue->setText(pointText(m_data.end.position));
+    ui->labelEndNormalValue->setText(directionText(m_data.end.normal));
+}
+
+bool WidgetSheetMetalConnector::loadSelectedConnector()
+{
+    auto* viewer = qobject_cast<ViewerWidget*>(parentWidget());
+    if (!viewer) {
+        return false;
+    }
+
+    QString metadata;
+    TDF_Label connectorLabel;
+    TopoDS_Shape connectorShape;
+    if (!viewer->selectedSheetMetalConnector(
+            metadata, connectorLabel, connectorShape)) {
+        return false;
+    }
+
+    SheetMetalConnectorMetadataResult parsed;
+    QString errorMessage;
+    if (!SheetMetalConnectorMetadata::deserialize(
+            metadata, parsed, &errorMessage)) {
+        updateStatus(tr("Failed to load connector parameters: %1").arg(errorMessage));
+        return false;
+    }
+
+    if (!viewer->resolveShapeLabel(parsed.startTargetEntry,
+                                   parsed.data.start.targetLabel,
+                                   parsed.data.start.targetShape)
+        || !viewer->resolveShapeLabel(parsed.endTargetEntry,
+                                      parsed.data.end.targetLabel,
+                                      parsed.data.end.targetShape)) {
+        updateStatus(tr("Failed to restore the connector target shapes."));
+        return false;
+    }
+
+    clearPreview();
+    m_data = std::move(parsed.data);
+    m_hasStart = true;
+    m_hasEnd = true;
+    m_modelView = ViewManager::getInstance().getActiveView();
+    m_appliedShape = connectorShape;
+    m_selectedNodeIndex = -1;
+    updateUiFromData();
+    refreshWaypointList();
+    updateStatus(tr("Connector parameters loaded. Reselect a face before changing its point."));
+    return true;
+}
+
+void WidgetSheetMetalConnector::updatePreview()
 {
     updateDataFromUi();
     clearPreview();
@@ -569,7 +817,7 @@ void WidgetBusbar::updatePreview()
         : tr("Route has a collision or clearance violation."));
 }
 
-void WidgetBusbar::onApplyClicked()
+void WidgetSheetMetalConnector::onApplyClicked()
 {
     if (!m_hasStart || !m_hasEnd || m_data.routePoints.size() < 2) {
         updateStatus(tr("Select two faces and calculate a route first."));
@@ -612,7 +860,7 @@ void WidgetBusbar::onApplyClicked()
     const TDF_Label label = viewer->displayShape(buildResult.solid, 0.83, 0.63, 0.16);
     if (!label.IsNull()) {
         TDataStd_Name::Set(label, "Sheet Metal Connector");
-        const QByteArray metadata = connectorMetadata().toUtf8();
+        const QByteArray metadata = SheetMetalConnectorMetadata::serialize(m_data).toUtf8();
         TDataStd_Comment::Set(label, TCollection_ExtendedString(metadata.constData()));
         viewer->updateTree();
     }
@@ -622,51 +870,7 @@ void WidgetBusbar::onApplyClicked()
     updateStatus(tr("Sheet-metal connector generated successfully."));
 }
 
-QString WidgetBusbar::connectorMetadata() const
-{
-    const auto labelEntry = [](const TDF_Label& label) {
-        if (label.IsNull()) {
-            return QString();
-        }
-        TCollection_AsciiString entry;
-        TDF_Tool::Entry(label, entry);
-        return QString::fromLatin1(entry.ToCString());
-    };
-    const auto connectionText = [&labelEntry](const SheetMetalConnectionEnd& connection) {
-        return QStringLiteral("%1,%2,%3,%4,%5,%6,%7,%8,%9,%10")
-            .arg(connection.position.X(), 0, 'g', 12)
-            .arg(connection.position.Y(), 0, 'g', 12)
-            .arg(connection.position.Z(), 0, 'g', 12)
-            .arg(connection.normal.X(), 0, 'g', 12)
-            .arg(connection.normal.Y(), 0, 'g', 12)
-            .arg(connection.normal.Z(), 0, 'g', 12)
-            .arg(static_cast<int>(connection.jointType))
-            .arg(connection.boltNut.specIndex)
-            .arg(connection.weld.typeIndex)
-            .arg(labelEntry(connection.targetLabel));
-    };
-
-    QStringList routePoints;
-    routePoints.reserve(static_cast<int>(m_data.routePoints.size()));
-    for (const auto& point : m_data.routePoints) {
-        routePoints.push_back(QStringLiteral("%1,%2,%3,%4")
-            .arg(point.position.X(), 0, 'g', 12)
-            .arg(point.position.Y(), 0, 'g', 12)
-            .arg(point.position.Z(), 0, 'g', 12)
-            .arg(point.bend.radius, 0, 'g', 12));
-    }
-
-    return QStringLiteral(
-        "version=1;width=%1;thickness=%2;clearance=%3;start=%4;end=%5;route=%6")
-        .arg(m_data.width, 0, 'g', 12)
-        .arg(m_data.thickness, 0, 'g', 12)
-        .arg(m_data.clearance, 0, 'g', 12)
-        .arg(connectionText(m_data.start))
-        .arg(connectionText(m_data.end))
-        .arg(routePoints.join(QLatin1Char('|')));
-}
-
-void WidgetBusbar::onClearClicked()
+void WidgetSheetMetalConnector::onClearClicked()
 {
     stopFacePicking();
     clearPreview();
@@ -691,12 +895,12 @@ void WidgetBusbar::onClearClicked()
     updateStatus(tr("Cleared."));
 }
 
-void WidgetBusbar::onCloseClicked()
+void WidgetSheetMetalConnector::onCloseClicked()
 {
     close();
 }
 
-void WidgetBusbar::clearPreview()
+void WidgetSheetMetalConnector::clearPreview()
 {
     auto* view = m_previewView.data();
     if (view && !view->Context().IsNull() && !m_previewShape.IsNull()) {
@@ -707,7 +911,7 @@ void WidgetBusbar::clearPreview()
     m_previewView.clear();
 }
 
-void WidgetBusbar::updateStatus(const QString& message)
+void WidgetSheetMetalConnector::updateStatus(const QString& message)
 {
     ui->labelStatus->setText(message);
 }

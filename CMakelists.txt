@@ -487,7 +487,13 @@ if(BUILD_TESTING)
         src/ui/SheetMetalConnectorBuilder.h
         src/ui/SheetMetalFaceGeometry.cpp
         src/ui/SheetMetalFaceGeometry.h
+        src/ui/SheetMetalConnectorMetadata.cpp
+        src/ui/SheetMetalConnectorMetadata.h
         src/ui/SheetMetalConnectorModel.h
+        src/ui/SheetMetalObstacleMap.cpp
+        src/ui/SheetMetalObstacleMap.h
+        src/ui/SheetMetalRouteEvaluator.cpp
+        src/ui/SheetMetalRouteEvaluator.h
         src/ui/SheetMetalRoutePlanner.cpp
         src/ui/SheetMetalRoutePlanner.h
     )

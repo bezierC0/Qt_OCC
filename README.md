@@ -55,7 +55,7 @@ Qt_OCC is a desktop CAD and point-cloud application developed using the Qt frame
 ## 📚 Documentation
 
 *   **Development and refactoring notes**: [`doc/development_refactoring.md`](doc/development_refactoring.md)
-*   **Sheet Metal Connector user guide**: [`doc/tool_busbar.md`](doc/tool_busbar.md)
+*   **Sheet Metal Connector user guide**: [`doc/tool_sheet_metal_connector.md`](doc/tool_sheet_metal_connector.md)
 *   **Sheet Metal Connector implementation**: [`doc/sheet_metal_connector_implementation.md`](doc/sheet_metal_connector_implementation.md)
 *   **Sheet Metal Connector plans**: [`doc/sheet_metal_connector_refactor_plan.md`](doc/sheet_metal_connector_refactor_plan.md), [`doc/sheet_metal_connector_phase2_plan.md`](doc/sheet_metal_connector_phase2_plan.md)
 *   **3D PDF export feature**: [`doc/file_export_3dpdf.md`](doc/file_export_3dpdf.md)

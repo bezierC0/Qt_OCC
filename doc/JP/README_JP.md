@@ -54,7 +54,7 @@ Qt_OCCは、ユーザーインターフェースにQtフレームワーク、ジ
 
 ## 📚 ドキュメント
 
-*   **板金コネクタ利用ガイド**: [`../tool_busbar.md`](../tool_busbar.md)
+*   **板金コネクタ利用ガイド**: [`../tool_sheet_metal_connector.md`](../tool_sheet_metal_connector.md)
 *   **板金コネクタ内部実装**: [`sheet_metal_connector_implementation_JP.md`](sheet_metal_connector_implementation_JP.md)
 *   **板金コネクタ基本版・Phase 2計画**: [`../sheet_metal_connector_refactor_plan.md`](../sheet_metal_connector_refactor_plan.md), [`../sheet_metal_connector_phase2_plan.md`](../sheet_metal_connector_phase2_plan.md)
 *   **点群の開発・手動テスト計画**: [`../point_cloud_development_plan.md`](../point_cloud_development_plan.md)

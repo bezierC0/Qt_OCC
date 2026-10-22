@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>WidgetBusbar</class>
- <widget class="QWidget" name="WidgetBusbar">
+ <class>WidgetSheetMetalConnector</class>
+ <widget class="QWidget" name="WidgetSheetMetalConnector">
   <property name="geometry">
-   <rect><x>0</x><y>0</y><width>380</width><height>820</height></rect>
+   <rect><x>0</x><y>0</y><width>400</width><height>600</height></rect>
   </property>
   <property name="windowTitle">
    <string>Sheet Metal Connector</string>
@@ -105,15 +105,39 @@
 
    <item>
     <widget class="QGroupBox" name="groupBoxNodeProp">
-     <property name="title"><string>Selected Bend</string></property>
+     <property name="title"><string>Selected Route Node</string></property>
      <layout class="QFormLayout" name="formLayoutNodeProp">
-      <item row="0" column="0"><widget class="QLabel" name="labelBendRadius"><property name="text"><string>Bend Radius:</string></property></widget></item>
+      <item row="0" column="0"><widget class="QLabel" name="labelNodeTransition"><property name="text"><string>Transition:</string></property></widget></item>
       <item row="0" column="1">
+       <widget class="QComboBox" name="comboBoxNodeTransition">
+        <item><property name="text"><string>Bend</string></property></item>
+        <item><property name="text"><string>Weld</string></property></item>
+        <item><property name="text"><string>Bolt / Nut</string></property></item>
+       </widget>
+      </item>
+      <item row="1" column="0"><widget class="QLabel" name="labelBendRadius"><property name="text"><string>Bend Radius:</string></property></widget></item>
+      <item row="1" column="1">
        <widget class="QDoubleSpinBox" name="spinBoxBendRadius">
         <property name="minimum"><double>0.1</double></property>
         <property name="maximum"><double>500.0</double></property>
         <property name="value"><double>5.0</double></property>
         <property name="suffix"><string> mm</string></property>
+       </widget>
+      </item>
+      <item row="2" column="0"><widget class="QLabel" name="labelNodeWeldType"><property name="text"><string>Weld Type:</string></property></widget></item>
+      <item row="2" column="1">
+       <widget class="QComboBox" name="comboBoxNodeWeldType">
+        <item><property name="text"><string>Butt</string></property></item>
+        <item><property name="text"><string>Lap</string></property></item>
+       </widget>
+      </item>
+      <item row="3" column="0"><widget class="QLabel" name="labelNodeBoltSpec"><property name="text"><string>Bolt Spec:</string></property></widget></item>
+      <item row="3" column="1">
+       <widget class="QComboBox" name="comboBoxNodeBoltSpec">
+        <item><property name="text"><string>M6</string></property></item>
+        <item><property name="text"><string>M8</string></property></item>
+        <item><property name="text"><string>M10</string></property></item>
+        <item><property name="text"><string>M12</string></property></item>
        </widget>
       </item>
      </layout>
@@ -142,7 +166,7 @@
       <item row="2" column="1">
        <widget class="QDoubleSpinBox" name="spinBoxDefaultBendRadius">
         <property name="minimum"><double>0.1</double></property><property name="maximum"><double>500.0</double></property>
-        <property name="value"><double>5.0</double></property><property name="suffix"><string> mm</string></property>
+        <property name="value"><double>25.0</double></property><property name="suffix"><string> mm</string></property>
        </widget>
       </item>
       <item row="3" column="0"><widget class="QLabel" name="labelClearance"><property name="text"><string>Minimum Clearance:</string></property></widget></item>
@@ -152,15 +176,23 @@
         <property name="value"><double>2.0</double></property><property name="suffix"><string> mm</string></property>
        </widget>
       </item>
-      <item row="4" column="0"><widget class="QLabel" name="labelSectionDir"><property name="text"><string>Section Direction:</string></property></widget></item>
+      <item row="4" column="0"><widget class="QLabel" name="labelMaximumBendCount"><property name="text"><string>Maximum Bends per Sheet:</string></property></widget></item>
       <item row="4" column="1">
+       <widget class="QSpinBox" name="spinBoxMaximumBendCount">
+        <property name="minimum"><number>0</number></property><property name="maximum"><number>10</number></property>
+        <property name="value"><number>2</number></property>
+       </widget>
+      </item>
+      <item row="5" column="0" colspan="2"><widget class="QCheckBox" name="checkBoxAllowSideBends"><property name="text"><string>Allow Side Bends</string></property><property name="checked"><bool>true</bool></property></widget></item>
+      <item row="6" column="0"><widget class="QLabel" name="labelSectionDir"><property name="text"><string>Section Direction:</string></property></widget></item>
+      <item row="6" column="1">
        <widget class="QComboBox" name="comboBoxSectionDir">
-        <item><property name="text"><string>Auto / +Z</string></property></item>
+        <item><property name="text"><string>Auto / Start Normal</string></property></item>
         <item><property name="text"><string>Fixed +X</string></property></item>
         <item><property name="text"><string>Fixed +Y</string></property></item>
        </widget>
       </item>
-      <item row="5" column="0" colspan="2"><widget class="QCheckBox" name="checkBoxAllowCollision"><property name="text"><string>Allow Apply with collision warning</string></property></widget></item>
+      <item row="7" column="0" colspan="2"><widget class="QCheckBox" name="checkBoxAllowCollision"><property name="text"><string>Allow Apply with collision warning</string></property></widget></item>
      </layout>
     </widget>
    </item>

@@ -1,12 +1,11 @@
 #include "SheetMetalRoutePlanner.h"
+#include "SheetMetalRouteEvaluator.h"
 
 #include <Precision.hxx>
 #include <gp_Vec.hxx>
 
 #include <algorithm>
-#include <array>
-#include <cmath>
-#include <limits>
+#include <utility>
 
 namespace
 {
@@ -22,55 +21,45 @@ std::vector<gp_Pnt> removeDuplicates(const std::vector<gp_Pnt>& points)
     return result;
 }
 
-std::vector<gp_Pnt> makeCandidate(const gp_Pnt& start,
-                                  const gp_Pnt& end,
-                                  const std::array<int, 3>& axes)
+std::vector<gp_Pnt> makeStartPlaneRoute(const SheetMetalConnectorData& data)
 {
-    double current[3] = {start.X(), start.Y(), start.Z()};
-    const double target[3] = {end.X(), end.Y(), end.Z()};
-
-    std::vector<gp_Pnt> points{start};
-    for (const int axis : axes) {
-        current[axis] = target[axis];
-        points.emplace_back(current[0], current[1], current[2]);
-    }
+    const gp_Vec startToEnd(data.start.position, data.end.position);
+    const gp_Vec normal(data.start.normal);
+    const gp_Pnt projectedEnd = data.end.position.Translated(
+        -normal * startToEnd.Dot(normal));
+    const std::vector<gp_Pnt> points{
+        data.start.position,
+        projectedEnd,
+        data.end.position
+    };
     return removeDuplicates(points);
 }
 
-double pathLength(const std::vector<gp_Pnt>& points)
+void setRoutePoints(SheetMetalConnectorData& data,
+                    const std::vector<gp_Pnt>& points,
+                    double bendRadius)
 {
-    double length = 0.0;
-    for (std::size_t index = 1; index < points.size(); ++index) {
-        length += points[index - 1].Distance(points[index]);
+    data.routePoints.clear();
+    data.routePoints.reserve(points.size());
+    for (std::size_t index = 0; index < points.size(); ++index) {
+        SheetMetalRoutePoint routePoint;
+        routePoint.position = points[index];
+        routePoint.transition.bend.radius = bendRadius;
+        routePoint.isEndpoint = index == 0 || index + 1 == points.size();
+        data.routePoints.push_back(routePoint);
     }
-    return length;
 }
 
-double normalAlignment(const std::vector<gp_Pnt>& points,
-                       const SheetMetalConnectionEnd& start,
-                       const SheetMetalConnectionEnd& end)
-{
-    if (points.size() < 2) {
-        return -std::numeric_limits<double>::infinity();
-    }
-
-    gp_Vec first(points.front(), points[1]);
-    gp_Vec last(points[points.size() - 2], points.back());
-    if (first.SquareMagnitude() <= Precision::SquareConfusion()
-        || last.SquareMagnitude() <= Precision::SquareConfusion()) {
-        return -std::numeric_limits<double>::infinity();
-    }
-
-    first.Normalize();
-    last.Normalize();
-    return first.Dot(gp_Vec(start.normal)) - last.Dot(gp_Vec(end.normal));
-}
 }
 
 bool SheetMetalRoutePlanner::computeOrthogonalRoute(SheetMetalConnectorData& data,
                                                     double bendRadius,
-                                                    QString* errorMessage)
+                                                    QString* errorMessage,
+                                                    const RouteValidator& routeValidator)
 {
+    if (errorMessage) {
+        errorMessage->clear();
+    }
     if (data.start.position.Distance(data.end.position) <= Precision::Confusion()) {
         if (errorMessage) {
             *errorMessage = QStringLiteral("The two connection positions must be different.");
@@ -84,41 +73,49 @@ bool SheetMetalRoutePlanner::computeOrthogonalRoute(SheetMetalConnectorData& dat
         return false;
     }
 
-    static constexpr std::array<std::array<int, 3>, 6> axisOrders{{
-        {{0, 1, 2}}, {{0, 2, 1}}, {{1, 0, 2}},
-        {{1, 2, 0}}, {{2, 0, 1}}, {{2, 1, 0}}
-    }};
-
-    std::vector<gp_Pnt> bestPoints;
-    double bestAlignment = -std::numeric_limits<double>::infinity();
-    double bestLength = std::numeric_limits<double>::infinity();
-
-    for (const auto& axes : axisOrders) {
-        const auto candidate = makeCandidate(data.start.position, data.end.position, axes);
-        const double alignment = normalAlignment(candidate, data.start, data.end);
-        const double length = pathLength(candidate);
-        const bool betterAlignment = alignment > bestAlignment + Precision::Confusion();
-        const bool sameAlignment = std::abs(alignment - bestAlignment) <= Precision::Confusion();
-        const bool fewerBends = !bestPoints.empty() && candidate.size() < bestPoints.size();
-
-        if (bestPoints.empty() || betterAlignment
-            || (sameAlignment && fewerBends)
-            || (sameAlignment && candidate.size() == bestPoints.size()
-                && length < bestLength - Precision::Confusion())) {
-            bestPoints = candidate;
-            bestAlignment = alignment;
-            bestLength = length;
+    const auto points = makeStartPlaneRoute(data);
+    const auto evaluation = SheetMetalRouteEvaluator::evaluate(points, data);
+    if (!evaluation.isValid) {
+        if (errorMessage && !evaluation.failureReasons.isEmpty()) {
+            *errorMessage = evaluation.failureReasons.front();
         }
+        return false;
     }
 
-    data.routePoints.clear();
-    data.routePoints.reserve(bestPoints.size());
-    for (std::size_t index = 0; index < bestPoints.size(); ++index) {
-        SheetMetalRoutePoint routePoint;
-        routePoint.position = bestPoints[index];
-        routePoint.bend.radius = bendRadius;
-        routePoint.isEndpoint = index == 0 || index + 1 == bestPoints.size();
-        data.routePoints.push_back(routePoint);
+    auto candidateData = data;
+    setRoutePoints(candidateData, points, bendRadius);
+    if (candidateData.routePoints.size() == 3
+        && (candidateData.maximumBendCount == 0
+            || (!candidateData.allowSideBends
+                && evaluation.sideBendCount > 0))) {
+        candidateData.routePoints[1].transition.type =
+            SheetMetalRouteTransitionType::Weld;
     }
+    if (routeValidator && !routeValidator(candidateData)) {
+        if (errorMessage && errorMessage->isEmpty()) {
+            *errorMessage = QStringLiteral(
+                "The start-face plane route intersects an obstacle.");
+        }
+        return false;
+    }
+
+    data.routePoints = std::move(candidateData.routePoints);
     return data.routePoints.size() >= 2;
+}
+
+bool SheetMetalRoutePlanner::validateRoute(const SheetMetalConnectorData& data,
+                                           QString* errorMessage)
+{
+    std::vector<gp_Pnt> points;
+    points.reserve(data.routePoints.size());
+    for (const auto& routePoint : data.routePoints) {
+        points.push_back(routePoint.position);
+    }
+    const auto evaluation = SheetMetalRouteEvaluator::evaluate(points, data);
+    if (errorMessage) {
+        *errorMessage = evaluation.failureReasons.isEmpty()
+            ? QString()
+            : evaluation.failureReasons.front();
+    }
+    return evaluation.isValid;
 }

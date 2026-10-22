@@ -54,7 +54,7 @@ Qt_OCC est une application de bureau dédiée à la CAO et aux nuages de points.
 
 ## 📚 Documentation
 
-*   **Guide du Connecteur de Tôle** : [`../tool_busbar.md`](../tool_busbar.md)
+*   **Guide du Connecteur de Tôle** : [`../tool_sheet_metal_connector.md`](../tool_sheet_metal_connector.md)
 *   **Implémentation interne du Connecteur de Tôle** : [`../sheet_metal_connector_implementation.md`](../sheet_metal_connector_implementation.md)
 *   **Plan de développement et de test manuel des nuages de points** : [`../point_cloud_development_plan.md`](../point_cloud_development_plan.md)
 *   **Données d'exemple de nuages de points** : [`../../samples/pointcloud/README.md`](../../samples/pointcloud/README.md)

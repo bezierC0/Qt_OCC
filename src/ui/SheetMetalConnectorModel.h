@@ -30,6 +30,21 @@ struct SheetMetalWeld
     int typeIndex{0};
 };
 
+enum class SheetMetalRouteTransitionType
+{
+    Bend,
+    Weld,
+    BoltNut
+};
+
+struct SheetMetalRouteTransition
+{
+    SheetMetalRouteTransitionType type{SheetMetalRouteTransitionType::Bend};
+    SheetMetalBend bend;
+    SheetMetalBoltNut boltNut;
+    SheetMetalWeld weld;
+};
+
 struct SheetMetalConnectionEnd
 {
     gp_Pnt position;
@@ -45,7 +60,7 @@ struct SheetMetalConnectionEnd
 struct SheetMetalRoutePoint
 {
     gp_Pnt position;
-    SheetMetalBend bend;
+    SheetMetalRouteTransition transition;
     bool isEndpoint{false};
 };
 
@@ -57,5 +72,7 @@ struct SheetMetalConnectorData
     double width{40.0};
     double thickness{5.0};
     double clearance{2.0};
+    int maximumBendCount{2};
+    bool allowSideBends{true};
     gp_Dir upDirection{0.0, 0.0, 1.0};
 };

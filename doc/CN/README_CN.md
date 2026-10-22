@@ -55,7 +55,7 @@ Qt_OCC 是一个使用 Qt 框架开发用户界面并以 OpenCASCADE Technology 
 ## 📚 文档
 
 *   **开发与重构说明**: [`../development_refactoring.md`](../development_refactoring.md)
-*   **钣金连接使用说明**: [`../tool_busbar.md`](../tool_busbar.md)
+*   **钣金连接使用说明**: [`../tool_sheet_metal_connector.md`](../tool_sheet_metal_connector.md)
 *   **钣金连接内部实现**: [`sheet_metal_connector_implementation_CN.md`](sheet_metal_connector_implementation_CN.md)
 *   **钣金连接基础版与 Phase 2 计划**: [`../sheet_metal_connector_refactor_plan.md`](../sheet_metal_connector_refactor_plan.md), [`../sheet_metal_connector_phase2_plan.md`](../sheet_metal_connector_phase2_plan.md)
 *   **3D PDF 导出功能**: [`../file_export_3dpdf.md`](../file_export_3dpdf.md)

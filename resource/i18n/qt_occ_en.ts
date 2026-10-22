@@ -1599,7 +1599,7 @@ Z: %5 .. %6</translation></message>
     <message><source>Binary big-endian PLY files are not supported.</source><translation>Binary big-endian PLY files are not supported.</translation></message>
 </context>
 <context>
-    <name>WidgetBusbar</name>
+    <name>WidgetSheetMetalConnector</name>
     <message><source>Sheet Metal Connector</source><translation>Sheet Metal Connector</translation></message>
     <message><source>Start Connection</source><translation>Start Connection</translation></message>
     <message><source>End Connection</source><translation>End Connection</translation></message>
@@ -1620,18 +1620,23 @@ Z: %5 .. %6</translation></message>
     <message><source>Route Points</source><translation>Route Points</translation></message>
     <message><source>Add Waypoint</source><translation>Add Waypoint</translation></message>
     <message><source>Delete Waypoint</source><translation>Delete Waypoint</translation></message>
-    <message><source>Selected Bend</source><translation>Selected Bend</translation></message>
+    <message><source>Selected Route Node</source><translation>Selected Route Node</translation></message>
+    <message><source>Transition:</source><translation>Transition:</translation></message>
+    <message><source>Bend</source><translation>Bend</translation></message>
     <message><source>Bend Radius:</source><translation>Bend Radius:</translation></message>
     <message><source>Sheet Metal Parameters</source><translation>Sheet Metal Parameters</translation></message>
     <message><source>Width:</source><translation>Width:</translation></message>
     <message><source>Thickness:</source><translation>Thickness:</translation></message>
     <message><source>Default Bend Radius:</source><translation>Default Bend Radius:</translation></message>
     <message><source>Minimum Clearance:</source><translation>Minimum Clearance:</translation></message>
+      <message><source>Maximum Bends per Sheet:</source><translation>Maximum Bends per Sheet:</translation></message>
+      <message><source>Allow Side Bends</source><translation>Allow Side Bends</translation></message>
     <message><source>Section Direction:</source><translation>Section Direction:</translation></message>
-    <message><source>Auto / +Z</source><translation>Auto / +Z</translation></message>
+    <message><source>Auto / Start Normal</source><translation>Auto / Start Normal</translation></message>
     <message><source>Fixed +X</source><translation>Fixed +X</translation></message>
     <message><source>Fixed +Y</source><translation>Fixed +Y</translation></message>
     <message><source>Allow Apply with collision warning</source><translation>Allow Apply with collision warning</translation></message>
+    <message><source>Options</source><translation>Options</translation></message>
     <message><source>Ready</source><translation>Ready</translation></message>
     <message><source>Select the start connection face.</source><translation>Select the start connection face.</translation></message>
     <message><source>Select the start connection face first.</source><translation>Select the start connection face first.</translation></message>
@@ -1664,11 +1669,16 @@ Z: %5 .. %6</translation></message>
     <message><source>Failed to generate sheet metal: %1</source><translation>Failed to generate sheet metal: %1</translation></message>
     <message><source>No active view available.</source><translation>No active view available.</translation></message>
     <message><source>P%1 Bend R=%2 mm</source><translation>P%1 Bend R=%2 mm</translation></message>
+    <message><source>P%1 Weld</source><translation>P%1 Weld</translation></message>
+    <message><source>P%1 Bolt / Nut</source><translation>P%1 Bolt / Nut</translation></message>
     <message><source>P%1 End</source><translation>P%1 End</translation></message>
     <message><source>P0 Start</source><translation>P0 Start</translation></message>
     <message><source>Select two faces and calculate a route first.</source><translation>Select two faces and calculate a route first.</translation></message>
     <message><source>Start and end points cannot be deleted.</source><translation>Start and end points cannot be deleted.</translation></message>
     <message><source>The owning viewer is not available.</source><translation>The owning viewer is not available.</translation></message>
     <message><source>Select both connection faces in the same view.</source><translation>Select both connection faces in the same view.</translation></message>
+    <message><source>Failed to load connector parameters: %1</source><translation>Failed to load connector parameters: %1</translation></message>
+    <message><source>Failed to restore the connector target shapes.</source><translation>Failed to restore the connector target shapes.</translation></message>
+    <message><source>Connector parameters loaded. Reselect a face before changing its point.</source><translation>Connector parameters loaded. Reselect a face before changing its point.</translation></message>
 </context>
 </TS>

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "SheetMetalConnectorModel.h"
+#include "SheetMetalObstacleMap.h"
 
 #include <AIS_InteractiveObject.hxx>
 #include <QStringList>
@@ -28,4 +29,9 @@ public:
         const SheetMetalConnectorData& data,
         const std::vector<Handle(AIS_InteractiveObject)>& sceneObjects,
         const TopoDS_Shape& ignoredShape = TopoDS_Shape());
+
+    static SheetMetalCollisionResult check(
+        const TopoDS_Shape& connector,
+        const SheetMetalConnectorData& data,
+        const SheetMetalObstacleMap& obstacleMap);
 };

@@ -1,14 +1,14 @@
 # Sheet Metal Connector 内部実装
 
-_基本版の開発者向け説明。コミット `a4c55fc`、更新日：2026-10-22。_
+_基本版の開発者向け説明。コミット `a4c55fc`、更新日：2026-10-23。_
 
 ---
 
 ## 📋 対象範囲と命名
 
-Sheet Metal Connectorは、選択した2つのFaceを幅と厚さを持つ経路板金で接続します。UIでは新しい名称を使用しますが、不要な変更を避けるため、内部クラス名 `WidgetBusbar` と `widget_busbar.*` は互換名として残しています。
+Sheet Metal Connectorは、選択した2つのFaceを幅と厚さを持つ経路板金で接続します。UIとソース識別子は、汎用的なSheet Metal Connector名称に統一されています。
 
-基本版はFace/Point選択、直交経路、円弧曲げ、Weld/BoltNut端部、プレビュー、干渉確認、XCAF登録を実装しています。自動回避、再オープン後の編集、展開、製造補正は対象外です。
+現在の実装はFace/Point選択、始点Face平面経路、円弧曲げ、ノード単位のBend/Weld/BoltNut遷移、プレビュー、干渉確認、XCAF登録、現在のドキュメント内でのパラメータ復元を実装しています。Auto Calculateは干渉する基本経路を拒否しますが、完全な迂回探索、ネイティブドキュメント永続化、展開、製造補正は対象外です。
 
 ## 🏗️ 全体構成
 
@@ -17,7 +17,7 @@ flowchart LR
     accTitle: 板金コネクタ内部構成
     accDescr: 対話選択から経路計算、形状生成、干渉確認、プレビュー、XCAF登録までの主要データフロー
 
-    ui[🖥️ WidgetBusbar] --> face_geometry[📐 Face処理]
+    ui[🖥️ WidgetSheetMetalConnector] --> face_geometry[📐 Face処理]
     face_geometry --> model[📋 接続データ]
     model --> route_planner[🧭 経路計算]
     route_planner --> builder[🔧 形状生成]
@@ -41,11 +41,13 @@ flowchart LR
 
 | コンポーネント | 役割 |
 | --- | --- |
-| `WidgetBusbar` | UI状態、選択セッション、プレビュー、Apply/Clear、データ受け渡し |
+| `WidgetSheetMetalConnector` | UI状態、選択セッション、プレビュー、Apply/Clear、データ受け渡し |
 | `SheetMetalConnectorModel.h` | 端点、接合方法、曲げ、経路、共通パラメータ |
 | `SheetMetalFaceGeometry` | Face内の既定点、点投影、向き付き法線 |
-| `SheetMetalRoutePlanner` | 6種類の直交候補と順位付け |
+| `SheetMetalRoutePlanner` | 始点Face平面経路、重複点削除、検証コールバック |
+| `SheetMetalRouteEvaluator` | 経路の妥当性、長さ、曲げ数、横曲げ数の集計 |
 | `SheetMetalConnectorBuilder` | 円弧中心線、矩形スイープ、Bolt/Nut穴 |
+| `SheetMetalObstacleMap` | シーンShapeの抽出、除外、許容接触の切り取り、境界箱検索 |
 | `SheetMetalCollisionChecker` | 境界箱の一次判定、交差、クリアランス、許容接触領域 |
 | `ViewerWidget::displayShape` | XCAF登録、表示登録、モデルツリー統合 |
 
@@ -74,39 +76,47 @@ Face選択とPoint選択は役割を分離しています。
 `SheetMetalConnectorData` は次の入力を保持します。
 
 - `start`、`end`：ワールド座標点、Face法線、選択Face、対象Shape、対象Label、接合パラメータ
-- `routePoints`：順序付き端点と曲げ点、および各曲げ半径
+- `routePoints`：順序付き端点と内部ノード。各内部ノードがBend、Weld、BoltNutの遷移方式とパラメータを保持
 - `width`、`thickness`：矩形断面寸法
 - `clearance`：非接触障害物までの必要距離
+- `maximumBendCount`、`allowSideBends`：各連続板金に適用する製造制約
 - `upDirection`：初期断面方向の基準
 
 `SheetMetalJointType` と `SheetMetalBend` は独立しています。Weldは溶接種類のインデックス、BoltNutは仕様インデックスと穴数を保持します。現在の基本ビルダーはBoltNut端部ごとに中央穴を1個生成します。
 
+## 🎯 ノード単位の遷移モデル
+
+現在の実装では、隣接する経路点間の各エッジを板セグメントとして扱い、各内部ノードに独立した遷移方式を設定します。
+
+- `Bend`：両側のセグメントを1枚の連続した板金および1つのSolidとして生成
+- `Weld`：ノードで2つの板金Solidに分割し、選択した溶接形状を生成
+- `BoltNut`：ノードで2つの板金Solidに分割し、必要な重なり、穴、締結接続を生成
+- 始点と終点の接続は内部遷移から分離し、生成した板金チェーンを選択対象Shapeへ接続
+
+基本経路は始点Faceのローカル平面を使用します。始点を `S`、終点を `E`、始点法線を `N` とすると、投影点は `Q = E - N * dot(E - S, N)`、基本経路は `S → Q → E` です。長さ0のセグメントは削除します。`Q` がBendの場合は1枚の曲げ板金、WeldまたはBoltNutの場合は2枚の接続板金を生成します。追加した内部ノードの既定値はBendです。最大曲げ数は連続する板金ごとに評価し、Bend以外の遷移後にリセットします。
+
 ## 🧭 経路計算
 
-`computeOrthogonalRoute()` はX、Y、Z移動順序の6通りを生成し、連続する重複点を削除します。そのため、結果は直線、L字、または3軸経路になります。
+`computeOrthogonalRoute()` は始点Faceの平面を使い、上記の `S → Q → E` 経路を生成します。連続する重複点は削除するため、終点が平面上または法線上にある場合は2点の直線経路になります。Auto Calculateはこの候補Shapeを生成し、干渉またはクリアランス違反を除外しますが、迂回ノードはまだ追加しません。
 
-候補の優先順位は次の通りです。
-
-1. 端点法線との整合が高い
-2. 経路点が少なく、曲げ数が少ない
-3. 折れ線全長が短い
-
-整合値は「最初のセグメント方向・始点法線の内積」から「最後のセグメント方向・終点法線の内積」を引いた値です。基本版では障害物を経路探索に使用せず、形状生成後に干渉を報告します。
+自動生成した1つの角が曲げ回数0または横曲げ禁止条件に違反する場合、そのノードの既定遷移はWeldになります。手動追加ノードはBendが既定値で、選択した経路ノードのパネルから個別に変更できます。
 
 ## 🔧 形状生成
 
 `SheetMetalConnectorBuilder::build()` の処理：
 
-1. 幅、厚さ、経路点数を検証します。
-2. 非共線の中間点ごとに接線入口、出口、円弧を作ります。接線オフセットは `radius * tan(angle / 2)` で、半径が隣接直線を消費する場合は失敗します。
-3. 最初の経路方向と `upDirection` から中央配置の矩形断面を作り、`BRepOffsetAPI_MakePipe` のcorrected Frenetで円弧Wireに沿ってスイープします。
-4. BoltNut端部ではFace normal方向に円柱穴を切ります。M6、M8、M10、M12は現在それぞれ半径 `3.3`、`4.5`、`5.5`、`6.5` mmです。
+1. 幅、厚さ、経路点、製造オプションを検証します。
+2. Bendノードを介する連続セグメントを1枚の板金にまとめます。WeldまたはBoltNutノードで現在の板金を終了し、次の独立Solidを開始します。連続板金が `maximumBendCount` を超える場合や禁止された横曲げを含む場合は、ノード遷移の変更が必要です。
+3. 各板金に残る曲げを円弧化し、曲げ半径と隣接直線長を検証します。
+4. 各板金を独立したSolidとして生成し、複数の場合は1つのCompoundに格納します。
+5. 直線Butt接合は同じ切断位置を共有します。Lap WeldとBoltNutは経路方向に `max(10 mm, 2 × thickness)` だけ重ね、隣接する板金を隣接する板厚層へ配置します。両者は面で接触し、Solid体積は交差しません。BoltNutは両方に整列した穴を作ります。角部Butt Weldは共通のマイター面で切り、交差体積を除去します。
+6. BoltNut端部ではFace normal方向に円柱穴を切ります。M6、M8、M10、M12は現在それぞれ半径 `3.3`、`4.5`、`5.5`、`6.5` mmです。
 
 結果は中心線Wireと最終Shapeを返します。失敗時は部分形状を残さず、エラーテキストを返します。
 
 ## 🔍 干渉とクリアランス
 
-`SheetMetalCollisionChecker::check()` はワールド座標で次を実行します。
+`SheetMetalObstacleMap` は対応するシーンオブジェクトをワールド座標のShapeへ変換し、除外規則と許容接触規則を適用して境界箱を保持します。`SheetMetalCollisionChecker::check()` はその障害物マップを検索して、次の精密判定を実行します。
 
 1. コネクタの境界箱を作り、`clearance` 分だけ拡張します。
 2. コネクタ自身と前回ApplyしたShapeを除外します。
@@ -121,21 +131,26 @@ Face選択とPoint選択は役割を分離しています。
 
 Previewは一時的な `AIS_Shape` です。Apply時には形状を再生成・再確認し、前回の適用Shapeがあれば削除してから `ViewerWidget::displayShape()` を呼びます。返された `TDF_Label` に `Sheet Metal Connector` 名と `TDataStd_Comment` メタデータを設定します。
 
-メタデータには幅、厚さ、クリアランス、端点座標と法線、接合パラメータ、対象Label Entry、経路点、曲げ半径を保存します。現在は書き込みのみで、再オープン後にUIへ復元する処理は未実装です。
+`version=5` メタデータは各ノードの遷移方式とBend/Weld/BoltNutパラメータを保存し、`version=1` から `version=4` の読み込みにも対応します。旧版のグローバル中間接続は、分割が必要な経路ノードへ移行します。生成済みコネクターを選択してからツールを開くと、パラメータ、経路、両方の親Shape/Label参照を復元し、次のApplyで選択したコネクターを置換します。
+
+安定したサブFace識別子はまだ保存しません。復元した座標と法線は使用できますが、接続点を変更する前に対応するFaceを再選択する必要があります。
 
 ## ⚠️ 現在の制限
 
-- 経路計算は障害物を自動回避せず、生成後に報告します
+- Auto Calculateは始点Face平面の経路を検証しますが、障害物を迂回する新しい経路点はまだ探索しません
 - 許容接触領域は球形近似で、厳密なFace接触領域ではありません
 - `holeCount` は保存しますが、現在は各端部に中央穴を1個だけ作ります
+- BoltNutは角で分割した板金を直接接続できません。この場合は今後のアングルブラケットまたはフランジが必要です
 - Weldパラメータは保存しますが、溶接ビードShapeは作りません
-- メタデータは現在、書き込み専用です
+- Lap Weldは現在 `max(10 mm, 2 × thickness)` だけ経路を対象側へ延長します。Phase 2で端面接触か重なりかを再検討し、必要なパラメータを公開します
+- 曲げ半径は矩形断面の半対角線より大きくする必要があり、スイープの自己交差と浮いた円弧Faceを防止します
+- 現在のXCAFドキュメント内では復元できますが、ネイティブドキュメントの保存・再オープンは未対応です
 - トポロジ変更後のFace参照には安定したサブShape命名が必要です
 - 現在のスイープShapeは展開やK-factorを持つ製造用板金定義ではありません
 
 ## 🧪 検証範囲
 
-`SheetMetalConnectorTests` は直線経路、曲げ経路、BoltNut穴、過大曲げ半径、交差/遠方障害物、Face内の既定点、Location付きFaceのワールド座標点を確認します。
+`SheetMetalConnectorTests` は始点Face平面投影、単一/複数板金経路、ノード単位の遷移、直線BoltNut接合、マイター角Weld、未対応のBolt角接合、曲げ半径、干渉、Face形状、メタデータ互換性を確認します。
 
 GUIでは次を手動確認する必要があります。
 
@@ -146,11 +161,14 @@ GUIでは次を手動確認する必要があります。
 
 ## 🔗 ソース一覧
 
-- UI：`src/ui/widget_busbar.h/.cpp/.ui`
+- UI：`src/ui/widget_sheet_metal_connector.h/.cpp/.ui`
 - データモデル：`src/ui/SheetMetalConnectorModel.h`
+- メタデータ：`src/ui/SheetMetalConnectorMetadata.h/.cpp`
 - Face処理：`src/ui/SheetMetalFaceGeometry.h/.cpp`
 - 経路：`src/ui/SheetMetalRoutePlanner.h/.cpp`
+- 経路評価：`src/ui/SheetMetalRouteEvaluator.h/.cpp`
 - 形状生成：`src/ui/SheetMetalConnectorBuilder.h/.cpp`
+- 障害物マップ：`src/ui/SheetMetalObstacleMap.h/.cpp`
 - 干渉確認：`src/ui/SheetMetalCollisionChecker.h/.cpp`
 - テスト：`tests/SheetMetalConnectorTests.cpp`
 - UI翻訳：`resource/i18n/qt_occ_en.ts`、`qt_occ_zh.ts`、`qt_occ_ja.ts`
