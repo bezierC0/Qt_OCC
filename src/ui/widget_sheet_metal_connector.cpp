@@ -3,9 +3,11 @@
 
 #include "OCCView.h"
 #include "SelectedEntity.h"
+#include "SheetMetalCollisionChecker.h"
 #include "SheetMetalConnectorBuilder.h"
 #include "SheetMetalFaceGeometry.h"
 #include "SheetMetalConnectorMetadata.h"
+#include "SheetMetalObstacleMap.h"
 #include "SheetMetalRoutePlanner.h"
 #include "ViewManager.h"
 #include "ViewerWidget.h"
@@ -13,6 +15,7 @@
 #include <AIS_InteractiveContext.hxx>
 #include <AIS_Shape.hxx>
 #include <Quantity_Color.hxx>
+#include <Precision.hxx>
 #include <StdSelect_ViewerSelector3d.hxx>
 #include <TCollection_ExtendedString.hxx>
 #include <TDataStd_Comment.hxx>
@@ -23,9 +26,14 @@
 #include <XCAFPrs_AISObject.hxx>
 
 #include <QCloseEvent>
+#include <QGroupBox>
+#include <QHBoxLayout>
 #include <QListWidgetItem>
 #include <QMessageBox>
 #include <QSignalBlocker>
+#include <QTimer>
+#include <QToolButton>
+#include <QVBoxLayout>
 
 #include <cmath>
 #include <utility>
@@ -79,6 +87,60 @@ WidgetSheetMetalConnector::WidgetSheetMetalConnector(QWidget* parent)
     ui->setupUi(this);
     setWindowFlags(Qt::Tool | Qt::WindowCloseButtonHint | Qt::WindowStaysOnTopHint);
 
+    auto* connectionContainer = new QWidget(this);
+    connectionContainer->setObjectName(QStringLiteral("widgetConnections"));
+    auto* connectionLayout = new QHBoxLayout(connectionContainer);
+    connectionLayout->setContentsMargins(0, 0, 0, 0);
+    connectionLayout->setSpacing(6);
+
+    auto* routeContainer = new QWidget(connectionContainer);
+    routeContainer->setObjectName(QStringLiteral("widgetRoute"));
+    auto* routeLayout = new QVBoxLayout(routeContainer);
+    routeLayout->setContentsMargins(0, 0, 0, 0);
+    routeLayout->setSpacing(6);
+
+    ui->verticalLayoutMain->removeWidget(ui->groupBoxStart);
+    ui->verticalLayoutMain->removeWidget(ui->groupBoxEnd);
+    ui->verticalLayoutMain->removeWidget(ui->pushButtonAutoCalc);
+    ui->verticalLayoutMain->removeWidget(ui->groupBoxWaypoints);
+    routeLayout->addWidget(ui->pushButtonAutoCalc);
+    routeLayout->addWidget(ui->groupBoxWaypoints);
+    connectionLayout->addWidget(ui->groupBoxStart);
+    connectionLayout->addWidget(ui->groupBoxEnd);
+    connectionLayout->addWidget(routeContainer);
+    ui->verticalLayoutMain->insertWidget(0, connectionContainer);
+
+    auto* optionsButton = new QToolButton(this);
+    optionsButton->setObjectName(QStringLiteral("toolButtonOptions"));
+    optionsButton->setText(tr("Options"));
+    optionsButton->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
+    optionsButton->setArrowType(Qt::RightArrow);
+    optionsButton->setCheckable(true);
+
+    auto* optionsContainer = new QWidget(this);
+    optionsContainer->setObjectName(QStringLiteral("widgetOptions"));
+    auto* optionsLayout = new QVBoxLayout(optionsContainer);
+    optionsLayout->setContentsMargins(0, 0, 0, 0);
+    optionsLayout->setSpacing(6);
+    ui->verticalLayoutMain->removeWidget(ui->groupBoxNodeProp);
+    ui->verticalLayoutMain->removeWidget(ui->groupBoxSheetMetalParams);
+    optionsLayout->addWidget(ui->groupBoxNodeProp);
+    optionsLayout->addWidget(ui->groupBoxSheetMetalParams);
+
+    const int connectionIndex = ui->verticalLayoutMain->indexOf(connectionContainer);
+    ui->verticalLayoutMain->insertWidget(connectionIndex + 1, optionsButton);
+    ui->verticalLayoutMain->insertWidget(connectionIndex + 2, optionsContainer);
+    optionsContainer->setVisible(false);
+    connect(optionsButton, &QToolButton::toggled,
+            this, [this, optionsButton, optionsContainer](bool expanded) {
+                optionsButton->setArrowType(
+                    expanded ? Qt::DownArrow : Qt::RightArrow);
+                optionsContainer->setVisible(expanded);
+                QTimer::singleShot(0, this, [this]() { adjustSize(); });
+            });
+
+    adjustSize();
+
     connect(ui->pushButtonPickStart, &QPushButton::clicked,
             this, &WidgetSheetMetalConnector::onPickStartClicked);
     connect(ui->pushButtonPickStartPoint, &QPushButton::clicked,
@@ -113,6 +175,10 @@ WidgetSheetMetalConnector::WidgetSheetMetalConnector(QWidget* parent)
             this, refreshPreview);
     connect(ui->spinBoxClearance, QOverload<double>::of(&QDoubleSpinBox::valueChanged),
             this, refreshPreview);
+    connect(ui->spinBoxMaximumBendCount, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, refreshPreview);
+    connect(ui->checkBoxAllowSideBends, &QCheckBox::toggled,
+            this, refreshPreview);
     connect(ui->comboBoxStartJoint, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, refreshPreview);
     connect(ui->comboBoxEndJoint, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -120,6 +186,10 @@ WidgetSheetMetalConnector::WidgetSheetMetalConnector(QWidget* parent)
     connect(ui->comboBoxStartBoltSpec, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, refreshPreview);
     connect(ui->comboBoxEndBoltSpec, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, refreshPreview);
+    connect(ui->comboBoxStartWeldType, QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this, refreshPreview);
+    connect(ui->comboBoxEndWeldType, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, refreshPreview);
     connect(ui->comboBoxSectionDir, QOverload<int>::of(&QComboBox::currentIndexChanged),
             this, refreshPreview);
@@ -132,6 +202,27 @@ WidgetSheetMetalConnector::WidgetSheetMetalConnector(QWidget* parent)
                     refreshWaypointList();
                 }
             });
+    const auto updateNodeTransition = [this](int) {
+        if (m_selectedNodeIndex > 0
+            && m_selectedNodeIndex < static_cast<int>(m_data.routePoints.size()) - 1) {
+            saveCurrentNodeProps();
+            updateNodePropertyPanel();
+            updatePreview();
+            refreshWaypointList();
+        }
+    };
+    connect(ui->comboBoxNodeTransition,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this,
+            updateNodeTransition);
+    connect(ui->comboBoxNodeWeldType,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this,
+            updateNodeTransition);
+    connect(ui->comboBoxNodeBoltSpec,
+            QOverload<int>::of(&QComboBox::currentIndexChanged),
+            this,
+            updateNodeTransition);
 
     const auto updateStartJointControls = [this](int index) {
         const bool isWeld = index == 0;
@@ -401,9 +492,29 @@ void WidgetSheetMetalConnector::onAutoCalcClicked()
     }
 
     updateDataFromUi();
+    clearPreview();
+
+    auto* view = m_modelView.data();
+    if (!view) {
+        updateStatus(tr("No active view available."));
+        return;
+    }
+    const auto obstacleMap = SheetMetalObstacleMap::build(
+        TopoDS_Shape(), m_data, view->getShapeObjects(), m_appliedShape);
+    const auto routeValidator = [&obstacleMap](
+        const SheetMetalConnectorData& candidateData) {
+        const auto buildResult = SheetMetalConnectorBuilder::build(candidateData);
+        return buildResult.isValid()
+            && SheetMetalCollisionChecker::check(
+                   buildResult.solid, candidateData, obstacleMap).isAcceptable();
+    };
+
     QString errorMessage;
     if (!SheetMetalRoutePlanner::computeOrthogonalRoute(
-            m_data, ui->spinBoxDefaultBendRadius->value(), &errorMessage)) {
+            m_data,
+            ui->spinBoxDefaultBendRadius->value(),
+            &errorMessage,
+            routeValidator)) {
         updateStatus(tr("Route calculation failed: %1").arg(errorMessage));
         return;
     }
@@ -427,7 +538,7 @@ void WidgetSheetMetalConnector::onAddWaypointClicked()
         (previous.position.X() + last.position.X()) * 0.5,
         (previous.position.Y() + last.position.Y()) * 0.5,
         (previous.position.Z() + last.position.Z()) * 0.5);
-    waypoint.bend.radius = ui->spinBoxDefaultBendRadius->value();
+    waypoint.transition.bend.radius = ui->spinBoxDefaultBendRadius->value();
     m_data.routePoints.insert(m_data.routePoints.end() - 1, waypoint);
     refreshWaypointList();
     updatePreview();
@@ -462,9 +573,15 @@ void WidgetSheetMetalConnector::refreshWaypointList()
         } else if (index + 1 == m_data.routePoints.size()) {
             label = tr("P%1 End").arg(index);
         } else {
-            label = tr("P%1 Bend R=%2 mm")
-                .arg(index)
-                .arg(point.bend.radius, 0, 'f', 1);
+            if (point.transition.type == SheetMetalRouteTransitionType::Bend) {
+                label = tr("P%1 Bend R=%2 mm")
+                    .arg(index)
+                    .arg(point.transition.bend.radius, 0, 'f', 1);
+            } else if (point.transition.type == SheetMetalRouteTransitionType::Weld) {
+                label = tr("P%1 Weld").arg(index);
+            } else {
+                label = tr("P%1 Bolt / Nut").arg(index);
+            }
         }
         ui->listWidgetWaypoints->addItem(label + QStringLiteral("  ") + pointText(point.position));
     }
@@ -498,8 +615,27 @@ void WidgetSheetMetalConnector::updateNodePropertyPanel()
         return;
     }
 
+    const auto& transition =
+        m_data.routePoints[static_cast<std::size_t>(m_selectedNodeIndex)].transition;
+    const QSignalBlocker transitionBlocker(ui->comboBoxNodeTransition);
+    const QSignalBlocker radiusBlocker(ui->spinBoxBendRadius);
+    const QSignalBlocker weldBlocker(ui->comboBoxNodeWeldType);
+    const QSignalBlocker boltBlocker(ui->comboBoxNodeBoltSpec);
+    ui->comboBoxNodeTransition->setCurrentIndex(
+        static_cast<int>(transition.type));
     ui->spinBoxBendRadius->setValue(
-        m_data.routePoints[static_cast<std::size_t>(m_selectedNodeIndex)].bend.radius);
+        transition.bend.radius);
+    ui->comboBoxNodeWeldType->setCurrentIndex(transition.weld.typeIndex);
+    ui->comboBoxNodeBoltSpec->setCurrentIndex(transition.boltNut.specIndex);
+
+    const bool isBend = transition.type == SheetMetalRouteTransitionType::Bend;
+    const bool isWeld = transition.type == SheetMetalRouteTransitionType::Weld;
+    ui->labelBendRadius->setEnabled(isBend);
+    ui->spinBoxBendRadius->setEnabled(isBend);
+    ui->labelNodeWeldType->setEnabled(isWeld);
+    ui->comboBoxNodeWeldType->setEnabled(isWeld);
+    ui->labelNodeBoltSpec->setEnabled(!isBend && !isWeld);
+    ui->comboBoxNodeBoltSpec->setEnabled(!isBend && !isWeld);
 }
 
 void WidgetSheetMetalConnector::saveCurrentNodeProps()
@@ -508,8 +644,13 @@ void WidgetSheetMetalConnector::saveCurrentNodeProps()
         || m_selectedNodeIndex >= static_cast<int>(m_data.routePoints.size()) - 1) {
         return;
     }
-    m_data.routePoints[static_cast<std::size_t>(m_selectedNodeIndex)].bend.radius =
-        ui->spinBoxBendRadius->value();
+    auto& transition =
+        m_data.routePoints[static_cast<std::size_t>(m_selectedNodeIndex)].transition;
+    transition.type = static_cast<SheetMetalRouteTransitionType>(
+        ui->comboBoxNodeTransition->currentIndex());
+    transition.bend.radius = ui->spinBoxBendRadius->value();
+    transition.weld.typeIndex = ui->comboBoxNodeWeldType->currentIndex();
+    transition.boltNut.specIndex = ui->comboBoxNodeBoltSpec->currentIndex();
 }
 
 void WidgetSheetMetalConnector::updateDataFromUi()
@@ -518,6 +659,8 @@ void WidgetSheetMetalConnector::updateDataFromUi()
     m_data.width = ui->spinBoxWidth->value();
     m_data.thickness = ui->spinBoxThickness->value();
     m_data.clearance = ui->spinBoxClearance->value();
+    m_data.maximumBendCount = ui->spinBoxMaximumBendCount->value();
+    m_data.allowSideBends = ui->checkBoxAllowSideBends->isChecked();
     m_data.start.jointType = ui->comboBoxStartJoint->currentIndex() == 0
         ? SheetMetalJointType::Weld
         : SheetMetalJointType::BoltNut;
@@ -535,7 +678,9 @@ void WidgetSheetMetalConnector::updateDataFromUi()
     } else if (directionIndex == 2) {
         m_data.upDirection = gp_Dir(0.0, 1.0, 0.0);
     } else {
-        m_data.upDirection = gp_Dir(0.0, 0.0, 1.0);
+        m_data.upDirection = m_hasStart
+            ? m_data.start.normal
+            : gp_Dir(0.0, 0.0, 1.0);
     }
 }
 
@@ -544,6 +689,8 @@ void WidgetSheetMetalConnector::updateUiFromData()
     const QSignalBlocker widthBlocker(ui->spinBoxWidth);
     const QSignalBlocker thicknessBlocker(ui->spinBoxThickness);
     const QSignalBlocker clearanceBlocker(ui->spinBoxClearance);
+    const QSignalBlocker bendCountBlocker(ui->spinBoxMaximumBendCount);
+    const QSignalBlocker sideBendsBlocker(ui->checkBoxAllowSideBends);
     const QSignalBlocker directionBlocker(ui->comboBoxSectionDir);
     const QSignalBlocker startJointBlocker(ui->comboBoxStartJoint);
     const QSignalBlocker startBoltBlocker(ui->comboBoxStartBoltSpec);
@@ -555,8 +702,14 @@ void WidgetSheetMetalConnector::updateUiFromData()
     ui->spinBoxWidth->setValue(m_data.width);
     ui->spinBoxThickness->setValue(m_data.thickness);
     ui->spinBoxClearance->setValue(m_data.clearance);
+    ui->spinBoxMaximumBendCount->setValue(m_data.maximumBendCount);
+    ui->checkBoxAllowSideBends->setChecked(m_data.allowSideBends);
+    const bool usesStartNormal = m_hasStart
+        && m_data.upDirection.IsEqual(
+            m_data.start.normal, Precision::Angular());
     ui->comboBoxSectionDir->setCurrentIndex(
-        std::abs(m_data.upDirection.X()) > 0.999 ? 1
+        usesStartNormal ? 0
+        : std::abs(m_data.upDirection.X()) > 0.999 ? 1
         : std::abs(m_data.upDirection.Y()) > 0.999 ? 2
         : 0);
     ui->comboBoxStartJoint->setCurrentIndex(
@@ -578,7 +731,6 @@ void WidgetSheetMetalConnector::updateUiFromData()
     ui->comboBoxEndWeldType->setEnabled(endIsWeld);
     ui->labelEndBoltSpec->setEnabled(!endIsWeld);
     ui->comboBoxEndBoltSpec->setEnabled(!endIsWeld);
-
     ui->labelStartPosValue->setText(pointText(m_data.start.position));
     ui->labelStartNormalValue->setText(directionText(m_data.start.normal));
     ui->labelEndPosValue->setText(pointText(m_data.end.position));

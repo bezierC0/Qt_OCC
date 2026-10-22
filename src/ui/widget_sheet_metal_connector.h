@@ -32,7 +32,7 @@ class WidgetSheetMetalConnector;
  * Workflow:
  *  1. Pick start and end faces interactively in the 3-D view.
  *  2. Click "Auto Calculate Route" to generate an orthogonal path.
- *  3. Add / delete / edit bend waypoints.
+ *  3. Add / delete / edit route nodes and their transitions.
  *  4. Set sheet-metal and endpoint joint parameters.
  *  5. Validate collisions and apply the generated solid.
  */

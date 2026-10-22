@@ -1255,18 +1255,23 @@ Z: %5 .. %6</translation></message>
     <message><source>Route Points</source><translation>経路点</translation></message>
     <message><source>Add Waypoint</source><translation>経路点を追加</translation></message>
     <message><source>Delete Waypoint</source><translation>経路点を削除</translation></message>
-    <message><source>Selected Bend</source><translation>選択した曲げ</translation></message>
+    <message><source>Selected Route Node</source><translation>選択した経路ノード</translation></message>
+    <message><source>Transition:</source><translation>ノード接続：</translation></message>
+    <message><source>Bend</source><translation>曲げ</translation></message>
     <message><source>Bend Radius:</source><translation>曲げ半径：</translation></message>
     <message><source>Sheet Metal Parameters</source><translation>板金パラメータ</translation></message>
     <message><source>Width:</source><translation>幅：</translation></message>
     <message><source>Thickness:</source><translation>厚さ：</translation></message>
     <message><source>Default Bend Radius:</source><translation>既定の曲げ半径：</translation></message>
     <message><source>Minimum Clearance:</source><translation>最小クリアランス：</translation></message>
+      <message><source>Maximum Bends per Sheet:</source><translation>板金1枚あたりの最大曲げ回数：</translation></message>
+      <message><source>Allow Side Bends</source><translation>横曲げを許可</translation></message>
     <message><source>Section Direction:</source><translation>断面方向：</translation></message>
-    <message><source>Auto / +Z</source><translation>自動 / +Z</translation></message>
+    <message><source>Auto / Start Normal</source><translation>自動 / 始点法線</translation></message>
     <message><source>Fixed +X</source><translation>固定 +X</translation></message>
     <message><source>Fixed +Y</source><translation>固定 +Y</translation></message>
     <message><source>Allow Apply with collision warning</source><translation>干渉警告があっても適用を許可</translation></message>
+    <message><source>Options</source><translation>オプション</translation></message>
     <message><source>Ready</source><translation>準備完了</translation></message>
     <message><source>Select the start connection face.</source><translation>始点の接続面を選択してください。</translation></message>
     <message><source>Select the start connection face first.</source><translation>先に始点の接続面を選択してください。</translation></message>
@@ -1299,6 +1304,8 @@ Z: %5 .. %6</translation></message>
     <message><source>Failed to generate sheet metal: %1</source><translation>板金の生成に失敗しました：%1</translation></message>
     <message><source>No active view available.</source><translation>利用可能なアクティブビューがありません。</translation></message>
     <message><source>P%1 Bend R=%2 mm</source><translation>P%1 曲げ R=%2 mm</translation></message>
+    <message><source>P%1 Weld</source><translation>P%1 溶接</translation></message>
+    <message><source>P%1 Bolt / Nut</source><translation>P%1 ボルト / ナット</translation></message>
     <message><source>P%1 End</source><translation>P%1 終点</translation></message>
     <message><source>P0 Start</source><translation>P0 始点</translation></message>
     <message><source>Select two faces and calculate a route first.</source><translation>先に2つの接続面を選択して経路を計算してください。</translation></message>
