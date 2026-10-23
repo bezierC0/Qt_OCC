@@ -80,7 +80,7 @@ This separation prevents the view-plane coordinate returned by `V3d_View::Conver
 - `width` and `thickness`: rectangular section dimensions
 - `clearance`: required distance from non-contact obstacles
 - `maximumBendCount` and `allowSideBends`: manufacturing limits applied to every continuous sheet
-- `upDirection`: reference used to orient the initial rectangular section
+- `upDirection`: legacy persisted value; strict base mode derives the section from `start.normal`
 
 `SheetMetalJointType` is independent from `SheetMetalBend`. Weld stores a weld-type index; BoltNut stores a specification index and hole count. The base builder currently creates one centered hole per BoltNut endpoint.
 
@@ -93,11 +93,13 @@ The implementation treats every edge between adjacent route points as a sheet se
 - `BoltNut`: split at the node into two sheet-metal solids and create the required overlap, holes, and fastener connection
 - start and end attachments remain separate from internal transitions and connect the generated sheet chain to the selected target shapes
 
-The initial route uses the start-face local plane. For start point `S`, end point `E`, and start normal `N`, the projected point is `Q = E - N * dot(E - S, N)`. The base route is `S → Q → E`; a zero-length segment is removed. A Bend at `Q` creates one folded sheet, while Weld or BoltNut creates two connected sheets. Newly added internal nodes default to Bend. Maximum bend count is evaluated per continuous sheet and resets after a non-Bend transition.
+The initial route uses the start-face local plane. For start point `S`, end point `E`, and start normal `N`, the projected point is `Q = E - N * dot(E - S, N)`. The base candidate is `S → Q → E`; a zero-length segment is removed. A Bend at `Q` creates one folded sheet, while Weld or BoltNut creates two connected sheets. Newly added internal nodes default to Bend. Maximum bend count is evaluated per continuous sheet and resets after a non-Bend transition.
+
+The base version applies a strict no-twist rule. The first segment must lie in the Start face plane, its sheet-thickness direction is fixed to `start.normal`, the last segment must lie in the End face plane, and the transported final sheet-thickness direction must be parallel or anti-parallel to `end.normal`. An angled planar panel is allowed, but a route that would require a rectangular section to twist is rejected instead of creating a skewed solid.
 
 ## 🧭 Route planning
 
-`SheetMetalRoutePlanner::computeOrthogonalRoute()` currently creates the start-plane route `S → Q → E` described above. Consecutive duplicate points are removed, so a point already on the plane or normal can produce a straight two-point route. Auto Calculate builds this candidate and rejects it when the resulting solid violates collision or clearance constraints. It does not yet add detour nodes.
+`SheetMetalRoutePlanner::computeOrthogonalRoute()` currently creates the start-plane candidate `S → Q → E` described above. Consecutive duplicate points are removed. Auto Calculate rejects the candidate when either endpoint orientation, final section orientation, collision, or clearance is invalid. It does not yet add orientation-correction or detour nodes.
 
 When the single generated corner would violate a zero-bend limit or a disabled side-bend rule, its default transition becomes Weld. Manually added nodes default to Bend; the user can change each node independently in the Selected Route Node panel.
 
@@ -105,11 +107,11 @@ When the single generated corner would violate a zero-bend limit or a disabled s
 
 `SheetMetalConnectorBuilder::build()` performs these steps:
 
-1. Validate positive width and thickness, route points, and manufacturing options.
+1. Validate positive width and thickness, route points, manufacturing options, both endpoint face-plane constraints, and final section-normal alignment.
 2. Group adjacent segments through Bend nodes. Weld and BoltNut nodes terminate the current sheet and start another independent solid. A continuous sheet that exceeds `maximumBendCount`, or contains a disabled side bend, is rejected until the node transition is changed.
 3. Replace every retained non-collinear corner with tangent entry/exit points and a circular arc. The tangent offset is `radius * tan(angle / 2)`; a radius is rejected when it consumes either adjacent segment.
    The radius must also exceed the rectangular section half-diagonal so that the swept bend does not fold through itself and create a stray curved face.
-4. Build and sweep every sheet independently, then return one solid or a compound containing all solids.
+4. Build and sweep every sheet independently from the Start normal and transported bend frames, then return one solid or a compound containing all solids. No arbitrary fallback axis is used when the Start normal is incompatible with the first segment.
 5. A straight Butt joint shares one cut position. Lap Weld and BoltNut joints overlap the adjacent sheets by `max(10 mm, 2 × thickness)` and place them on adjacent thickness layers. Their faces contact without intersecting solid volume. BoltNut cuts aligned holes through both sheets. Corner Butt Weld sheets are trimmed by a shared miter plane to remove intersecting volume.
 6. For each BoltNut endpoint, cut a cylinder along the stored face normal. M6, M8, M10, and M12 currently map to hole radii `3.3`, `4.5`, `5.5`, and `6.5` mm.
 
@@ -176,7 +178,7 @@ Phase 2 should extend the planner and evaluator without merging joint type back 
 
 ## 🧪 Verification
 
-`SheetMetalConnectorTests` covers start-face-plane projection, single- and multi-sheet routes, per-node transitions, straight BoltNut sheet joints, mitered corner Weld splits, unsupported bolted corners, bend-radius rejection, collision checks, face geometry, and metadata compatibility.
+`SheetMetalConnectorTests` includes source-level cases for strict Start/End face-plane alignment, final sheet-normal rejection, start-face-plane projection, single- and multi-sheet routes, per-node transitions, straight BoltNut sheet joints, mitered corner Weld splits, unsupported bolted corners, bend-radius rejection, collision checks, face geometry, and metadata compatibility. The strict-orientation changes have not been compiled or executed at the user's request.
 
 Manual GUI acceptance should still verify:
 

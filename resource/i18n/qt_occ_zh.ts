@@ -28,6 +28,8 @@
 <context>
     <name>MainWindow</name>
     <message><source>Sheet Metal Connector</source><translation>钣金连接</translation></message>
+    <message><source>Black and White</source><translation>黑白</translation></message>
+    <message><source>Background Color</source><translation>背景颜色</translation></message>
     <message>
         <source>Revolve</source>
         <translation>旋转体</translation>

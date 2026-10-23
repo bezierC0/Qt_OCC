@@ -10,7 +10,7 @@ Qt_OCC est une application de bureau dédiée à la CAO et aux nuages de points.
 
 ### 🎥 Visualisation & Navigation
 *   **Vues Standard** : Basculez rapidement entre les vues Isométrique, Dessus, Dessous, Gauche, Droite, Avant et Arrière.
-*   **Modes d'Affichage** : Basculez entre les styles de rendu Fil de fer (Wireframe), Ombré (Shaded) et Ombré avec Arêtes.
+*   **Modes d'Affichage** : Basculez entre les styles Fil de fer, Ombré, Lignes cachées, Ombré avec Arêtes et Noir et Blanc, et personnalisez la couleur d'arrière-plan de la vue.
 *   **Contrôle de la Vue** : Ajustement automatique de la vue au contenu de la scène.
 
 ### ☁️ Nuages de Points

@@ -278,12 +278,7 @@ bool analyzeRouteFrames(const SheetMetalConnectorData& data,
     }
     direction.Normalize();
 
-    gp_Vec reference(data.upDirection);
-    if (std::abs(reference.Dot(direction)) > 0.999) {
-        reference = std::abs(direction.Y()) < 0.999
-            ? gp_Vec(0.0, 1.0, 0.0)
-            : gp_Vec(1.0, 0.0, 0.0);
-    }
+    gp_Vec reference(data.start.normal);
     gp_Vec widthDirection = reference.Crossed(direction);
     widthDirection.Normalize();
     gp_Vec thicknessDirection = direction.Crossed(widthDirection);

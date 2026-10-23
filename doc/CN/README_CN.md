@@ -10,7 +10,7 @@ Qt_OCC 是一个使用 Qt 框架开发用户界面并以 OpenCASCADE Technology 
 
 ### 🎥 可视化与导航
 *   **标准视图**: 快速切换等轴测(Isometric)、顶、底、左、右、前、后视图。
-*   **显示模式**: 支持线框(Wireframe)、着色(Shaded)以及带边框着色(Shaded with Edges)模式。
+*   **显示模式**: 支持线框(Wireframe)、着色(Shaded)、隐藏线(Hidden Line)、带边框着色(Shaded with Edges)以及黑白(Black and White)模式，并可自定义视图背景颜色。
 *   **视图控制**: 自动适应视图以显示所有内容。
 
 ### ☁️ 点云

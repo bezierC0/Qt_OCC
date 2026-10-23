@@ -10,7 +10,7 @@ Qt_OCC is a desktop CAD and point-cloud application developed using the Qt frame
 
 ### 🎥 Visualization & Navigation
 *   **Standard Views**: Quickly switch between Isometric, Top, Bottom, Left, Right, Front, and Back views.
-*   **Display Modes**: Toggle between Wireframe, Shaded, and Shaded with Edges rendering styles.
+*   **Display Modes**: Toggle between Wireframe, Shaded, Hidden Line, Shaded with Edges, and Black and White rendering styles, and customize the viewport background color.
 *   **View Control**: Auto-fit view to scene content.
 
 ### ☁️ Point Cloud

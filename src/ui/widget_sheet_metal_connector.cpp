@@ -15,7 +15,6 @@
 #include <AIS_InteractiveContext.hxx>
 #include <AIS_Shape.hxx>
 #include <Quantity_Color.hxx>
-#include <Precision.hxx>
 #include <StdSelect_ViewerSelector3d.hxx>
 #include <TCollection_ExtendedString.hxx>
 #include <TDataStd_Comment.hxx>
@@ -35,7 +34,6 @@
 #include <QToolButton>
 #include <QVBoxLayout>
 
-#include <cmath>
 #include <utility>
 
 namespace
@@ -672,16 +670,9 @@ void WidgetSheetMetalConnector::updateDataFromUi()
     m_data.start.weld.typeIndex = ui->comboBoxStartWeldType->currentIndex();
     m_data.end.weld.typeIndex = ui->comboBoxEndWeldType->currentIndex();
 
-    const int directionIndex = ui->comboBoxSectionDir->currentIndex();
-    if (directionIndex == 1) {
-        m_data.upDirection = gp_Dir(1.0, 0.0, 0.0);
-    } else if (directionIndex == 2) {
-        m_data.upDirection = gp_Dir(0.0, 1.0, 0.0);
-    } else {
-        m_data.upDirection = m_hasStart
-            ? m_data.start.normal
-            : gp_Dir(0.0, 0.0, 1.0);
-    }
+    m_data.upDirection = m_hasStart
+        ? m_data.start.normal
+        : gp_Dir(0.0, 0.0, 1.0);
 }
 
 void WidgetSheetMetalConnector::updateUiFromData()
@@ -704,14 +695,7 @@ void WidgetSheetMetalConnector::updateUiFromData()
     ui->spinBoxClearance->setValue(m_data.clearance);
     ui->spinBoxMaximumBendCount->setValue(m_data.maximumBendCount);
     ui->checkBoxAllowSideBends->setChecked(m_data.allowSideBends);
-    const bool usesStartNormal = m_hasStart
-        && m_data.upDirection.IsEqual(
-            m_data.start.normal, Precision::Angular());
-    ui->comboBoxSectionDir->setCurrentIndex(
-        usesStartNormal ? 0
-        : std::abs(m_data.upDirection.X()) > 0.999 ? 1
-        : std::abs(m_data.upDirection.Y()) > 0.999 ? 2
-        : 0);
+    ui->comboBoxSectionDir->setCurrentIndex(0);
     ui->comboBoxStartJoint->setCurrentIndex(
         m_data.start.jointType == SheetMetalJointType::Weld ? 0 : 1);
     ui->comboBoxStartBoltSpec->setCurrentIndex(m_data.start.boltNut.specIndex);

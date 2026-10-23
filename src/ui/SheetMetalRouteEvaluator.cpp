@@ -44,12 +44,13 @@ SheetMetalRouteEvaluation SheetMetalRouteEvaluator::evaluate(
     }
     firstDirection.Normalize();
 
-    gp_Vec reference(data.upDirection);
-    if (std::abs(reference.Dot(firstDirection)) > 0.999) {
-        reference = std::abs(firstDirection.Y()) < 0.999
-            ? gp_Vec(0.0, 1.0, 0.0)
-            : gp_Vec(1.0, 0.0, 0.0);
+    if (!gp_Dir(firstDirection).IsNormal(
+            data.start.normal, Precision::Angular())) {
+        result.failureReasons.push_back(
+            QStringLiteral("The first sheet segment must lie in the start face plane."));
+        return result;
     }
+    gp_Vec reference(data.start.normal);
     gp_Vec widthDirection = reference.Crossed(firstDirection);
     widthDirection.Normalize();
     gp_Vec thicknessDirection = firstDirection.Crossed(widthDirection);
@@ -67,9 +68,6 @@ SheetMetalRouteEvaluation SheetMetalRouteEvaluator::evaluate(
 
     gp_Vec lastDirection(points[points.size() - 2], points.back());
     lastDirection.Normalize();
-    result.normalAlignment = firstDirection.Dot(gp_Vec(data.start.normal))
-        - lastDirection.Dot(gp_Vec(data.end.normal));
-
     for (std::size_t index = 1; index + 1 < points.size(); ++index) {
         gp_Vec incoming(points[index - 1], points[index]);
         gp_Vec outgoing(points[index], points[index + 1]);
@@ -97,6 +95,21 @@ SheetMetalRouteEvaluation SheetMetalRouteEvaluator::evaluate(
         widthDirection.Normalize();
         thicknessDirection.Normalize();
     }
+
+    if (!gp_Dir(lastDirection).IsNormal(
+            data.end.normal, Precision::Angular())) {
+        result.failureReasons.push_back(
+            QStringLiteral("The last sheet segment must lie in the end face plane."));
+        return result;
+    }
+    if (!gp_Dir(thicknessDirection).IsParallel(
+            data.end.normal, Precision::Angular())) {
+        result.failureReasons.push_back(
+            QStringLiteral("The route would twist the sheet away from the end face normal."));
+        return result;
+    }
+    result.normalAlignment = std::abs(
+        thicknessDirection.Dot(gp_Vec(data.end.normal)));
 
     result.isValid = true;
     return result;

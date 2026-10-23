@@ -28,6 +28,8 @@
 <context>
     <name>MainWindow</name>
     <message><source>Sheet Metal Connector</source><translation>Sheet Metal Connector</translation></message>
+    <message><source>Black and White</source><translation>Black and White</translation></message>
+    <message><source>Background Color</source><translation>Background Color</translation></message>
     <message>
         <source>Revolve</source>
         <translation>Revolve</translation>

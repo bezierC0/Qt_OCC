@@ -228,6 +228,7 @@ private:
     QAction* m_viewFrontAction;
     QAction* m_viewBackAction;
     QAction* m_displayModeAction;
+    QAction* m_backgroundColorAction;
 
 
     // ---- Tool Group ----

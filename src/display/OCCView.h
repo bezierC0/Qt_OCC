@@ -16,6 +16,8 @@
 #include <TopAbs_ShapeEnum.hxx>
 #include <TopTools_ListOfShape.hxx>
 #include <TopoDS_Shape.hxx>
+#include <Quantity_Color.hxx>
+#include <Graphic3d_TypeOfShadingModel.hxx>
 #include <gp_Pln.hxx>
 #include <gp_Pnt2d.hxx>
 #include <ProjLib.hxx>
@@ -42,6 +44,7 @@ enum DisplayMode {
     MODE_WIREFRAME,
     MODE_HIDDEN_LINE,
     MODE_SHADED_WITH_EDGES,
+    MODE_BLACK_AND_WHITE,
     MODE_END
 };
 class WorkPlane{
@@ -206,6 +209,8 @@ public:
     void viewFront();
     void viewBack();
     void setDisplayMode(View::DisplayMode mode);
+    Quantity_Color backgroundColor() const;
+    void setBackgroundColor(const Quantity_Color& color);
     void createWorkPlane(double x, double y, double z, double dx, double dy, double dz);
     bool isWorkPlaneActive() const;
     void deactivateWorkPlane();
@@ -312,6 +317,14 @@ private:
     void handleViewRedraw(const Handle(AIS_InteractiveContext) & theCtx,
                           const Handle(V3d_View) & theView) override;
 private:
+    struct DisplayColorState
+    {
+        Handle(AIS_Shape) object;
+        Quantity_Color color{Quantity_NOC_WHITE};
+        Graphic3d_TypeOfShadingModel shadingModel{Graphic3d_TOSM_DEFAULT};
+        bool hadColor{false};
+    };
+
     Handle(V3d_Viewer)              m_viewer; //! AIS context handle.
     Handle(V3d_View)                m_view; //! View cube handle.
     Handle(AIS_InteractiveContext)  m_context;
@@ -325,6 +338,7 @@ private:
     //! Core profile flag.
 
     std::vector<Handle(AIS_InteractiveObject)> m_loadedObjects;
+    std::vector<DisplayColorState> m_blackAndWhiteColorStates;
     std::vector<TopoDS_Shape> m_explosionSourceShapes;
     std::vector<gp_Trsf> m_explosionSourceTransforms;
     std::vector<std::shared_ptr<View::SelectedEntity>> m_selectedObjects;

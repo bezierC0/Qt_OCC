@@ -10,7 +10,7 @@ Qt_OCC es una aplicación de escritorio para CAD y nubes de puntos. Utiliza el m
 
 ### 🎥 Visualización y Navegación
 *   **Vistas Estándar**: Cambie rápidamente entre vistas Isométrica, Superior, Inferior, Izquierda, Derecha, Frontal y Trasera.
-*   **Modos de Visualización**: Alterne entre los estilos de renderizado Alámbrico (Wireframe), Sombreado (Shaded) y Sombreado con Bordes.
+*   **Modos de Visualización**: Alterne entre los estilos Alámbrico, Sombreado, Líneas Ocultas, Sombreado con Bordes y Blanco y Negro, y personalice el color de fondo de la vista.
 *   **Control de Vista**: Ajuste automático de la vista al contenido de la escena.
 
 ### ☁️ Nubes de Puntos

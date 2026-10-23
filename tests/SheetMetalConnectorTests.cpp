@@ -111,8 +111,8 @@ int main()
     }
 
     auto straight = makeData(
-        gp_Pnt(0.0, 0.0, 0.0), gp_Dir(1.0, 0.0, 0.0),
-        gp_Pnt(100.0, 0.0, 0.0), gp_Dir(-1.0, 0.0, 0.0));
+        gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0),
+        gp_Pnt(100.0, 0.0, 0.0), gp_Dir(0.0, 0.0, -1.0));
     QString errorMessage;
     success &= require(
         SheetMetalRoutePlanner::computeOrthogonalRoute(straight, 5.0, &errorMessage),
@@ -122,7 +122,7 @@ int main()
 
     auto localPlaneRoute = makeData(
         gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0),
-        gp_Pnt(100.0, 100.0, 50.0), gp_Dir(0.0, 0.0, -1.0));
+        gp_Pnt(100.0, 100.0, 50.0), gp_Dir(-1.0, -1.0, 0.0));
     int checkedCandidateCount = 0;
     const auto acceptLocalPlaneRoute = [&checkedCandidateCount](
         const SheetMetalConnectorData& candidate) {
@@ -139,6 +139,14 @@ int main()
             && localPlaneRoute.routePoints[1].position.Distance(
                    gp_Pnt(100.0, 100.0, 0.0)) <= Precision::Confusion(),
         "The intermediate route point is not on the start-face plane.");
+
+    auto invalidStartOrientation = makeData(
+        gp_Pnt(0.0, 0.0, 0.0), gp_Dir(1.0, 0.0, 0.0),
+        gp_Pnt(100.0, 0.0, 0.0), gp_Dir(-1.0, 0.0, 0.0));
+    success &= require(
+        !SheetMetalRoutePlanner::computeOrthogonalRoute(
+            invalidStartOrientation, 5.0, &errorMessage),
+        "A route leaving along the start normal was accepted.");
 
     std::vector<gp_Pnt> straightPoints;
     for (const auto& routePoint : straight.routePoints) {
@@ -164,6 +172,11 @@ int main()
     success &= require(straightBuild.isValid(), "Straight connector build failed.");
     success &= require(containsSolid(straightBuild.solid),
                        "Straight connector does not contain a solid.");
+
+    auto twistedEnd = straight;
+    twistedEnd.end.normal = gp_Dir(0.0, 1.0, 0.0);
+    success &= require(!SheetMetalConnectorBuilder::build(twistedEnd).isValid(),
+                       "A route with a mismatched end sheet normal was accepted.");
 
     auto lapWeld = straight;
     lapWeld.start.weld.typeIndex = 1;
@@ -215,7 +228,7 @@ int main()
 
     auto sideBendDisabled = makeData(
         gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0),
-        gp_Pnt(80.0, 60.0, 0.0), gp_Dir(0.0, -1.0, 0.0));
+        gp_Pnt(80.0, 60.0, 0.0), gp_Dir(0.0, 0.0, 1.0));
     sideBendDisabled.routePoints = {
         makeRoutePoint(gp_Pnt(0.0, 0.0, 0.0), 12.0, true),
         makeRoutePoint(gp_Pnt(80.0, 0.0, 0.0), 12.0),
@@ -271,8 +284,8 @@ int main()
         "An upright bend was rejected when side bends were disabled.");
 
     auto twoBends = makeData(
-        gp_Pnt(0.0, 0.0, 0.0), gp_Dir(1.0, 0.0, 0.0),
-        gp_Pnt(80.0, 60.0, 40.0), gp_Dir(0.0, 0.0, -1.0));
+        gp_Pnt(0.0, 0.0, 0.0), gp_Dir(0.0, 0.0, 1.0),
+        gp_Pnt(80.0, 60.0, 40.0), gp_Dir(0.0, -1.0, 0.0));
     twoBends.maximumBendCount = 1;
     twoBends.routePoints = {
         makeRoutePoint(gp_Pnt(0.0, 0.0, 0.0), 12.0, true),

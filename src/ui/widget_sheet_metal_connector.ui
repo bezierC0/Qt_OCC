@@ -188,8 +188,6 @@
       <item row="6" column="1">
        <widget class="QComboBox" name="comboBoxSectionDir">
         <item><property name="text"><string>Auto / Start Normal</string></property></item>
-        <item><property name="text"><string>Fixed +X</string></property></item>
-        <item><property name="text"><string>Fixed +Y</string></property></item>
        </widget>
       </item>
       <item row="7" column="0" colspan="2"><widget class="QCheckBox" name="checkBoxAllowCollision"><property name="text"><string>Allow Apply with collision warning</string></property></widget></item>
