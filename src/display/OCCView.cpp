@@ -18,6 +18,7 @@
 #include <QMouseEvent>
 
 #include <AIS_Shape.hxx>
+#include <AIS_PointCloud.hxx>
 #include <AIS_ViewController.hxx>
 #include <XCAFPrs_AISObject.hxx>
 #include <TDF_Label.hxx>
@@ -37,6 +38,7 @@
 #include <BRepOffsetAPI_MakeThickSolid.hxx>
 
 #include <Graphic3d_Camera.hxx>
+#include <Graphic3d_AspectFillArea3d.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <OpenGl_FrameBuffer.hxx>
 
@@ -729,6 +731,7 @@ void OCCView::clearShape()
         m_context->Erase(object, false);
     }
     m_loadedObjects.clear();
+    m_blackAndWhiteColorStates.clear();
     m_explosionSourceShapes.clear();
     m_explosionSourceTransforms.clear();
 
@@ -769,6 +772,27 @@ void OCCView::setShape(const Handle(AIS_InteractiveObject) & loadedShape)
     m_explosionSourceTransforms.emplace_back(
         loadedShape.IsNull() ? gp_Trsf() : loadedShape->LocalTransformation());
     emit signalShapeObjectsChanged();
+}
+
+void OCCView::syncShapeSource(const Handle(AIS_InteractiveObject) & loadedShape)
+{
+    const auto objectIt = std::find(m_loadedObjects.cbegin(), m_loadedObjects.cend(), loadedShape);
+    if (objectIt == m_loadedObjects.cend()) return;
+
+    const Handle(XCAFPrs_AISObject) xcafObject =
+        Handle(XCAFPrs_AISObject)::DownCast(loadedShape);
+    if (!xcafObject.IsNull()) {
+        xcafObject->DispatchStyles();
+    }
+
+    const auto index = static_cast<std::size_t>(std::distance(m_loadedObjects.cbegin(), objectIt));
+    const Handle(AIS_Shape) aisShape = Handle(AIS_Shape)::DownCast(loadedShape);
+    m_explosionSourceShapes[index] = aisShape.IsNull() ? TopoDS_Shape() : aisShape->Shape();
+    m_explosionSourceTransforms[index] = loadedShape->LocalTransformation();
+    m_context->Redisplay(loadedShape, false);
+    requestSceneRedraw();
+    repaint();
+    emit signalShapeDocumentChanged();
 }
 
 void OCCView::removeShape(const TopoDS_Shape& removeShape)
@@ -1183,11 +1207,36 @@ void OCCView::applyInterferenceObjectDisplay()
 
 void OCCView::reDraw()
 {
+    if (m_displayMode != View::DisplayMode::MODE_BLACK_AND_WHITE
+        && !m_blackAndWhiteColorStates.empty()) {
+        for (const DisplayColorState& state : m_blackAndWhiteColorStates) {
+            if (state.object.IsNull()) continue;
+
+            const Handle(XCAFPrs_AISObject) xcafObject =
+                Handle(XCAFPrs_AISObject)::DownCast(state.object);
+            m_context->UnsetColor(state.object, false);
+            state.object->Attributes()->ShadingAspect()->Aspect()->SetShadingModel(
+                state.shadingModel);
+            if (!xcafObject.IsNull()) {
+                xcafObject->DispatchStyles();
+            }
+            if (state.hadColor) {
+                m_context->SetColor(state.object, state.color, false);
+            }
+        }
+        m_blackAndWhiteColorStates.clear();
+    }
+
     auto reDisplayMode = [&](const Handle(AIS_InteractiveObject) & object) {
         auto fnSetViewComputedMode = [=](bool on) {
             for (auto it = m_context->CurrentViewer()->DefinedViewIterator(); it.More(); it.Next())
                 it.Value()->SetComputedMode(on);
         };
+        if (!Handle(AIS_PointCloud)::DownCast(object).IsNull()) {
+            fnSetViewComputedMode(false);
+            m_context->DefaultDrawer()->DisableDrawHiddenLine();
+            return;
+        }
         if(m_displayMode == View::DisplayMode::MODE_HIDDEN_LINE){
             m_context->DefaultDrawer()->SetTypeOfHLR(Prs3d_TOH_PolyAlgo);
             m_context->DefaultDrawer()->EnableDrawHiddenLine();
@@ -1206,8 +1255,43 @@ void OCCView::reDraw()
             }
             if (aisDispMode != object->DisplayMode() )
                 m_context->SetDisplayMode(object, aisDispMode, false);
-            const bool showFaceBounds = m_displayMode == View::DisplayMode::MODE_SHADED_WITH_EDGES;
-            if (object->Attributes()->FaceBoundaryDraw() != showFaceBounds) {
+            if (m_displayMode == View::DisplayMode::MODE_BLACK_AND_WHITE) {
+                const Handle(AIS_Shape) aisShape = Handle(AIS_Shape)::DownCast(object);
+                if (!aisShape.IsNull()) {
+                    const auto stateIt = std::find_if(
+                        m_blackAndWhiteColorStates.cbegin(),
+                        m_blackAndWhiteColorStates.cend(),
+                        [&](const DisplayColorState& state) { return state.object == aisShape; });
+                    if (stateIt == m_blackAndWhiteColorStates.cend()) {
+                        DisplayColorState state;
+                        state.object = aisShape;
+                        state.hadColor = aisShape->HasColor();
+                        if (state.hadColor) {
+                            aisShape->Color(state.color);
+                        }
+                        state.shadingModel = aisShape->Attributes()
+                            ->ShadingAspect()->Aspect()->ShadingModel();
+                        m_blackAndWhiteColorStates.emplace_back(state);
+
+                        const Handle(XCAFPrs_AISObject) xcafObject =
+                            Handle(XCAFPrs_AISObject)::DownCast(aisShape);
+                        if (!xcafObject.IsNull()) {
+                            xcafObject->ClearCustomAspects();
+                        }
+                    }
+                    m_context->SetColor(aisShape, Quantity_NOC_WHITE, false);
+                    const Handle(Graphic3d_AspectFillArea3d)& fillAspect =
+                        aisShape->Attributes()->ShadingAspect()->Aspect();
+                    fillAspect->SetInteriorColor(Quantity_NOC_WHITE);
+                    fillAspect->SetBackInteriorColor(Quantity_NOC_WHITE);
+                    fillAspect->SetShadingModel(Graphic3d_TOSM_UNLIT);
+                }
+            }
+            const bool showFaceBounds =
+                m_displayMode == View::DisplayMode::MODE_SHADED_WITH_EDGES
+                || m_displayMode == View::DisplayMode::MODE_BLACK_AND_WHITE;
+            if (object->Attributes()->FaceBoundaryDraw() != showFaceBounds
+                || m_displayMode == View::DisplayMode::MODE_BLACK_AND_WHITE) {
                 object->Attributes()->SetFaceBoundaryDraw(showFaceBounds);
                 Handle(Prs3d_LineAspect) visibleLineAspect =
                     new Prs3d_LineAspect(Quantity_NOC_BLACK, Aspect_TOL_SOLID, 2.0);
@@ -1230,7 +1314,11 @@ void OCCView::reDraw()
         }
         else
         {
-            m_context->Display(object, object->DisplayMode(), 0, false);
+            const Handle(AIS_PointCloud) pointCloud = Handle(AIS_PointCloud)::DownCast(object);
+            const Standard_Integer selectionMode = pointCloud.IsNull()
+                ? 0
+                : AIS_PointCloud::SM_BndBox;
+            m_context->Display(object, object->DisplayMode(), selectionMode, false);
         }
         reDisplayMode(object);
     }
@@ -1278,6 +1366,17 @@ void OCCView::reDraw()
     }
 
     m_context->UpdateCurrentViewer() ;
+    m_view->Redraw();
+}
+
+Quantity_Color OCCView::backgroundColor() const
+{
+    return m_view->BackgroundColor();
+}
+
+void OCCView::setBackgroundColor(const Quantity_Color& color)
+{
+    m_view->SetBackgroundColor(color);
     m_view->Redraw();
 }
 

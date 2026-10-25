@@ -27,6 +27,9 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Sheet Metal Connector</source><translation>Sheet Metal Connector</translation></message>
+    <message><source>Black and White</source><translation>Black and White</translation></message>
+    <message><source>Background Color</source><translation>Background Color</translation></message>
     <message>
         <source>Revolve</source>
         <translation>Revolve</translation>
@@ -1503,8 +1506,181 @@
         <translation>Changes applied.</translation>
     </message>
     <message>
+        <source>Failed to apply transform.</source>
+        <translation>Failed to apply transform.</translation>
+    </message>
+    <message>
         <source>Selected Solid</source>
         <translation>Selected Solid</translation>
     </message>
+</context>
+<context>
+    <name>MainWindow</name>
+    <message><source>Point Cloud</source><translation>Point Cloud</translation></message>
+    <message><source>Open Geometry File</source><translation>Open Geometry File</translation></message>
+    <message><source>All Supported Files (*.step *.stp *.iges *.igs *.xyz *.txt *.pts *.ply);;CAD Files (*.step *.stp *.iges *.igs);;Point Cloud Files (*.xyz *.txt *.pts *.ply)</source><translation>All Supported Files (*.step *.stp *.iges *.igs *.xyz *.txt *.pts *.ply);;CAD Files (*.step *.stp *.iges *.igs);;Point Cloud Files (*.xyz *.txt *.pts *.ply)</translation></message>
+</context>
+<context>
+    <name>ViewerWidget</name>
+    <message><source>Point Cloud Import</source><translation>Point Cloud Import</translation></message>
+    <message><source>A point cloud is already being imported.</source><translation>A point cloud is already being imported.</translation></message>
+    <message><source>Reading point cloud...</source><translation>Reading point cloud...</translation></message>
+    <message><source>Cancel</source><translation>Cancel</translation></message>
+    <message><source>Point cloud import cancelled.</source><translation>Point cloud import cancelled.</translation></message>
+    <message><source>Point cloud import failed.</source><translation>Point cloud import failed.</translation></message>
+    <message><source>Loaded %1 points from %2.</source><translation>Loaded %1 points from %2.</translation></message>
+    <message><source> Ignored %1 invalid records.</source><translation> Ignored %1 invalid records.</translation></message>
+    <message><source>Displaying %1 of %2 points.</source><translation>Displaying %1 of %2 points.</translation></message>
+    <message><source> CAD and CAE shape commands are unavailable for point clouds.</source><translation> CAD and CAE shape commands are unavailable for point clouds.</translation></message>
+</context>
+<context>
+    <name>WidgetPointCloud</name>
+    <message><source>Point Cloud Information</source><translation>Point Cloud Information</translation></message>
+    <message><source>File</source><translation>File</translation></message>
+    <message><source>File Size</source><translation>File Size</translation></message>
+    <message><source>Source Records</source><translation>Source Records</translation></message>
+    <message><source>Valid Points</source><translation>Valid Points</translation></message>
+    <message><source>Displayed Points</source><translation>Displayed Points</translation></message>
+    <message><source>Point Colors</source><translation>Point Colors</translation></message>
+    <message><source>Bounds</source><translation>Bounds</translation></message>
+    <message><source>Dimensions</source><translation>Dimensions</translation></message>
+    <message><source>Invalid Records</source><translation>Invalid Records</translation></message>
+    <message><source>Point Cloud Display</source><translation>Point Cloud Display</translation></message>
+    <message><source>Visible</source><translation>Visible</translation></message>
+    <message><source>Original RGB</source><translation>Original RGB</translation></message>
+    <message><source>Single Color</source><translation>Single Color</translation></message>
+    <message><source>Height (Z)</source><translation>Height (Z)</translation></message>
+    <message><source>Choose Color</source><translation>Choose Color</translation></message>
+    <message><source>All Points</source><translation>All Points</translation></message>
+    <message><source>Point Size</source><translation>Point Size</translation></message>
+    <message><source>Color Mode</source><translation>Color Mode</translation></message>
+    <message><source>Maximum Display</source><translation>Maximum Display</translation></message>
+    <message><source>Fit Point Cloud</source><translation>Fit Point Cloud</translation></message>
+    <message><source>Remove Point Cloud</source><translation>Remove Point Cloud</translation></message>
+    <message><source>Reset Display Settings</source><translation>Reset Display Settings</translation></message>
+    <message><source>RGB</source><translation>RGB</translation></message>
+    <message><source>No</source><translation>No</translation></message>
+    <message><source>X: %1 .. %2
+Y: %3 .. %4
+Z: %5 .. %6</source><translation>X: %1 .. %2
+Y: %3 .. %4
+Z: %5 .. %6</translation></message>
+    <message><source>%1 x %2 x %3</source><translation>%1 x %2 x %3</translation></message>
+    <message><source>Point Cloud Color</source><translation>Point Cloud Color</translation></message>
+</context>
+<context>
+    <name>PointCloudReader</name>
+    <message><source>The file does not contain any valid points.</source><translation>The file does not contain any valid points.</translation></message>
+    <message><source>The declared point count does not match the number of valid points.</source><translation>The declared point count does not match the number of valid points.</translation></message>
+    <message><source>Invalid PLY header.</source><translation>Invalid PLY header.</translation></message>
+    <message><source>Invalid PLY vertex count.</source><translation>Invalid PLY vertex count.</translation></message>
+    <message><source>Unsupported PLY vertex property.</source><translation>Unsupported PLY vertex property.</translation></message>
+    <message><source>PLY header is incomplete.</source><translation>PLY header is incomplete.</translation></message>
+    <message><source>Only ASCII PLY files are supported.</source><translation>Only ASCII PLY files are supported.</translation></message>
+    <message><source>The PLY file does not contain vertices.</source><translation>The PLY file does not contain vertices.</translation></message>
+    <message><source>PLY vertex properties must include x, y, and z.</source><translation>PLY vertex properties must include x, y, and z.</translation></message>
+    <message><source>The PLY file does not contain any valid points.</source><translation>The PLY file does not contain any valid points.</translation></message>
+    <message><source>Some PLY vertex records were invalid or missing.</source><translation>Some PLY vertex records were invalid or missing.</translation></message>
+    <message><source>Unsupported point cloud file format.</source><translation>Unsupported point cloud file format.</translation></message>
+    <message><source>Unable to open the point cloud file.</source><translation>Unable to open the point cloud file.</translation></message>
+    <message><source>Not enough memory to read the point cloud.</source><translation>Not enough memory to read the point cloud.</translation></message>
+    <message><source>The point cloud is too large to read.</source><translation>The point cloud is too large to read.</translation></message>
+    <message><source>Unsupported PLY format.</source><translation>Unsupported PLY format.</translation></message>
+    <message><source>Invalid PLY element count.</source><translation>Invalid PLY element count.</translation></message>
+    <message><source>PLY property is not associated with an element.</source><translation>PLY property is not associated with an element.</translation></message>
+    <message><source>Unsupported PLY property declaration.</source><translation>Unsupported PLY property declaration.</translation></message>
+    <message><source>Unsupported PLY property type.</source><translation>Unsupported PLY property type.</translation></message>
+    <message><source>PLY format is missing.</source><translation>PLY format is missing.</translation></message>
+    <message><source>PLY list properties on vertices are not supported.</source><translation>PLY list properties on vertices are not supported.</translation></message>
+    <message><source>PLY vertex colors must include red, green, and blue.</source><translation>PLY vertex colors must include red, green, and blue.</translation></message>
+    <message><source>PLY data is incomplete.</source><translation>PLY data is incomplete.</translation></message>
+    <message><source>PLY binary data is incomplete.</source><translation>PLY binary data is incomplete.</translation></message>
+    <message><source>PLY vertex record is too large.</source><translation>PLY vertex record is too large.</translation></message>
+    <message><source>PLY vertex record is invalid.</source><translation>PLY vertex record is invalid.</translation></message>
+    <message><source>PLY binary vertex data is incomplete.</source><translation>PLY binary vertex data is incomplete.</translation></message>
+    <message><source>Binary big-endian PLY files are not supported.</source><translation>Binary big-endian PLY files are not supported.</translation></message>
+</context>
+<context>
+    <name>WidgetSheetMetalConnector</name>
+    <message><source>Sheet Metal Connector</source><translation>Sheet Metal Connector</translation></message>
+    <message><source>Start Connection</source><translation>Start Connection</translation></message>
+    <message><source>End Connection</source><translation>End Connection</translation></message>
+    <message><source>Position:</source><translation>Position:</translation></message>
+    <message><source>Face Normal:</source><translation>Face Normal:</translation></message>
+    <message><source>Joint:</source><translation>Joint:</translation></message>
+    <message><source>Weld</source><translation>Weld</translation></message>
+    <message><source>Bolt / Nut</source><translation>Bolt / Nut</translation></message>
+    <message><source>Weld Type:</source><translation>Weld Type:</translation></message>
+    <message><source>Bolt Spec:</source><translation>Bolt Spec:</translation></message>
+    <message><source>Butt</source><translation>Butt</translation></message>
+    <message><source>Lap</source><translation>Lap</translation></message>
+    <message><source>Pick Start Face</source><translation>Pick Start Face</translation></message>
+    <message><source>Pick Start Point</source><translation>Pick Start Point</translation></message>
+    <message><source>Pick End Face</source><translation>Pick End Face</translation></message>
+    <message><source>Pick End Point</source><translation>Pick End Point</translation></message>
+    <message><source>Auto Calculate Route</source><translation>Auto Calculate Route</translation></message>
+    <message><source>Route Points</source><translation>Route Points</translation></message>
+    <message><source>Add Waypoint</source><translation>Add Waypoint</translation></message>
+    <message><source>Delete Waypoint</source><translation>Delete Waypoint</translation></message>
+    <message><source>Selected Route Node</source><translation>Selected Route Node</translation></message>
+    <message><source>Transition:</source><translation>Transition:</translation></message>
+    <message><source>Bend</source><translation>Bend</translation></message>
+    <message><source>Bend Radius:</source><translation>Bend Radius:</translation></message>
+    <message><source>Sheet Metal Parameters</source><translation>Sheet Metal Parameters</translation></message>
+    <message><source>Width:</source><translation>Width:</translation></message>
+    <message><source>Thickness:</source><translation>Thickness:</translation></message>
+    <message><source>Default Bend Radius:</source><translation>Default Bend Radius:</translation></message>
+    <message><source>Minimum Clearance:</source><translation>Minimum Clearance:</translation></message>
+      <message><source>Maximum Bends per Sheet:</source><translation>Maximum Bends per Sheet:</translation></message>
+      <message><source>Allow Side Bends</source><translation>Allow Side Bends</translation></message>
+    <message><source>Section Direction:</source><translation>Section Direction:</translation></message>
+    <message><source>Auto / Start Normal</source><translation>Auto / Start Normal</translation></message>
+    <message><source>Fixed +X</source><translation>Fixed +X</translation></message>
+    <message><source>Fixed +Y</source><translation>Fixed +Y</translation></message>
+    <message><source>Allow Apply with collision warning</source><translation>Allow Apply with collision warning</translation></message>
+    <message><source>Options</source><translation>Options</translation></message>
+    <message><source>Ready</source><translation>Ready</translation></message>
+    <message><source>Select the start connection face.</source><translation>Select the start connection face.</translation></message>
+    <message><source>Select the start connection face first.</source><translation>Select the start connection face first.</translation></message>
+    <message><source>Select a point on the start connection face.</source><translation>Select a point on the start connection face.</translation></message>
+    <message><source>Select the end connection face.</source><translation>Select the end connection face.</translation></message>
+    <message><source>Select the end connection face first.</source><translation>Select the end connection face first.</translation></message>
+    <message><source>Select a point on the end connection face.</source><translation>Select a point on the end connection face.</translation></message>
+    <message><source>Select a point on the previously selected face.</source><translation>Select a point on the previously selected face.</translation></message>
+    <message><source>Connection point selected.</source><translation>Connection point selected.</translation></message>
+    <message><source>Connection face selected. A default point was placed on the face.</source><translation>Connection face selected. A default point was placed on the face.</translation></message>
+    <message><source>Select the start and end connection faces first.</source><translation>Select the start and end connection faces first.</translation></message>
+    <message><source>Route calculation failed: %1</source><translation>Route calculation failed: %1</translation></message>
+    <message><source>Preview failed: %1</source><translation>Preview failed: %1</translation></message>
+    <message><source>Route is valid and ready to apply.</source><translation>Route is valid and ready to apply.</translation></message>
+    <message><source>Route has a collision or clearance violation.</source><translation>Route has a collision or clearance violation.</translation></message>
+    <message><source>The connector collides with another shape or violates the minimum clearance.</source><translation>The connector collides with another shape or violates the minimum clearance.</translation></message>
+    <message><source>Sheet-metal connector generated successfully.</source><translation>Sheet-metal connector generated successfully.</translation></message>
+    <message><source>Cleared.</source><translation>Cleared.</translation></message>
+    <message><source> mm</source><translation> mm</translation></message>
+    <message><source>-</source><translation>-</translation></message>
+    <message><source>Apply</source><translation>Apply</translation></message>
+    <message><source>Clear</source><translation>Clear</translation></message>
+    <message><source>Close</source><translation>Close</translation></message>
+    <message><source>M6</source><translation>M6</translation></message>
+    <message><source>M8</source><translation>M8</translation></message>
+    <message><source>M10</source><translation>M10</translation></message>
+    <message><source>M12</source><translation>M12</translation></message>
+    <message><source>Calculate a route before adding waypoints.</source><translation>Calculate a route before adding waypoints.</translation></message>
+    <message><source>Failed to evaluate the selected face.</source><translation>Failed to evaluate the selected face.</translation></message>
+    <message><source>Failed to generate sheet metal: %1</source><translation>Failed to generate sheet metal: %1</translation></message>
+    <message><source>No active view available.</source><translation>No active view available.</translation></message>
+    <message><source>P%1 Bend R=%2 mm</source><translation>P%1 Bend R=%2 mm</translation></message>
+    <message><source>P%1 Weld</source><translation>P%1 Weld</translation></message>
+    <message><source>P%1 Bolt / Nut</source><translation>P%1 Bolt / Nut</translation></message>
+    <message><source>P%1 End</source><translation>P%1 End</translation></message>
+    <message><source>P0 Start</source><translation>P0 Start</translation></message>
+    <message><source>Select two faces and calculate a route first.</source><translation>Select two faces and calculate a route first.</translation></message>
+    <message><source>Start and end points cannot be deleted.</source><translation>Start and end points cannot be deleted.</translation></message>
+    <message><source>The owning viewer is not available.</source><translation>The owning viewer is not available.</translation></message>
+    <message><source>Select both connection faces in the same view.</source><translation>Select both connection faces in the same view.</translation></message>
+    <message><source>Failed to load connector parameters: %1</source><translation>Failed to load connector parameters: %1</translation></message>
+    <message><source>Failed to restore the connector target shapes.</source><translation>Failed to restore the connector target shapes.</translation></message>
+    <message><source>Connector parameters loaded. Reselect a face before changing its point.</source><translation>Connector parameters loaded. Reselect a face before changing its point.</translation></message>
 </context>
 </TS>

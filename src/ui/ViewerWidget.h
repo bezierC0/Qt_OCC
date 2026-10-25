@@ -1,8 +1,11 @@
 #pragma once
 
 #include <array>
+#include <atomic>
+#include <cstdint>
 #include <map>
 
+#include <QColor>
 #include <QWidget>
 #include <AIS_Point.hxx>
 #include <gp_Pnt.hxx>
@@ -12,10 +15,16 @@
 #include "OCCView.h" 
 #include "cae/CaeBoundaryVisualization.h"
 #include "cae/CaeNamedSelection.h"
+#include "pointcloud/PointCloudData.h"
+#include "pointcloud/PointCloudReader.h"
 class AIS_InteractiveObject;
 class gp_Dir;
 class QLabel;
+class QProgressDialog;
 class QResizeEvent;
+class QTimer;
+template<typename T>
+class QFutureWatcher;
 
 class DialogCreateArc;
 class DialogCreateBox;
@@ -49,7 +58,7 @@ class WidgetChamfer;
 class WidgetMinimumDistance;
 class WidgetHole;
 class WidgetAnimation;
-class WidgetBusbar;
+class WidgetSheetMetalConnector;
 
 template<typename T>
 class Tree;
@@ -93,6 +102,8 @@ public:
     void viewFront() const ;
     void viewBack() const ;
     void setDisplayMode( int mode ) ;
+    QColor backgroundColor() const;
+    void setBackgroundColor(const QColor& color);
 
     // tool
     void switchSelect(bool checked);
@@ -104,7 +115,7 @@ public:
     void clipping(const gp_Dir& normal, const gp_Pnt& point, bool isOn = true);
     void explosion();
     void animation();
-    void busbar();
+    void sheetMetalConnector();
     
     /* measure */
     void measureDistance();
@@ -143,12 +154,21 @@ public:
     void fillet();
     void hole();
 
-    void displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0); // Add this function
+    TDF_Label displayShape(const TopoDS_Shape& shape, double r = 1.0, double g=1.0, double b=1.0);
     void removeShape(const TopoDS_Shape& shape);
+    bool selectedSheetMetalConnector(QString& metadata,
+                                     TDF_Label& label,
+                                     TopoDS_Shape& shape) const;
+    bool resolveShapeLabel(const QString& entry,
+                           TDF_Label& label,
+                           TopoDS_Shape& shape) const;
     const std::map<TopAbs_ShapeEnum, bool>& getSelectionFilters() const ;
     void repairAndSave(const TopoDS_Shape& shape);
     void updateTree();
     bool hasGeometry() const;
+    bool hasCadGeometry() const;
+    bool hasPointCloud() const;
+    bool hasSceneContent() const;
     bool exportCaeGeometry(const QString& filePath, QString* errorMessage);
     bool selectedCaePlanarFace(Cae::PlanarSelectionRegion* region, QString* errorMessage) const;
     bool showCaeMesh(const QString& meshFilePath, QString* errorMessage = nullptr);
@@ -182,6 +202,10 @@ signals:
     void signalSelectedObjects(const std::vector<std::shared_ptr<View::SelectedEntity>>& objects);
     void signalSelectionInfo(const QString& info);
     void signalCaeNodePicked(int nodeId);
+    void signalPointCloudLoaded(const PointCloud::Data& data, quint64 displayedPointCount);
+    void signalPointCloudCleared();
+    void signalSceneContentChanged(bool hasCadGeometry, bool hasPointCloud);
+    void signalStatusMessage(const QString& message, int timeout);
 
 private slots:
     void onUpdateSelectionInfo(const std::vector<std::shared_ptr<View::SelectedEntity>>& selectedObjects);
@@ -191,6 +215,14 @@ private slots:
 public slots:
     void highlightLabel(const TDF_Label& label);
     void removeLabelShape(const TDF_Label& label);
+    void setPointCloudVisible(bool visible);
+    void setPointCloudPointSize(double size);
+    void setPointCloudColorMode(int mode);
+    void setPointCloudSingleColor(const QColor& color);
+    void setPointCloudMaximumDisplayPoints(qulonglong maximumPointCount);
+    void resetPointCloudDisplaySettings();
+    void fitPointCloud();
+    void removePointCloud();
 
 protected:
     void resizeEvent(QResizeEvent* event) override;
@@ -228,6 +260,11 @@ private:
     void updateCaeNodeHover(int nodeId);
     void clearCaeNodeHover();
     TDF_Label ensureActivePart();
+    void startPointCloudLoad(const QString& filename);
+    void finishPointCloudLoad(const PointCloud::ReadResult& result);
+    void rebuildPointCloudPresentation();
+    void cancelPointCloudLoad();
+    void emitSceneContentChanged();
 
 private:
     OCCView*                        m_occView{nullptr};
@@ -240,6 +277,16 @@ private:
     std::map<int, gp_Pnt>           m_caePickNodes;
     Handle(AIS_Point)               m_caeNodeHoverMarker;
     int                             m_caeHoveredNodeId{-1};
+    QFutureWatcher<PointCloud::ReadResult>* m_pointCloudWatcher{nullptr};
+    QProgressDialog*                m_pointCloudProgressDialog{nullptr};
+    QTimer*                         m_pointCloudProgressTimer{nullptr};
+    std::shared_ptr<std::atomic_bool> m_pointCloudCancelFlag;
+    std::shared_ptr<std::atomic_int> m_pointCloudProgress;
+    PointCloud::ColorMode           m_pointCloudColorMode{PointCloud::ColorMode::Original};
+    QColor                          m_pointCloudSingleColor{Qt::lightGray};
+    double                          m_pointCloudPointSize{2.0};
+    std::uint64_t                   m_pointCloudMaximumDisplayPoints{2000000};
+    bool                            m_pointCloudVisible{true};
 
     TDF_Label                       m_defaultAssemblyLabel;
     TDF_Label                       m_activePartLabel;
@@ -279,6 +326,6 @@ private:
     WidgetMinimumDistance* m_widgetMinimumDistance{nullptr};
     WidgetHole*      m_widgetHole{nullptr};
     WidgetAnimation* m_widgetAnimation{nullptr};
-    WidgetBusbar*    m_widgetBusbar{nullptr};
+    WidgetSheetMetalConnector* m_widgetSheetMetalConnector{nullptr};
 };
 

@@ -1,0 +1,8 @@
+# Three valid points and four intentionally invalid records
+0 0 0
+10 0 0 255 0 0
+this line is invalid
+0 10 0 0 255 0
+nan 0 0
+0 inf 0
+0 0 10 300 0 0

@@ -18,6 +18,7 @@
 #include <QInputDialog>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QColorDialog>
 #include <QCloseEvent>
 #include <QSignalBlocker>
 #include <QTabWidget>
@@ -29,6 +30,7 @@
 #include "ViewerWidget.h"
 #include "WidgetModelTree.h"
 #include "WidgetCaeTree.h"
+#include "WidgetPointCloud.h"
 #include "DialogAbout.h"
 #include "DialogCaeForce.h"
 #include "DialogCaeConvection.h"
@@ -55,16 +57,18 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
 
     m_modelTreeWidget = new ModelTreeWidget( this );
     m_caeTreeWidget = new CaeTreeWidget(this);
+    m_pointCloudWidget = new WidgetPointCloud(this);
     m_viewerWidget = new ViewerWidget(this);
     m_caeController = std::make_unique<Cae::CaeController>();
     m_caeController->setExternalToolConfig(Cae::CaeExternalToolConfigStore().load());
 
-    auto* navigationTabs = new QTabWidget(this);
-    navigationTabs->addTab(m_modelTreeWidget, tr("Model"));
-    navigationTabs->addTab(m_caeTreeWidget, tr("CAE"));
+    m_navigationTabs = new QTabWidget(this);
+    m_navigationTabs->addTab(m_modelTreeWidget, tr("Model"));
+    m_navigationTabs->addTab(m_caeTreeWidget, tr("CAE"));
+    m_navigationTabs->addTab(m_pointCloudWidget, tr("Point Cloud"));
 
     const auto splitter = new QSplitter( Qt::Horizontal, this );
-    splitter->addWidget( navigationTabs );
+    splitter->addWidget( m_navigationTabs );
     splitter->addWidget( m_viewerWidget );
 
     splitter->setStretchFactor( 0, 1 ); // m_modelTreeWidget
@@ -74,6 +78,34 @@ MainWindow::MainWindow(QWidget* parent) : SARibbonMainWindow(parent)
     connect(m_modelTreeWidget, &ModelTreeWidget::labelPickRequested, m_viewerWidget, &ViewerWidget::highlightLabel);
     connect(m_modelTreeWidget, &ModelTreeWidget::labelRemoveRequested, m_viewerWidget, &ViewerWidget::removeLabelShape);
     connect(m_viewerWidget, &ViewerWidget::signalCaeNodePicked, this, &MainWindow::onCaeNodePicked);
+    connect(m_viewerWidget, &ViewerWidget::signalPointCloudLoaded,
+            m_pointCloudWidget, &WidgetPointCloud::setPointCloud);
+    connect(m_viewerWidget, &ViewerWidget::signalPointCloudLoaded, this,
+            [this](const PointCloud::Data&, quint64) {
+                m_navigationTabs->setCurrentWidget(m_pointCloudWidget);
+            });
+    connect(m_viewerWidget, &ViewerWidget::signalPointCloudCleared,
+            m_pointCloudWidget, &WidgetPointCloud::clearPointCloud);
+    connect(m_viewerWidget, &ViewerWidget::signalSceneContentChanged,
+            this, &MainWindow::updateSceneActionState);
+    connect(m_viewerWidget, &ViewerWidget::signalStatusMessage,
+            this, &MainWindow::updateStatusMessage);
+    connect(m_pointCloudWidget, &WidgetPointCloud::visibilityChanged,
+            m_viewerWidget, &ViewerWidget::setPointCloudVisible);
+    connect(m_pointCloudWidget, &WidgetPointCloud::pointSizeChanged,
+            m_viewerWidget, &ViewerWidget::setPointCloudPointSize);
+    connect(m_pointCloudWidget, &WidgetPointCloud::colorModeChanged,
+            m_viewerWidget, &ViewerWidget::setPointCloudColorMode);
+    connect(m_pointCloudWidget, &WidgetPointCloud::singleColorChanged,
+            m_viewerWidget, &ViewerWidget::setPointCloudSingleColor);
+    connect(m_pointCloudWidget, &WidgetPointCloud::maximumDisplayPointsChanged,
+            m_viewerWidget, &ViewerWidget::setPointCloudMaximumDisplayPoints);
+    connect(m_pointCloudWidget, &WidgetPointCloud::displaySettingsReset,
+            m_viewerWidget, &ViewerWidget::resetPointCloudDisplaySettings);
+    connect(m_pointCloudWidget, &WidgetPointCloud::fitRequested,
+            m_viewerWidget, &ViewerWidget::fitPointCloud);
+    connect(m_pointCloudWidget, &WidgetPointCloud::removeRequested,
+            m_viewerWidget, &ViewerWidget::removePointCloud);
     connect(m_caeTreeWidget, &CaeTreeWidget::meshActivated, this, &MainWindow::onCaeTreeMeshActivated);
     connect(m_caeTreeWidget, &CaeTreeWidget::resultFieldActivated, this, &MainWindow::onCaeTreeResultActivated);
     connect(m_caeTreeWidget, &CaeTreeWidget::materialActivated, this, &MainWindow::onCaeMaterialActivated);
@@ -134,6 +166,11 @@ void MainWindow::refreshCaeTree()
 
 void MainWindow::updateCaeActionAvailability()
 {
+    if (m_viewerWidget && m_viewerWidget->hasPointCloud()) {
+        updateSceneActionState(false, true);
+        return;
+    }
+
     const Cae::CaeStudy* study = m_caeController
         ? m_caeController->project().activeStudy()
         : nullptr;
@@ -241,6 +278,12 @@ void MainWindow::setupUi()
     // Connect signals
     connect(m_viewerWidget, &ViewerWidget::signalMouseMove, this, &MainWindow::updateCoordInfo);
     connect(m_viewerWidget, &ViewerWidget::signalSelectionInfo, this, &MainWindow::updateShapeInfo);
+    if (m_navigationTabs) {
+        m_navigationTabs->setTabText(m_navigationTabs->indexOf(m_modelTreeWidget), tr("Model"));
+        m_navigationTabs->setTabText(m_navigationTabs->indexOf(m_caeTreeWidget), tr("CAE"));
+        m_navigationTabs->setTabText(m_navigationTabs->indexOf(m_pointCloudWidget), tr("Point Cloud"));
+    }
+    updateSceneActionState(m_viewerWidget->hasCadGeometry(), m_viewerWidget->hasPointCloud());
 }
 
 void MainWindow::createRibbon() {
@@ -383,6 +426,17 @@ void MainWindow::createViewGroup()
         m_displayModeAction->setToolTip(tr("Display Mode"));
         menu->setStyleSheet("QMenu::item { padding-left: 25px; }");
 
+        m_backgroundColorAction = new QAction(
+            QIcon(":/icons/icon/background_color.svg"), tr("Background Color"), this);
+        connect(m_backgroundColorAction, &QAction::triggered, this, [this]() {
+            const QColor color = QColorDialog::getColor(
+                m_viewerWidget->backgroundColor(), this, tr("Background Color"));
+            if (color.isValid()) {
+                m_viewerWidget->setBackgroundColor(color);
+            }
+        });
+        m_displayModePannel->addSmallAction(m_backgroundColorAction);
+
         QActionGroup* displayModeGroup = new QActionGroup(this);
         displayModeGroup->setExclusive(true);
 
@@ -403,6 +457,7 @@ void MainWindow::createViewGroup()
         auto wireframeAction = createDisplayAction(QIcon(":/icons/icon/display_mode_wireframe.svg"),tr("Wireframe"), 1);
         auto hiddenLineAction = createDisplayAction(QIcon(":/icons/icon/display_mode_hidden_line.svg"),tr("Hidden Line"), 2);
         auto shadingEdgeAction = createDisplayAction(QIcon(":/icons/icon/display_mode_shading_edge.svg"),tr("Shading with edge"), 3);
+        auto blackAndWhiteAction = createDisplayAction(QIcon(":/icons/icon/display_mode_black_white.svg"),tr("Black and White"), 4);
 
         shadingAction->setChecked(true); // Default selection
     };
@@ -556,10 +611,10 @@ void MainWindow::createToolGroup()
         connect(m_animationAction, &QAction::triggered, this, &MainWindow::onAnimation);
         m_otherPannel->addLargeAction(m_animationAction);
 
-        // busbar
-        m_busbarAction = new QAction(QIcon(":/icons/icon/busbar.svg"), tr("Busbar"), this);
-        connect(m_busbarAction, &QAction::triggered, this, &MainWindow::onBusbar);
-        m_otherPannel->addLargeAction(m_busbarAction);
+        // sheet metal connector
+        m_sheetMetalConnectorAction = new QAction(QIcon(":/icons/icon/sheet_metal_connector.svg"), tr("Sheet Metal Connector"), this);
+        connect(m_sheetMetalConnectorAction, &QAction::triggered, this, &MainWindow::onSheetMetalConnector);
+        m_otherPannel->addLargeAction(m_sheetMetalConnectorAction);
     };
     createOtherPannel();
 
@@ -875,7 +930,13 @@ void MainWindow::onNewFile()
 }
 void MainWindow::onOpenFile()
 {
-    QString filename = QFileDialog::getOpenFileName(this, "Open CAD File", "", "STEP (*.step *.stp);;IGES (*.iges *.igs)");
+    QString filename = QFileDialog::getOpenFileName(
+        this,
+        tr("Open Geometry File"),
+        QString(),
+        tr("All Supported Files (*.step *.stp *.iges *.igs *.xyz *.txt *.pts *.ply);;"
+           "CAD Files (*.step *.stp *.iges *.igs);;"
+           "Point Cloud Files (*.xyz *.txt *.pts *.ply)"));
     if (!filename.isEmpty())
     {
         m_caeController->clearProject();
@@ -1032,9 +1093,9 @@ void MainWindow::onAnimation()
     m_viewerWidget->animation();
 }
 
-void MainWindow::onBusbar()
+void MainWindow::onSheetMetalConnector()
 {
-    m_viewerWidget->busbar();
+    m_viewerWidget->sheetMetalConnector();
 }
 
 void MainWindow::onMeasureDistance() const
@@ -1253,7 +1314,7 @@ void MainWindow::onCaeUseCurrentGeometry()
     m_viewerWidget->clearScalarField();
     m_viewerWidget->clearCaeMesh();
     m_viewerWidget->clearCaeBoundaryMarkers();
-    updateStatusMessage(m_caeController->useCurrentGeometry(m_viewerWidget->hasGeometry()), 5000);
+    updateStatusMessage(m_caeController->useCurrentGeometry(m_viewerWidget->hasCadGeometry()), 5000);
     refreshCaeTree();
 }
 
@@ -2245,6 +2306,85 @@ ModelTreeWidget* MainWindow::GetModelTreeWidget() const
 void MainWindow::updateStatusMessage(const QString& msg, int timeout)
 {
     statusBar()->showMessage(msg, timeout);
+}
+
+void MainWindow::updateSceneActionState(bool hasCadGeometry, bool hasPointCloud)
+{
+    Q_UNUSED(hasCadGeometry);
+    const bool cadActionsEnabled = !hasPointCloud;
+    const QList<QAction*> cadOnlyActions{
+        m_exportFileAction,
+        m_exportDxfAction,
+        m_exportDwgAction,
+        m_export3dpdfAction,
+        m_selectAction,
+        m_selectFilterAction,
+        m_transformAction,
+        m_interferenceAction,
+        m_explosionAction,
+        m_measureDistanceAction,
+        m_measureLengthAction,
+        m_measureArcLengthAction,
+        m_measureAngleAction,
+        m_measureMinimumDistanceAction,
+        m_createWorkPlaneAction,
+        m_animationAction,
+        m_sheetMetalConnectorAction,
+        m_pointAction,
+        m_lineAction,
+        m_rectangleAction,
+        m_circleAction,
+        m_arcAction,
+        m_ellipseAction,
+        m_hyperbolaAction,
+        m_parabolaAction,
+        m_offsetCurveAction,
+        m_polygonAction,
+        m_bezierCurveAction,
+        m_nurbsCurveAction,
+        m_boxAction,
+        m_sphereAction,
+        m_torusAction,
+        m_revolAction,
+        m_cylinderAction,
+        m_coneAction,
+        m_booleanOperationAction,
+        m_mirrorByPlaneAction,
+        m_mirrorByAxisAction,
+        m_patternLinearAction,
+        m_patternCircularAction,
+        m_shapeToolShellAction,
+        m_shapeToolChamferAction,
+        m_shapeToolFilletAction,
+        m_shapeToolHoleAction,
+        m_caeNewStaticAction,
+        m_caeNewThermalAction,
+        m_caeUseCurrentGeometryAction,
+        m_caeNamedSelectionAction,
+        m_caeAssignMaterialAction,
+        m_caeFixedSupportAction,
+        m_caeForceAction,
+        m_caePressureAction,
+        m_caeFixedTemperatureAction,
+        m_caeHeatFluxAction,
+        m_caeConvectionAction,
+        m_caeHeatGenerationAction,
+        m_caeGenerateMeshAction,
+        m_caeRunSolverAction,
+        m_caeShowDisplacementAction,
+        m_caeShowStressAction,
+        m_caeShowTemperatureAction,
+        m_caeDeformationScaleAction,
+        m_caeColorRangeAction,
+        m_caeProbeResultAction,
+        m_caePickNodeAction
+    };
+
+    for (QAction* action : cadOnlyActions) {
+        if (action) {
+            action->setEnabled(cadActionsEnabled);
+        }
+    }
 }
 
 void MainWindow::onSwitchLanguage()

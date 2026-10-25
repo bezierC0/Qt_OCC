@@ -27,6 +27,9 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Sheet Metal Connector</source><translation>钣金连接</translation></message>
+    <message><source>Black and White</source><translation>黑白</translation></message>
+    <message><source>Background Color</source><translation>背景颜色</translation></message>
     <message>
         <source>Revolve</source>
         <translation>旋转体</translation>
@@ -1138,8 +1141,181 @@
         <translation>更改已应用。</translation>
     </message>
     <message>
+        <source>Failed to apply transform.</source>
+        <translation>应用变换失败。</translation>
+    </message>
+    <message>
         <source>Selected Solid</source>
         <translation>选中的实体</translation>
     </message>
+</context>
+<context>
+    <name>MainWindow</name>
+    <message><source>Point Cloud</source><translation>点云</translation></message>
+    <message><source>Open Geometry File</source><translation>打开几何文件</translation></message>
+    <message><source>All Supported Files (*.step *.stp *.iges *.igs *.xyz *.txt *.pts *.ply);;CAD Files (*.step *.stp *.iges *.igs);;Point Cloud Files (*.xyz *.txt *.pts *.ply)</source><translation>所有支持的文件 (*.step *.stp *.iges *.igs *.xyz *.txt *.pts *.ply);;CAD 文件 (*.step *.stp *.iges *.igs);;点云文件 (*.xyz *.txt *.pts *.ply)</translation></message>
+</context>
+<context>
+    <name>ViewerWidget</name>
+    <message><source>Point Cloud Import</source><translation>点云导入</translation></message>
+    <message><source>A point cloud is already being imported.</source><translation>正在导入点云。</translation></message>
+    <message><source>Reading point cloud...</source><translation>正在读取点云...</translation></message>
+    <message><source>Cancel</source><translation>取消</translation></message>
+    <message><source>Point cloud import cancelled.</source><translation>点云导入已取消。</translation></message>
+    <message><source>Point cloud import failed.</source><translation>点云导入失败。</translation></message>
+    <message><source>Loaded %1 points from %2.</source><translation>已从 %2 加载 %1 个点。</translation></message>
+    <message><source> Ignored %1 invalid records.</source><translation> 已忽略 %1 条无效记录。</translation></message>
+    <message><source>Displaying %1 of %2 points.</source><translation>正在显示 %2 个点中的 %1 个。</translation></message>
+    <message><source> CAD and CAE shape commands are unavailable for point clouds.</source><translation> 点云场景不能使用 CAD 和 CAE 拓扑命令。</translation></message>
+</context>
+<context>
+    <name>WidgetPointCloud</name>
+    <message><source>Point Cloud Information</source><translation>点云信息</translation></message>
+    <message><source>File</source><translation>文件</translation></message>
+    <message><source>File Size</source><translation>文件大小</translation></message>
+    <message><source>Source Records</source><translation>原始记录数</translation></message>
+    <message><source>Valid Points</source><translation>有效点数</translation></message>
+    <message><source>Displayed Points</source><translation>显示点数</translation></message>
+    <message><source>Point Colors</source><translation>点颜色</translation></message>
+    <message><source>Bounds</source><translation>边界</translation></message>
+    <message><source>Dimensions</source><translation>尺寸</translation></message>
+    <message><source>Invalid Records</source><translation>无效记录</translation></message>
+    <message><source>Point Cloud Display</source><translation>点云显示</translation></message>
+    <message><source>Visible</source><translation>可见</translation></message>
+    <message><source>Original RGB</source><translation>原始 RGB</translation></message>
+    <message><source>Single Color</source><translation>单色</translation></message>
+    <message><source>Height (Z)</source><translation>高度 (Z)</translation></message>
+    <message><source>Choose Color</source><translation>选择颜色</translation></message>
+    <message><source>All Points</source><translation>全部点</translation></message>
+    <message><source>Point Size</source><translation>点大小</translation></message>
+    <message><source>Color Mode</source><translation>颜色模式</translation></message>
+    <message><source>Maximum Display</source><translation>最大显示数</translation></message>
+    <message><source>Fit Point Cloud</source><translation>适合点云</translation></message>
+    <message><source>Remove Point Cloud</source><translation>移除点云</translation></message>
+    <message><source>Reset Display Settings</source><translation>重置显示设置</translation></message>
+    <message><source>RGB</source><translation>RGB</translation></message>
+    <message><source>No</source><translation>无</translation></message>
+    <message><source>X: %1 .. %2
+Y: %3 .. %4
+Z: %5 .. %6</source><translation>X: %1 .. %2
+Y: %3 .. %4
+Z: %5 .. %6</translation></message>
+    <message><source>%1 x %2 x %3</source><translation>%1 x %2 x %3</translation></message>
+    <message><source>Point Cloud Color</source><translation>点云颜色</translation></message>
+</context>
+<context>
+    <name>PointCloudReader</name>
+    <message><source>The file does not contain any valid points.</source><translation>文件中没有有效点。</translation></message>
+    <message><source>The declared point count does not match the number of valid points.</source><translation>声明的点数与有效点数不一致。</translation></message>
+    <message><source>Invalid PLY header.</source><translation>PLY 文件头无效。</translation></message>
+    <message><source>Invalid PLY vertex count.</source><translation>PLY 顶点数无效。</translation></message>
+    <message><source>Unsupported PLY vertex property.</source><translation>不支持的 PLY 顶点属性。</translation></message>
+    <message><source>PLY header is incomplete.</source><translation>PLY 文件头不完整。</translation></message>
+    <message><source>Only ASCII PLY files are supported.</source><translation>仅支持 ASCII PLY 文件。</translation></message>
+    <message><source>The PLY file does not contain vertices.</source><translation>PLY 文件不包含顶点。</translation></message>
+    <message><source>PLY vertex properties must include x, y, and z.</source><translation>PLY 顶点属性必须包含 x、y 和 z。</translation></message>
+    <message><source>The PLY file does not contain any valid points.</source><translation>PLY 文件中没有有效点。</translation></message>
+    <message><source>Some PLY vertex records were invalid or missing.</source><translation>部分 PLY 顶点记录无效或缺失。</translation></message>
+    <message><source>Unsupported point cloud file format.</source><translation>不支持的点云文件格式。</translation></message>
+    <message><source>Unable to open the point cloud file.</source><translation>无法打开点云文件。</translation></message>
+    <message><source>Not enough memory to read the point cloud.</source><translation>读取点云的内存不足。</translation></message>
+    <message><source>The point cloud is too large to read.</source><translation>点云过大，无法读取。</translation></message>
+    <message><source>Unsupported PLY format.</source><translation>不支持的 PLY 格式。</translation></message>
+    <message><source>Invalid PLY element count.</source><translation>PLY 元素数量无效。</translation></message>
+    <message><source>PLY property is not associated with an element.</source><translation>PLY 属性没有关联的元素。</translation></message>
+    <message><source>Unsupported PLY property declaration.</source><translation>不支持的 PLY 属性声明。</translation></message>
+    <message><source>Unsupported PLY property type.</source><translation>不支持的 PLY 属性类型。</translation></message>
+    <message><source>PLY format is missing.</source><translation>PLY 文件缺少格式声明。</translation></message>
+    <message><source>PLY list properties on vertices are not supported.</source><translation>暂不支持顶点中的 PLY 列表属性。</translation></message>
+    <message><source>PLY vertex colors must include red, green, and blue.</source><translation>PLY 顶点颜色必须同时包含红、绿、蓝分量。</translation></message>
+    <message><source>PLY data is incomplete.</source><translation>PLY 数据不完整。</translation></message>
+    <message><source>PLY binary data is incomplete.</source><translation>PLY 二进制数据不完整。</translation></message>
+    <message><source>PLY vertex record is too large.</source><translation>PLY 顶点记录过大。</translation></message>
+    <message><source>PLY vertex record is invalid.</source><translation>PLY 顶点记录无效。</translation></message>
+    <message><source>PLY binary vertex data is incomplete.</source><translation>PLY 二进制顶点数据不完整。</translation></message>
+    <message><source>Binary big-endian PLY files are not supported.</source><translation>暂不支持大端序二进制 PLY 文件。</translation></message>
+</context>
+<context>
+    <name>WidgetSheetMetalConnector</name>
+    <message><source>Sheet Metal Connector</source><translation>钣金连接</translation></message>
+    <message><source>Start Connection</source><translation>起始连接</translation></message>
+    <message><source>End Connection</source><translation>终止连接</translation></message>
+    <message><source>Position:</source><translation>位置：</translation></message>
+    <message><source>Face Normal:</source><translation>面法向：</translation></message>
+    <message><source>Joint:</source><translation>连接方式：</translation></message>
+    <message><source>Weld</source><translation>焊接</translation></message>
+    <message><source>Bolt / Nut</source><translation>螺栓/螺母</translation></message>
+    <message><source>Weld Type:</source><translation>焊接类型：</translation></message>
+    <message><source>Bolt Spec:</source><translation>螺栓规格：</translation></message>
+    <message><source>Butt</source><translation>对接</translation></message>
+    <message><source>Lap</source><translation>搭接</translation></message>
+    <message><source>Pick Start Face</source><translation>选择起始面</translation></message>
+    <message><source>Pick Start Point</source><translation>选择起点</translation></message>
+    <message><source>Pick End Face</source><translation>选择终止面</translation></message>
+    <message><source>Pick End Point</source><translation>选择终点</translation></message>
+    <message><source>Auto Calculate Route</source><translation>自动计算路径</translation></message>
+    <message><source>Route Points</source><translation>路径点</translation></message>
+    <message><source>Add Waypoint</source><translation>添加路径点</translation></message>
+    <message><source>Delete Waypoint</source><translation>删除路径点</translation></message>
+    <message><source>Selected Route Node</source><translation>选中的路径节点</translation></message>
+    <message><source>Transition:</source><translation>节点连接：</translation></message>
+    <message><source>Bend</source><translation>折弯</translation></message>
+    <message><source>Bend Radius:</source><translation>折弯半径：</translation></message>
+    <message><source>Sheet Metal Parameters</source><translation>钣金参数</translation></message>
+    <message><source>Width:</source><translation>宽度：</translation></message>
+    <message><source>Thickness:</source><translation>厚度：</translation></message>
+    <message><source>Default Bend Radius:</source><translation>默认折弯半径：</translation></message>
+    <message><source>Minimum Clearance:</source><translation>最小间隙：</translation></message>
+      <message><source>Maximum Bends per Sheet:</source><translation>每块钣金最大折弯次数：</translation></message>
+      <message><source>Allow Side Bends</source><translation>允许侧向折弯</translation></message>
+    <message><source>Section Direction:</source><translation>截面方向：</translation></message>
+    <message><source>Auto / Start Normal</source><translation>自动 / 起点法向</translation></message>
+    <message><source>Fixed +X</source><translation>固定 +X</translation></message>
+    <message><source>Fixed +Y</source><translation>固定 +Y</translation></message>
+    <message><source>Allow Apply with collision warning</source><translation>允许在碰撞警告下应用</translation></message>
+    <message><source>Options</source><translation>选项</translation></message>
+    <message><source>Ready</source><translation>就绪</translation></message>
+    <message><source>Select the start connection face.</source><translation>请选择起始连接面。</translation></message>
+    <message><source>Select the start connection face first.</source><translation>请先选择起始连接面。</translation></message>
+    <message><source>Select a point on the start connection face.</source><translation>请在起始连接面上选择一个点。</translation></message>
+    <message><source>Select the end connection face.</source><translation>请选择终止连接面。</translation></message>
+    <message><source>Select the end connection face first.</source><translation>请先选择终止连接面。</translation></message>
+    <message><source>Select a point on the end connection face.</source><translation>请在终止连接面上选择一个点。</translation></message>
+    <message><source>Select a point on the previously selected face.</source><translation>请在之前选择的连接面上选择一个点。</translation></message>
+    <message><source>Connection point selected.</source><translation>已选择连接点。</translation></message>
+    <message><source>Connection face selected. A default point was placed on the face.</source><translation>已选择连接面，并在面上设置了默认点。</translation></message>
+    <message><source>Select the start and end connection faces first.</source><translation>请先选择起始和终止连接面。</translation></message>
+    <message><source>Route calculation failed: %1</source><translation>路径计算失败：%1</translation></message>
+    <message><source>Preview failed: %1</source><translation>预览失败：%1</translation></message>
+    <message><source>Route is valid and ready to apply.</source><translation>路径有效，可以应用。</translation></message>
+    <message><source>Route has a collision or clearance violation.</source><translation>路径存在碰撞或间隙不足。</translation></message>
+    <message><source>The connector collides with another shape or violates the minimum clearance.</source><translation>钣金连接件与其他形状碰撞或不满足最小间隙。</translation></message>
+    <message><source>Sheet-metal connector generated successfully.</source><translation>钣金连接件生成成功。</translation></message>
+    <message><source>Cleared.</source><translation>已清除。</translation></message>
+    <message><source> mm</source><translation> 毫米</translation></message>
+    <message><source>-</source><translation>-</translation></message>
+    <message><source>Apply</source><translation>应用</translation></message>
+    <message><source>Clear</source><translation>清除</translation></message>
+    <message><source>Close</source><translation>关闭</translation></message>
+    <message><source>M6</source><translation>M6</translation></message>
+    <message><source>M8</source><translation>M8</translation></message>
+    <message><source>M10</source><translation>M10</translation></message>
+    <message><source>M12</source><translation>M12</translation></message>
+    <message><source>Calculate a route before adding waypoints.</source><translation>请先计算路径再添加路径点。</translation></message>
+    <message><source>Failed to evaluate the selected face.</source><translation>无法计算所选面的信息。</translation></message>
+    <message><source>Failed to generate sheet metal: %1</source><translation>生成钣金失败：%1</translation></message>
+    <message><source>No active view available.</source><translation>没有可用的活动视图。</translation></message>
+    <message><source>P%1 Bend R=%2 mm</source><translation>P%1 折弯 R=%2 毫米</translation></message>
+    <message><source>P%1 Weld</source><translation>P%1 焊接</translation></message>
+    <message><source>P%1 Bolt / Nut</source><translation>P%1 螺栓/螺母</translation></message>
+    <message><source>P%1 End</source><translation>P%1 终点</translation></message>
+    <message><source>P0 Start</source><translation>P0 起点</translation></message>
+    <message><source>Select two faces and calculate a route first.</source><translation>请先选择两个连接面并计算路径。</translation></message>
+    <message><source>Start and end points cannot be deleted.</source><translation>不能删除起点和终点。</translation></message>
+    <message><source>The owning viewer is not available.</source><translation>所属视图不可用。</translation></message>
+    <message><source>Select both connection faces in the same view.</source><translation>请在同一视图中选择两个连接面。</translation></message>
+    <message><source>Failed to load connector parameters: %1</source><translation>加载连接件参数失败：%1</translation></message>
+    <message><source>Failed to restore the connector target shapes.</source><translation>无法恢复连接件的目标形状。</translation></message>
+    <message><source>Connector parameters loaded. Reselect a face before changing its point.</source><translation>已加载连接件参数。修改连接点前请重新选择连接面。</translation></message>
 </context>
 </TS>

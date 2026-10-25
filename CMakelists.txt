@@ -161,7 +161,7 @@ endif()
 # Qt
 #########
 find_package(Qt5 REQUIRED COMPONENTS 
-    Core Widgets LinguistTools
+    Core Widgets Concurrent LinguistTools
 )
 # Output Qt info
 if(Qt5_FOUND)
@@ -339,6 +339,7 @@ file(
     src/command/*.cpp
     src/cae/*.cpp
     src/common/*.cpp
+    src/pointcloud/*.cpp
     #src/core/*.cpp
     # ui
     src/ui/*.ui
@@ -360,6 +361,7 @@ file(
     src/command/*.h
     src/cae/*.h
     src/common/*.h
+    src/pointcloud/*.h
     #src/core/*.h
 )
 
@@ -470,11 +472,43 @@ target_link_libraries(${PROJECT_NAME}
         ${OCCT_LIBRARIES_TO_LINK} 
         ${MANUAL_3RDPARTY_LIBRARIES} 
         Qt5::Widgets Qt5::Core
+        Qt5::Concurrent
         CoreApi
         ${Boost_LIBRARIES}
 )
 
 include(CTest)
+if(BUILD_TESTING)
+    add_executable(SheetMetalConnectorTests
+        tests/SheetMetalConnectorTests.cpp
+        src/ui/SheetMetalCollisionChecker.cpp
+        src/ui/SheetMetalCollisionChecker.h
+        src/ui/SheetMetalConnectorBuilder.cpp
+        src/ui/SheetMetalConnectorBuilder.h
+        src/ui/SheetMetalFaceGeometry.cpp
+        src/ui/SheetMetalFaceGeometry.h
+        src/ui/SheetMetalConnectorMetadata.cpp
+        src/ui/SheetMetalConnectorMetadata.h
+        src/ui/SheetMetalConnectorModel.h
+        src/ui/SheetMetalObstacleMap.cpp
+        src/ui/SheetMetalObstacleMap.h
+        src/ui/SheetMetalRouteEvaluator.cpp
+        src/ui/SheetMetalRouteEvaluator.h
+        src/ui/SheetMetalRoutePlanner.cpp
+        src/ui/SheetMetalRoutePlanner.h
+    )
+    target_include_directories(SheetMetalConnectorTests PRIVATE
+        ${MANUAL_OCCT_INCLUDE_DIR}
+        src/ui
+    )
+    target_link_libraries(SheetMetalConnectorTests PRIVATE
+        ${OCCT_LIBRARIES_TO_LINK}
+        ${MANUAL_3RDPARTY_LIBRARIES}
+        Qt5::Core
+    )
+    add_test(NAME SheetMetalConnectorTests COMMAND SheetMetalConnectorTests)
+endif()
+
 # AnimationSequenceTests.cpp is currently not kept in the repository. Preserve
 # the target definition as a reference, but keep it disabled by default.
 option(BUILD_ANIMATION_SEQUENCE_TESTS

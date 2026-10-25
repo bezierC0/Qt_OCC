@@ -15,6 +15,7 @@
 
 class QTranslator;
 class QCloseEvent;
+class QTabWidget;
 
 class TopoDS_Shape;
 
@@ -25,6 +26,7 @@ class WidgetSetCoordinateSystem;
 class WidgetExplodeAssembly;
 class WidgetClipping;
 class WidgetTransform;
+class WidgetPointCloud;
 
 namespace Cae {
 class CaeController;
@@ -75,7 +77,7 @@ private slots:
     void onExplosion();
     void onCreateWorkPlane();
     void onAnimation();
-    void onBusbar();
+    void onSheetMetalConnector();
 
     /* measure */
     void onMeasureDistance() const;
@@ -183,11 +185,14 @@ private:
     };
     
     void setStatusText(StatusType type, const QString& text);
+    void updateSceneActionState(bool hasCadGeometry, bool hasPointCloud);
 
 private:
     ViewerWidget* m_viewerWidget;
     ModelTreeWidget* m_modelTreeWidget;
     CaeTreeWidget* m_caeTreeWidget{nullptr};
+    WidgetPointCloud* m_pointCloudWidget{nullptr};
+    QTabWidget* m_navigationTabs{nullptr};
     QTranslator* m_translator;
     int m_currentLanguage;
 
@@ -223,6 +228,7 @@ private:
     QAction* m_viewFrontAction;
     QAction* m_viewBackAction;
     QAction* m_displayModeAction;
+    QAction* m_backgroundColorAction;
 
 
     // ---- Tool Group ----
@@ -246,7 +252,7 @@ private:
     QAction* m_measureMinimumDistanceAction;
     QAction* m_createWorkPlaneAction;
     QAction* m_animationAction{};
-    QAction* m_busbarAction{};
+    QAction* m_sheetMetalConnectorAction{};
 
     // ---- Shape Group ----
     SARibbonCategory* m_shapeCategory;

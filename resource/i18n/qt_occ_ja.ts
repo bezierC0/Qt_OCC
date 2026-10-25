@@ -27,6 +27,9 @@
 </context>
 <context>
     <name>MainWindow</name>
+    <message><source>Sheet Metal Connector</source><translation>板金コネクタ</translation></message>
+    <message><source>Black and White</source><translation>白黒</translation></message>
+    <message><source>Background Color</source><translation>背景色</translation></message>
     <message>
         <source>Revolve</source>
         <translation>回転体</translation>
@@ -1138,8 +1141,181 @@
         <translation>変更を適用しました。</translation>
     </message>
     <message>
+        <source>Failed to apply transform.</source>
+        <translation>変換を適用できませんでした。</translation>
+    </message>
+    <message>
         <source>Selected Solid</source>
         <translation>選択したソリッド</translation>
     </message>
+</context>
+<context>
+    <name>MainWindow</name>
+    <message><source>Point Cloud</source><translation>点群</translation></message>
+    <message><source>Open Geometry File</source><translation>ジオメトリファイルを開く</translation></message>
+    <message><source>All Supported Files (*.step *.stp *.iges *.igs *.xyz *.txt *.pts *.ply);;CAD Files (*.step *.stp *.iges *.igs);;Point Cloud Files (*.xyz *.txt *.pts *.ply)</source><translation>すべての対応ファイル (*.step *.stp *.iges *.igs *.xyz *.txt *.pts *.ply);;CAD ファイル (*.step *.stp *.iges *.igs);;点群ファイル (*.xyz *.txt *.pts *.ply)</translation></message>
+</context>
+<context>
+    <name>ViewerWidget</name>
+    <message><source>Point Cloud Import</source><translation>点群インポート</translation></message>
+    <message><source>A point cloud is already being imported.</source><translation>点群をインポートしています。</translation></message>
+    <message><source>Reading point cloud...</source><translation>点群を読み込んでいます...</translation></message>
+    <message><source>Cancel</source><translation>キャンセル</translation></message>
+    <message><source>Point cloud import cancelled.</source><translation>点群のインポートをキャンセルしました。</translation></message>
+    <message><source>Point cloud import failed.</source><translation>点群のインポートに失敗しました。</translation></message>
+    <message><source>Loaded %1 points from %2.</source><translation>%2 から %1 点を読み込みました。</translation></message>
+    <message><source> Ignored %1 invalid records.</source><translation> 無効なレコード %1 件を無視しました。</translation></message>
+    <message><source>Displaying %1 of %2 points.</source><translation>%2 点中 %1 点を表示しています。</translation></message>
+    <message><source> CAD and CAE shape commands are unavailable for point clouds.</source><translation> 点群では CAD および CAE の形状コマンドを使用できません。</translation></message>
+</context>
+<context>
+    <name>WidgetPointCloud</name>
+    <message><source>Point Cloud Information</source><translation>点群情報</translation></message>
+    <message><source>File</source><translation>ファイル</translation></message>
+    <message><source>File Size</source><translation>ファイルサイズ</translation></message>
+    <message><source>Source Records</source><translation>元レコード数</translation></message>
+    <message><source>Valid Points</source><translation>有効点数</translation></message>
+    <message><source>Displayed Points</source><translation>表示点数</translation></message>
+    <message><source>Point Colors</source><translation>点の色</translation></message>
+    <message><source>Bounds</source><translation>境界</translation></message>
+    <message><source>Dimensions</source><translation>寸法</translation></message>
+    <message><source>Invalid Records</source><translation>無効なレコード</translation></message>
+    <message><source>Point Cloud Display</source><translation>点群表示</translation></message>
+    <message><source>Visible</source><translation>表示</translation></message>
+    <message><source>Original RGB</source><translation>元の RGB</translation></message>
+    <message><source>Single Color</source><translation>単色</translation></message>
+    <message><source>Height (Z)</source><translation>高さ (Z)</translation></message>
+    <message><source>Choose Color</source><translation>色を選択</translation></message>
+    <message><source>All Points</source><translation>すべての点</translation></message>
+    <message><source>Point Size</source><translation>点サイズ</translation></message>
+    <message><source>Color Mode</source><translation>カラーモード</translation></message>
+    <message><source>Maximum Display</source><translation>最大表示数</translation></message>
+    <message><source>Fit Point Cloud</source><translation>点群をフィット</translation></message>
+    <message><source>Remove Point Cloud</source><translation>点群を削除</translation></message>
+    <message><source>Reset Display Settings</source><translation>表示設定をリセット</translation></message>
+    <message><source>RGB</source><translation>RGB</translation></message>
+    <message><source>No</source><translation>なし</translation></message>
+    <message><source>X: %1 .. %2
+Y: %3 .. %4
+Z: %5 .. %6</source><translation>X: %1 .. %2
+Y: %3 .. %4
+Z: %5 .. %6</translation></message>
+    <message><source>%1 x %2 x %3</source><translation>%1 x %2 x %3</translation></message>
+    <message><source>Point Cloud Color</source><translation>点群の色</translation></message>
+</context>
+<context>
+    <name>PointCloudReader</name>
+    <message><source>The file does not contain any valid points.</source><translation>ファイルに有効な点がありません。</translation></message>
+    <message><source>The declared point count does not match the number of valid points.</source><translation>宣言された点数と有効点数が一致しません。</translation></message>
+    <message><source>Invalid PLY header.</source><translation>PLY ヘッダーが無効です。</translation></message>
+    <message><source>Invalid PLY vertex count.</source><translation>PLY の頂点数が無効です。</translation></message>
+    <message><source>Unsupported PLY vertex property.</source><translation>未対応の PLY 頂点プロパティです。</translation></message>
+    <message><source>PLY header is incomplete.</source><translation>PLY ヘッダーが不完全です。</translation></message>
+    <message><source>Only ASCII PLY files are supported.</source><translation>ASCII PLY ファイルのみ対応しています。</translation></message>
+    <message><source>The PLY file does not contain vertices.</source><translation>PLY ファイルに頂点がありません。</translation></message>
+    <message><source>PLY vertex properties must include x, y, and z.</source><translation>PLY 頂点プロパティには x、y、z が必要です。</translation></message>
+    <message><source>The PLY file does not contain any valid points.</source><translation>PLY ファイルに有効な点がありません。</translation></message>
+    <message><source>Some PLY vertex records were invalid or missing.</source><translation>一部の PLY 頂点レコードが無効または不足しています。</translation></message>
+    <message><source>Unsupported point cloud file format.</source><translation>未対応の点群ファイル形式です。</translation></message>
+    <message><source>Unable to open the point cloud file.</source><translation>点群ファイルを開けません。</translation></message>
+    <message><source>Not enough memory to read the point cloud.</source><translation>点群を読み込むためのメモリが不足しています。</translation></message>
+    <message><source>The point cloud is too large to read.</source><translation>点群が大きすぎるため読み込めません。</translation></message>
+    <message><source>Unsupported PLY format.</source><translation>未対応の PLY 形式です。</translation></message>
+    <message><source>Invalid PLY element count.</source><translation>PLY 要素数が無効です。</translation></message>
+    <message><source>PLY property is not associated with an element.</source><translation>PLY プロパティに対応する要素がありません。</translation></message>
+    <message><source>Unsupported PLY property declaration.</source><translation>未対応の PLY プロパティ宣言です。</translation></message>
+    <message><source>Unsupported PLY property type.</source><translation>未対応の PLY プロパティ型です。</translation></message>
+    <message><source>PLY format is missing.</source><translation>PLY の形式宣言がありません。</translation></message>
+    <message><source>PLY list properties on vertices are not supported.</source><translation>頂点の PLY リストプロパティには対応していません。</translation></message>
+    <message><source>PLY vertex colors must include red, green, and blue.</source><translation>PLY 頂点色には赤、緑、青がすべて必要です。</translation></message>
+    <message><source>PLY data is incomplete.</source><translation>PLY データが不完全です。</translation></message>
+    <message><source>PLY binary data is incomplete.</source><translation>PLY バイナリデータが不完全です。</translation></message>
+    <message><source>PLY vertex record is too large.</source><translation>PLY 頂点レコードが大きすぎます。</translation></message>
+    <message><source>PLY vertex record is invalid.</source><translation>PLY 頂点レコードが無効です。</translation></message>
+    <message><source>PLY binary vertex data is incomplete.</source><translation>PLY バイナリ頂点データが不完全です。</translation></message>
+    <message><source>Binary big-endian PLY files are not supported.</source><translation>ビッグエンディアンのバイナリ PLY には対応していません。</translation></message>
+</context>
+<context>
+    <name>WidgetSheetMetalConnector</name>
+    <message><source>Sheet Metal Connector</source><translation>板金コネクタ</translation></message>
+    <message><source>Start Connection</source><translation>始点接続</translation></message>
+    <message><source>End Connection</source><translation>終点接続</translation></message>
+    <message><source>Position:</source><translation>位置：</translation></message>
+    <message><source>Face Normal:</source><translation>面法線：</translation></message>
+    <message><source>Joint:</source><translation>接合方法：</translation></message>
+    <message><source>Weld</source><translation>溶接</translation></message>
+    <message><source>Bolt / Nut</source><translation>ボルト / ナット</translation></message>
+    <message><source>Weld Type:</source><translation>溶接種類：</translation></message>
+    <message><source>Bolt Spec:</source><translation>ボルト仕様：</translation></message>
+    <message><source>Butt</source><translation>突合せ</translation></message>
+    <message><source>Lap</source><translation>重ね</translation></message>
+    <message><source>Pick Start Face</source><translation>始点面を選択</translation></message>
+    <message><source>Pick Start Point</source><translation>始点を選択</translation></message>
+    <message><source>Pick End Face</source><translation>終点面を選択</translation></message>
+    <message><source>Pick End Point</source><translation>終点を選択</translation></message>
+    <message><source>Auto Calculate Route</source><translation>経路を自動計算</translation></message>
+    <message><source>Route Points</source><translation>経路点</translation></message>
+    <message><source>Add Waypoint</source><translation>経路点を追加</translation></message>
+    <message><source>Delete Waypoint</source><translation>経路点を削除</translation></message>
+    <message><source>Selected Route Node</source><translation>選択した経路ノード</translation></message>
+    <message><source>Transition:</source><translation>ノード接続：</translation></message>
+    <message><source>Bend</source><translation>曲げ</translation></message>
+    <message><source>Bend Radius:</source><translation>曲げ半径：</translation></message>
+    <message><source>Sheet Metal Parameters</source><translation>板金パラメータ</translation></message>
+    <message><source>Width:</source><translation>幅：</translation></message>
+    <message><source>Thickness:</source><translation>厚さ：</translation></message>
+    <message><source>Default Bend Radius:</source><translation>既定の曲げ半径：</translation></message>
+    <message><source>Minimum Clearance:</source><translation>最小クリアランス：</translation></message>
+      <message><source>Maximum Bends per Sheet:</source><translation>板金1枚あたりの最大曲げ回数：</translation></message>
+      <message><source>Allow Side Bends</source><translation>横曲げを許可</translation></message>
+    <message><source>Section Direction:</source><translation>断面方向：</translation></message>
+    <message><source>Auto / Start Normal</source><translation>自動 / 始点法線</translation></message>
+    <message><source>Fixed +X</source><translation>固定 +X</translation></message>
+    <message><source>Fixed +Y</source><translation>固定 +Y</translation></message>
+    <message><source>Allow Apply with collision warning</source><translation>干渉警告があっても適用を許可</translation></message>
+    <message><source>Options</source><translation>オプション</translation></message>
+    <message><source>Ready</source><translation>準備完了</translation></message>
+    <message><source>Select the start connection face.</source><translation>始点の接続面を選択してください。</translation></message>
+    <message><source>Select the start connection face first.</source><translation>先に始点の接続面を選択してください。</translation></message>
+    <message><source>Select a point on the start connection face.</source><translation>始点の接続面上で点を選択してください。</translation></message>
+    <message><source>Select the end connection face.</source><translation>終点の接続面を選択してください。</translation></message>
+    <message><source>Select the end connection face first.</source><translation>先に終点の接続面を選択してください。</translation></message>
+    <message><source>Select a point on the end connection face.</source><translation>終点の接続面上で点を選択してください。</translation></message>
+    <message><source>Select a point on the previously selected face.</source><translation>先に選択した接続面上で点を選択してください。</translation></message>
+    <message><source>Connection point selected.</source><translation>接続点を選択しました。</translation></message>
+    <message><source>Connection face selected. A default point was placed on the face.</source><translation>接続面を選択し、面上に既定の点を配置しました。</translation></message>
+    <message><source>Select the start and end connection faces first.</source><translation>先に始点と終点の接続面を選択してください。</translation></message>
+    <message><source>Route calculation failed: %1</source><translation>経路計算に失敗しました：%1</translation></message>
+    <message><source>Preview failed: %1</source><translation>プレビューに失敗しました：%1</translation></message>
+    <message><source>Route is valid and ready to apply.</source><translation>経路は有効で、適用できます。</translation></message>
+    <message><source>Route has a collision or clearance violation.</source><translation>経路に干渉またはクリアランス違反があります。</translation></message>
+    <message><source>The connector collides with another shape or violates the minimum clearance.</source><translation>板金コネクタが他の形状と干渉しているか、最小クリアランスを満たしていません。</translation></message>
+    <message><source>Sheet-metal connector generated successfully.</source><translation>板金コネクタを生成しました。</translation></message>
+    <message><source>Cleared.</source><translation>クリアしました。</translation></message>
+    <message><source> mm</source><translation> mm</translation></message>
+    <message><source>-</source><translation>-</translation></message>
+    <message><source>Apply</source><translation>適用</translation></message>
+    <message><source>Clear</source><translation>クリア</translation></message>
+    <message><source>Close</source><translation>閉じる</translation></message>
+    <message><source>M6</source><translation>M6</translation></message>
+    <message><source>M8</source><translation>M8</translation></message>
+    <message><source>M10</source><translation>M10</translation></message>
+    <message><source>M12</source><translation>M12</translation></message>
+    <message><source>Calculate a route before adding waypoints.</source><translation>経路点を追加する前に経路を計算してください。</translation></message>
+    <message><source>Failed to evaluate the selected face.</source><translation>選択した面を評価できませんでした。</translation></message>
+    <message><source>Failed to generate sheet metal: %1</source><translation>板金の生成に失敗しました：%1</translation></message>
+    <message><source>No active view available.</source><translation>利用可能なアクティブビューがありません。</translation></message>
+    <message><source>P%1 Bend R=%2 mm</source><translation>P%1 曲げ R=%2 mm</translation></message>
+    <message><source>P%1 Weld</source><translation>P%1 溶接</translation></message>
+    <message><source>P%1 Bolt / Nut</source><translation>P%1 ボルト / ナット</translation></message>
+    <message><source>P%1 End</source><translation>P%1 終点</translation></message>
+    <message><source>P0 Start</source><translation>P0 始点</translation></message>
+    <message><source>Select two faces and calculate a route first.</source><translation>先に2つの接続面を選択して経路を計算してください。</translation></message>
+    <message><source>Start and end points cannot be deleted.</source><translation>始点と終点は削除できません。</translation></message>
+    <message><source>The owning viewer is not available.</source><translation>対象のビューアを利用できません。</translation></message>
+    <message><source>Select both connection faces in the same view.</source><translation>2つの接続面を同じビューで選択してください。</translation></message>
+    <message><source>Failed to load connector parameters: %1</source><translation>コネクターパラメータの読み込みに失敗しました：%1</translation></message>
+    <message><source>Failed to restore the connector target shapes.</source><translation>コネクターの対象形状を復元できませんでした。</translation></message>
+    <message><source>Connector parameters loaded. Reselect a face before changing its point.</source><translation>コネクターパラメータを読み込みました。接続点を変更する前に面を再選択してください。</translation></message>
 </context>
 </TS>

@@ -8,6 +8,8 @@
         <file>icon/clipping.svg</file>
         <file>icon/cone.png</file>
         <file>icon/cylinder.png</file>
+        <file>icon/background_color.svg</file>
+        <file>icon/display_mode_black_white.svg</file>
         <file>icon/display_mode_hidden_line.svg</file>
         <file>icon/display_mode_shading_edge.svg</file>
         <file>icon/display_mode_shading.svg</file>
@@ -69,7 +71,7 @@
         <file>icon/view_top.svg</file>
         <file>icon/work_plane.svg</file>
         <file>icon/animation.svg</file>
-        <file>icon/busbar.svg</file>
+        <file>icon/sheet_metal_connector.svg</file>
         <file>icon/cae_assign_material.svg</file>
         <file>icon/cae_convection.svg</file>
         <file>icon/cae_color_range.svg</file>
