@@ -18,6 +18,7 @@
 #include <QInputDialog>
 #include <QLineEdit>
 #include <QMessageBox>
+#include <QColorDialog>
 #include <QCloseEvent>
 #include <QSignalBlocker>
 #include <QTabWidget>
@@ -425,6 +426,17 @@ void MainWindow::createViewGroup()
         m_displayModeAction->setToolTip(tr("Display Mode"));
         menu->setStyleSheet("QMenu::item { padding-left: 25px; }");
 
+        m_backgroundColorAction = new QAction(
+            QIcon(":/icons/icon/background_color.svg"), tr("Background Color"), this);
+        connect(m_backgroundColorAction, &QAction::triggered, this, [this]() {
+            const QColor color = QColorDialog::getColor(
+                m_viewerWidget->backgroundColor(), this, tr("Background Color"));
+            if (color.isValid()) {
+                m_viewerWidget->setBackgroundColor(color);
+            }
+        });
+        m_displayModePannel->addSmallAction(m_backgroundColorAction);
+
         QActionGroup* displayModeGroup = new QActionGroup(this);
         displayModeGroup->setExclusive(true);
 
@@ -445,6 +457,7 @@ void MainWindow::createViewGroup()
         auto wireframeAction = createDisplayAction(QIcon(":/icons/icon/display_mode_wireframe.svg"),tr("Wireframe"), 1);
         auto hiddenLineAction = createDisplayAction(QIcon(":/icons/icon/display_mode_hidden_line.svg"),tr("Hidden Line"), 2);
         auto shadingEdgeAction = createDisplayAction(QIcon(":/icons/icon/display_mode_shading_edge.svg"),tr("Shading with edge"), 3);
+        auto blackAndWhiteAction = createDisplayAction(QIcon(":/icons/icon/display_mode_black_white.svg"),tr("Black and White"), 4);
 
         shadingAction->setChecked(true); // Default selection
     };

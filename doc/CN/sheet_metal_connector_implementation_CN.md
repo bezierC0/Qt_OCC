@@ -80,7 +80,7 @@ Face 选择与 Point 选择承担不同职责。
 - `width`、`thickness`：矩形截面尺寸
 - `clearance`：与非接触障碍物的最小间隙
 - `maximumBendCount`、`allowSideBends`：应用于每块连续钣金的制造约束
-- `upDirection`：确定初始矩形截面朝向的参考方向
+- `upDirection`：为兼容旧元数据而保留；严格基础模式从 `start.normal` 确定截面
 
 `SheetMetalJointType` 与 `SheetMetalBend` 相互独立。Weld 保存焊接类型索引；BoltNut 保存规格索引和孔数量。当前基础生成器每个 BoltNut 端部只生成一个中心孔。
 
@@ -93,11 +93,13 @@ Face 选择与 Point 选择承担不同职责。
 - `BoltNut`：在节点处拆成两个钣金 Solid，并生成所需搭接、孔和紧固连接
 - 起点和终点连接保持独立，只负责把生成的钣金链连接到选中的目标 Shape
 
-基础路线使用起点 Face 的局部平面。设起点为 `S`、终点为 `E`、起点法向为 `N`，投影点为 `Q = E - N * dot(E - S, N)`，基础路线为 `S → Q → E`；零长度板段会被删除。`Q` 节点选择 Bend 时生成一块折弯钣金，选择 Weld 或 BoltNut 时生成两块相连钣金。新增加的内部节点默认使用 Bend。最大折弯次数按每块连续钣金分别计算，并在非 Bend 节点后重新计数。
+基础路线使用起点 Face 的局部平面。设起点为 `S`、终点为 `E`、起点法向为 `N`，投影点为 `Q = E - N * dot(E - S, N)`，基础候选路线为 `S → Q → E`；零长度板段会被删除。`Q` 节点选择 Bend 时生成一块折弯钣金，选择 Weld 或 BoltNut 时生成两块相连钣金。新增加的内部节点默认使用 Bend。最大折弯次数按每块连续钣金分别计算，并在非 Bend 节点后重新计数。
+
+基础版采用严格的无扭转规则：第一段必须位于 Start Face 平面内，其板厚方向固定为 `start.normal`；最后一段必须位于 End Face 平面内，经过各 Bend 搬运后的最终板厚方向必须与 `end.normal` 平行或反向平行。允许整块平板斜着放置，但如果路线要求矩形截面沿路径扭转，则直接拒绝，不生成歪斜 Solid。
 
 ## 🧭 路径规划
 
-`computeOrthogonalRoute()` 当前生成上述起点平面路线 `S → Q → E`。连续重复点会被删除，因此终点已经位于该平面或法向上时可以得到两点直线路线。Auto Calculate 会构造该候选实体并排除碰撞或间隙不足的结果，但尚不会自动增加绕障节点。
+`computeOrthogonalRoute()` 当前生成上述起点平面候选路线 `S → Q → E`。连续重复点会被删除。Auto Calculate 会在端点平面方向、最终截面方向、碰撞或间隙任一条件不满足时拒绝该候选；目前尚不会自动增加方向修正节点或绕障节点。
 
 当自动生成的单个拐角违反零折弯限制或侧弯禁用规则时，该节点默认改为 Weld。手动增加的节点默认是 Bend，用户可在“选中的路径节点”面板中独立修改每个节点。
 
@@ -105,10 +107,10 @@ Face 选择与 Point 选择承担不同职责。
 
 `SheetMetalConnectorBuilder::build()` 的主要步骤：
 
-1. 校验宽度、厚度、路径点和制造选项。
+1. 校验宽度、厚度、路径点、制造选项、首末段的 Face 平面约束和最终截面法向。
 2. 通过 Bend 节点合并连续板段；Weld 和 BoltNut 节点结束当前钣金并开始新的独立 Solid。连续钣金超过 `maximumBendCount` 或包含被禁止的侧弯时，会要求先修改节点连接方式。
 3. 对每块钣金保留的非共线中间点生成圆弧折弯，并校验半径及相邻直线段。
-4. 每块钣金独立扫掠成 Solid；多块结果放入一个 Compound。
+4. 从 Start normal 和经过 Bend 搬运的截面坐标系独立扫掠每块钣金；不再在 Start normal 与首段不兼容时改用任意备用轴。多块结果放入一个 Compound。
 5. 直线 Butt 连接共用切断位置；Lap Weld 和 BoltNut 按 `max(10 mm, 2 × thickness)` 沿路径搭接，并把相邻钣金放到相邻板厚层。两块板只有表面接触，没有实体相交体积；BoltNut 在两块板上切对齐孔。拐角 Butt Weld 使用共同斜切面裁剪，去除相交体积。
 6. 对 BoltNut 端部沿 Face normal 切圆柱孔；M6、M8、M10、M12 当前对应 `3.3`、`4.5`、`5.5`、`6.5` mm 孔半径。
 
@@ -150,7 +152,7 @@ Preview 使用临时 `AIS_Shape`。Apply 会重新构建和重新检查最终实
 
 ## 🧪 验证范围
 
-`SheetMetalConnectorTests` 已覆盖起点 Face 平面投影、单块/多块钣金路线、每节点过渡、直线 BoltNut 连接、斜切拐角 Weld、不支持的 Bolt 拐角、折弯半径、碰撞、Face 几何和元数据兼容。
+`SheetMetalConnectorTests` 源码已加入严格的 Start/End Face 平面对齐、最终板厚法向拒绝、起点 Face 平面投影、单块/多块钣金路线、每节点过渡、直线 BoltNut 连接、斜切拐角 Weld、不支持的 Bolt 拐角、折弯半径、碰撞、Face 几何和元数据兼容用例。按用户要求，本次严格姿态修改未编译、未执行测试。
 
 仍需 GUI 手动验收：
 

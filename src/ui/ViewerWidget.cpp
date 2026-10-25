@@ -2276,6 +2276,18 @@ void ViewerWidget::setDisplayMode(const int mode)
     m_occView->setDisplayMode(static_cast<View::DisplayMode>(mode));
 }
 
+QColor ViewerWidget::backgroundColor() const
+{
+    const Quantity_Color color = m_occView->backgroundColor();
+    return QColor::fromRgbF(color.Red(), color.Green(), color.Blue());
+}
+
+void ViewerWidget::setBackgroundColor(const QColor& color)
+{
+    m_occView->setBackgroundColor(Quantity_Color(
+        color.redF(), color.greenF(), color.blueF(), Quantity_TOC_RGB));
+}
+
 void ViewerWidget::switchSelect(bool checked)
 {
     m_occView->setMouseMode(checked ? View::MouseMode::SELECTION : View::MouseMode::NONE);

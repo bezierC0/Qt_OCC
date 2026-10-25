@@ -102,6 +102,8 @@ public:
     void viewFront() const ;
     void viewBack() const ;
     void setDisplayMode( int mode ) ;
+    QColor backgroundColor() const;
+    void setBackgroundColor(const QColor& color);
 
     // tool
     void switchSelect(bool checked);

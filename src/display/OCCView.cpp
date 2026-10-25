@@ -38,6 +38,7 @@
 #include <BRepOffsetAPI_MakeThickSolid.hxx>
 
 #include <Graphic3d_Camera.hxx>
+#include <Graphic3d_AspectFillArea3d.hxx>
 #include <OpenGl_GraphicDriver.hxx>
 #include <OpenGl_FrameBuffer.hxx>
 
@@ -730,6 +731,7 @@ void OCCView::clearShape()
         m_context->Erase(object, false);
     }
     m_loadedObjects.clear();
+    m_blackAndWhiteColorStates.clear();
     m_explosionSourceShapes.clear();
     m_explosionSourceTransforms.clear();
 
@@ -1205,6 +1207,26 @@ void OCCView::applyInterferenceObjectDisplay()
 
 void OCCView::reDraw()
 {
+    if (m_displayMode != View::DisplayMode::MODE_BLACK_AND_WHITE
+        && !m_blackAndWhiteColorStates.empty()) {
+        for (const DisplayColorState& state : m_blackAndWhiteColorStates) {
+            if (state.object.IsNull()) continue;
+
+            const Handle(XCAFPrs_AISObject) xcafObject =
+                Handle(XCAFPrs_AISObject)::DownCast(state.object);
+            m_context->UnsetColor(state.object, false);
+            state.object->Attributes()->ShadingAspect()->Aspect()->SetShadingModel(
+                state.shadingModel);
+            if (!xcafObject.IsNull()) {
+                xcafObject->DispatchStyles();
+            }
+            if (state.hadColor) {
+                m_context->SetColor(state.object, state.color, false);
+            }
+        }
+        m_blackAndWhiteColorStates.clear();
+    }
+
     auto reDisplayMode = [&](const Handle(AIS_InteractiveObject) & object) {
         auto fnSetViewComputedMode = [=](bool on) {
             for (auto it = m_context->CurrentViewer()->DefinedViewIterator(); it.More(); it.Next())
@@ -1233,8 +1255,43 @@ void OCCView::reDraw()
             }
             if (aisDispMode != object->DisplayMode() )
                 m_context->SetDisplayMode(object, aisDispMode, false);
-            const bool showFaceBounds = m_displayMode == View::DisplayMode::MODE_SHADED_WITH_EDGES;
-            if (object->Attributes()->FaceBoundaryDraw() != showFaceBounds) {
+            if (m_displayMode == View::DisplayMode::MODE_BLACK_AND_WHITE) {
+                const Handle(AIS_Shape) aisShape = Handle(AIS_Shape)::DownCast(object);
+                if (!aisShape.IsNull()) {
+                    const auto stateIt = std::find_if(
+                        m_blackAndWhiteColorStates.cbegin(),
+                        m_blackAndWhiteColorStates.cend(),
+                        [&](const DisplayColorState& state) { return state.object == aisShape; });
+                    if (stateIt == m_blackAndWhiteColorStates.cend()) {
+                        DisplayColorState state;
+                        state.object = aisShape;
+                        state.hadColor = aisShape->HasColor();
+                        if (state.hadColor) {
+                            aisShape->Color(state.color);
+                        }
+                        state.shadingModel = aisShape->Attributes()
+                            ->ShadingAspect()->Aspect()->ShadingModel();
+                        m_blackAndWhiteColorStates.emplace_back(state);
+
+                        const Handle(XCAFPrs_AISObject) xcafObject =
+                            Handle(XCAFPrs_AISObject)::DownCast(aisShape);
+                        if (!xcafObject.IsNull()) {
+                            xcafObject->ClearCustomAspects();
+                        }
+                    }
+                    m_context->SetColor(aisShape, Quantity_NOC_WHITE, false);
+                    const Handle(Graphic3d_AspectFillArea3d)& fillAspect =
+                        aisShape->Attributes()->ShadingAspect()->Aspect();
+                    fillAspect->SetInteriorColor(Quantity_NOC_WHITE);
+                    fillAspect->SetBackInteriorColor(Quantity_NOC_WHITE);
+                    fillAspect->SetShadingModel(Graphic3d_TOSM_UNLIT);
+                }
+            }
+            const bool showFaceBounds =
+                m_displayMode == View::DisplayMode::MODE_SHADED_WITH_EDGES
+                || m_displayMode == View::DisplayMode::MODE_BLACK_AND_WHITE;
+            if (object->Attributes()->FaceBoundaryDraw() != showFaceBounds
+                || m_displayMode == View::DisplayMode::MODE_BLACK_AND_WHITE) {
                 object->Attributes()->SetFaceBoundaryDraw(showFaceBounds);
                 Handle(Prs3d_LineAspect) visibleLineAspect =
                     new Prs3d_LineAspect(Quantity_NOC_BLACK, Aspect_TOL_SOLID, 2.0);
@@ -1309,6 +1366,17 @@ void OCCView::reDraw()
     }
 
     m_context->UpdateCurrentViewer() ;
+    m_view->Redraw();
+}
+
+Quantity_Color OCCView::backgroundColor() const
+{
+    return m_view->BackgroundColor();
+}
+
+void OCCView::setBackgroundColor(const Quantity_Color& color)
+{
+    m_view->SetBackgroundColor(color);
     m_view->Redraw();
 }
 
